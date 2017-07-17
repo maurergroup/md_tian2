@@ -1,0 +1,13 @@
+*~
+*.o
+*.mod
+*.exe
+*.layout
+*.cbp
+*.depend
+bin/
+obj/
+data/
+conf/
+traj/
+old_version/
