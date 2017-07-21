@@ -206,6 +206,9 @@ subroutine simbox_init(slab, teil)
 !
 !if (confname == 'poscar' .or. confname == 'fit') deallocate(start_l)
 !
+
+!TODO: Do not forget to convert the masses from amu to program units
+
 end subroutine simbox_init
 !
 !subroutine read_conf(nr_at_layer, nlnofix, nlno, n_p, n_l, n_p0, &

@@ -29,6 +29,11 @@ module atom_class
     real(dp), parameter          :: twelfth  = 1.0_dp/12.0_dp
     integer, parameter           :: randseed(13)   = [7,5,3,11,9,1,17,2,9,6,4,5,8]
 
+    integer, parameter :: verlet_prop = 1001
+    integer, parameter :: beeman_prop = 1002
+    integer, parameter :: langevin_prop = 1003
+    integer, parameter :: langevin_series_prop = 1004
+
     ! Conversion constants to program units
     !
     ! Program basic units
@@ -65,19 +70,37 @@ module atom_class
 
     end type atoms
 
-    !-------------------------------------------------------------------------|
-    !                  Constructor for type atoms                             |
-    !-------------------------------------------------------------------------|
-    !    input:  n_beads, n_atoms                                             |
-    !    allocates arrays as (3,n_beads,n_atom)                               |
-    !                                                                         |
-    !-------------------------------------------------------------------------|
+    type simulation_parameters
+
+        integer :: start
+        integer :: ntrajs
+        integer :: nsteps
+        real(dp):: step
+        integer :: nlattices       ! number of lattice species
+        integer :: nprojectiles    ! number of incident species
+        character(len=3), dimension(:), allocatable :: name_l, name_p ! atomic names
+        real(dp),         dimension(:), allocatable :: mass_l, mass_p ! atomic masses
+        integer,          dimension(:), allocatable :: md_algo_l, md_algo_p     ! and respective key
+        real(dp) :: einc          ! incidence energy (eV)
+        real(dp) :: inclination   ! incidence polar angle (degree)
+        real(dp) :: azimuth       ! incidence azimuthal angle (degree)
+
+
+    end type
 
     interface atoms
         module procedure new_atoms
     end interface
 
+    interface simulation_parameters
+        module procedure new_simulation_parameters
+    end interface
+
 contains
+
+    ! Constructor for type atoms
+    !    input:  n_beads, n_atoms
+    !    allocates arrays as (3,n_beads,n_atom)
 
     function new_atoms(n_beads, n_atoms)
         integer, intent(in) :: n_beads, n_atoms
@@ -101,6 +124,24 @@ contains
         new_atoms%f     = 0.0_dp
         new_atoms%fixed = .FALSE.
 
+
+    end function
+
+    ! Constructor for type simulation_parameters
+
+    function new_simulation_parameters
+
+        type(simulation_parameters) new_simulation_parameters
+
+        new_simulation_parameters%start  = -1       ! a trajectory to start with
+        new_simulation_parameters%ntrajs = -1       ! number of trajectories
+        new_simulation_parameters%nsteps = -1       ! number of steps
+        new_simulation_parameters%step   = -1_dp    ! time step in fs
+        new_simulation_parameters%nlattices = -1    ! number of lattice species
+        new_simulation_parameters%nprojectiles = -1 ! number of incident species
+        new_simulation_parameters%einc   = -1_dp    ! incidence energy (eV)
+        new_simulation_parameters%inclination =-1_dp! incidence polar angle (degree)
+        new_simulation_parameters%azimuth   = -1_dp ! incidence azimuthal angle (degree)
 
     end function
 

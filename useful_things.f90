@@ -61,6 +61,24 @@ subroutine lower_case(str)
     end do
 end subroutine lower_case
 
+subroutine split_string ( line, words, nw )
+    character(*), intent(in)  :: line
+    character(*), intent(out) :: words(:)
+    integer,      intent(out) :: nw
+    character(len(words)) :: buf( size(words) )
+    integer :: i, ios
+
+    nw = 0 ; words(:) = ""
+
+    do i = 1, size(words)
+        read( line, *, iostat=ios ) buf( 1 : i )
+        if ( ios /= 0 ) exit
+        nw = i
+        words( 1 : nw ) = buf( 1 : nw )
+    enddo
+
+endsubroutine
+
 
 subroutine norm_dist(vec1, vec2, length, norm)
     !
