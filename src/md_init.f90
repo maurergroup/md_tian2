@@ -144,9 +144,9 @@ subroutine simbox_init(slab, teil)
 
     if (command_argument_count() == 0) stop " I need an input file"
 
-    call get_command_argument(1,input_file,input_file_length,input_file_status)
-    allocate(character(input_file_length) ::input_file)
-    call get_command_argument(1,input_file,input_file_length,input_file_status)
+    call get_command(length=input_file_length)
+    allocate(character(input_file_length) :: input_file)
+    call get_command_argument(1, input_file, input_file_length, input_file_status)
     if (input_file_status /= 0) stop " Error by reading the command line"
 
 

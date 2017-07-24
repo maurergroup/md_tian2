@@ -129,7 +129,7 @@ contains
 
     ! Constructor for type simulation_parameters
 
-    function new_simulation_parameters
+    function new_simulation_parameters()
 
         type(simulation_parameters) new_simulation_parameters
 

@@ -62,7 +62,7 @@ simparams = new_simulation_parameters()
         read(38, '(A)', iostat=ios) buffer
         if (ios == 0) then
 
-           line = line + 1
+            line = line + 1
             ! Split an input string
             call split_string(buffer, words, nwords)
 
