@@ -1,21 +1,22 @@
-start 1
+start -5
 ntrajs 1
 nsteps 100
 step 1
 
-lattice 2 Au 196.96657 lan Ag 107.87 ver
-projectile 2 H 1.0079  lan D 2.015 ver
+lattice    2 Au 196.96657 lan   Ag 107.87  ver
+projectile 2  H    1.0079 lan    D   2.015 ver
 
 incidence 3.33 180 90 3.33 180 90
 
 Tsurf 300
 annealing 1000 25 5
 
-conf mxt './trajs' 10 r
+conf mxt './trajs' 10
 !conf poscar './au111_2x2x6.POSCAR' 1 2
 
 !pes definition
-!pes './md_tian.pes'
+pes './md_tian.pes'
 
+perform nve
 
 

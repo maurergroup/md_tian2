@@ -14,3 +14,4 @@ old_version/
 .cproject
 .project
 Debug_Intel64/
+.settings/

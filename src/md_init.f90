@@ -15,7 +15,7 @@ module md_init
     !			        Dan J. Auerbach
 
     use atom_class
-    use run_config
+    use run_config, only : simparams, read_input_file
 
     implicit none
 !    save
@@ -105,112 +105,147 @@ module md_init
 
 contains
 
-subroutine simbox_init(slab, teil)
-!
-! Purpose:
-!           Initialise the entire system:
-!               1. Geometry
-!               2. Interaction Potential
-!               3. Velocities
-!
-    implicit none
+    subroutine simbox_init(slab, teil)
+        !
+        ! Purpose:
+        !           Initialise the entire system:
+        !               1. Geometry
+        !               2. Interaction Potential
+        !               3. Velocities
+        !
+        implicit none
 
-    type(atoms), intent(out) :: slab, teil
+        type(atoms), intent(out) :: slab, teil
 
-    character(len=:), allocatable :: input_file
-    integer :: input_file_length, input_file_status
-    integer :: randk
-!    character(len=7) :: celln
-!!    character(len= 1) :: coord_sys
-!
-!    integer :: n_l0, n_l=1, n_p, n_p0=0
-!    integer :: i
-!    integer :: nlnofix, nlno = -1
-!!    integer, dimension(:,:) :: neigh
-!
-!
-!    real(8), dimension(3,3) :: c_matrix
-!
-!    real(8), dimension(:,:), allocatable :: start_l
-!    integer, dimension(:), allocatable :: nr_at_layer
-!
-!    logical :: exists
-!
-!    integer :: nspec
-!
+        character(len=:), allocatable :: input_file
+        integer :: input_file_length, input_file_status
+        integer :: randk
+
+        ! Read in name of input file
+
+        if (command_argument_count() == 0) stop " I need an input file"
+
+        call get_command(length=input_file_length)
+        allocate(character(input_file_length) :: input_file)
+        call get_command_argument(1, input_file, input_file_length, input_file_status)
+        if (input_file_status /= 0) stop " Error by reading the command line"
 
 
-! Read in name of input file
+        ! size of seed for random number generator
+        randk=size(randseed)
+        call random_seed(size=randk)
 
-    if (command_argument_count() == 0) stop " I need an input file"
-
-    call get_command(length=input_file_length)
-    allocate(character(input_file_length) :: input_file)
-    call get_command_argument(1, input_file, input_file_length, input_file_status)
-    if (input_file_status /= 0) stop " Error by reading the command line"
+        call read_input_file(input_file)
+        call check_input_sanity()
 
 
-! size of seed for random number generator
-    randk=size(randseed)
-    call random_seed(size=randk)
+    !
+    !    if (pip_sign == 1) then
+    !        print *, 'Warning: You have selected option ', trim(key_p_pos),&
+    !                 '         Your number of projectiles will be reduced to one.'
+    !        n_p0 = 1
+    !    end if
+    !
+    !    close(38)
+    !
+    !    if (wstep(1) > 1) then
+    !        print *, 'Warning: You are saving the geometries along the trajectory.'
+    !        print *, '         This is storage demanding.'
+    !    end if
+    !
+    !!------------------------------------------------------------------------------
+    !!                       READ IN CONFIGURATION
+    !!                       =====================
+    !!------------------------------------------------------------------------------
+    !
+    !! call subroutine which reads in configuration
+    !if (confname == 'poscar' .or. confname == 'fit') then
+    !    call read_conf(nr_at_layer, nlnofix, nlno, n_p, n_l, n_p0, &
+    !                   slab, teil, start_l, c_matrix)
+    !! mxt
+    !else if (confname == 'mxt' .or. confname == 'geo') then
+    !    call read_mxt(nspec, teil, slab, n_p0)
+    !end if
+    !if (confname == 'fit') then
+    !    call read_fit(fracaimd, n_p, n_p0, n_l, n_l0, teil, slab, &
+    !                  start_l, c_matrix)
+    !end if
+    !
+    !if (sasteps > 0) then
+    !    Tmin = Tsurf
+    !end if
+    !
+    !
+    !! Create a directory for configuration data
+    !inquire(directory='conf',exist=exists)
+    !if (.not. exists) then
+    !    call system('mkdir conf')
+    !end if
+    !! Create a directory for trajectory data
+    !inquire(directory='traj',exist=exists)
+    !if (.not. exists) then
+    !    call system('mkdir traj')
+    !end if
+    !
+    !if (confname == 'poscar' .or. confname == 'fit') deallocate(start_l)
+    !
 
-    call read_input_file(input_file)
+    !TODO: Do not forget to convert the masses from amu to program units
+    !TODO: Do not forget to convert the angles from degrees to program units
 
-!
-!    if (pip_sign == 1) then
-!        print *, 'Warning: You have selected option ', trim(key_p_pos),&
-!                 '         Your number of projectiles will be reduced to one.'
-!        n_p0 = 1
-!    end if
-!
-!    close(38)
-!
-!    if (wstep(1) > 1) then
-!        print *, 'Warning: You are saving the geometries along the trajectory.'
-!        print *, '         This is storage demanding.'
-!    end if
-!
-!!------------------------------------------------------------------------------
-!!                       READ IN CONFIGURATION
-!!                       =====================
-!!------------------------------------------------------------------------------
-!
-!! call subroutine which reads in configuration
-!if (confname == 'poscar' .or. confname == 'fit') then
-!    call read_conf(nr_at_layer, nlnofix, nlno, n_p, n_l, n_p0, &
-!                   slab, teil, start_l, c_matrix)
-!! mxt
-!else if (confname == 'mxt' .or. confname == 'geo') then
-!    call read_mxt(nspec, teil, slab, n_p0)
-!end if
-!if (confname == 'fit') then
-!    call read_fit(fracaimd, n_p, n_p0, n_l, n_l0, teil, slab, &
-!                  start_l, c_matrix)
-!end if
-!
-!if (sasteps > 0) then
-!    Tmin = Tsurf
-!end if
-!
-!
-!! Create a directory for configuration data
-!inquire(directory='conf',exist=exists)
-!if (.not. exists) then
-!    call system('mkdir conf')
-!end if
-!! Create a directory for trajectory data
-!inquire(directory='traj',exist=exists)
-!if (.not. exists) then
-!    call system('mkdir traj')
-!end if
-!
-!if (confname == 'poscar' .or. confname == 'fit') deallocate(start_l)
-!
+    end subroutine simbox_init
 
-!TODO: Do not forget to convert the masses from amu to program units
-!TODO: Do not forget to convert the angles from degrees to program units
 
-end subroutine simbox_init
+
+    subroutine check_input_sanity()
+
+        character(len=20), parameter :: err_sanity = "sanity check error: "
+
+        type simulation_parameters
+
+            integer :: start                                            ! a trajectory to start with
+            integer :: ntrajs                                           ! number of trajectories
+            integer :: nsteps                                           ! number of steps
+            real(dp):: step                                             ! time step in fs
+            integer :: nlattices                                        ! number of lattice species
+            integer :: nprojectiles                                     ! number of incident species
+            character(len=3), allocatable :: name_l(:), name_p(:)       ! atomic names
+            real(dp),         allocatable :: mass_l(:), mass_p(:)       ! atomic masses
+            integer,          allocatable :: md_algo_l(:), md_algo_p(:) ! and respective key
+            real(dp),         allocatable :: einc(:)                    ! incidence energy (eV)
+            real(dp),         allocatable :: inclination(:)             ! incidence polar angle (degree)
+            real(dp),         allocatable :: azimuth(:)                 ! incidence azimuthal angle (degree)
+            real(dp):: Tsurf                                            ! surface temperature in K
+            real(dp):: sa_Tmax                                          ! max. Tsurf for simulated annealing in K
+            integer :: sa_nsteps                                        ! number of steps per simulated annealing cycle
+            integer :: sa_interval                                      ! number of steps per temperature interval
+            character(len=7)    :: confname                             ! configuration key
+            character(len=max_string_length) :: confname_file           ! name of the system configuration file or folder
+            integer :: rep(2)                                           ! defines in-plane repetitions
+            integer :: nconfs                                           ! number of configurations to read in
+            character(len=max_string_length) :: pes_file                ! stores the potential parameters
+
+        end type
+
+        ! Perform MD
+        if (simparams%perform == "nve" .or. simparams%perform == "nvt") then
+            if (simparams%start <= 0)  stop err_sanity // "start key must be present and larger than zero"
+            if (simparams%ntrajs <= 0) stop err_sanity // "ntrajs key must be present and larger than zero"
+            if (simparams%nsteps <= 0) stop err_sanity // "nsteps key must be present and larger than zero"
+            if (simparams%step <= 0)  stop err_sanity // "nsteps key must be present and larger than zero"
+            if (simparams%nlattices <= 0 .and. simparams%nprojectiles <= 0) stop err_sanity // "either lattice and/or projectile key must be present"
+
+
+        ! Perform fit
+        else if (simparams%perform == "fit") then
+
+
+        end if
+
+
+
+    end subroutine check_input_sanity
+
 !
 !subroutine read_conf(nr_at_layer, nlnofix, nlno, n_p, n_l, n_p0, &
 !                   slab, teil, start_l, c_matrix)

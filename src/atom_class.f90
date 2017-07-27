@@ -11,45 +11,10 @@ module atom_class
     !			        Sascha Kandratsenka
     !			        Dan J. Auerbach
 
-    use, intrinsic :: iso_fortran_env
+    use constants
 
     implicit none
-    public         ! public for performance in accessing components
-    save
 
-    integer, parameter :: dp = REAL64
-
-    ! Various useful constants
-    real(dp), parameter          :: sqrt2    = sqrt(2._dp)
-    real(dp), parameter          :: isqrt2   = 1/sqrt2
-    real(dp), parameter          :: sqrt3    = sqrt(3._dp)
-    real(dp), parameter          :: pi       = acos(-1._dp)
-    real(dp), parameter          :: kB       = 8.61733238496e-5_dp
-    real(dp), parameter          :: hbar     = 0.6582119280967_dp
-    real(dp), parameter          :: twelfth  = 1.0_dp/12.0_dp
-    integer, parameter           :: randseed(13)   = [7,5,3,11,9,1,17,2,9,6,4,5,8]
-
-    integer, parameter :: verlet_prop = 1001
-    integer, parameter :: beeman_prop = 1002
-    integer, parameter :: langevin_prop = 1003
-    integer, parameter :: langevin_series_prop = 1004
-
-    integer, parameter :: max_string_length = 1000
-
-    ! Conversion constants to program units
-    !
-    ! Program basic units
-    !           Length : Ang
-    !           Time   : fs
-    !           Energy : eV
-    ! Program derived units
-    !           Mass   : eV fs^2 / A^2 = 1/103.6382 amu
-    !           Angle  : radian = 180 deg
-    !           bohr   : bohr = 0.5291772 Angstroem
-    real(dp), parameter          :: amu2mass = 103.638239276_dp
-    real(dp), parameter          :: deg2rad  = pi/180.0_dp
-    real(dp), parameter          :: bohr2ang = 0.529177211_dp
-    real(dp), parameter          :: p2GPa    = 160.2176565_dp
 
     !  Type atoms
     !   structure to hold the position, velocity, force etc. for multiple atoms
@@ -59,42 +24,43 @@ module atom_class
     !       mass array has length of n_atoms
     type atoms
 
-        integer                                     :: natoms   ! number of atoms
-        integer                                     :: nbeads   ! number of beads per atom
-        real(dp), dimension(:),         allocatable :: m        ! mass
-        integer,  dimension(:),         allocatable :: atn      ! atomic number
-        character(len=3), dimension(:), allocatable :: name     ! atomic name
-        real(dp), dimension(:,:,:),     allocatable :: r        ! positions
-        real(dp), dimension(:,:,:),     allocatable :: v        ! velocities
-        real(dp), dimension(:,:,:),     allocatable :: f        ! forces
-        logical,  dimension(:,:,:),     allocatable :: fixed    ! mask array defining frozen atoms
-                                                                !  T is frozen
+        integer                       :: natoms       ! number of atoms
+        integer                       :: nbeads       ! number of beads per atom
+        real(dp),         allocatable :: m(:)         ! mass
+        integer,          allocatable :: atn(:)       ! atomic number
+        character(len=3), allocatable :: name(:)      ! atomic name
+        real(dp), allocatable         :: r(:,:,:)     ! positions
+        real(dp), allocatable         :: v(:,:,:)     ! velocities
+        real(dp), allocatable         :: f(:,:,:)     ! forces
+        logical,  allocatable         :: fixed(:,:,:) ! mask array defining frozen atoms (T is frozen)
+
 
     end type atoms
 
     type simulation_parameters
 
-        integer :: start                                                    ! a trajectory to start with
-        integer :: ntrajs                                                   ! number of trajectories
-        integer :: nsteps                                                   ! number of steps
-        real(dp):: step                                                     ! time step in fs
-        integer :: nlattices                                                ! number of lattice species
-        integer :: nprojectiles                                             ! number of incident species
-        character(len=3), dimension(:), allocatable :: name_l, name_p       ! atomic names
-        real(dp),         dimension(:), allocatable :: mass_l, mass_p       ! atomic masses
-        integer,          dimension(:), allocatable :: md_algo_l, md_algo_p ! and respective key
-        real(dp),         dimension(:), allocatable :: einc                 ! incidence energy (eV)
-        real(dp),         dimension(:), allocatable :: inclination          ! incidence polar angle (degree)
-        real(dp),         dimension(:), allocatable :: azimuth              ! incidence azimuthal angle (degree)
-        real(dp):: Tsurf                                                    ! surface temperature in K
-        real(dp):: sa_Tmax                                                  ! max. Tsurf for simulated annealing in K
-        integer :: sa_nsteps                                                ! number of steps per simulated annealing cycle
-        integer :: sa_interval                                              ! number of steps per temperature interval
-        character(len=7)    :: confname                                     ! configuration key
-        character(len=max_string_length) :: confname_file                   ! name of the system configuration file
-        integer, dimension(2) :: rep                                        ! defines in-plane repetitions
-        integer :: nconfs                                                   ! Number of configurations to read in
-
+        integer :: start                                            ! a trajectory to start with
+        integer :: ntrajs                                           ! number of trajectories
+        integer :: nsteps                                           ! number of steps
+        real(dp):: step                                             ! time step in fs
+        integer :: nlattices                                        ! number of lattice species
+        integer :: nprojectiles                                     ! number of incident species
+        character(len=3), allocatable :: name_l(:), name_p(:)       ! atomic names
+        real(dp),         allocatable :: mass_l(:), mass_p(:)       ! atomic masses
+        integer,          allocatable :: md_algo_l(:), md_algo_p(:) ! and respective key
+        real(dp),         allocatable :: einc(:)                    ! incidence energy (eV)
+        real(dp),         allocatable :: inclination(:)             ! incidence polar angle (degree)
+        real(dp),         allocatable :: azimuth(:)                 ! incidence azimuthal angle (degree)
+        real(dp):: Tsurf                                            ! surface temperature in K
+        real(dp):: sa_Tmax                                          ! max. Tsurf for simulated annealing in K
+        integer :: sa_nsteps                                        ! number of steps per simulated annealing cycle
+        integer :: sa_interval                                      ! number of steps per temperature interval
+        character(len=7)    :: confname                             ! configuration key
+        character(len=max_string_length) :: confname_file           ! name of the system configuration file or folder
+        integer :: rep(2)                                           ! defines in-plane repetitions
+        integer :: nconfs                                           ! number of configurations to read in
+        character(len=max_string_length) :: pes_file                ! stores the potential parameters
+        character(len=3) :: perform                                 ! what to do
 
     end type
 
@@ -156,6 +122,8 @@ contains
         new_simulation_parameters%confname = ""
         new_simulation_parameters%rep = [0,0]
         new_simulation_parameters%nconfs  = -1
+        new_simulation_parameters%pes_file = ""
+        new_simulation_parameters%perform = ""
 
     end function
 
