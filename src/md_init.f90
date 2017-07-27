@@ -208,6 +208,7 @@ subroutine simbox_init(slab, teil)
 !
 
 !TODO: Do not forget to convert the masses from amu to program units
+!TODO: Do not forget to convert the angles from degrees to program units
 
 end subroutine simbox_init
 !

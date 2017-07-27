@@ -18,19 +18,10 @@ type(simulation_parameters) :: simparams
     save
 
 
-    character(len=1000) :: confname_file
-    character(len=7)    :: confname
-    integer :: n_confs = 1          ! Number of configurations to read in
     integer :: conf_nr = 1          ! number in the name of configurational file to read in.
     character(len=10)  :: fitnum    ! number of fit
-    integer, dimension(2) :: rep = (/0,0/)  ! number of in-plane repetitions
 
-    real(dp) :: Tsurf        = 300_dp ! surface temperature (Kelvin)
-    logical  :: Tsurf_key = .false.
-    real(dp) :: Tmax = 0_dp           ! Annealing parameters
-    integer :: sasteps = 0
-
-    character(len=1000) :: pes_file=''
+    character(len=max_string_length) :: pes_file=''
 
 
 contains
@@ -40,8 +31,8 @@ subroutine read_input_file(input_file)
 character(*), intent(in) :: input_file
 
 integer :: i, ios = 0, line = 0, nwords
-character(len=1000) :: buffer
-character(len=1000), dimension(100) :: words
+character(len=max_string_length) :: buffer
+character(len=max_string_length), dimension(100) :: words
 
 
 simparams = new_simulation_parameters()
@@ -183,30 +174,92 @@ simparams = new_simulation_parameters()
                 else
                                   stop 'Error in the input file: projectile key needs arguments'
                 end if
-print*, simparams
-stop 211
-!            case('incidence')
-!
-!
-!                read(buffer,*,iostat=ios) einc, inclination, azimuth
-!                if (ios.ne.0) stop 'Error in the input file: incidence conditions'
-!                inclination = inclination*deg2rad
-!                azimuth = azimuth*deg2rad
-!
-!            case ('conf')
-!                read(buffer, *, iostat=ios) confname, confname_file
-!                call lower_case(confname)
-!                select case (confname)
+
+            case('incidence')
+
+                if (allocated(simparams%einc))   stop 'Error in the input file: Multiple use of the incidence key'
+                if (nwords > 1 .and. mod(nwords - 1, 3) == 0) then
+                    allocate(   simparams%einc((nwords-1)/3),&
+                                simparams%inclination((nwords-1)/3),&
+                                simparams%azimuth((nwords-1)/3)      )
+                    do i=0,(nwords-1)/3 -1
+                        read(words(2+3*i),*, iostat=ios) simparams%einc(i+1)
+                        if (ios /= 0) stop 'Error in the input file: incidence key - einc value must be a number'
+                        read(words(3+3*i),*, iostat=ios) simparams%inclination(i+1)
+                        if (ios /= 0) stop 'Error in the input file: incidence key - inclination value must be a number'
+                        read(words(4+3*i),*, iostat=ios) simparams%azimuth(i+1)
+                        if (ios /= 0) stop 'Error in the input file: incidence key - azimuth value must be a number'
+                    end do
+                else
+                                  stop 'Error in the input file: incidence key needs (3 x n_projectiles) arguments'
+                end if
+
+            case('Tsurf')
+
+                if (simparams%Tsurf > 0)   stop 'Error in the input file: Multiple use of the Tsurf key'
+                if (nwords == 2) then
+                    read(words(2),*, iostat=ios) simparams%Tsurf
+                    if (ios /= 0) stop 'Error in the input file: Tsurf value must be a number'
+                else
+                                  stop 'Error in the input file: Tsurf key needs a single argument'
+                end if
+
+            case('annealing')
+
+                if (simparams%sa_Tmax > 0)   stop 'Error in the input file: Multiple use of the annealing key'
+                if (nwords == 4) then
+                    read(words(2),*, iostat=ios) simparams%sa_Tmax
+                    if (ios /= 0) stop 'Error in the input file: annealing key - sa_Tmax value must be a number'
+                    read(words(3),'(i1000)', iostat=ios) simparams%sa_nsteps
+                    if (ios /= 0) stop 'Error in the input file: annealing key - sa_nsteps value must be integer'
+                    read(words(4),'(i1000)', iostat=ios) simparams%sa_interval
+                    if (ios /= 0) stop 'Error in the input file: annealing key - sa_interval value must be integer'
+                else
+                                  stop 'Error in the input file: annealing key needs 3 arguments'
+                end if
+
+            case ('conf')
+
+                if (simparams%confname /= "")   stop 'Error in the input file: Multiple use of the conf key'
+                if (nwords > 2) then
+                    read(words(2),'(A)') simparams%confname
+                    call lower_case(simparams%confname)
+                    read(words(3),'(A)') simparams%confname_file
+
+                    select case (simparams%confname)
+
+                        case ('poscar')
+
+                            if (nwords > 5) stop 'Error in the input file: conf key - poscar argument number is to large'
+                            if (words(4) /= "") then
+                                read(words(4),'(i1000)',iostat=ios) simparams%rep(1)
+                                if (ios /= 0) stop 'Error in the input file: conf key - poscar repetition arguments must be integer'
+                                if (words(5) /= "") then
+                                    read(words(5),'(i1000)',iostat=ios) simparams%rep(2)
+                                    if (ios /= 0) stop 'Error in the input file: conf key - poscar repetition arguments must be integer'
+                                else
+                                    simparams%rep(2) = simparams%rep(1)
+                                end if
+                            end if
+
+
 !                    case ('geo')
 !                        read(buffer, *, iostat=ios) confname, confname_file, conf_nr
-!                    case ('mxt')
-!                        read(buffer, *, iostat=ios) confname, confname_file, n_confs
+                            case ('mxt')
+                                if (nwords == 4) then
+                                    read(words(4),'(i1000)',iostat=ios) simparams%nconfs
+                                    if (ios /= 0) stop 'Error in the input file: conf key - mxt argument must be integer'
+                                else
+                                    stop 'Error in the input file: conf key - mxt must have two arguments'
+                                end if
 !                    case ('fit')
 !                        read(buffer, *, iostat=ios) confname, confname_file, n_confs, fitnum
-!                    case ('poscar')
-!                    case default
-!                        stop 'Error in the input file: unknown conf keyword.'
-!                end select
+                    case default
+                        stop 'Error in the input file: conf key - unknown conf name'
+                    end select
+                else
+                    stop 'Error in the input file: conf key needs at least 2 arguments'
+                end if
 !                if (ios.ne.0) stop 'Error in the input file: ill-defined configuration'
 !                call lower_case(confname)
 !
@@ -227,15 +280,6 @@ stop 211
 !
 !                end if
 !
-!            case('Tsurf')
-!                read(buffer,*,iostat=ios) Tsurf
-!                if (ios /= 0) stop 'Error in the input file: Tsurf not properly set'
-!                Tsurf_key = .true.
-!
-!            case('anneal')
-!                read(buffer, *, iostat=ios) Tmax, sasteps
-!                if (ios /= 0) stop 'Error in the input file: anneal not properly set'
-!
 !            case ('pes')
 !                read(buffer, *, iostat=ios) pes_file
 !                if (ios /= 0) stop 'Error in the input file: pes file not specified'
@@ -247,6 +291,9 @@ stop 211
             end select
         end if
     end do ! ios
+
+print *, simparams
+stop 115
 
 if (pes_file == '') stop 'Error in the input file: keyword pes absent'
 

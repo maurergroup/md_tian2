@@ -34,6 +34,8 @@ module atom_class
     integer, parameter :: langevin_prop = 1003
     integer, parameter :: langevin_series_prop = 1004
 
+    integer, parameter :: max_string_length = 1000
+
     ! Conversion constants to program units
     !
     ! Program basic units
@@ -57,8 +59,8 @@ module atom_class
     !       mass array has length of n_atoms
     type atoms
 
-        integer                                     :: n_atoms  ! number of atoms
-        integer                                     :: n_beads  ! number of beads per atom
+        integer                                     :: natoms   ! number of atoms
+        integer                                     :: nbeads   ! number of beads per atom
         real(dp), dimension(:),         allocatable :: m        ! mass
         integer,  dimension(:),         allocatable :: atn      ! atomic number
         character(len=3), dimension(:), allocatable :: name     ! atomic name
@@ -72,18 +74,26 @@ module atom_class
 
     type simulation_parameters
 
-        integer :: start
-        integer :: ntrajs
-        integer :: nsteps
-        real(dp):: step
-        integer :: nlattices       ! number of lattice species
-        integer :: nprojectiles    ! number of incident species
-        character(len=3), dimension(:), allocatable :: name_l, name_p ! atomic names
-        real(dp),         dimension(:), allocatable :: mass_l, mass_p ! atomic masses
-        integer,          dimension(:), allocatable :: md_algo_l, md_algo_p     ! and respective key
-        real(dp) :: einc          ! incidence energy (eV)
-        real(dp) :: inclination   ! incidence polar angle (degree)
-        real(dp) :: azimuth       ! incidence azimuthal angle (degree)
+        integer :: start                                                    ! a trajectory to start with
+        integer :: ntrajs                                                   ! number of trajectories
+        integer :: nsteps                                                   ! number of steps
+        real(dp):: step                                                     ! time step in fs
+        integer :: nlattices                                                ! number of lattice species
+        integer :: nprojectiles                                             ! number of incident species
+        character(len=3), dimension(:), allocatable :: name_l, name_p       ! atomic names
+        real(dp),         dimension(:), allocatable :: mass_l, mass_p       ! atomic masses
+        integer,          dimension(:), allocatable :: md_algo_l, md_algo_p ! and respective key
+        real(dp),         dimension(:), allocatable :: einc                 ! incidence energy (eV)
+        real(dp),         dimension(:), allocatable :: inclination          ! incidence polar angle (degree)
+        real(dp),         dimension(:), allocatable :: azimuth              ! incidence azimuthal angle (degree)
+        real(dp):: Tsurf                                                    ! surface temperature in K
+        real(dp):: sa_Tmax                                                  ! max. Tsurf for simulated annealing in K
+        integer :: sa_nsteps                                                ! number of steps per simulated annealing cycle
+        integer :: sa_interval                                              ! number of steps per temperature interval
+        character(len=7)    :: confname                                     ! configuration key
+        character(len=max_string_length) :: confname_file                   ! name of the system configuration file
+        integer, dimension(2) :: rep                                        ! defines in-plane repetitions
+        integer :: nconfs                                                   ! Number of configurations to read in
 
 
     end type
@@ -102,20 +112,20 @@ contains
     !    input:  n_beads, n_atoms
     !    allocates arrays as (3,n_beads,n_atom)
 
-    function new_atoms(n_beads, n_atoms)
-        integer, intent(in) :: n_beads, n_atoms
+    function new_atoms(nbeads, natoms)
+        integer, intent(in) :: nbeads, natoms
         type(atoms) new_atoms
 
-        allocate(new_atoms%m(n_atoms))
-        allocate(new_atoms%atn(n_atoms))
-        allocate(new_atoms%name(n_atoms))
-        allocate(new_atoms%r(3,n_beads,n_atoms))
-        allocate(new_atoms%v(3,n_beads,n_atoms))
-        allocate(new_atoms%f(3,n_beads,n_atoms))
-        allocate(new_atoms%fixed(3,n_beads,n_atoms))
+        allocate(new_atoms%m(natoms))
+        allocate(new_atoms%atn(natoms))
+        allocate(new_atoms%name(natoms))
+        allocate(new_atoms%r(3,nbeads,natoms))
+        allocate(new_atoms%v(3,nbeads,natoms))
+        allocate(new_atoms%f(3,nbeads,natoms))
+        allocate(new_atoms%fixed(3,nbeads,natoms))
 
-        new_atoms%n_beads = n_beads       !   initialize
-        new_atoms%n_atoms = n_atoms
+        new_atoms%nbeads = nbeads
+        new_atoms%natoms = natoms
         new_atoms%m     = -1.0_dp
         new_atoms%atn   = 0
         new_atoms%name  = ""
@@ -133,15 +143,19 @@ contains
 
         type(simulation_parameters) new_simulation_parameters
 
-        new_simulation_parameters%start  = -1       ! a trajectory to start with
-        new_simulation_parameters%ntrajs = -1       ! number of trajectories
-        new_simulation_parameters%nsteps = -1       ! number of steps
-        new_simulation_parameters%step   = -1_dp    ! time step in fs
-        new_simulation_parameters%nlattices = -1    ! number of lattice species
-        new_simulation_parameters%nprojectiles = -1 ! number of incident species
-        new_simulation_parameters%einc   = -1_dp    ! incidence energy (eV)
-        new_simulation_parameters%inclination =-1_dp! incidence polar angle (degree)
-        new_simulation_parameters%azimuth   = -1_dp ! incidence azimuthal angle (degree)
+        new_simulation_parameters%start  = -1
+        new_simulation_parameters%ntrajs = -1
+        new_simulation_parameters%nsteps = -1
+        new_simulation_parameters%step   = -1_dp
+        new_simulation_parameters%nlattices = -1
+        new_simulation_parameters%nprojectiles = -1
+        new_simulation_parameters%Tsurf   = -1_dp
+        new_simulation_parameters%sa_Tmax   = -1_dp
+        new_simulation_parameters%sa_nsteps = -1
+        new_simulation_parameters%sa_interval = -1
+        new_simulation_parameters%confname = ""
+        new_simulation_parameters%rep = [0,0]
+        new_simulation_parameters%nconfs  = -1
 
     end function
 
