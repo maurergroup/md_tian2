@@ -1,3 +1,5 @@
+run md
+
 start -5
 ntrajs 1
 nsteps 100
@@ -17,6 +19,5 @@ conf mxt './trajs' 10
 !pes definition
 pes './md_tian.pes'
 
-perform nve
 
 
