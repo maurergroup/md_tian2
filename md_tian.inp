@@ -9,6 +9,10 @@ lattice    2 Au 196.96657 lan   Ag 107.87  ver
 projectile 2  H    1.0079 lan    D   2.015 ver
 
 incidence 3.33 180 90 3.33 180 90
+inc_rot energy <3 orientation angles>
+inc_vib energy
+
+pip r r 6
 
 Tsurf 300
 annealing 1000 25 5
@@ -18,6 +22,8 @@ conf mxt './trajs' 10
 
 !pes definition
 pes './md_tian.pes'
+
+output 1
 
 
 

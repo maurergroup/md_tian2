@@ -16,11 +16,6 @@ module run_config
 
     type(simulation_parameters) :: simparams
 
-    integer :: conf_nr = 1          ! number in the name of configurational file to read in.
-    character(len=10)  :: fitnum    ! number of fit
-
-    character(len=max_string_length) :: pes_file=''
-
 
 contains
 
@@ -57,9 +52,20 @@ contains
 
                 select case (words(1))
 
+
+                    case ('run')
+
+                        if (simparams%run /= "") stop 'Error in the input file: Multiple use of the run key'
+                        if (nwords == 2) then
+                            read(words(2),'(A)') simparams%run
+                        else
+                            stop 'Error in the input file: run key needs a single argument'
+                        end if
+
+
                     case('start')
 
-                        if (simparams%start >= 0) stop 'Error in the input file: Multiple use of the start key'
+                        if (simparams%start > -1) stop 'Error in the input file: Multiple use of the start key'
                         if (nwords == 2) then
                             read(words(2),'(i1000)', iostat=ios) simparams%start
                             if (ios /= 0)  stop 'Error in the input file: start value must be integer'
@@ -70,7 +76,7 @@ contains
 
                     case('ntrajs')
 
-                        if (simparams%ntrajs > 0)   stop 'Error in the input file: Multiple use of the ntrajs key'
+                        if (simparams%ntrajs > -1)   stop 'Error in the input file: Multiple use of the ntrajs key'
                         if (nwords == 2) then
                             read(words(2),'(i1000)', iostat=ios) simparams%ntrajs
                             if (ios /= 0) stop 'Error in the input file: ntrajs value must be integer'
@@ -81,7 +87,7 @@ contains
 
                     case('nsteps')
 
-                        if (simparams%nsteps > 0)   stop 'Error in the input file: Multiple use of the nsteps key'
+                        if (simparams%nsteps > -1)   stop 'Error in the input file: Multiple use of the nsteps key'
                         if (nwords == 2) then
                             read(words(2),'(i1000)', iostat=ios) simparams%nsteps
                             if (ios /= 0) stop 'Error in the input file: nsteps value must be integer'
@@ -92,7 +98,7 @@ contains
 
                     case('step')
 
-                        if (simparams%step > 0)   stop 'Error in the input file: Multiple use of the step key'
+                        if (simparams%step > -1)   stop 'Error in the input file: Multiple use of the step key'
                         if (nwords == 2) then
                             read(words(2),*, iostat=ios) simparams%step
                             if (ios /= 0) stop 'Error in the input file: step value must be a number'
@@ -201,7 +207,7 @@ contains
 
                     case('Tsurf')
 
-                        if (simparams%Tsurf > 0)   stop 'Error in the input file: Multiple use of the Tsurf key'
+                        if (simparams%Tsurf > -1)   stop 'Error in the input file: Multiple use of the Tsurf key'
                         if (nwords == 2) then
                             read(words(2),*, iostat=ios) simparams%Tsurf
                             if (ios /= 0) stop 'Error in the input file: Tsurf value must be a number'
@@ -212,7 +218,7 @@ contains
 
                     case('annealing')
 
-                        if (simparams%sa_Tmax > 0)   stop 'Error in the input file: Multiple use of the annealing key'
+                        if (simparams%sa_Tmax > -1)   stop 'Error in the input file: Multiple use of the annealing key'
                         if (nwords == 4) then
                             read(words(2),*, iostat=ios) simparams%sa_Tmax
                             if (ios /= 0) stop 'Error in the input file: annealing key - sa_Tmax value must be a number'
@@ -256,6 +262,7 @@ contains
                                         read(words(4),'(i1000)',iostat=ios) simparams%nconfs
                                         if (ios /= 0) stop 'Error in the input file: conf key - mxt argument must be integer'
                                     end if
+                                    if (nwords > 4) stop 'Error in the input file: conf key - too many mxt arguments'
 
 
                                 case default
@@ -266,18 +273,23 @@ contains
                         end if
 
 
-                    case ('pes')
+                    case ('output')
 
-                        if (simparams%pes_file /= "") stop 'Error in the input file: Multiple use of the pes key'
-                        read(words(2), '(A)', iostat=ios) simparams%pes_file
-                        if (ios /= 0) stop 'Error in the input file: pes file not specified'
+                        if (simparams%output(1) > -1)   stop 'Error in the input file: Multiple use of the output key'
+                        if (words(2) /= "") then
+                            read(words(2),'(i1000)',iostat=ios) simparams%output(1)
+                            if (ios /= 0) stop 'Error in the input file: 1st output key must be integer'
+                            if (words(3) /= "") then
+                                read(words(3),'(i1000)',iostat=ios) simparams%output(2)
+                                if (ios /= 0) stop 'Error in the input file: 2nd output key must be integer'
+                            end if
+                        else
+                            stop 'Error in the input file: output key has no arguments'
+                        end if
+                        if (nwords > 3) stop 'Error in the input file: output key has too many arguments'
 
 
-                    case ('perform')
 
-
-
-                    !            case ('wstep')
                     !
                     !
                     !            case ('evasp')
@@ -285,6 +297,13 @@ contains
                     !
 
                     !
+                    case ('pes')
+
+                        if (simparams%pes_file /= "") stop 'Error in the input file: Multiple use of the pes key'
+                        read(words(2), '(A)', iostat=ios) simparams%pes_file
+                        if (ios /= 0) stop 'Error in the input file: pes file not specified'
+
+
                     case default
                         if (trim(words(1)) /= '' .and. words(1)(1:1) /= '!') &
                             print *, 'Skipping invalid label ',trim(words(1)),' in line', line
@@ -292,7 +311,8 @@ contains
                 end select
             end if
         end do ! ios
-
+print*, simparams%output
+stop 111
     end subroutine read_input_file
 
 end module run_config

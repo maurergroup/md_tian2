@@ -59,8 +59,9 @@ module atom_class
         character(len=max_string_length) :: confname_file           ! name of the system configuration file or folder
         integer :: rep(2)                                           ! defines in-plane repetitions
         integer :: nconfs                                           ! number of configurations to read in
-        character(len=max_string_length) :: pes_file                ! stores the potential parameters
-        character(len=3) :: perform                                 ! what to do
+        character(len=max_string_length) :: pes_file                ! name of the file that stores the potential parameters
+        character(len=3) :: run                                     ! what to do
+        integer, dimension(2) :: output                             ! what to save
 
     end type
 
@@ -123,7 +124,8 @@ contains
         new_simulation_parameters%rep = [0,0]
         new_simulation_parameters%nconfs  = -1
         new_simulation_parameters%pes_file = ""
-        new_simulation_parameters%perform = ""
+        new_simulation_parameters%run = ""
+        new_simulation_parameters%output = [-1,-1]
 
     end function
 

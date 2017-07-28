@@ -228,7 +228,7 @@ contains
         end type
 
         ! Perform MD
-        if (simparams%perform == "nve" .or. simparams%perform == "nvt") then
+        if (simparams%run == "nve" .or. simparams%run == "nvt") then
             if (simparams%start <= 0)  stop err_sanity // "start key must be present and larger than zero"
             if (simparams%ntrajs <= 0) stop err_sanity // "ntrajs key must be present and larger than zero"
             if (simparams%nsteps <= 0) stop err_sanity // "nsteps key must be present and larger than zero"
@@ -237,7 +237,7 @@ contains
 
 
         ! Perform fit
-        else if (simparams%perform == "fit") then
+        else if (simparams%run == "fit") then
 
 
         end if
