@@ -27,9 +27,7 @@ contains
         character(len=max_string_length) :: buffer
         character(len=max_string_length) :: words(100)
 
-
         simparams = new_simulation_parameters()
-
 
         !------------------------------------------------------------------------------
         !                       READ IN INPUT FILE
@@ -55,7 +53,7 @@ contains
 
                     case ('run')
 
-                        if (simparams%run /= "") stop 'Error in the input file: Multiple use of the run key'
+                        if (simparams%run /= default_string) stop 'Error in the input file: Multiple use of the run key'
                         if (nwords == 2) then
                             read(words(2),'(A)') simparams%run
                         else
@@ -65,7 +63,7 @@ contains
 
                     case('start')
 
-                        if (simparams%start > -1) stop 'Error in the input file: Multiple use of the start key'
+                        if (simparams%start /= default_int) stop 'Error in the input file: Multiple use of the start key'
                         if (nwords == 2) then
                             read(words(2),'(i1000)', iostat=ios) simparams%start
                             if (ios /= 0)  stop 'Error in the input file: start value must be integer'
@@ -76,7 +74,7 @@ contains
 
                     case('ntrajs')
 
-                        if (simparams%ntrajs > -1)   stop 'Error in the input file: Multiple use of the ntrajs key'
+                        if (simparams%ntrajs /= default_int)   stop 'Error in the input file: Multiple use of the ntrajs key'
                         if (nwords == 2) then
                             read(words(2),'(i1000)', iostat=ios) simparams%ntrajs
                             if (ios /= 0) stop 'Error in the input file: ntrajs value must be integer'
@@ -87,7 +85,7 @@ contains
 
                     case('nsteps')
 
-                        if (simparams%nsteps > -1)   stop 'Error in the input file: Multiple use of the nsteps key'
+                        if (simparams%nsteps /= default_int)   stop 'Error in the input file: Multiple use of the nsteps key'
                         if (nwords == 2) then
                             read(words(2),'(i1000)', iostat=ios) simparams%nsteps
                             if (ios /= 0) stop 'Error in the input file: nsteps value must be integer'
@@ -98,7 +96,7 @@ contains
 
                     case('step')
 
-                        if (simparams%step > -1)   stop 'Error in the input file: Multiple use of the step key'
+                        if (simparams%step /= default_real)   stop 'Error in the input file: Multiple use of the step key'
                         if (nwords == 2) then
                             read(words(2),*, iostat=ios) simparams%step
                             if (ios /= 0) stop 'Error in the input file: step value must be a number'
@@ -109,7 +107,7 @@ contains
 
                     case ('lattice')
 
-                        if (simparams%nlattices > -1)   stop 'Error in the input file: Multiple use of the lattice key'
+                        if (simparams%nlattices /= default_int)   stop 'Error in the input file: Multiple use of the lattice key'
                         if (nwords > 1) then
                             read(words(2),'(i1000)', iostat=ios) simparams%nlattices
                             if (ios /= 0) stop 'Error in the input file: lattice key 1st argument value must be integer'
@@ -148,7 +146,7 @@ contains
 
                     case ('projectile')
 
-                        if (simparams%nprojectiles > -1)   stop 'Error in the input file: Multiple use of the projectile key'
+                        if (simparams%nprojectiles /= default_int)   stop 'Error in the input file: Multiple use of the projectile key'
                         if (nwords > 1) then
                             read(words(2),'(i1000)', iostat=ios) simparams%nprojectiles
                             if (ios /= 0) stop 'Error in the input file: projectile key 1st argument value must be integer'
@@ -207,7 +205,7 @@ contains
 
                     case('Tsurf')
 
-                        if (simparams%Tsurf > -1)   stop 'Error in the input file: Multiple use of the Tsurf key'
+                        if (simparams%Tsurf /= default_real) stop 'Error in the input file: Multiple use of the Tsurf key'
                         if (nwords == 2) then
                             read(words(2),*, iostat=ios) simparams%Tsurf
                             if (ios /= 0) stop 'Error in the input file: Tsurf value must be a number'
@@ -218,7 +216,7 @@ contains
 
                     case('annealing')
 
-                        if (simparams%sa_Tmax > -1)   stop 'Error in the input file: Multiple use of the annealing key'
+                        if (simparams%sa_Tmax /= default_real) stop 'Error in the input file: Multiple use of the annealing key'
                         if (nwords == 4) then
                             read(words(2),*, iostat=ios) simparams%sa_Tmax
                             if (ios /= 0) stop 'Error in the input file: annealing key - sa_Tmax value must be a number'
@@ -233,7 +231,7 @@ contains
 
                     case ('conf')
 
-                        if (simparams%confname /= "")   stop 'Error in the input file: Multiple use of the conf key'
+                        if (simparams%confname /= default_string)   stop 'Error in the input file: Multiple use of the conf key'
                         if (nwords > 2) then
                             read(words(2),'(A)') simparams%confname
                             call lower_case(simparams%confname)
@@ -275,7 +273,7 @@ contains
 
                     case ('output')
 
-                        if (simparams%output(1) > -1)   stop 'Error in the input file: Multiple use of the output key'
+                        if (any(simparams%output /= default_int))   stop 'Error in the input file: Multiple use of the output key'
                         if (words(2) /= "") then
                             read(words(2),'(i1000)',iostat=ios) simparams%output(1)
                             if (ios /= 0) stop 'Error in the input file: 1st output key must be integer'
@@ -289,19 +287,22 @@ contains
                         if (nwords > 3) stop 'Error in the input file: output key has too many arguments'
 
 
+                    case ('pip')
 
-                    !
-                    !
-                    !            case ('evasp')
-                    !
-                    !
+                        if (any(simparams%pip /= default_string)) stop 'Error in the input file: Multiple use of the pip key'
+                        if (nwords == 4) then
+                            read (words(2:4), '(A)') simparams%pip
+                        else
+                            stop 'Error in the input file: pip key needs 3 arguments'
+                        end if
 
-                    !
+
                     case ('pes')
 
-                        if (simparams%pes_file /= "") stop 'Error in the input file: Multiple use of the pes key'
+                        if (simparams%pes_file /= default_string) stop 'Error in the input file: Multiple use of the pes key'
                         read(words(2), '(A)', iostat=ios) simparams%pes_file
                         if (ios /= 0) stop 'Error in the input file: pes file not specified'
+                    !TODO: add keywords for fit
 
 
                     case default
@@ -311,8 +312,43 @@ contains
                 end select
             end if
         end do ! ios
-print*, simparams%output
-stop 111
+        print*, simparams%pip(1)
+
+        stop 111
     end subroutine read_input_file
+
+
+    function get_atomic_indices(ident_line)
+
+        ! Each atom has a unique index 1, 2, ..., n, where n is the number of species in
+        !  the system. It starts with the projectiles and ends with the lattice atoms.
+        !  The order is given in the *.inp file. It has to match the order in the geometry file.
+
+        character(len=max_string_length), intent(in) :: ident_line(4)
+        integer :: get_atomic_indices(2)
+
+        integer :: i, j
+
+        get_atomic_indices = -1
+
+        do i = 1, 2
+            if (ident_line(i+2) == "proj") then
+                do j = 1, simparams%nprojectiles
+                    if (ident_line(i) == simparams%name_p(j)) then
+                        get_atomic_indices(i) = j
+                    end if
+                end do
+            else if (ident_line(i+2) == "latt") then
+                do j = 1, simparams%nlattices
+                    if (ident_line(i) == simparams%name_l(j)) then
+                        get_atomic_indices(i) = j + simparams%nprojectiles
+                    end if
+                end do
+            end if
+        end do
+
+        if (any(get_atomic_indices == -1)) stop "Mismatch between atomic types in .inp file and PES file."
+
+    end function get_atomic_indices
 
 end module run_config

@@ -24,15 +24,17 @@ module atom_class
     !       mass array has length of n_atoms
     type atoms
 
-        integer                       :: natoms       ! number of atoms
-        integer                       :: nbeads       ! number of beads per atom
-        real(dp),         allocatable :: m(:)         ! mass
-        integer,          allocatable :: atn(:)       ! atomic number
-        character(len=3), allocatable :: name(:)      ! atomic name
-        real(dp), allocatable         :: r(:,:,:)     ! positions
-        real(dp), allocatable         :: v(:,:,:)     ! velocities
-        real(dp), allocatable         :: f(:,:,:)     ! forces
-        logical,  allocatable         :: fixed(:,:,:) ! mask array defining frozen atoms (T is frozen)
+        integer                       :: natoms          ! number of atoms
+        integer                       :: nbeads          ! number of beads per atom
+        real(dp),         allocatable :: m(:)            ! mass
+        integer,          allocatable :: atn(:)          ! atomic number
+        character(len=3), allocatable :: name(:)         ! atomic name
+        real(dp), allocatable         :: r(:,:,:)        ! positions
+        real(dp), allocatable         :: v(:,:,:)        ! velocities
+        real(dp), allocatable         :: f(:,:,:)        ! forces
+        logical,  allocatable         :: is_fixed(:,:,:) ! mask array defining frozen atoms (T is frozen)
+        logical,  allocatable         :: is_proj(:)      ! to distinguish between proj and latt
+        integer,  allocatable         :: idx             ! program-wide index of atom type
 
 
     end type atoms
@@ -62,6 +64,7 @@ module atom_class
         character(len=max_string_length) :: pes_file                ! name of the file that stores the potential parameters
         character(len=3) :: run                                     ! what to do
         integer, dimension(2) :: output                             ! what to save
+        character(len=15) :: pip(3)                                 ! determine initial projectile position
 
     end type
 
@@ -89,7 +92,7 @@ contains
         allocate(new_atoms%r(3,nbeads,natoms))
         allocate(new_atoms%v(3,nbeads,natoms))
         allocate(new_atoms%f(3,nbeads,natoms))
-        allocate(new_atoms%fixed(3,nbeads,natoms))
+        allocate(new_atoms%is_fixed(3,nbeads,natoms))
 
         new_atoms%nbeads = nbeads
         new_atoms%natoms = natoms
@@ -99,7 +102,7 @@ contains
         new_atoms%r     = 0.0_dp
         new_atoms%v     = 0.0_dp
         new_atoms%f     = 0.0_dp
-        new_atoms%fixed = .FALSE.
+        new_atoms%is_fixed = .FALSE.
 
 
     end function
@@ -110,22 +113,26 @@ contains
 
         type(simulation_parameters) new_simulation_parameters
 
-        new_simulation_parameters%start  = -1
-        new_simulation_parameters%ntrajs = -1
-        new_simulation_parameters%nsteps = -1
-        new_simulation_parameters%step   = -1_dp
-        new_simulation_parameters%nlattices = -1
-        new_simulation_parameters%nprojectiles = -1
-        new_simulation_parameters%Tsurf   = -1_dp
-        new_simulation_parameters%sa_Tmax   = -1_dp
-        new_simulation_parameters%sa_nsteps = -1
-        new_simulation_parameters%sa_interval = -1
-        new_simulation_parameters%confname = ""
+        new_simulation_parameters%start  = default_int
+        new_simulation_parameters%ntrajs = default_int
+        new_simulation_parameters%nsteps = default_int
+        new_simulation_parameters%step   = default_real
+        new_simulation_parameters%nlattices = default_int
+        new_simulation_parameters%nprojectiles = default_int
+        new_simulation_parameters%Tsurf   = default_real
+        new_simulation_parameters%sa_Tmax   = default_real
+        new_simulation_parameters%sa_nsteps = default_int
+        new_simulation_parameters%sa_interval = default_int
+        new_simulation_parameters%confname = default_string
         new_simulation_parameters%rep = [0,0]
-        new_simulation_parameters%nconfs  = -1
-        new_simulation_parameters%pes_file = ""
-        new_simulation_parameters%run = ""
-        new_simulation_parameters%output = [-1,-1]
+        new_simulation_parameters%nconfs  = default_int
+        new_simulation_parameters%pes_file = default_string
+        new_simulation_parameters%run = default_string
+        new_simulation_parameters%output = [default_int,default_int]
+        new_simulation_parameters%pip = default_string
+
+        print *, default_int, default_string, default_real
+        stop 156
 
     end function
 

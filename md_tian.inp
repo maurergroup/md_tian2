@@ -20,6 +20,8 @@ annealing 1000 25 5
 conf mxt './trajs' 10
 !conf poscar './au111_2x2x6.POSCAR' 1 2
 
+
+
 !pes definition
 pes './md_tian.pes'
 

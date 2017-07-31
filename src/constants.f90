@@ -23,6 +23,12 @@ module constants
     integer, parameter :: max_string_length = 1000
 
 
+    ! Defaults
+    integer, parameter :: default_int = huge(0_4)
+    real(dp), parameter :: default_real = huge(0_dp)
+    character, parameter :: default_string = ""
+
+
     ! Propagation
     integer, parameter :: prop_verlet          = 1001
     integer, parameter :: prop_beeman          = 1002
