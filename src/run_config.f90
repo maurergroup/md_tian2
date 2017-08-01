@@ -11,6 +11,7 @@ module run_config
     use constants
     use atom_class
     use useful_things, only : lower_case, split_string
+    use open_file, only : open_for_read
 
     implicit none
 
@@ -21,7 +22,7 @@ contains
 
     subroutine read_input_file(input_file)
 
-        character(*), intent(in) :: input_file
+        character(len=*), intent(in) :: input_file
 
         integer :: i, ios = 0, line = 0, nwords
         character(len=max_string_length) :: buffer
@@ -312,9 +313,7 @@ contains
                 end select
             end if
         end do ! ios
-        print*, simparams%pip(1)
 
-        stop 111
     end subroutine read_input_file
 
 

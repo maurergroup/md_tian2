@@ -18,6 +18,13 @@ module constants
     real(dp), parameter :: twelfth  = 1.0_dp/12.0_dp
 
 
+    ! PES-related constants
+    integer, parameter :: nparams_lj    = 2
+    integer, parameter :: nparams_morse = 3
+    integer, parameter :: nparams_emt   = 7
+    integer, parameter :: nparams_rebo  = 13
+
+
     ! Internal program constants
     integer, parameter :: randseed(13)   = [7,5,3,11,9,1,17,2,9,6,4,5,8]
     integer, parameter :: max_string_length = 1000

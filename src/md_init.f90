@@ -136,6 +136,7 @@ contains
         call random_seed(size=randk)
 
         call read_input_file(input_file)
+        call pes_init()
         call check_input_sanity()
 
 
@@ -196,52 +197,147 @@ contains
     end subroutine simbox_init
 
 
+    subroutine pes_init()
+
+        use run_config, only : simparams
+        use useful_things, only : split_string, file_exists
+        use open_file, only : open_for_read
+
+        use pes_lj_module, only : read_lj
+
+        character(len=*), parameter :: err_pes_init = "PES initialization error: "
+        integer :: ios = 0, nwords
+        integer, parameter :: pes_unit = 38
+        character(len=max_string_length) :: buffer
+        character(len=max_string_length) :: words(100)
+
+        if (.not. file_exists(simparams%pes_file)) stop "Error: PES file does not exist"
+
+        call open_for_read(pes_unit, simparams%pes_file)
+        ! ios < 0: end of record condition encountered or endfile condition detected
+        ! ios > 0: an error is detected
+        ! ios = 0  otherwise
+
+        do while (ios == 0)
+
+            read(pes_unit, '(A)', iostat=ios) buffer
+            if (ios == 0) then
+
+                ! Split an input string
+                call split_string(buffer, words, nwords)
+
+                if (words(1) == "pes" .and. nwords == 2) then
+
+                    select case (words(2))
+
+                        case ('lj')
+                            call read_lj(pes_unit)
+
+                        !                        case ('morse')
+                        !                            call read_morse(pes_unit)
+                        !
+                        !                        case ('emt')
+                        !                            call read_emt(pes_unit)
+                        !
+                        !                        case ('rebo')
+                        !                            call read_rebo(pes_unit)
+
+                        case default
+                            print *, "Unknown potential in PES file:", words(2)
+                            stop
+
+                    end select
+
+                end if
+            end if
+
+        end do
+
+    end subroutine pes_init
+
+
 
     subroutine check_input_sanity()
 
-        character(len=20), parameter :: err_sanity = "sanity check error: "
+        use pes_lj_module, only : check_lj
 
-        type simulation_parameters
+        character(len=*), parameter :: err_sanity = "sanity check error: "
+        logical, allocatable :: interacting(:,:)
+        integer :: ntypes, i
 
-            integer :: start                                            ! a trajectory to start with
-            integer :: ntrajs                                           ! number of trajectories
-            integer :: nsteps                                           ! number of steps
-            real(dp):: step                                             ! time step in fs
-            integer :: nlattices                                        ! number of lattice species
-            integer :: nprojectiles                                     ! number of incident species
-            character(len=3), allocatable :: name_l(:), name_p(:)       ! atomic names
-            real(dp),         allocatable :: mass_l(:), mass_p(:)       ! atomic masses
-            integer,          allocatable :: md_algo_l(:), md_algo_p(:) ! and respective key
-            real(dp),         allocatable :: einc(:)                    ! incidence energy (eV)
-            real(dp),         allocatable :: inclination(:)             ! incidence polar angle (degree)
-            real(dp),         allocatable :: azimuth(:)                 ! incidence azimuthal angle (degree)
-            real(dp):: Tsurf                                            ! surface temperature in K
-            real(dp):: sa_Tmax                                          ! max. Tsurf for simulated annealing in K
-            integer :: sa_nsteps                                        ! number of steps per simulated annealing cycle
-            integer :: sa_interval                                      ! number of steps per temperature interval
-            character(len=7)    :: confname                             ! configuration key
-            character(len=max_string_length) :: confname_file           ! name of the system configuration file or folder
-            integer :: rep(2)                                           ! defines in-plane repetitions
-            integer :: nconfs                                           ! number of configurations to read in
-            character(len=max_string_length) :: pes_file                ! stores the potential parameters
+        ntypes = simparams%nprojectiles+simparams%nlattices
+        allocate(interacting(ntypes,ntypes))
+        interacting = .false.
 
-        end type
-
-        ! Perform MD
+        ! Check the *.inp file
+        !!! Perform MD
         if (simparams%run == "nve" .or. simparams%run == "nvt") then
-            if (simparams%start <= 0)  stop err_sanity // "start key must be present and larger than zero"
-            if (simparams%ntrajs <= 0) stop err_sanity // "ntrajs key must be present and larger than zero"
-            if (simparams%nsteps <= 0) stop err_sanity // "nsteps key must be present and larger than zero"
-            if (simparams%step <= 0)  stop err_sanity // "nsteps key must be present and larger than zero"
-            if (simparams%nlattices <= 0 .and. simparams%nprojectiles <= 0) stop err_sanity // "either lattice and/or projectile key must be present"
+            if (simparams%start <= 0)  stop err_sanity // "start key must be present and larger than zero."
+            if (simparams%ntrajs <= 0) stop err_sanity // "ntrajs key must be present and larger than zero."
+            if (simparams%nsteps <= 0) stop err_sanity // "nsteps key must be present and larger than zero."
+            if (simparams%step <= 0)  stop err_sanity // "nsteps key must be present and larger than zero."
+            if (simparams%nlattices <= 0 .and. simparams%nprojectiles <= 0) stop err_sanity // "either lattice and/or projectile key must be present."
+
+            if (simparams%nprojectiles > 0 .and. .not. allocated(simparams%name_p)) stop err_sanity // "projectile names not set."
+            if (simparams%nprojectiles > 0 .and. .not. allocated(simparams%mass_p)) stop err_sanity // "projectile masses not set."
+            if (simparams%nprojectiles > 0 .and. .not. allocated(simparams%mass_p)) stop err_sanity // "projectile masses not set."
+            if (simparams%nprojectiles > 0 .and. .not. allocated(simparams%md_algo_p)) stop err_sanity // "projectile propagation algorithm not set."
+
+            if (simparams%nlattices > 0 .and. .not. allocated(simparams%mass_l)) stop err_sanity // "lattice masses not set."
+            if (simparams%nlattices > 0 .and. .not. allocated(simparams%name_l)) stop err_sanity // "lattice names not set."
+            if (simparams%nlattices > 0 .and. .not. allocated(simparams%mass_l)) stop err_sanity // "lattice masses not set."
+            if (simparams%nlattices > 0 .and. .not. allocated(simparams%md_algo_l)) stop err_sanity // "lattice propagation algorithm not set."
+
+            ! If one of them is set, the others must be set as well.
+            if ( (allocated(simparams%einc) .neqv. allocated(simparams%inclination)) .or. &
+                 (allocated(simparams%einc) .neqv. allocated(simparams%azimuth)) ) &
+                 stop err_sanity // "incidence conditions ambiguous."
 
 
-        ! Perform fit
+
+        !!! Perform fit
         else if (simparams%run == "fit") then
 
 
         end if
+!
+!        integer :: start                                            ! a trajectory to start with
+!        integer :: ntrajs                                           ! number of trajectories
+!        integer :: nsteps                                           ! number of steps
+!        real(dp):: step                                             ! time step in fs
+!        integer :: nlattices                                        ! number of lattice species
+!        integer :: nprojectiles                                     ! number of incident species
+!        character(len=3), allocatable :: name_l(:), name_p(:)       ! atomic names
+!        real(dp),         allocatable :: mass_l(:), mass_p(:)       ! atomic masses
+!        integer,          allocatable :: md_algo_l(:), md_algo_p(:) ! and respective key
+!        real(dp),         allocatable :: einc(:)                    ! incidence energy (eV)
+!        real(dp),         allocatable :: inclination(:)             ! incidence polar angle (degree)
+!        real(dp),         allocatable :: azimuth(:)                 ! incidence azimuthal angle (degree)
+!        real(dp):: Tsurf                                            ! surface temperature in K
+!        real(dp):: sa_Tmax                                          ! max. Tsurf for simulated annealing in K
+!        integer :: sa_nsteps                                        ! number of steps per simulated annealing cycle
+!        integer :: sa_interval                                      ! number of steps per temperature interval
+!        character(len=7)    :: confname                             ! configuration key
+!        character(len=max_string_length) :: confname_file           ! name of the system configuration file or folder
+!        integer :: rep(2)                                           ! defines in-plane repetitions
+!        integer :: nconfs                                           ! number of configurations to read in
+!        character(len=max_string_length) :: pes_file                ! name of the file that stores the potential parameters
+!        character(len=3) :: run                                     ! what to do
+!        integer, dimension(2) :: output                             ! what to save
+!        character(len=15) :: pip(3)                                 ! determine initial projectile position
 
+
+
+
+
+
+        ! Check the potential input
+        call check_lj(interacting)
+
+        print *, "lj interaction"
+        do i = 1, ntypes
+            print *, interacting(:,i)
+        end do
 
 
     end subroutine check_input_sanity

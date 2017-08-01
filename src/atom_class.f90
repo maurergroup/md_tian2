@@ -131,9 +131,6 @@ contains
         new_simulation_parameters%output = [default_int,default_int]
         new_simulation_parameters%pip = default_string
 
-        print *, default_int, default_string, default_real
-        stop 156
-
     end function
 
 

@@ -23,7 +23,7 @@ conf mxt './trajs' 10
 
 
 !pes definition
-pes './md_tian.pes'
+pes './md_tian_v2.pes'
 
 output 1
 
