@@ -86,7 +86,7 @@ contains
 
     subroutine check_lj(interacting)
 
-        use run_config, only : simparams
+!        use run_config, only : simparams
 
         logical :: interacting(:,:)
 
@@ -94,8 +94,9 @@ contains
 
         where (pes_lj%eps /= default_real) interacting = .true.
 
-
     end subroutine check_lj
+
+
 
 end module pes_lj_module
 

@@ -15,6 +15,9 @@ module atom_class
 
     implicit none
 
+    real(dp) :: simbox(3,3) = default_real     ! simulation cell
+
+
 
     !  Type atoms
     !   structure to hold the position, velocity, force etc. for multiple atoms
@@ -33,8 +36,7 @@ module atom_class
         real(dp), allocatable         :: v(:,:,:)        ! velocities
         real(dp), allocatable         :: f(:,:,:)        ! forces
         logical,  allocatable         :: is_fixed(:,:,:) ! mask array defining frozen atoms (T is frozen)
-        logical,  allocatable         :: is_proj(:)      ! to distinguish between proj and latt
-        integer,  allocatable         :: idx             ! program-wide index of atom type
+        integer,  allocatable         :: idx(:)          ! program-wide index of atom type
 
 
     end type atoms
@@ -93,16 +95,18 @@ contains
         allocate(new_atoms%v(3,nbeads,natoms))
         allocate(new_atoms%f(3,nbeads,natoms))
         allocate(new_atoms%is_fixed(3,nbeads,natoms))
+        allocate(new_atoms%idx(natoms))
 
         new_atoms%nbeads = nbeads
         new_atoms%natoms = natoms
-        new_atoms%m     = -1.0_dp
-        new_atoms%atn   = 0
-        new_atoms%name  = ""
-        new_atoms%r     = 0.0_dp
-        new_atoms%v     = 0.0_dp
-        new_atoms%f     = 0.0_dp
-        new_atoms%is_fixed = .FALSE.
+        new_atoms%m     = default_real
+        new_atoms%atn   = default_int
+        new_atoms%name  = default_string
+        new_atoms%r     = default_real
+        new_atoms%v     = default_real
+        new_atoms%f     = default_real
+        new_atoms%is_fixed = .false.
+        new_atoms%idx   = default_int
 
 
     end function
