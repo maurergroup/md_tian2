@@ -15,7 +15,8 @@ module atom_class
 
     implicit none
 
-    real(dp) :: simbox(3,3) = default_real     ! simulation cell
+    real(dp) ::  simbox(3,3) = default_real     ! simulation cell
+    real(dp) :: isimbox(3,3) = default_real     ! inverse simulation cell
 
 
 
@@ -37,7 +38,6 @@ module atom_class
         real(dp), allocatable         :: f(:,:,:)        ! forces
         logical,  allocatable         :: is_fixed(:,:,:) ! mask array defining frozen atoms (T is frozen)
         integer,  allocatable         :: idx(:)          ! program-wide index of atom type
-
 
     end type atoms
 
@@ -136,6 +136,37 @@ contains
         new_simulation_parameters%pip = default_string
 
     end function
+
+
+    subroutine to_cartesian(this)
+
+        type(atoms), intent(inout) :: this
+        integer :: i,j
+
+        do i = 1, this%natoms
+            do j = 1, this%nbeads
+                this%r(:,j,i) = matmul(simbox, this%r(:,j,i))
+            end do
+        end do
+
+    end subroutine
+
+
+    subroutine to_direct(this)
+
+        type(atoms), intent(inout) :: this
+        integer :: i,j
+
+        do i = 1, this%natoms
+            do j = 1, this%nbeads
+                this%r(:,j,i) = matmul(isimbox, this%r(:,j,i))
+            end do
+        end do
+
+    end subroutine
+
+
+
 
 
 end module

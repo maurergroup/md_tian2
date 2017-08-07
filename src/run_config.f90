@@ -242,7 +242,7 @@ contains
 
                                 case ('poscar')
 
-                                    if (nwords > 5) stop 'Error in the input file: conf key - poscar argument number is to large'
+                                    if (nwords > 5) stop 'Error in the input file: conf key - poscar argument number is too large'
                                     if (words(4) /= "") then
                                         read(words(4),'(i1000)',iostat=ios) simparams%rep(1)
                                         if (ios /= 0) stop 'Error in the input file: conf key - poscar repetition arguments must be integer'
@@ -261,6 +261,7 @@ contains
                                         read(words(4),'(i1000)',iostat=ios) simparams%nconfs
                                         if (ios /= 0) stop 'Error in the input file: conf key - mxt argument must be integer'
                                     end if
+                                    if (nwords < 4) stop 'Error in the input file: conf key - too few mxt arguments'
                                     if (nwords > 4) stop 'Error in the input file: conf key - too many mxt arguments'
 
 
