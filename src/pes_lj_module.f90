@@ -3,6 +3,7 @@ module pes_lj_module
 
     use constants
     use useful_things, only : split_string
+    use atom_class
 
     implicit none
 
@@ -21,17 +22,19 @@ module pes_lj_module
 
 contains
 
-    subroutine read_lj(inp_unit)
+    subroutine read_lj(teil, slab, inp_unit)
 
-        use run_config, only : get_atomic_indices, simparams
+        use run_config, only : simparams
 
+        type(atoms), intent(in) :: teil, slab
         integer, intent(in) :: inp_unit
 
         integer :: nwords = 0
         integer :: ios = 0
         character(len=max_string_length) :: buffer
         character(len=max_string_length) :: words(100)
-        integer :: indices(2), ntypes
+        integer :: idx1, idx2, ntypes
+        character(len=*), parameter :: err_read_lj = "Error in read_lj: "
 
         ntypes = simparams%nprojectiles+simparams%nlattices
 
@@ -45,10 +48,27 @@ contains
         read(inp_unit, '(A)', iostat=ios) buffer
         call split_string(buffer, words, nwords)
 
-        if (nwords == 4) then
-            indices = get_atomic_indices(words(1:4))
+        if (nwords /= 4) stop err_read_lj // "need four entries in interaction-defining lines"
+
+        if (words(3) == "proj" .and. words(4) == "proj") then
+            idx1 = get_idx_from_name(teil, words(1))
+            idx2 = get_idx_from_name(teil, words(2))
+
+        else if (words(3) == "proj" .and. words(4) == "latt") then
+            idx1 = get_idx_from_name(teil, words(1))
+            idx2 = get_idx_from_name(slab, words(2))
+
+        else if (words(3) == "latt" .and. words(4) == "proj") then
+            idx1 = get_idx_from_name(slab, words(1))
+            idx2 = get_idx_from_name(teil, words(2))
+
+        else if (words(3) == "latt" .and. words(4) == "latt") then
+            idx1 = get_idx_from_name(slab, words(1))
+            idx2 = get_idx_from_name(slab, words(2))
+
         else
-            stop "Error in PES file. Need four entries in interaction-defining lines"
+            stop err_read_lj // "interaction must be defined via 'proj' and 'latt' keywords"
+
         end if
 
         do
@@ -65,17 +85,17 @@ contains
             end if
 
             select case (words(1))
-            case ('sigma')
-                read(words(2), *) pes_lj%sigma(indices(1),indices(2))
-                read(words(2), *) pes_lj%sigma(indices(2),indices(1))
+                case ('sigma')
+                    read(words(2), *) pes_lj%sigma(idx1, idx2)
+                    read(words(2), *) pes_lj%sigma(idx2, idx1)
 
-            case ('epsilon')
-                read(words(2), *) pes_lj%eps(indices(1),indices(2))
-                read(words(2), *) pes_lj%eps(indices(2),indices(1))
+                case ('epsilon')
+                    read(words(2), *) pes_lj%eps(idx1, idx2)
+                    read(words(2), *) pes_lj%eps(idx2, idx1)
 
-            case default
-                print *, "Error in the PES file: unknown LJ parameter", words(1)
-                stop
+                case default
+                    print *, "Error in the PES file: unknown LJ parameter", words(1)
+                    stop
 
             end select
         end do
@@ -83,18 +103,39 @@ contains
     end subroutine read_lj
 
 
-
-    subroutine check_lj(interacting)
-
-!        use run_config, only : simparams
-
-        logical :: interacting(:,:)
-
-        interacting = .false.
-
-        where (pes_lj%eps /= default_real) interacting = .true.
-
-    end subroutine check_lj
+!    subroutine compute_lj(teil, slab, flag)
+!
+!        type(atoms), intent(inout) :: teil, slab
+!        integer, intent(in)        :: flag
+!
+!        integer :: i, j, b
+!        real(dp) :: xr(3),
+!
+!        ! teil-teil interaction
+!        do i = 1, teil%natoms
+!            do j = i+1, teil%natoms
+!                do b = 1, teil%nbeads
+!
+!
+!                    xr = xr-box*nint (xr/box)
+!                    r2 = xr**2
+!                    if (r2.1t.rc2) then
+!                        r2i=i/r2
+!                        r6i=r2i**3
+!                        ff=48*r2i*r6i* (r6i-0.5)
+!                        f (i)=f (i) +ff*xr
+!                        f (j)=f (j) -ff*xr
+!                        en=en+4*r6i* (r6i-l) -ecut
+!                    endif
+!
+!
+!                end do
+!            end do
+!        end do
+!
+!
+!
+!    end subroutine compute_lj
 
 
 

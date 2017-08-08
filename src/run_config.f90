@@ -27,6 +27,7 @@ contains
         integer :: i, ios = 0, line = 0, nwords
         character(len=max_string_length) :: buffer
         character(len=max_string_length) :: words(100)
+        integer, parameter :: inp_unit = 38
 
         simparams = new_simulation_parameters()
 
@@ -35,14 +36,14 @@ contains
         !                       ==================
         !------------------------------------------------------------------------------
 
-        call open_for_read(38, input_file)
+        call open_for_read(inp_unit, input_file)
         ! ios < 0: end of record condition encountered or endfile condition detected
         ! ios > 0: an error is detected
         ! ios = 0  otherwise
 
         do while (ios == 0)
 
-            read(38, '(A)', iostat=ios) buffer
+            read(inp_unit, '(A)', iostat=ios) buffer
             if (ios == 0) then
 
                 line = line + 1
@@ -123,13 +124,13 @@ contains
                                     call lower_case(words(2+3*i))
                                     select case (words(2+3*i))
                                         case ('ver')                ! verlet
-                                            simparams%md_algo_l(i) = prop_verlet
+                                            simparams%md_algo_l(i) = prop_id_verlet
                                         case ('bee')                ! beeman
-                                            simparams%md_algo_l(i) = prop_beeman
+                                            simparams%md_algo_l(i) = prop_id_beeman
                                         case ('lan')                ! langevin
-                                            simparams%md_algo_l(i) = prop_langevin
+                                            simparams%md_algo_l(i) = prop_id_langevin
                                         case ('sla')                ! langevin (series)
-                                            simparams%md_algo_l(i) = prop_langevin_series
+                                            simparams%md_algo_l(i) = prop_id_langevin_series
                                         case default
                                             print *, 'algorithm ', trim(words(2+3*i)),&
                                                 ' for lattice species ', trim(simparams%name_l(i)), ' unknown'
@@ -162,13 +163,13 @@ contains
                                     call lower_case(words(2+3*i))
                                     select case (words(2+3*i))
                                         case ('ver')                ! verlet
-                                            simparams%md_algo_p(i) = prop_verlet
+                                            simparams%md_algo_p(i) = prop_id_verlet
                                         case ('bee')                ! beeman
-                                            simparams%md_algo_p(i) = prop_beeman
+                                            simparams%md_algo_p(i) = prop_id_beeman
                                         case ('lan')                ! langevin
-                                            simparams%md_algo_p(i) = prop_langevin
+                                            simparams%md_algo_p(i) = prop_id_langevin
                                         case ('sla')                ! langevin (series)
-                                            simparams%md_algo_p(i) = prop_langevin_series
+                                            simparams%md_algo_p(i) = prop_id_langevin_series
                                         case default
                                             print *, 'algorithm ', trim(words(2+3*i)),&
                                                 ' for projectile species ', trim(simparams%name_p(i)), ' unknown'
@@ -314,41 +315,11 @@ contains
                 end select
             end if
         end do ! ios
+        close(inp_unit)
 
     end subroutine read_input_file
 
 
-    function get_atomic_indices(ident_line)
 
-        ! Each atom has a unique index 1, 2, ..., n, where n is the number of species in
-        !  the system. It starts with the projectiles and ends with the lattice atoms.
-        !  The order is given in the *.inp file. It has to match the order in the geometry file.
-
-        character(len=max_string_length), intent(in) :: ident_line(4)
-        integer :: get_atomic_indices(2)
-
-        integer :: i, j
-
-        get_atomic_indices = -1
-
-        do i = 1, 2
-            if (ident_line(i+2) == "proj") then
-                do j = 1, simparams%nprojectiles
-                    if (ident_line(i) == simparams%name_p(j)) then
-                        get_atomic_indices(i) = j
-                    end if
-                end do
-            else if (ident_line(i+2) == "latt") then
-                do j = 1, simparams%nlattices
-                    if (ident_line(i) == simparams%name_l(j)) then
-                        get_atomic_indices(i) = j + simparams%nprojectiles
-                    end if
-                end do
-            end if
-        end do
-
-        if (any(get_atomic_indices == -1)) stop "Mismatch between atomic types in .inp file and PES file."
-
-    end function get_atomic_indices
 
 end module run_config

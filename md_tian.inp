@@ -5,7 +5,7 @@ ntrajs 1
 nsteps 100
 step 1
 
-projectile 2  H    1.0079 lan    D   2.015 ver
+!projectile 2  H    1.0079 lan    D   2.015 ver
 lattice    2 Au 196.96657 lan   Ag 107.87  ver
 
 
@@ -18,7 +18,7 @@ pip r r 6
 Tsurf 300
 annealing 1000 25 5
 
-conf poscar 'test.POSCAR'
+conf poscar 'cart.POSCAR'
 !conf poscar 'test.POSCAR' 1 2
 
 

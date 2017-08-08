@@ -37,7 +37,8 @@ module atom_class
         real(dp), allocatable         :: v(:,:,:)        ! velocities
         real(dp), allocatable         :: f(:,:,:)        ! forces
         logical,  allocatable         :: is_fixed(:,:,:) ! mask array defining frozen atoms (T is frozen)
-        integer,  allocatable         :: idx(:)          ! program-wide index of atom type
+        integer,  allocatable         :: idx(:)          ! index of atom type used in program
+        integer,  allocatable         :: pes(:,:)        ! defines idx-dependent pes
 
     end type atoms
 
@@ -64,8 +65,8 @@ module atom_class
         integer :: rep(2)                                           ! defines in-plane repetitions
         integer :: nconfs                                           ! number of configurations to read in
         character(len=max_string_length) :: pes_file                ! name of the file that stores the potential parameters
-        character(len=3) :: run                                     ! what to do
-        integer, dimension(2) :: output                             ! what to save
+        character(len=3)  :: run                                    ! what to do
+        integer           :: output(2)                              ! what to save
         character(len=15) :: pip(3)                                 ! determine initial projectile position
 
     end type
@@ -164,6 +165,45 @@ contains
         end do
 
     end subroutine
+
+
+    integer function get_idx_from_name(this, name) result(idx)
+
+        type(atoms), intent(in) :: this
+        character(len=3), intent(in) :: name
+
+        integer :: i
+
+        idx = default_int
+        do i = 1, this%natoms
+            if (this%name(i) == name) then
+                idx = this%idx(i)
+                exit
+            end if
+        end do
+
+        if (idx == default_int) stop "Error in get_idx_from_name(): make sure you & 
+                        correctly assign element names to projectile and slab in both &
+                        *.inp and *.pes files."
+
+    end function get_idx_from_name
+
+
+    subroutine create_repetitions(inslab)
+
+        type(atoms), intent(inout) :: inslab
+
+        type(atoms) :: outslab
+
+        outslab = new_atoms(6, 12)
+        inslab = outslab
+
+    end subroutine create_repetitions
+
+
+
+
+
 
 
 

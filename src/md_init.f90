@@ -137,9 +137,11 @@ contains
         call random_seed(size=randk)
 
         call read_input_file(input_file)
-        call pes_init()
-        call read_poscar(teil, slab, simparams%confname_file)
-        call check_input_sanity()
+        call ensure_input_sanity()
+
+        call read_geometry(teil, slab, simparams%confname_file)
+        call read_pes(teil, slab)
+
     !TODO   call output_run_details()
 
 
@@ -200,13 +202,15 @@ contains
     end subroutine simbox_init
 
 
-    subroutine pes_init()
+    subroutine read_pes(teil, slab)
 
         use run_config, only : simparams
         use useful_things, only : split_string, file_exists
         use open_file, only : open_for_read
 
         use pes_lj_module, only : read_lj
+
+        type(atoms), intent(in) :: teil, slab
 
         character(len=*), parameter :: err_pes_init = "Error in pes_init: "
         integer :: ios = 0, nwords
@@ -234,7 +238,7 @@ contains
                     select case (words(2))
 
                         case ('lj')
-                            call read_lj(pes_unit)
+                            call read_lj(teil, slab, pes_unit)
 
                         !                        case ('morse')
                         !                            call read_morse(pes_unit)
@@ -256,7 +260,9 @@ contains
 
         end do
 
-    end subroutine pes_init
+        close(pes_unit)
+
+    end subroutine read_pes
 
 
 
@@ -271,9 +277,15 @@ contains
 
         if (.not. file_exists(infile)) stop "Error: geometry file does not exist"
 
+        select case (simparams%confname)
 
+            case ("poscar")
+                call read_poscar(teil, slab, infile)
 
+            case default
+                stop "Error: conf keyword unknown"
 
+        end select
 
     end subroutine read_geometry
 
@@ -283,7 +295,7 @@ contains
         use run_config, only : simparams
         use useful_things
         use open_file, only : open_for_read
-        use atom_class, only : simbox, isimbox
+!        use atom_class, only : simbox, isimbox
 
         type(atoms), intent(out) :: teil, slab
         character(len=*), intent(in) :: infile
@@ -292,13 +304,14 @@ contains
         real(dp) :: scaling_const
         integer, allocatable :: natoms(:)
         integer, parameter :: geo_unit = 55
-        integer :: ios, nwords, nspecies, i, j, tmp
+        integer :: ios, nwords, nspecies, i, j
         integer :: nproj_atoms, nslab_atoms
         integer :: nbeads = 1, pos1 = 0, pos2 = 0
         character(len=3), allocatable :: elements(:)
         character(len=max_string_length) :: buffer, c_system
         character(len=max_string_length) :: words(100)
         character(len=1), allocatable :: can_move(:,:,:)
+
 
         nspecies = simparams%nprojectiles + simparams%nlattices
         allocate(natoms(nspecies), elements(nspecies))
@@ -320,7 +333,7 @@ contains
         simbox = simbox * scaling_const
 
         ! read atom types
-        read(geo_unit, '(A)', iostat=ios) buffer !(elements(i), i=1,nspecies)
+        read(geo_unit, '(A)', iostat=ios) buffer
         if (ios /= 0) stop err_read_poscar // "reading atom type"
         call split_string(buffer, elements(:), nwords)
 
@@ -336,12 +349,12 @@ contains
         read(buffer(pos2+1:), *, iostat=ios) natoms(:)
         if (ios /= 0) stop err_read_poscar // "reading number of atoms"
 
-        nslab_atoms = sum(natoms(simparams%nprojectiles+1:))
         nproj_atoms = sum(natoms(:simparams%nprojectiles))
+        nslab_atoms = sum(natoms(simparams%nprojectiles+1:))
 
         ! now we have everything to construct atom types
-        if (nproj_atoms > 0) teil = new_atoms(nbeads, nproj_atoms)
-        if (nslab_atoms > 0) slab = new_atoms(nbeads, nslab_atoms)
+        teil = new_atoms(nbeads, nproj_atoms)
+        slab = new_atoms(nbeads, nslab_atoms)
 
         ! Direct or Cartesian coordinates, needed later
         read(geo_unit, '(A)', iostat=ios) c_system
@@ -354,30 +367,29 @@ contains
         backspace(geo_unit)
         call split_string(buffer, words, nwords)
 
-
         if (nwords == 3) then
 
-            if (nproj_atoms > 0) read(geo_unit, *, iostat=ios) teil%r
+            if (teil%natoms > 0) read(geo_unit, *, iostat=ios) teil%r
             if (ios /= 0) stop err_read_poscar // "reading projectile coordinates"
-            if (nslab_atoms > 0) read(geo_unit, *, iostat=ios) slab%r
+            if (slab%natoms > 0) read(geo_unit, *, iostat=ios) slab%r
             if (ios /= 0) stop err_read_poscar // "reading lattice coordinates"
 
         else if (nwords == 6) then
 
-            if (nproj_atoms > 0) then
-                allocate (can_move(3, nbeads, nproj_atoms))
-                read(geo_unit, *, iostat=ios) ((teil%r(:,j,i), can_move(:,j,i), j=1,nbeads), &
-                    i=1,nproj_atoms)
+            if (teil%natoms > 0) then
+                allocate (can_move(3, teil%nbeads, teil%natoms))
+                read(geo_unit, *, iostat=ios) ((teil%r(:,j,i), can_move(:,j,i), j=1,teil%nbeads), &
+                    i=1,teil%natoms)
                 if (ios /= 0) stop err_read_poscar // "reading projectile coordinates and mobility flags"
                 where (can_move == "F") teil%is_fixed = .true.
                 deallocate (can_move)
 
             end if
 
-            if (nslab_atoms > 0) then
-                allocate(can_move(3, nbeads, nslab_atoms))
-                read(geo_unit, *, iostat=ios) ((slab%r(:,j,i), can_move(:,j,i), j=1,nbeads), &
-                    i=1,nslab_atoms)
+            if (slab%natoms > 0) then
+                allocate(can_move(3, slab%nbeads, slab%natoms))
+                read(geo_unit, *, iostat=ios) ((slab%r(:,j,i), can_move(:,j,i), j=1,slab%nbeads), &
+                    i=1,slab%natoms)
                 if (ios /= 0) stop err_read_poscar // "reading slab coordinates and mobility flags"
                 where (can_move == "F") slab%is_fixed = .true.
                 deallocate (can_move)
@@ -385,6 +397,7 @@ contains
 
         else
             stop err_read_poscar // "cannot read coordinate section"
+
         end if
 
         ! Check if there is a velocity section
@@ -394,9 +407,9 @@ contains
 
         else if (ios == 0 .and. len_trim(buffer) == 0) then
             ! blank line after coordinate section and no eof yet -> read velocities
-            if (nproj_atoms > 0) read(geo_unit, *, iostat=ios) teil%v
+            if (teil%natoms > 0) read(geo_unit, *, iostat=ios) teil%v
             if (ios /= 0) stop err_read_poscar // "reading initial projectile velocities"
-            if (nslab_atoms > 0) read(geo_unit, *, iostat=ios) slab%v
+            if (slab%natoms > 0) read(geo_unit, *, iostat=ios) slab%v
             if (ios /= 0) stop err_read_poscar // "reading initial slab velocities"
 
         else
@@ -405,46 +418,38 @@ contains
 
         ! Invert the cell matrix to obtain direct coordinates
         isimbox = invert_matrix(simbox)
-        print *, "inverted"
-        print *, isimbox
-        print *, ""
 
         ! If system was given in direct coordinates, convert to cartesian
         call lower_case(c_system)
         if (trim(adjustl(c_system)) == "d" .or. &
             trim(adjustl(c_system)) == "direct") then
 
-            if (simparams%nprojectiles > 0) call to_cartesian(teil)
-            if (simparams%nlattices > 0)    call to_cartesian(slab)
+            if (teil%natoms > 0) call to_cartesian(teil)
+            if (slab%natoms > 0) call to_cartesian(slab)
 
         else if (trim(adjustl(c_system)) == "c" .or. &
             trim(adjustl(c_system)) == "cart" .or. &
             trim(adjustl(c_system)) == "cartesian") then
 
-            if (simparams%nprojectiles > 0) teil%r = teil%r * scaling_const
-            if (simparams%nlattices > 0)    slab%r = slab%r * scaling_const
+            if (teil%natoms > 0) teil%r = teil%r * scaling_const
+            if (slab%natoms > 0) slab%r = slab%r * scaling_const
 
         else
             stop err_read_poscar // "reading coordinate system type (cartesian/direct)"
 
         end if
 
-
-print *, slab%r
-
-
-    !TODO multiply lattice constant
-    !TODO invert cell matrix
+        call set_atomic_indices(teil, slab, natoms)
+        call set_atomic_names(teil, slab, elements)
+        print *, slab%natoms
+        call create_repetitions(slab)
+        print *, slab%natoms
 
     end subroutine read_poscar
 
 
 
-
-
-    subroutine check_input_sanity()
-
-        use pes_lj_module, only : check_lj
+    subroutine ensure_input_sanity()
 
         character(len=*), parameter :: err_sanity = "sanity check error: "
         logical, allocatable :: interacting(:,:)
@@ -456,12 +461,14 @@ print *, slab%r
 
         ! Check the *.inp file
         !!! Perform MD
-        if (simparams%run == "nve" .or. simparams%run == "nvt") then
-            if (simparams%start <= 0)  stop err_sanity // "start key must be present and larger than zero."
-            if (simparams%ntrajs <= 0) stop err_sanity // "ntrajs key must be present and larger than zero."
-            if (simparams%nsteps <= 0) stop err_sanity // "nsteps key must be present and larger than zero."
-            if (simparams%step <= 0)  stop err_sanity // "nsteps key must be present and larger than zero."
-            if (simparams%nlattices <= 0 .and. simparams%nprojectiles <= 0) stop err_sanity // "either lattice and/or projectile key must be present."
+        if (simparams%run == "md") then
+            if (simparams%start == default_int)  stop err_sanity // "start key must be present and larger than zero."
+            if (simparams%ntrajs == default_int) stop err_sanity // "ntrajs key must be present and larger than zero."
+            if (simparams%nsteps == default_int) stop err_sanity // "nsteps key must be present and larger than zero."
+            if (simparams%step == default_real)  stop err_sanity // "nsteps key must be present and larger than zero."
+            if (simparams%nlattices == default_int .and. simparams%nprojectiles == default_int) stop err_sanity // "either lattice and/or projectile key must be present."
+            if (simparams%nprojectiles == default_int) simparams%nprojectiles = 0
+            if (simparams%nlattices == default_int) simparams%nlattices = 0
 
             if (simparams%nprojectiles > 0 .and. .not. allocated(simparams%name_p)) stop err_sanity // "projectile names not set."
             if (simparams%nprojectiles > 0 .and. .not. allocated(simparams%mass_p)) stop err_sanity // "projectile masses not set."
@@ -516,16 +523,64 @@ print *, slab%r
 
 
 
-        ! Check the potential input
-        call check_lj(interacting)
+    end subroutine ensure_input_sanity
 
-        print *, "lj interaction"
-        do i = 1, ntypes
-            print *, interacting(:,i)
+
+
+    subroutine set_atomic_indices(teil, slab, natoms)
+
+        ! Each atom has a unique index 1, 2, ..., n, where n is the number of species in
+        !  the system.
+        !  The order is given in the *.inp file. It has to match the order in the geometry file.
+
+        use atom_class
+
+        type(atoms), intent(inout) :: teil, slab
+        integer, intent(in) :: natoms(:)
+
+        integer :: i, j, counter
+
+        counter = 1
+        do i = 1, simparams%nprojectiles
+            do j = 1, natoms(i)
+                teil%idx(counter) = i
+                counter = counter + 1
+            end do
         end do
 
+        counter = 1
+        do i = simparams%nprojectiles+1, simparams%nprojectiles+simparams%nlattices
+            do j = 1, natoms(i)
+                slab%idx(counter) = i
+                counter = counter + 1
+            end do
+        end do
 
-    end subroutine check_input_sanity
+    end subroutine set_atomic_indices
+
+
+    subroutine set_atomic_names(teil, slab, elements)
+
+        ! Names are based on indices. Names can only be set if atomic indices have been set first.
+
+        use atom_class
+
+        type(atoms), intent(inout) :: teil, slab
+        character(len=3), intent(in) :: elements(:)
+
+        integer :: i
+
+        if (simparams%nprojectiles > 0) then
+            if (any(teil%idx == default_int)) stop "Error: atomic indices not set; cannot set projectile names"
+            forall (i = 1 : teil%natoms) teil%name(i) = elements(teil%idx(i))
+        end if
+
+        if (simparams%nlattices > 0) then
+            if (any(slab%idx == default_int)) stop "Error: atomic indices not set; cannot set lattice names"
+            forall (i = 1 : slab%natoms) slab%name(i) = elements(slab%idx(i))
+        end if
+
+    end subroutine set_atomic_names
 
 !
 !subroutine read_conf(nr_at_layer, nlnofix, nlno, n_p, n_l, n_p0, &

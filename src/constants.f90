@@ -10,7 +10,7 @@ module constants
 
     ! Physical and mathematical constants
     real(dp), parameter :: sqrt2    = sqrt(2._dp)
-    real(dp), parameter :: isqrt2   = 1/sqrt2
+    real(dp), parameter :: isqrt2   = 1._dp/sqrt2
     real(dp), parameter :: sqrt3    = sqrt(3._dp)
     real(dp), parameter :: pi       = acos(-1._dp)
     real(dp), parameter :: kB       = 8.61733238496e-5_dp
@@ -23,6 +23,12 @@ module constants
     integer, parameter :: nparams_morse = 3
     integer, parameter :: nparams_emt   = 7
     integer, parameter :: nparams_rebo  = 13
+
+    integer, parameter :: pes_id_lj    = 2001
+    integer, parameter :: pes_id_morse = 2002
+    integer, parameter :: pes_id_emt   = 2003
+    integer, parameter :: pes_id_rebo  = 2004
+    integer, parameter :: pes_id_ho    = 2005
 
 
     ! Internal program constants
@@ -38,10 +44,13 @@ module constants
 
 
     ! Propagation
-    integer, parameter :: prop_verlet          = 1001
-    integer, parameter :: prop_beeman          = 1002
-    integer, parameter :: prop_langevin        = 1003
-    integer, parameter :: prop_langevin_series = 1004
+    integer, parameter :: prop_id_verlet          = 1001
+    integer, parameter :: prop_id_beeman          = 1002
+    integer, parameter :: prop_id_langevin        = 1003
+    integer, parameter :: prop_id_langevin_series = 1004
+
+    integer, parameter :: energy_and_force = 3001
+    integer, parameter :: energy_only      = 3002
 
 
     ! Conversion constants to program units
