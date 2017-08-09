@@ -13,15 +13,17 @@ program md_tian
     !
 
 
-use atom_class
 use md_init
+use atom_class
+use pes_lj_module
 
 implicit none
 
-type(atoms) :: slab, teil
+type(atoms) :: teil, slab
 
 
-call simbox_init(slab, teil)
+call simbox_init(teil, slab)
+call compute_lj(teil, slab, energy_and_force)
 
 
 

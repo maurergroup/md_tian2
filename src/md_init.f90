@@ -106,17 +106,11 @@ module md_init
 
 contains
 
-    subroutine simbox_init(slab, teil)
-        !
-        ! Purpose:
-        !           Initialise the entire system:
-        !               1. Geometry
-        !               2. Interaction Potential
-        !               3. Velocities
-        !
-        implicit none
+    subroutine simbox_init(teil, slab)
 
-        type(atoms), intent(out) :: slab, teil
+        use pes_lj_module
+
+        type(atoms), intent(out) :: teil, slab
 
         character(len=:), allocatable :: input_file
         integer :: input_file_length, input_file_status
@@ -138,7 +132,6 @@ contains
 
         call read_input_file(input_file)
         call ensure_input_sanity()
-
         call read_geometry(teil, slab, simparams%confname_file)
         call read_pes(teil, slab)
 
@@ -207,8 +200,8 @@ contains
         use run_config, only : simparams
         use useful_things, only : split_string, file_exists
         use open_file, only : open_for_read
-
         use pes_lj_module, only : read_lj
+        use atom_class
 
         type(atoms), intent(in) :: teil, slab
 
@@ -271,6 +264,7 @@ contains
     subroutine read_geometry(teil, slab, infile)
 
         use useful_things, only : file_exists
+        use atom_class
 
         character(len=*), intent(in) :: infile
         type(atoms), intent(inout) :: teil, slab
@@ -295,7 +289,7 @@ contains
         use run_config, only : simparams
         use useful_things
         use open_file, only : open_for_read
-!        use atom_class, only : simbox, isimbox
+        use atom_class
 
         type(atoms), intent(out) :: teil, slab
         character(len=*), intent(in) :: infile
@@ -419,20 +413,27 @@ contains
         ! Invert the cell matrix to obtain direct coordinates
         isimbox = invert_matrix(simbox)
 
-        ! If system was given in direct coordinates, convert to cartesian
+        ! If system was given in cartesian coordinates, convert to direct
         call lower_case(c_system)
         if (trim(adjustl(c_system)) == "d" .or. &
             trim(adjustl(c_system)) == "direct") then
 
-            if (teil%natoms > 0) call to_cartesian(teil)
-            if (slab%natoms > 0) call to_cartesian(slab)
+            teil%is_cart = .false. ; slab%is_cart = .false.
 
         else if (trim(adjustl(c_system)) == "c" .or. &
             trim(adjustl(c_system)) == "cart" .or. &
             trim(adjustl(c_system)) == "cartesian") then
 
-            if (teil%natoms > 0) teil%r = teil%r * scaling_const
-            if (slab%natoms > 0) slab%r = slab%r * scaling_const
+            teil%is_cart = .true. ; slab%is_cart = .true.
+
+            if (teil%natoms > 0) then
+                teil%r = teil%r * scaling_const
+                call to_direct(teil)
+            end if
+            if (slab%natoms > 0) then
+                slab%r = slab%r * scaling_const
+                call to_direct(slab)
+            end if
 
         else
             stop err_read_poscar // "reading coordinate system type (cartesian/direct)"
@@ -440,10 +441,9 @@ contains
         end if
 
         call set_atomic_indices(teil, slab, natoms)
+        call set_atomic_masses(teil, slab)
         call set_atomic_names(teil, slab, elements)
-        print *, slab%natoms
-        call create_repetitions(slab)
-        print *, slab%natoms
+        call create_repetitions(slab, simparams%rep)
 
     end subroutine read_poscar
 
@@ -581,6 +581,30 @@ contains
         end if
 
     end subroutine set_atomic_names
+
+
+    subroutine set_atomic_masses(teil, slab)
+
+        use run_config, only : simparams
+        use atom_class
+
+        type(atoms), intent(inout) :: teil, slab
+
+        if (teil%natoms > 0) then
+            allocate(teil%m(simparams%nprojectiles))
+            teil%m = default_real
+            teil%m(:) = simparams%mass_p(:)
+            if (any(teil%m == default_real)) stop "Error in set_atomic_masses: not all projectile masses set"
+        end if
+
+        if (slab%natoms > 0) then
+            allocate(slab%m(simparams%nlattices))
+            slab%m = default_real
+            slab%m(:) = simparams%mass_l(:)
+            if (any(slab%m == default_real)) stop "Error in set_atomic_masses: not all slab masses set"
+        end if
+
+    end subroutine set_atomic_masses
 
 !
 !subroutine read_conf(nr_at_layer, nlnofix, nlno, n_p, n_l, n_p0, &

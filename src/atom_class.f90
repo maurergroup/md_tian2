@@ -31,7 +31,6 @@ module atom_class
         integer                       :: natoms          ! number of atoms
         integer                       :: nbeads          ! number of beads per atom
         real(dp),         allocatable :: m(:)            ! mass
-        integer,          allocatable :: atn(:)          ! atomic number
         character(len=3), allocatable :: name(:)         ! atomic name
         real(dp), allocatable         :: r(:,:,:)        ! positions
         real(dp), allocatable         :: v(:,:,:)        ! velocities
@@ -39,6 +38,7 @@ module atom_class
         logical,  allocatable         :: is_fixed(:,:,:) ! mask array defining frozen atoms (T is frozen)
         integer,  allocatable         :: idx(:)          ! index of atom type used in program
         integer,  allocatable         :: pes(:,:)        ! defines idx-dependent pes
+        logical                       :: is_cart            ! if geometry is cartesian or direct
 
     end type atoms
 
@@ -71,14 +71,6 @@ module atom_class
 
     end type
 
-    interface atoms
-        module procedure new_atoms
-    end interface
-
-    interface simulation_parameters
-        module procedure new_simulation_parameters
-    end interface
-
 contains
 
     ! Constructor for type atoms
@@ -89,8 +81,6 @@ contains
         integer, intent(in) :: nbeads, natoms
         type(atoms) new_atoms
 
-        allocate(new_atoms%m(natoms))
-        allocate(new_atoms%atn(natoms))
         allocate(new_atoms%name(natoms))
         allocate(new_atoms%r(3,nbeads,natoms))
         allocate(new_atoms%v(3,nbeads,natoms))
@@ -100,8 +90,6 @@ contains
 
         new_atoms%nbeads = nbeads
         new_atoms%natoms = natoms
-        new_atoms%m     = default_real
-        new_atoms%atn   = default_int
         new_atoms%name  = default_string
         new_atoms%r     = default_real
         new_atoms%v     = default_real
@@ -144,11 +132,17 @@ contains
         type(atoms), intent(inout) :: this
         integer :: i,j
 
+        if (this%is_cart) then
+            print *,"Cannot convert cartesian to cartesian coordinates" ; call abort
+        end if
+
         do i = 1, this%natoms
             do j = 1, this%nbeads
                 this%r(:,j,i) = matmul(simbox, this%r(:,j,i))
             end do
         end do
+
+        this%is_cart = .not. this%is_cart
 
     end subroutine
 
@@ -158,11 +152,17 @@ contains
         type(atoms), intent(inout) :: this
         integer :: i,j
 
+        if (.not. this%is_cart) then
+            print *,"Cannot convert direct to direct coordinates" ; call abort
+        end if
+
         do i = 1, this%natoms
             do j = 1, this%nbeads
                 this%r(:,j,i) = matmul(isimbox, this%r(:,j,i))
             end do
         end do
+
+        this%is_cart = .not. this%is_cart
 
     end subroutine
 
@@ -189,21 +189,56 @@ contains
     end function get_idx_from_name
 
 
-    subroutine create_repetitions(inslab)
+    subroutine create_repetitions(inslab, rep)
+
+        use useful_things, only : invert_matrix
 
         type(atoms), intent(inout) :: inslab
+        integer, intent(in) :: rep(2)
 
-        type(atoms) :: outslab
+        type(atoms) :: out_slab
+        integer :: nreps
+        integer :: i, j, start, end
 
-        outslab = new_atoms(6, 12)
-        inslab = outslab
+        if (.not. allocated(inslab%m)) stop "Error in create_repetitions(): mass attribute not allocated"
+
+        ! new atoms
+        nreps = (1+2*rep(1)) * (1+2*rep(2))
+        out_slab = new_atoms(inslab%nbeads, nreps*inslab%natoms)
+        allocate(out_slab%m(size(inslab%m)))
+        out_slab%m = inslab%m
+
+        do i = -rep(1), rep(1)
+            do j = -rep(2), rep(2)
+                ! This map -i, -i+1, ... , i-1, i and -j, -j+1, ... , j-1, j
+                !  to 1, 2, 3, ... , #total_repetitions
+                start = (rep(1) * (i+rep(1)) * (1+2*rep(2)) + rep(2) + j)     * inslab%natoms + 1
+                end   = (rep(1) * (i+rep(1)) * (1+2*rep(2)) + rep(2) + j + 1) * inslab%natoms
+
+                out_slab%r( 1 , :, start : end ) = inslab%r(1,:,:) + i
+                out_slab%r( 2 , :, start : end ) = inslab%r(2,:,:) + j
+                out_slab%r( 3 , :, start : end ) = inslab%r(3,:,:)
+
+                out_slab%name(     start : end ) = inslab%name(:)
+                out_slab%idx(      start : end ) = inslab%idx(:)
+                out_slab%v( : , :, start : end ) = inslab%v(:,:,:)
+                out_slab%f( : , :, start : end ) = inslab%v(:,:,:)
+                out_slab%is_fixed( : , :, start : end ) = inslab%is_fixed(:,:,:)
+
+            end do
+        end do
+
+        ! bring back to cartesian
+        call to_cartesian(out_slab)
+
+        ! enlarge the cell
+        simbox(:,1) = simbox(:,1) * (1+2*rep(1))
+        simbox(:,2) = simbox(:,2) * (1+2*rep(2))
+
+        ! obtain new inverse cell matrix
+        isimbox = invert_matrix(simbox)
 
     end subroutine create_repetitions
-
-
-
-
-
 
 
 

@@ -18,7 +18,7 @@ pip r r 6
 Tsurf 300
 annealing 1000 25 5
 
-conf poscar 'cart.POSCAR'
+conf poscar 'cart.POSCAR'  
 !conf poscar 'test.POSCAR' 1 2
 
 

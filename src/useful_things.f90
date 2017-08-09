@@ -9,7 +9,7 @@ module useful_things
         !			Sascha Kandratsenka
         !			Dan J. Auerbach
 
-    use atom_class
+    use constants
 
     implicit none
 
@@ -102,18 +102,7 @@ contains
 
     end subroutine norm_dist
 
-    function E_kin(s,mass)
-        !
-        ! Purpose: kinetic energy
-        !
 
-        type(atoms) :: s
-        real(8) :: mass, E_kin
-
-        E_kin = 0.5d0*sum(s%v*s%v)*mass
-
-
-    end function E_kin
 
     subroutine pbc_dist(a, b, cmat, cimat, r)
             !
@@ -141,31 +130,24 @@ contains
 
     end subroutine pbc_dist
 
-    subroutine pbc_distdir(a, b, cmat, cimat, r, uvec)
+    subroutine pbc_distdir(a, b, r, vec)
             !
-            ! Purpose: Distance between atoms a and b and unit vector a-->b them
+            ! Purpose: Distance between atoms a and b and vector a-->b
             !          with taking into account the periodic boundary conditions
             !
+        use atom_class, only : simbox, isimbox
 
         real(8), dimension(3),   intent(in)  :: a, b
-        real(8), dimension(3,3), intent(in)  :: cmat, cimat
         real(8),                 intent(out) :: r
-        real(8), dimension(3),   intent(out) :: uvec
+        real(8), dimension(3),   intent(out) :: vec
 
-        real(8), dimension(3) :: r3temp
+        vec = b - a   ! distance vector from a to b
 
+        vec = matmul(isimbox, vec)   ! transform to direct coordinates
+        vec = vec - Anint(vec)       ! imaging
+        vec = matmul(simbox, vec)    ! back to cartesian coordinates
 
-        ! Applying PBCs
-        r3temp = b - a   ! distance vector from a to b
-        r3temp = matmul(cimat, r3temp)   ! transform to direct coordinates
-
-        r3temp(1) = r3temp(1) - Anint(r3temp(1))! imaging
-        r3temp(2) = r3temp(2) - Anint(r3temp(2))
-        r3temp(3) = r3temp(3) - Anint(r3temp(3))
-        r3temp    = matmul(cmat, r3temp)    ! back to cartesian coordinates
-
-        r =  sqrt(sum(r3temp*r3temp))           ! distance
-        uvec = r3temp/r                         ! director from a to b
+        r =  sqrt(sum(vec*vec))      ! distance
 
     end subroutine pbc_distdir
 
