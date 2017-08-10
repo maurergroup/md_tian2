@@ -63,10 +63,13 @@ module constants
     !           Mass   : eV fs^2 / A^2 = 1/103.6382 amu
     !           Angle  : radian = 180 deg
     !           bohr   : bohr = 0.5291772 Angstroem
-    real(dp), parameter :: amu2mass = 103.638239276_dp
-    real(dp), parameter :: deg2rad  = pi/180.0_dp
-    real(dp), parameter :: bohr2ang = 0.529177211_dp
-    real(dp), parameter :: p2GPa    = 160.2176565_dp
+    real(dp), parameter :: amu2mass  = 103.638239276_dp
+    real(dp), parameter :: deg2rad   = pi/180.0_dp
+    real(dp), parameter :: bohr2ang  = 0.529177211_dp
+    real(dp), parameter :: p2GPa     = 160.2176565_dp
+    real(dp), parameter :: joule2ev  = 6.2415093433e+18_dp
+    real(dp), parameter :: kelvin2ev = kB
+
 
 
 

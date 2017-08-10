@@ -14,103 +14,20 @@ module md_init
     !			        Sascha Kandratsenka
     !			        Dan J. Auerbach
 
-    use atom_class
-    use run_config, only : simparams, read_input_file
+    use universe_mod
+    use useful_things
+    use run_config
     use constants
 
     implicit none
-!    save
-!
-!!    integer :: start_tr     = 1     ! a trajectory to start with
-!!    integer :: ntrajs       = 10    ! number of trajectories
-!!    real(8) :: einc         = 5     ! incidence energy (eV)
-!!    real(8) :: inclination  = 0     ! incidence polar angle (degree)
-!!    real(8) :: azimuth      = 0     ! incidence azimuthal angle (degree)
-!!                                    ! [10-1] = 60 deg
-!!                                    ! [11-2] = 90 deg
-!!    real(8) :: Tsurf        = 300   ! surface temperature (Kelvin)
-!!    real(8) :: step         =-1.0d0 ! time step in fs
-!!    integer :: nsteps       = 100   ! number of steps
-!!    integer :: md_algo_l    = 1     ! md propagation algorithm: 1 - verlet
-!!                                    !                           2 - beeman
-!!                                    !                           3 - langevin
-!!                                    !                           4 - langevin (series)
-!!                                    !                           5 - verlet + post Electronic friction
-!!    integer :: md_algo_p    = 0     !  0 means no projectile
-!!    logical :: Tsurf_key = .false., md_algo_l_key = .false., md_algo_p_key = .false.
-!!    integer :: pip_sign     =-1     ! -1 : read in from configuration file. Default.
-!!                                    !  0 : assign random positions
-!!                                    !  1 : coordinates for projectile via key word: top, fcc, hcp
-!!                                    !  2 : take positions from file
-!!    integer, dimension(2) :: wstep   = (/-1,1/)   ! way and interval to save data
-!!                                    ! (1) = -1 specifies initial and end conditions. mxt_fin.
-!!                                    !        0 in wstep(2) intervals, information on traj. mxt_trj
-!!                                    !        1 all the information in wstep(2) steps, binary file
-!!                                    !        -2 Sames a 1, only into non-binary file. Takes a lot of space.
-!!                                    !           Reconsider
-!!    real(8) :: height = 6.0d0       ! Read-in height projectile
-!!    real(8) :: Epot = 0.0d0
-!!    real(8), allocatable, dimension(:)      :: pEfric != 0.0d0       ! electronic friction accumulator for md_algo_p == 5, needs to have the same
-!!    real(8) :: a_lat                ! lattice constant
-!!    real(8),dimension(3,3) :: cell_mat, cell_imat ! simulation cell matrix and its inverse
-!!
-!!    character(len=80) :: name_l, key_l
-!!    character(len=80) :: name_p = 'Elerium'
-!!    character(len=80) :: key_p_pos = 'top'
-!!    character(len=80) :: pes_name = 'emt'
-!!    character(len=80) :: key_p = 'empty'
-!!    integer :: npars_l ! number of parameters for lattice
-!!    integer :: npars_p = 0
-!!    integer :: np_atoms, nl_atoms
-!!    integer :: pes_key = 0      ! pes type:
-!!                                !   0 : EMT
-!!                                !   1 : LJ12-6
-!!    integer :: pes_nigh = 0     ! kind of neighbouring:
-!!                                !   0 : cutoff radius
-!!                                !   1 : nearest-neighbours
-!!                                !   2 : next-nearest-neighbours
-!!                                !   3 : nxt-next-nearest-neighbours
-!!    integer, dimension(:,:), allocatable :: neigh_l, neigh_p
-!!    real(8) :: mass_l
-!!    real(8) :: mass_p = 1.0d0
-!!    real(8), dimension(:), allocatable   :: pars_l, pars_p ! potential parameters
-!!
-!!
-!!    character(len=100) :: confname_file
-!!    character(len= 7) :: confname
-!!    integer :: n_confs = 1          ! Number of configurations to read in
-!!    integer :: conf_nr = 1          ! number in name of configurational file to read in.
-!!
-!!    ! Fit stuctures or fit-related parameters
-!!    real(8), dimension(:,:,:), allocatable  :: x_all
-!!    real(8), dimension(:),     allocatable  :: y_all
-!!    real(8)                                 :: evasp = -24.995689d0 ! A value for Au 2x2
-!!    integer, dimension(2)                   :: rep = (/0,0/)  ! number of repetition layers
-!!    integer                                 :: ipc ! number of parameters to be held constant during fit
-!!    integer, dimension(20)                  :: ibt = 0 ! Integer Array containing the subscripts of parameters to be held constant.
-!!    integer                                 :: max_iterations = 10 ! maximum number of iterations
-!!    integer, dimension(3)                   :: celldim=(/2,2,4/)  ! input cell structure
-!!    character(len=4)                        :: fitnum      ! number of fit
-!!    integer, dimension(2)                   :: fracaimd ! number of energy grid and aimd data points
-!!    character(len=3),dimension(:), allocatable :: trajname  ! names of AIMD trajectories
-!!    integer                                 :: nsites = 0, trajn = 0
-!!    integer, dimension(:), allocatable      :: ssites   ! names of sites that are to be included
-!!    real(8), dimension(2)                   :: dftlu = (/-20.0d0,20.0d0/)   ! upper and lower limit in (eV) for included 3Dgrid-points
-!!    real(8), dimension(2)                   :: aimdlu = (/-20.0d0,20.0d0/)   ! upper and lower limit in (eV) included AIMD-points
-!!    real(8), dimension(2)                   :: distmima = (/0.0d0,20.0d0/)   ! minimal distance of H-atom to surface atoms and maximal
-!!                                                                            ! distance to surface atoms
-!!
-!!    ! Annealing
-!!    real(8) :: Tmin, Tmax
-!!    integer :: sasteps = 0
 
 contains
 
-    subroutine simbox_init(teil, slab)
+    subroutine simbox_init(atoms)
 
-        use pes_lj_module
+        use pes_lj_mod
 
-        type(atoms), intent(out) :: teil, slab
+        type(universe), intent(out) :: atoms
 
         character(len=:), allocatable :: input_file
         integer :: input_file_length, input_file_status
@@ -130,80 +47,23 @@ contains
         randk=size(randseed)
         call random_seed(size=randk)
 
-        call read_input_file(input_file)
+        call read_input_file(input_file)        ! build the simparams object
         call ensure_input_sanity()
-        call read_geometry(teil, slab, simparams%confname_file)
-        call read_pes(teil, slab)
+        call read_geometry(atoms, simparams%confname_file)
+        call read_pes(atoms)
 
-    !TODO   call output_run_details()
-
-
-    !
-    !    if (pip_sign == 1) then
-    !        print *, 'Warning: You have selected option ', trim(key_p_pos),&
-    !                 '         Your number of projectiles will be reduced to one.'
-    !        n_p0 = 1
-    !    end if
-    !
-    !    close(38)
-    !
-    !    if (wstep(1) > 1) then
-    !        print *, 'Warning: You are saving the geometries along the trajectory.'
-    !        print *, '         This is storage demanding.'
-    !    end if
-    !
-    !!------------------------------------------------------------------------------
-    !!                       READ IN CONFIGURATION
-    !!                       =====================
-    !!------------------------------------------------------------------------------
-    !
-    !! call subroutine which reads in configuration
-    !if (confname == 'poscar' .or. confname == 'fit') then
-    !    call read_conf(nr_at_layer, nlnofix, nlno, n_p, n_l, n_p0, &
-    !                   slab, teil, start_l, c_matrix)
-    !! mxt
-    !else if (confname == 'mxt' .or. confname == 'geo') then
-    !    call read_mxt(nspec, teil, slab, n_p0)
-    !end if
-    !if (confname == 'fit') then
-    !    call read_fit(fracaimd, n_p, n_p0, n_l, n_l0, teil, slab, &
-    !                  start_l, c_matrix)
-    !end if
-    !
-    !if (sasteps > 0) then
-    !    Tmin = Tsurf
-    !end if
-    !
-    !
-    !! Create a directory for configuration data
-    !inquire(directory='conf',exist=exists)
-    !if (.not. exists) then
-    !    call system('mkdir conf')
-    !end if
-    !! Create a directory for trajectory data
-    !inquire(directory='traj',exist=exists)
-    !if (.not. exists) then
-    !    call system('mkdir traj')
-    !end if
-    !
-    !if (confname == 'poscar' .or. confname == 'fit') deallocate(start_l)
-    !
-
-    !TODO: Do not forget to convert the masses from amu to program units
+    !TODO:   call output_run_details()
     !TODO: Do not forget to convert the angles from degrees to program units
 
     end subroutine simbox_init
 
 
-    subroutine read_pes(teil, slab)
+    subroutine read_pes(atoms)
 
-        use run_config, only : simparams
-        use useful_things, only : split_string, file_exists
         use open_file, only : open_for_read
-        use pes_lj_module, only : read_lj
-        use atom_class
+        use pes_lj_mod, only : read_lj
 
-        type(atoms), intent(in) :: teil, slab
+        type(universe), intent(in) :: atoms
 
         character(len=*), parameter :: err_pes_init = "Error in pes_init: "
         integer :: ios = 0, nwords
@@ -231,7 +91,7 @@ contains
                     select case (words(2))
 
                         case ('lj')
-                            call read_lj(teil, slab, pes_unit)
+                            call read_lj(atoms, pes_unit)
 
                         !                        case ('morse')
                         !                            call read_morse(pes_unit)
@@ -261,20 +121,19 @@ contains
 
     ! After this subroutine, the system will be initialized with all user-specified geometry
     !   and velocity information.
-    subroutine read_geometry(teil, slab, infile)
+    subroutine read_geometry(atoms, infile)
 
         use useful_things, only : file_exists
-        use atom_class
 
         character(len=*), intent(in) :: infile
-        type(atoms), intent(inout) :: teil, slab
+        type(universe), intent(inout) :: atoms
 
         if (.not. file_exists(infile)) stop "Error: geometry file does not exist"
 
         select case (simparams%confname)
 
             case ("poscar")
-                call read_poscar(teil, slab, infile)
+                call read_poscar(atoms, infile)
 
             case default
                 stop "Error: conf keyword unknown"
@@ -284,22 +143,19 @@ contains
     end subroutine read_geometry
 
 
-    subroutine read_poscar(teil, slab, infile)
+    subroutine read_poscar(atoms, infile)
 
-        use run_config, only : simparams
-        use useful_things
         use open_file, only : open_for_read
-        use atom_class
 
-        type(atoms), intent(out) :: teil, slab
+        type(universe), intent(out) :: atoms
         character(len=*), intent(in) :: infile
 
         character(len=*), parameter :: err_read_poscar = "Error in read_poscar: "
         real(dp) :: scaling_const
+        real(dp) :: simbox(3,3)
         integer, allocatable :: natoms(:)
         integer, parameter :: geo_unit = 55
-        integer :: ios, nwords, nspecies, i, j
-        integer :: nproj_atoms, nslab_atoms
+        integer :: ios, nwords, ntypes, i, j
         integer :: nbeads = 1, pos1 = 0, pos2 = 0
         character(len=3), allocatable :: elements(:)
         character(len=max_string_length) :: buffer, c_system
@@ -307,8 +163,8 @@ contains
         character(len=1), allocatable :: can_move(:,:,:)
 
 
-        nspecies = simparams%nprojectiles + simparams%nlattices
-        allocate(natoms(nspecies), elements(nspecies))
+        ntypes = simparams%nprojectiles + simparams%nlattices
+        allocate(natoms(ntypes), elements(ntypes))
 
         call open_for_read(geo_unit, infile)
 
@@ -324,7 +180,6 @@ contains
         ! read the cell vectors and multiply with scaling constant
         read(geo_unit, *, iostat=ios) simbox(:,:)
         if (ios /= 0) stop err_read_poscar // "reading simulation box"
-        simbox = simbox * scaling_const
 
         ! read atom types
         read(geo_unit, '(A)', iostat=ios) buffer
@@ -343,12 +198,8 @@ contains
         read(buffer(pos2+1:), *, iostat=ios) natoms(:)
         if (ios /= 0) stop err_read_poscar // "reading number of atoms"
 
-        nproj_atoms = sum(natoms(:simparams%nprojectiles))
-        nslab_atoms = sum(natoms(simparams%nprojectiles+1:))
-
         ! now we have everything to construct atom types
-        teil = new_atoms(nbeads, nproj_atoms)
-        slab = new_atoms(nbeads, nslab_atoms)
+        atoms = new_atoms(nbeads, sum(natoms), ntypes)
 
         ! Direct or Cartesian coordinates, needed later
         read(geo_unit, '(A)', iostat=ios) c_system
@@ -363,248 +214,237 @@ contains
 
         if (nwords == 3) then
 
-            if (teil%natoms > 0) read(geo_unit, *, iostat=ios) teil%r
-            if (ios /= 0) stop err_read_poscar // "reading projectile coordinates"
-            if (slab%natoms > 0) read(geo_unit, *, iostat=ios) slab%r
-            if (ios /= 0) stop err_read_poscar // "reading lattice coordinates"
+            read(geo_unit, *, iostat=ios) atoms%r
+            if (ios /= 0) stop err_read_poscar // "reading coordinates"
 
         else if (nwords == 6) then
 
-            if (teil%natoms > 0) then
-                allocate (can_move(3, teil%nbeads, teil%natoms))
-                read(geo_unit, *, iostat=ios) ((teil%r(:,j,i), can_move(:,j,i), j=1,teil%nbeads), &
-                    i=1,teil%natoms)
-                if (ios /= 0) stop err_read_poscar // "reading projectile coordinates and mobility flags"
-                where (can_move == "F") teil%is_fixed = .true.
+            if (atoms%natoms > 0) then
+                allocate (can_move(3, atoms%nbeads, atoms%natoms))
+                read(geo_unit, *, iostat=ios) ((atoms%r(:,j,i), can_move(:,j,i), j=1,atoms%nbeads), &
+                    i=1,atoms%natoms)
+                if (ios /= 0) stop err_read_poscar // "reading atom coordinates and mobility flags"
+                where (can_move == "F") atoms%is_fixed = .true.
                 deallocate (can_move)
-
-            end if
-
-            if (slab%natoms > 0) then
-                allocate(can_move(3, slab%nbeads, slab%natoms))
-                read(geo_unit, *, iostat=ios) ((slab%r(:,j,i), can_move(:,j,i), j=1,slab%nbeads), &
-                    i=1,slab%natoms)
-                if (ios /= 0) stop err_read_poscar // "reading slab coordinates and mobility flags"
-                where (can_move == "F") slab%is_fixed = .true.
-                deallocate (can_move)
+            else
+                stop err_read_poscar // "reading projectile coordinates and mobility flags"
             end if
 
         else
-            stop err_read_poscar // "cannot read coordinate section"
+        stop err_read_poscar // "cannot read coordinate section"
 
-        end if
+    end if
 
-        ! Check if there is a velocity section
-        read(geo_unit, '(A)', iostat=ios) buffer
-        if (ios == iostat_end) then
-            ! eof of file, don't read anything more
+    ! Check if there is a velocity section
+    read(geo_unit, '(A)', iostat=ios) buffer
+    if (ios == iostat_end) then
+        ! eof of file, don't read anything more
 
-        else if (ios == 0 .and. len_trim(buffer) == 0) then
-            ! blank line after coordinate section and no eof yet -> read velocities
-            if (teil%natoms > 0) read(geo_unit, *, iostat=ios) teil%v
-            if (ios /= 0) stop err_read_poscar // "reading initial projectile velocities"
-            if (slab%natoms > 0) read(geo_unit, *, iostat=ios) slab%v
-            if (ios /= 0) stop err_read_poscar // "reading initial slab velocities"
+    else if (ios == 0 .and. len_trim(buffer) == 0) then
+        ! blank line after coordinate section and no eof yet -> read velocities
+        read(geo_unit, *, iostat=ios) atoms%v
+        if (ios /= 0) stop err_read_poscar // "cannot read initial atom velocities"
 
-        else
-            stop "Error: cannot read velocity section in poscar file"
-        end if
+    else
+        stop err_read_poscar // "cannot read initial atom velocities"
+    end if
 
-        ! Invert the cell matrix to obtain direct coordinates
-        isimbox = invert_matrix(simbox)
+    ! Set the simulation box
+    simbox = simbox * scaling_const
+    atoms%simbox  = simbox
+    atoms%isimbox = invert_matrix(simbox)
 
-        ! If system was given in cartesian coordinates, convert to direct
-        call lower_case(c_system)
-        if (trim(adjustl(c_system)) == "d" .or. &
-            trim(adjustl(c_system)) == "direct") then
+    ! Set the projectile identification
+    if (simparams%nprojectiles > 0) atoms%is_proj(1:simparams%nprojectiles)  = .true.
+    if (simparams%nlattices    > 0) atoms%is_proj(simparams%nprojectiles+1:) = .false.
 
-            teil%is_cart = .false. ; slab%is_cart = .false.
+    ! If system was given in cartesian coordinates, convert to direct
+    call lower_case(c_system)
+    if (trim(adjustl(c_system)) == "d" .or. &
+        trim(adjustl(c_system)) == "direct") then
 
-        else if (trim(adjustl(c_system)) == "c" .or. &
-            trim(adjustl(c_system)) == "cart" .or. &
-            trim(adjustl(c_system)) == "cartesian") then
+        atoms%is_cart = .false.
 
-            teil%is_cart = .true. ; slab%is_cart = .true.
+    else if (trim(adjustl(c_system)) == "c" .or. &
+        trim(adjustl(c_system)) == "cart" .or. &
+        trim(adjustl(c_system)) == "cartesian") then
 
-            if (teil%natoms > 0) then
-                teil%r = teil%r * scaling_const
-                call to_direct(teil)
-            end if
-            if (slab%natoms > 0) then
-                slab%r = slab%r * scaling_const
-                call to_direct(slab)
-            end if
+        atoms%is_cart = .true.
+        atoms%r = atoms%r * scaling_const
+        call to_direct(atoms)
 
-        else
-            stop err_read_poscar // "reading coordinate system type (cartesian/direct)"
+    else
+        stop err_read_poscar // "reading coordinate system type (cartesian/direct)"
 
-        end if
+    end if
 
-        call set_atomic_indices(teil, slab, natoms)
-        call set_atomic_masses(teil, slab)
-        call set_atomic_names(teil, slab, elements)
-        call create_repetitions(slab, simparams%rep)
+    call set_atomic_indices(atoms, natoms)
+    call set_atomic_masses(atoms)
+    call set_atomic_names(atoms, elements)
+    call create_repetitions(atoms, simparams%rep)
 
-    end subroutine read_poscar
+end subroutine read_poscar
 
 
 
-    subroutine ensure_input_sanity()
+subroutine ensure_input_sanity()
 
-        character(len=*), parameter :: err_sanity = "sanity check error: "
-        logical, allocatable :: interacting(:,:)
-        integer :: ntypes, i
+    character(len=*), parameter :: err_sanity = "sanity check error: "
+    logical, allocatable :: interacting(:,:)
+    integer :: ntypes, i
 
-        ntypes = simparams%nprojectiles+simparams%nlattices
-        allocate(interacting(ntypes,ntypes))
-        interacting = .false.
+    ntypes = simparams%nprojectiles+simparams%nlattices
+    allocate(interacting(ntypes,ntypes))
+    interacting = .false.
 
-        ! Check the *.inp file
-        !!! Perform MD
-        if (simparams%run == "md") then
-            if (simparams%start == default_int)  stop err_sanity // "start key must be present and larger than zero."
-            if (simparams%ntrajs == default_int) stop err_sanity // "ntrajs key must be present and larger than zero."
-            if (simparams%nsteps == default_int) stop err_sanity // "nsteps key must be present and larger than zero."
-            if (simparams%step == default_real)  stop err_sanity // "nsteps key must be present and larger than zero."
-            if (simparams%nlattices == default_int .and. simparams%nprojectiles == default_int) stop err_sanity // "either lattice and/or projectile key must be present."
-            if (simparams%nprojectiles == default_int) simparams%nprojectiles = 0
-            if (simparams%nlattices == default_int) simparams%nlattices = 0
+    ! Check the *.inp file
+    !!! Perform MD
+    if (simparams%run == "md") then
+        if (simparams%start == default_int)  stop err_sanity // "start key must be present and larger than zero."
+        if (simparams%ntrajs == default_int) stop err_sanity // "ntrajs key must be present and larger than zero."
+        if (simparams%nsteps == default_int) stop err_sanity // "nsteps key must be present and larger than zero."
+        if (simparams%step == default_real)  stop err_sanity // "nsteps key must be present and larger than zero."
+        if (simparams%nlattices == default_int .and. simparams%nprojectiles == default_int) stop err_sanity // "either lattice and/or projectile key must be present."
+        if (simparams%nprojectiles == default_int) simparams%nprojectiles = 0
+        if (simparams%nlattices == default_int) simparams%nlattices = 0
 
-            if (simparams%nprojectiles > 0 .and. .not. allocated(simparams%name_p)) stop err_sanity // "projectile names not set."
-            if (simparams%nprojectiles > 0 .and. .not. allocated(simparams%mass_p)) stop err_sanity // "projectile masses not set."
-            if (simparams%nprojectiles > 0 .and. .not. allocated(simparams%mass_p)) stop err_sanity // "projectile masses not set."
-            if (simparams%nprojectiles > 0 .and. .not. allocated(simparams%md_algo_p)) stop err_sanity // "projectile propagation algorithm not set."
+        if (simparams%nprojectiles > 0 .and. .not. allocated(simparams%name_p)) stop err_sanity // "projectile names not set."
+        if (simparams%nprojectiles > 0 .and. .not. allocated(simparams%mass_p)) stop err_sanity // "projectile masses not set."
+        if (simparams%nprojectiles > 0 .and. .not. allocated(simparams%mass_p)) stop err_sanity // "projectile masses not set."
+        if (simparams%nprojectiles > 0 .and. .not. allocated(simparams%md_algo_p)) stop err_sanity // "projectile propagation algorithm not set."
 
-            if (simparams%nlattices > 0 .and. .not. allocated(simparams%mass_l)) stop err_sanity // "lattice masses not set."
-            if (simparams%nlattices > 0 .and. .not. allocated(simparams%name_l)) stop err_sanity // "lattice names not set."
-            if (simparams%nlattices > 0 .and. .not. allocated(simparams%mass_l)) stop err_sanity // "lattice masses not set."
-            if (simparams%nlattices > 0 .and. .not. allocated(simparams%md_algo_l)) stop err_sanity // "lattice propagation algorithm not set."
+        if (simparams%nlattices > 0 .and. .not. allocated(simparams%mass_l)) stop err_sanity // "lattice masses not set."
+        if (simparams%nlattices > 0 .and. .not. allocated(simparams%name_l)) stop err_sanity // "lattice names not set."
+        if (simparams%nlattices > 0 .and. .not. allocated(simparams%mass_l)) stop err_sanity // "lattice masses not set."
+        if (simparams%nlattices > 0 .and. .not. allocated(simparams%md_algo_l)) stop err_sanity // "lattice propagation algorithm not set."
 
-            ! If one of them is set, the others must be set as well.
-            if ( (allocated(simparams%einc) .neqv. allocated(simparams%inclination)) .or. &
-                (allocated(simparams%einc) .neqv. allocated(simparams%azimuth)) ) &
-                stop err_sanity // "incidence conditions ambiguous."
+        ! If one of them is set, the others must be set as well.
+        if ( (allocated(simparams%einc) .neqv. allocated(simparams%inclination)) .or. &
+            (allocated(simparams%einc) .neqv. allocated(simparams%azimuth)) ) &
+            stop err_sanity // "incidence conditions ambiguous."
 
-
-
-        !!! Perform fit
-        else if (simparams%run == "fit") then
+            ! TODO: to be completed
 
 
-        end if
-        !
-        !        integer :: start                                            ! a trajectory to start with
-        !        integer :: ntrajs                                           ! number of trajectories
-        !        integer :: nsteps                                           ! number of steps
-        !        real(dp):: step                                             ! time step in fs
-        !        integer :: nlattices                                        ! number of lattice species
-        !        integer :: nprojectiles                                     ! number of incident species
-        !        character(len=3), allocatable :: name_l(:), name_p(:)       ! atomic names
-        !        real(dp),         allocatable :: mass_l(:), mass_p(:)       ! atomic masses
-        !        integer,          allocatable :: md_algo_l(:), md_algo_p(:) ! and respective key
-        !        real(dp),         allocatable :: einc(:)                    ! incidence energy (eV)
-        !        real(dp),         allocatable :: inclination(:)             ! incidence polar angle (degree)
-        !        real(dp),         allocatable :: azimuth(:)                 ! incidence azimuthal angle (degree)
-        !        real(dp):: Tsurf                                            ! surface temperature in K
-        !        real(dp):: sa_Tmax                                          ! max. Tsurf for simulated annealing in K
-        !        integer :: sa_nsteps                                        ! number of steps per simulated annealing cycle
-        !        integer :: sa_interval                                      ! number of steps per temperature interval
-        !        character(len=7)    :: confname                             ! configuration key
-        !        character(len=max_string_length) :: confname_file           ! name of the system configuration file or folder
-        !        integer :: rep(2)                                           ! defines in-plane repetitions
-        !        integer :: nconfs                                           ! number of configurations to read in
-        !        character(len=max_string_length) :: pes_file                ! name of the file that stores the potential parameters
-        !        character(len=3) :: run                                     ! what to do
-        !        integer, dimension(2) :: output                             ! what to save
-        !        character(len=15) :: pip(3)                                 ! determine initial projectile position
 
+    !!! Perform fit
+    else if (simparams%run == "fit") then
+
+
+    end if
+    !
+    !        integer :: start                                            ! a trajectory to start with
+    !        integer :: ntrajs                                           ! number of trajectories
+    !        integer :: nsteps                                           ! number of steps
+    !        real(dp):: step                                             ! time step in fs
+    !        integer :: nlattices                                        ! number of lattice species
+    !        integer :: nprojectiles                                     ! number of incident species
+    !        character(len=3), allocatable :: name_l(:), name_p(:)       ! atomic names
+    !        real(dp),         allocatable :: mass_l(:), mass_p(:)       ! atomic masses
+    !        integer,          allocatable :: md_algo_l(:), md_algo_p(:) ! and respective key
+    !        real(dp),         allocatable :: einc(:)                    ! incidence energy (eV)
+    !        real(dp),         allocatable :: inclination(:)             ! incidence polar angle (degree)
+    !        real(dp),         allocatable :: azimuth(:)                 ! incidence azimuthal angle (degree)
+    !        real(dp):: Tsurf                                            ! surface temperature in K
+    !        real(dp):: sa_Tmax                                          ! max. Tsurf for simulated annealing in K
+    !        integer :: sa_nsteps                                        ! number of steps per simulated annealing cycle
+    !        integer :: sa_interval                                      ! number of steps per temperature interval
+    !        character(len=7)    :: confname                             ! configuration key
+    !        character(len=max_string_length) :: confname_file           ! name of the system configuration file or folder
+    !        integer :: rep(2)                                           ! defines in-plane repetitions
+    !        integer :: nconfs                                           ! number of configurations to read in
+    !        character(len=max_string_length) :: pes_file                ! name of the file that stores the potential parameters
+    !        character(len=3) :: run                                     ! what to do
+    !        integer, dimension(2) :: output                             ! what to save
+    !        character(len=15) :: pip(3)                                 ! determine initial projectile position
 
 
 
 
 
-    end subroutine ensure_input_sanity
+
+end subroutine ensure_input_sanity
 
 
 
-    subroutine set_atomic_indices(teil, slab, natoms)
+subroutine set_atomic_indices(atoms, natoms)
 
-        ! Each atom has a unique index 1, 2, ..., n, where n is the number of species in
-        !  the system.
-        !  The order is given in the *.inp file. It has to match the order in the geometry file.
+    ! Each atom has a unique index 1, 2, ..., n, where n is the number of species in
+    !  the system.
+    !  The order is given in the *.inp file. It has to match the order in the geometry file.
 
-        use atom_class
+    type(universe), intent(inout) :: atoms
+    integer, intent(in) :: natoms(:)
 
-        type(atoms), intent(inout) :: teil, slab
-        integer, intent(in) :: natoms(:)
+    integer :: i, j, counter
 
-        integer :: i, j, counter
-
-        counter = 1
-        do i = 1, simparams%nprojectiles
-            do j = 1, natoms(i)
-                teil%idx(counter) = i
-                counter = counter + 1
-            end do
+    counter = 1
+    !print *, natoms
+    do i = 1, size(natoms)
+        do j = 1, natoms(i)
+            atoms%idx(counter) = i
+            counter = counter + 1
         end do
+    end do
+    if (any(atoms%idx == default_int))  stop "Error in set_atomic_indices: not all atom indices set."
+    if (size(natoms) > size(atoms%idx)) stop "Error in set_atomic_indices: more atoms than indices."
 
-        counter = 1
-        do i = simparams%nprojectiles+1, simparams%nprojectiles+simparams%nlattices
-            do j = 1, natoms(i)
-                slab%idx(counter) = i
-                counter = counter + 1
-            end do
-        end do
-
-    end subroutine set_atomic_indices
+end subroutine set_atomic_indices
 
 
-    subroutine set_atomic_names(teil, slab, elements)
+subroutine set_atomic_names(atoms, elements)
 
-        ! Names are based on indices. Names can only be set if atomic indices have been set first.
+    type(universe), intent(inout) :: atoms
+    character(len=3), intent(in) :: elements(:)
+    character(len=*), parameter :: err = "Error in set_atomic_names: "
 
-        use atom_class
+    ! Check if element names from *.inp file and poscar file are in agreement
 
-        type(atoms), intent(inout) :: teil, slab
-        character(len=3), intent(in) :: elements(:)
+    if (allocated(simparams%name_p(:)) .and. allocated(simparams%name_l(:))) then
+        if (any(elements /= [simparams%name_p, simparams%name_l])) stop err // "atomic names in *.inp and poscar files differ"
 
-        integer :: i
+    else if (allocated(simparams%name_p(:))) then
+        if (any(elements /= simparams%name_p(:))) stop err // "atomic names in *.inp and poscar files differ"
 
-        if (simparams%nprojectiles > 0) then
-            if (any(teil%idx == default_int)) stop "Error: atomic indices not set; cannot set projectile names"
-            forall (i = 1 : teil%natoms) teil%name(i) = elements(teil%idx(i))
-        end if
+    else if (allocated(simparams%name_l(:))) then
+        if (any(elements /= simparams%name_l(:))) stop err // "atomic names in *.inp and poscar files differ"
 
-        if (simparams%nlattices > 0) then
-            if (any(slab%idx == default_int)) stop "Error: atomic indices not set; cannot set lattice names"
-            forall (i = 1 : slab%natoms) slab%name(i) = elements(slab%idx(i))
-        end if
+    else
+        stop err // "neither projectile nor slab exist"
+    end if
 
-    end subroutine set_atomic_names
+    atoms%name = elements
+
+end subroutine set_atomic_names
 
 
-    subroutine set_atomic_masses(teil, slab)
+subroutine set_atomic_masses(atoms)
 
-        use run_config, only : simparams
-        use atom_class
+    type(universe), intent(inout) :: atoms
+    character(len=*), parameter :: err = "Error in set_atomic_masses: "
 
-        type(atoms), intent(inout) :: teil, slab
+    ! Either (mass_p or mass_l) or both are allocated
 
-        if (teil%natoms > 0) then
-            allocate(teil%m(simparams%nprojectiles))
-            teil%m = default_real
-            teil%m(:) = simparams%mass_p(:)
-            if (any(teil%m == default_real)) stop "Error in set_atomic_masses: not all projectile masses set"
-        end if
+    if (allocated(simparams%mass_p(:)) .and. allocated(simparams%mass_l(:))) then
+        atoms%m(:) = [simparams%mass_p(:), simparams%mass_l(:)]
+        if (size(atoms%m) /= size([simparams%mass_p, simparams%mass_l])) stop err // "more masses than species"
 
-        if (slab%natoms > 0) then
-            allocate(slab%m(simparams%nlattices))
-            slab%m = default_real
-            slab%m(:) = simparams%mass_l(:)
-            if (any(slab%m == default_real)) stop "Error in set_atomic_masses: not all slab masses set"
-        end if
+    else if (allocated(simparams%mass_p(:))) then
+        atoms%m(:) = simparams%mass_p(:)
+        if (size(atoms%m) /= size(simparams%mass_p(:))) stop err // "more masses than species"
 
-    end subroutine set_atomic_masses
+    else if (allocated(simparams%mass_l(:))) then
+        atoms%m(:) = simparams%mass_l(:)
+        if (size(atoms%m) /= size(simparams%mass_l(:))) stop err // "more masses than species"
+
+    else
+        stop err // "neither projectile nor slab exist"
+    end if
+
+    ! To program units
+    atoms%m = atoms%m * amu2mass
+
+end subroutine set_atomic_masses
 
 !
 !subroutine read_conf(nr_at_layer, nlnofix, nlno, n_p, n_l, n_p0, &

@@ -9,16 +9,69 @@ module run_config
         !                   Sascha Kandratsenka
 
     use constants
-    use atom_class
+    use universe_mod, only : universe
     use useful_things, only : lower_case, split_string
     use open_file, only : open_for_read
 
     implicit none
 
+    type simulation_parameters
+
+        integer :: start                                            ! a trajectory to start with
+        integer :: ntrajs                                           ! number of trajectories
+        integer :: nsteps                                           ! number of steps
+        real(dp):: step                                             ! time step in fs
+        integer :: nlattices                                        ! number of lattice species
+        integer :: nprojectiles                                     ! number of incident species
+        character(len=3), allocatable :: name_l(:), name_p(:)       ! atomic names
+        real(dp),         allocatable :: mass_l(:), mass_p(:)       ! atomic masses
+        integer,          allocatable :: md_algo_l(:), md_algo_p(:) ! and respective key
+        real(dp),         allocatable :: einc(:)                    ! incidence energy (eV)
+        real(dp),         allocatable :: inclination(:)             ! incidence polar angle (degree)
+        real(dp),         allocatable :: azimuth(:)                 ! incidence azimuthal angle (degree)
+        real(dp):: Tsurf                                            ! surface temperature in K
+        real(dp):: sa_Tmax                                          ! max. Tsurf for simulated annealing in K
+        integer :: sa_nsteps                                        ! number of steps per simulated annealing cycle
+        integer :: sa_interval                                      ! number of steps per temperature interval
+        character(len=7)    :: confname                             ! configuration key
+        character(len=max_string_length) :: confname_file           ! name of the system configuration file or folder
+        integer :: rep(2)                                           ! defines in-plane repetitions
+        integer :: nconfs                                           ! number of configurations to read in
+        character(len=max_string_length) :: pes_file                ! name of the file that stores the potential parameters
+        character(len=3)  :: run                                    ! what to do
+        integer           :: output(2)                              ! what to save
+        character(len=15) :: pip(3)                                 ! determine initial projectile position
+
+    end type
+
     type(simulation_parameters) :: simparams
 
 
 contains
+
+    function new_simulation_parameters()
+
+        type(simulation_parameters) new_simulation_parameters
+
+        new_simulation_parameters%start  = default_int
+        new_simulation_parameters%ntrajs = default_int
+        new_simulation_parameters%nsteps = default_int
+        new_simulation_parameters%step   = default_real
+        new_simulation_parameters%nlattices = default_int
+        new_simulation_parameters%nprojectiles = default_int
+        new_simulation_parameters%Tsurf   = default_real
+        new_simulation_parameters%sa_Tmax   = default_real
+        new_simulation_parameters%sa_nsteps = default_int
+        new_simulation_parameters%sa_interval = default_int
+        new_simulation_parameters%confname = default_string
+        new_simulation_parameters%rep = [0,0]
+        new_simulation_parameters%nconfs  = default_int
+        new_simulation_parameters%pes_file = default_string
+        new_simulation_parameters%run = default_string
+        new_simulation_parameters%output = [default_int,default_int]
+        new_simulation_parameters%pip = default_string
+
+    end function
 
     subroutine read_input_file(input_file)
 

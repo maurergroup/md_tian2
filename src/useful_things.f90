@@ -130,26 +130,7 @@ contains
 
     end subroutine pbc_dist
 
-    subroutine pbc_distdir(a, b, r, vec)
-            !
-            ! Purpose: Distance between atoms a and b and vector a-->b
-            !          with taking into account the periodic boundary conditions
-            !
-        use atom_class, only : simbox, isimbox
 
-        real(8), dimension(3),   intent(in)  :: a, b
-        real(8),                 intent(out) :: r
-        real(8), dimension(3),   intent(out) :: vec
-
-        vec = b - a   ! distance vector from a to b
-
-        vec = matmul(isimbox, vec)   ! transform to direct coordinates
-        vec = vec - Anint(vec)       ! imaging
-        vec = matmul(simbox, vec)    ! back to cartesian coordinates
-
-        r =  sqrt(sum(vec*vec))      ! distance
-
-    end subroutine pbc_distdir
 
     function lines_in_file(lunit, file_name)
         !

@@ -1,9 +1,9 @@
 
-module pes_lj_module
+module pes_lj_mod
 
     use constants
-    use useful_things, only : split_string, pbc_distdir
-    use atom_class, only : atoms, get_idx_from_name
+    use useful_things, only : split_string
+    use universe_mod
 
     implicit none
 
@@ -25,12 +25,11 @@ module pes_lj_module
 
 contains
 
-    subroutine read_lj(teil, slab, inp_unit)
+    subroutine read_lj(atoms, inp_unit)
 
         use run_config, only : simparams
-        use atom_class, only : simbox
 
-        type(atoms), intent(in) :: teil, slab
+        type(universe), intent(in) :: atoms
         integer, intent(in) :: inp_unit
 
         integer :: nwords = 0, ios = 0, i
@@ -44,13 +43,13 @@ contains
 
         if (.not. allocated(pes_lj%eps)) then
             allocate(pes_lj%eps(ntypes, ntypes),   &
-                     pes_lj%sigma(ntypes, ntypes), &
-                     pes_lj%shift(ntypes, ntypes))
+                pes_lj%sigma(ntypes, ntypes), &
+                pes_lj%shift(ntypes, ntypes))
             pes_lj%eps   = default_real
             pes_lj%sigma = default_real
             pes_lj%shift = default_real
             do i = 1, 3
-                temp3(i) = sqrt(sum(simbox(:,i)*simbox(:,i)))
+                temp3(i) = sqrt(sum(atoms%simbox(:,i)*atoms%simbox(:,i)))
             end do
             pes_lj%cutoff = minval(temp3(:))
         end if
@@ -61,25 +60,16 @@ contains
 
         if (nwords /= 4) stop err_read_lj // "need four entries in interaction-defining lines"
 
-        if (words(3) == "proj" .and. words(4) == "proj") then
-            idx1 = get_idx_from_name(teil, words(1))
-            idx2 = get_idx_from_name(teil, words(2))
+        if (words(3) == "proj" .and. words(4) == "proj" .or. &
+            words(3) == "proj" .and. words(4) == "latt" .or. &
+            words(3) == "latt" .and. words(4) == "proj" .or. &
+            words(3) == "latt" .and. words(4) == "latt") then
 
-        else if (words(3) == "proj" .and. words(4) == "latt") then
-            idx1 = get_idx_from_name(teil, words(1))
-            idx2 = get_idx_from_name(slab, words(2))
-
-        else if (words(3) == "latt" .and. words(4) == "proj") then
-            idx1 = get_idx_from_name(slab, words(1))
-            idx2 = get_idx_from_name(teil, words(2))
-
-        else if (words(3) == "latt" .and. words(4) == "latt") then
-            idx1 = get_idx_from_name(slab, words(1))
-            idx2 = get_idx_from_name(slab, words(2))
+            idx1 = get_idx_from_name(atoms, words(1), is_proj=(words(3)=="proj"))
+            idx2 = get_idx_from_name(atoms, words(2), is_proj=(words(4)=="proj"))
 
         else
             stop err_read_lj // "interaction must be defined via 'proj' and 'latt' keywords"
-
         end if
 
         do
@@ -89,8 +79,8 @@ contains
             ! pes block terminated, set shift
             if (nwords == 0 .or. ios /= 0) then
                 pes_lj%shift(idx1,idx2) = 4.0_dp * pes_lj%eps(idx1,idx2) * &
-                                           ( (pes_lj%sigma(idx1,idx2)/pes_lj%cutoff)**12 &
-                                           - (pes_lj%sigma(idx1,idx2)/pes_lj%cutoff)**6 )
+                    ( (pes_lj%sigma(idx1,idx2)/pes_lj%cutoff)**12 &
+                    - (pes_lj%sigma(idx1,idx2)/pes_lj%cutoff)**6 )
                 pes_lj%shift(idx2,idx1) = pes_lj%shift(idx1,idx2)
                 exit
 
@@ -100,13 +90,16 @@ contains
             end if
 
             select case (words(1))
-                case ('sigma')
+
+                case ('sigma')      ! given in angstrom
                     read(words(2), *) pes_lj%sigma(idx1, idx2)
                     read(words(2), *) pes_lj%sigma(idx2, idx1)
 
-                case ('epsilon')
+                case ('epsilon')    ! given in kelvin
                     read(words(2), *) pes_lj%eps(idx1, idx2)
                     read(words(2), *) pes_lj%eps(idx2, idx1)
+                    pes_lj%eps(idx1, idx2) = pes_lj%eps(idx1, idx2) * kelvin2ev
+                    pes_lj%eps(idx2, idx1) = pes_lj%eps(idx2, idx1) * kelvin2ev
 
                 case default
                     print *, "Error in the PES file: unknown LJ parameter", words(1)
@@ -114,18 +107,15 @@ contains
 
             end select
 
-
-
-
         end do
 
     end subroutine read_lj
 
 
-    subroutine compute_lj(teil, slab, flag)
+    subroutine compute_lj(atoms, flag)
 
-        type(atoms), intent(inout) :: teil, slab
-        integer, intent(in)        :: flag
+        type(universe), intent(inout) :: atoms
+        integer, intent(in)           :: flag
 
         integer :: i, j, b, idx_i, idx_j
         real(dp) :: vec(3)
@@ -133,26 +123,26 @@ contains
         real(dp) :: f(3)
 
         ! teil-teil interaction
-        do i = 1, teil%natoms
-            do j = i+1, teil%natoms
-                do b = 1, teil%nbeads
+        do i = 1, atoms%natoms
+            do j = i+1, atoms%natoms
+                do b = 1, atoms%nbeads
 
-                    idx_i = teil%idx(i)
-                    idx_j = teil%idx(j)
+                    idx_i = atoms%idx(i)
+                    idx_j = atoms%idx(j)
 
-                    call pbc_distdir(teil%r(:,b,i), teil%r(:,b,j), r, vec)
+                    call pbc_distdir(atoms, i, j, b, r, vec)
 
                     r2 = r*r
-                    fr2 = pes_lj%sigma( idx_i , idx_j ) / r2
+                    fr2 = pes_lj%sigma(idx_i,idx_j) / r2
                     fr6 = fr2 * fr2 * fr2
-                    fpr = 48._dp * pes_lj%eps( idx_i , idx_j ) * fr6 * (fr6 - 0.5_dp) / r2   ! f/r
+                    fpr = 48._dp * pes_lj%eps(idx_i,idx_j) * fr6 * (fr6 - 0.5_dp) / r2   ! f/r
 
                     f(:) = fpr * vec(:)
 
-                    teil%f(:,b,i) = teil%f(:,b,i) + f(:)
-                    teil%f(:,b,j) = teil%f(:,b,j) - f(:)
+                    atoms%f(:,b,i) = atoms%f(:,b,i) + f(:)
+                    atoms%f(:,b,j) = atoms%f(:,b,j) - f(:)
 
-
+                    atoms%epot(b) = atoms%epot(b) + 4.0_dp * pes_lj%eps(idx_i,idx_j) * fr6 * (fr6 - 1.0_dp)
 
                 end do
             end do
@@ -164,7 +154,7 @@ contains
 
 
 
-end module pes_lj_module
+end module pes_lj_mod
 
 
 
