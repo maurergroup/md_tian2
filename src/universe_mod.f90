@@ -27,8 +27,7 @@ module universe_mod
         integer                       :: natoms          ! number of atoms
         integer                       :: nbeads          ! number of beads per atom
         integer                       :: ntypes          ! proj species + latt species
-        real(dp),         allocatable :: m(:)            ! mass
-        character(len=3), allocatable :: name(:)         ! atomic name
+
         real(dp), allocatable         :: r(:,:,:)        ! positions
         real(dp), allocatable         :: v(:,:,:)        ! velocities
         real(dp), allocatable         :: f(:,:,:)        ! forces
@@ -36,8 +35,12 @@ module universe_mod
         logical,  allocatable         :: is_fixed(:,:,:) ! mask array defining frozen atoms (T is frozen)
 
         integer, allocatable          :: idx(:)          ! index of atom type used in program
+        real(dp),         allocatable :: m(:)            ! mass
+        character(len=3), allocatable :: name(:)         ! atomic name
         integer, allocatable          :: pes(:,:)        ! defines idx-dependent pes
+        integer, allocatable          :: algo(:)         ! defines idx-dependent propagation algorithm
         logical, allocatable          :: is_proj(:)      ! defines projectile and lattice via idx
+
         real(dp), allocatable         :: epot(:)
 
         real(dp)                      :: simbox(3,3)     ! simulation cell
@@ -71,6 +74,7 @@ contains
         allocate(new_atoms%pes(ntypes,ntypes))
         allocate(new_atoms%name(ntypes))
         allocate(new_atoms%m(ntypes))
+        allocate(new_atoms%algo(ntypes))
         allocate(new_atoms%is_proj(ntypes))
 
         new_atoms%nbeads = nbeads
@@ -87,6 +91,7 @@ contains
         new_atoms%is_cart  = .false.
         new_atoms%idx   = default_int
         new_atoms%pes   = default_int
+        new_atoms%algo  = default_int
         new_atoms%simbox  = default_real
         new_atoms%isimbox = default_real
     end function
@@ -142,7 +147,7 @@ contains
 
         idx = default_int
         do i = 1, this%natoms
-            if (this%name(i) == name .and. this%is_proj(this%idx(i)) == is_proj) then
+            if (this%name(this%idx(i)) == name .and. this%is_proj(this%idx(i)) == is_proj) then
                 idx = this%idx(i)
                 exit
             end if
@@ -163,37 +168,65 @@ contains
         integer, intent(in) :: rep(2)
 
         type(universe) :: other
-        integer :: nreps
+        integer :: nreps, nprojs = 0
         integer :: i, j, start, end
 
-        if (this%is_cart) call to_direct(this)
+        !        print *, "before"
+        !        print *, this%r
 
-        ! new atoms
+        if (this%is_cart) call to_direct(this)
         nreps = (1+2*rep(1)) * (1+2*rep(2))
-        other = new_atoms(this%nbeads, nreps*this%natoms, this%ntypes)
+
+        ! if projectile exists, put at beginning of new structure
+        if (any(this%is_proj)) then
+            do i = 1, this%natoms
+                if (this%is_proj(this%idx(i))) then
+                    nprojs = nprojs + 1
+                end if
+            end do
+            !            print *, "nprojs", nprojs
+            other = new_atoms(this%nbeads, nreps*(this%natoms-nprojs)+nprojs, this%ntypes)
+            other%r(:,:,:nprojs) = this%r(:,:,:nprojs)
+            other%v(:,:,:nprojs) = this%v(:,:,:nprojs)
+            other%a(:,:,:nprojs) = this%a(:,:,:nprojs)
+            other%f(:,:,:nprojs) = this%f(:,:,:nprojs)
+            other%is_fixed(:,:,:nprojs) = this%is_fixed(:,:,:nprojs)
+            other%idx(:nprojs) = this%idx(:nprojs)
+
+        else
+            other = new_atoms(this%nbeads, nreps*this%natoms, this%ntypes)
+        end if
+
         other%m = this%m
+        other%pes = this%pes
+        other%algo = this%algo
         other%name = this%name
+        other%simbox = this%simbox
         other%is_proj = this%is_proj
 
         do i = -rep(1), rep(1)
             do j = -rep(2), rep(2)
                 ! This map -i, -i+1, ... , i-1, i and -j, -j+1, ... , j-1, j
                 !  to 1, 2, 3, ... , #total_repetitions
-                start = (rep(1) * (i+rep(1)) * (1+2*rep(2)) + rep(2) + j)     * this%natoms + 1
-                end   = (rep(1) * (i+rep(1)) * (1+2*rep(2)) + rep(2) + j + 1) * this%natoms
+                start = (rep(1) * (i+rep(1)) * (1+2*rep(2)) + rep(2) + j)     * (this%natoms-nprojs) + 1
+                end   = (rep(1) * (i+rep(1)) * (1+2*rep(2)) + rep(2) + j + 1) * (this%natoms-nprojs)
 
-                other%r( 1 , :, start : end ) = this%r(1,:,:) + i
-                other%r( 2 , :, start : end ) = this%r(2,:,:) + j
-                other%r( 3 , :, start : end ) = this%r(3,:,:)
+                !                print *, i, j, nprojs+start, nprojs+end
 
+                other%r( 1 , :, nprojs+start : nprojs+end ) = this%r(1,:,nprojs+1:) + i
+                other%r( 2 , :, nprojs+start : nprojs+end ) = this%r(2,:,nprojs+1:) + j
+                other%r( 3 , :, nprojs+start : nprojs+end ) = this%r(3,:,nprojs+1:)
 
-                other%idx(      start : end ) = this%idx(:)
-                other%v( : , :, start : end ) = this%v(:,:,:)
-                other%f( : , :, start : end ) = this%v(:,:,:)
-                other%is_fixed( : , :, start : end ) = this%is_fixed(:,:,:)
+                other%idx(      nprojs+start : nprojs+end ) = this%idx(nprojs+1:)
+                other%v( : , :, nprojs+start : nprojs+end ) = this%v(:,:,nprojs+1:)
+                other%f( : , :, nprojs+start : nprojs+end ) = this%f(:,:,nprojs+1:)
+                other%is_fixed( : , :, nprojs+start : nprojs+end ) = this%is_fixed(:,:,nprojs+1:)
 
             end do
         end do
+
+        !        print *, "after"
+        !        print *, other%r
 
         ! bring back to cartesian
         call to_cartesian(other)
@@ -211,38 +244,31 @@ contains
     end subroutine create_repetitions
 
 
-    subroutine pbc_distdir(atoms, i, j, b, r, vec)
+    subroutine pbc_distdir(this, i, j, b, r, vec)
             !
-            ! Purpose: Distance between atoms a and b and vector a-->b
+            ! Purpose: Distance between this a and b and vector a-->b
             !          with taking into account the periodic boundary conditions
             !
 
-        type(universe), intent(in)         :: atoms
+        type(universe), intent(in)         :: this
         integer, intent(in)                :: i, j, b
         real(8),               intent(out) :: r
         real(8), dimension(3), intent(out) :: vec
 
-        vec = atoms%r(:,b,j)-atoms%r(:,b,i)   ! distance vector from a to b
+        vec = this%r(:,b,j)-this%r(:,b,i)   ! distance vector from a to b
 
-        vec = matmul(atoms%isimbox, vec)   ! transform to direct coordinates
-        vec = vec - Anint(vec)       ! imaging
-        vec = matmul(atoms%simbox, vec)    ! back to cartesian coordinates
+        vec = matmul(this%isimbox, vec)   ! transform to direct coordinates
+        vec = vec - Anint(vec)            ! imaging
+        vec = matmul(this%simbox, vec)    ! back to cartesian coordinates
 
         r =  sqrt(sum(vec*vec))      ! distance
 
     end subroutine pbc_distdir
 
 
-    subroutine set_acceleration(atoms)
 
-        type(universe), intent(inout) :: atoms
-        integer :: i
 
-        do i = 1, atoms%natoms
-            atoms%a(:,:,i) = atoms%f(:,:,i)/atoms%m(atoms%idx(i))
-        end do
 
-    end subroutine set_acceleration
 
 
 

@@ -52,7 +52,6 @@ contains
         call read_geometry(atoms, simparams%confname_file)
         call read_pes(atoms)
 
-    !TODO:   call output_run_details()
     !TODO: Do not forget to convert the angles from degrees to program units
 
     end subroutine simbox_init
@@ -281,6 +280,7 @@ contains
     call set_atomic_indices(atoms, natoms)
     call set_atomic_masses(atoms)
     call set_atomic_names(atoms, elements)
+    call set_prop_algos(atoms)
     call create_repetitions(atoms, simparams%rep)
 
 end subroutine read_poscar
@@ -445,6 +445,35 @@ subroutine set_atomic_masses(atoms)
     atoms%m = atoms%m * amu2mass
 
 end subroutine set_atomic_masses
+
+
+
+
+subroutine set_prop_algos(atoms)
+
+    type(universe), intent(inout) :: atoms
+
+    character(len=*), parameter :: err = "Error in set_prop_algos: "
+
+    ! Either (md_algo_p or md_algo_l) or both are allocated
+
+    if (allocated(simparams%md_algo_p(:)) .and. allocated(simparams%md_algo_l(:))) then
+        atoms%algo(:) = [simparams%md_algo_p(:), simparams%md_algo_l(:)]
+        if (size(atoms%algo) /= size([simparams%md_algo_p, simparams%md_algo_l])) stop err // "more algorithms than species"
+
+    else if (allocated(simparams%md_algo_p(:))) then
+        atoms%algo(:) = simparams%md_algo_p(:)
+        if (size(atoms%algo) /= size(simparams%md_algo_p(:))) stop err // "more algorithms than species"
+
+    else if (allocated(simparams%md_algo_l(:))) then
+        atoms%algo(:) = simparams%md_algo_l(:)
+        if (size(atoms%algo) /= size(simparams%md_algo_l(:))) stop err // "more algorithms than species"
+
+    else
+        stop err // "neither projectile nor slab exist"
+    end if
+
+end subroutine set_prop_algos
 
 !
 !subroutine read_conf(nr_at_layer, nlnofix, nlno, n_p, n_l, n_p0, &
