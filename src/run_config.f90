@@ -178,12 +178,12 @@ contains
                                     select case (words(2+3*i))
                                         case ('ver')                ! verlet
                                             simparams%md_algo_l(i) = prop_id_verlet
-                                        case ('bee')                ! beeman
-                                            simparams%md_algo_l(i) = prop_id_beeman
-                                        case ('lan')                ! langevin
-                                            simparams%md_algo_l(i) = prop_id_langevin
-                                        case ('sla')                ! langevin (series)
-                                            simparams%md_algo_l(i) = prop_id_langevin_series
+!                                        case ('bee')                ! beeman
+!                                            simparams%md_algo_l(i) = prop_id_beeman
+!                                        case ('lan')                ! langevin
+!                                            simparams%md_algo_l(i) = prop_id_langevin
+!                                        case ('sla')                ! langevin (series)
+!                                            simparams%md_algo_l(i) = prop_id_langevin_series
                                         case default
                                             print *, 'algorithm ', trim(words(2+3*i)),&
                                                 ' for lattice species ', trim(simparams%name_l(i)), ' unknown'
@@ -217,12 +217,12 @@ contains
                                     select case (words(2+3*i))
                                         case ('ver')                ! verlet
                                             simparams%md_algo_p(i) = prop_id_verlet
-                                        case ('bee')                ! beeman
-                                            simparams%md_algo_p(i) = prop_id_beeman
-                                        case ('lan')                ! langevin
-                                            simparams%md_algo_p(i) = prop_id_langevin
-                                        case ('sla')                ! langevin (series)
-                                            simparams%md_algo_p(i) = prop_id_langevin_series
+!                                        case ('bee')                ! beeman
+!                                            simparams%md_algo_p(i) = prop_id_beeman
+!                                        case ('lan')                ! langevin
+!                                            simparams%md_algo_p(i) = prop_id_langevin
+!                                        case ('sla')                ! langevin (series)
+!                                            simparams%md_algo_p(i) = prop_id_langevin_series
                                         case default
                                             print *, 'algorithm ', trim(words(2+3*i)),&
                                                 ' for projectile species ', trim(simparams%name_p(i)), ' unknown'

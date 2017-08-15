@@ -12,31 +12,38 @@ program md_tian
         !			        Dan J. Auerbach
         !
 
-
-    use md_init
-    use universe_mod
-    use pes_lj_mod
+    use force
     use md_algo
+    use md_init
+    use pes_lj_mod
     use rpmd
+    use universe_mod, only : universe
+    use output_mod, only : output
 
     implicit none
 
     integer :: itraj, istep
     type(universe) :: atoms
 
-
     call simbox_init(atoms)
     !call output_run_details()
 
+    do itraj = simparams%start, simparams%start+simparams%ntrajs-1
 
-    do itraj = simparams%start, simparams%start+simparams%ntrajs
+        call calc_force(atoms)
+        call set_acceleration(atoms)
 
         do istep = 1, simparams%nsteps
 
             call propagate_1(atoms)
+
             if (atoms%nbeads > 1) call ring_polymer_step(atoms)
-            !call calc_forces(atoms)
+            call calc_force(atoms)
             call propagate_2(atoms)
+
+            if (mod(simparams%output(2), istep) == 0) call output(atoms, itraj, simparams%output(1))
+
+
 
         end do
     end do

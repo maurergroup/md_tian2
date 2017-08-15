@@ -1,11 +1,11 @@
 run md
 
-start -5
+start 1
 ntrajs 1
-nsteps 100
+nsteps 0
 step 1
 
-projectile 2  H    1.0079 lan    D   2.015 ver
+projectile 2  H    1.0079 ver    D   2.015 ver
 !lattice    2 Au 196.96657 lan   Ag 107.87  ver
 
 
@@ -15,10 +15,10 @@ inc_vib energy
 
 pip r r 6
 
-Tsurf 300
-annealing 1000 25 5
+!Tsurf 300
+!annealing 1000 25 5
 
-conf poscar 'cart.POSCAR'  1 0
+conf poscar 'cart.POSCAR'  0 0
 !conf poscar 'test.POSCAR' 1 2
 
 
@@ -26,7 +26,7 @@ conf poscar 'cart.POSCAR'  1 0
 !pes definition
 pes './md_tian_v2.pes'
 
-output 1
+output 1 1
 
 
 

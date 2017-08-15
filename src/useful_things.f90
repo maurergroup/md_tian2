@@ -161,6 +161,17 @@ contains
     end function file_exists
 
 
+
+    logical function dir_exists(fname) result(exists)
+
+        character(len=*), intent(in) :: fname
+
+        inquire(directory=fname, exist=exists)
+
+    end function dir_exists
+
+
+
     function invert_matrix(A) result(B)
         !! Performs a direct calculation of the inverse of a 3×3 matrix.
         real(dp), intent(in) :: A(3,3)   !! Matrix

@@ -53,6 +53,9 @@ module constants
     integer, parameter :: energy_only      = 3002
 
 
+    ! Output
+    integer, parameter :: format_xyz = 1
+
     ! Conversion constants to program units
     !
     ! Program basic units

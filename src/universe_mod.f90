@@ -155,7 +155,7 @@ contains
 
         if (idx == default_int) stop "Error in get_idx_from_name(): make sure you & 
                         correctly assign element names to projectile and slab in both &
-                        *.inp and *.pes files."        
+                        *.inp and *.pes files."     
 
     end function get_idx_from_name
 
@@ -244,7 +244,7 @@ contains
     end subroutine create_repetitions
 
 
-    subroutine pbc_distdir(this, i, j, b, r, vec)
+    subroutine minimg_one(this, i, j, b, r, vec)
             !
             ! Purpose: Distance between this a and b and vector a-->b
             !          with taking into account the periodic boundary conditions
@@ -263,8 +263,29 @@ contains
 
         r =  sqrt(sum(vec*vec))      ! distance
 
-    end subroutine pbc_distdir
+    end subroutine minimg_one
 
+
+    subroutine minimg_beads(this, i, j, r, vec)
+            !
+            ! Purpose: Distance between this a and b and vector a-->b
+            !          with taking into account the periodic boundary conditions
+            !
+
+        type(universe), intent(in) :: this
+        integer, intent(in)        :: i, j
+        real(8), intent(out)       :: r(this%nbeads)
+        real(8), intent(out)       :: vec(3, this%nbeads)
+
+        vec = this%r(:,:,j)-this%r(:,:,i)   ! distance vector from a to b
+
+        vec = matmul(this%isimbox, vec)   ! transform to direct coordinates
+        vec = vec - Anint(vec)            ! imaging
+        vec = matmul(this%simbox, vec)    ! back to cartesian coordinates
+
+        r =  sqrt(sum(vec*vec))      ! distance
+
+    end subroutine minimg_beads
 
 
 

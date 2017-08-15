@@ -62,7 +62,7 @@ contains
         use open_file, only : open_for_read
         use pes_lj_mod, only : read_lj
 
-        type(universe), intent(in) :: atoms
+        type(universe), intent(inout) :: atoms
 
         character(len=*), parameter :: err_pes_init = "Error in pes_init: "
         integer :: ios = 0, nwords
@@ -289,7 +289,7 @@ end subroutine read_poscar
 
 subroutine ensure_input_sanity()
 
-    character(len=*), parameter :: err_sanity = "sanity check error: "
+    character(len=*), parameter :: err = "sanity check error: "
     logical, allocatable :: interacting(:,:)
     integer :: ntypes, i
 
@@ -300,28 +300,31 @@ subroutine ensure_input_sanity()
     ! Check the *.inp file
     !!! Perform MD
     if (simparams%run == "md") then
-        if (simparams%start == default_int)  stop err_sanity // "start key must be present and larger than zero."
-        if (simparams%ntrajs == default_int) stop err_sanity // "ntrajs key must be present and larger than zero."
-        if (simparams%nsteps == default_int) stop err_sanity // "nsteps key must be present and larger than zero."
-        if (simparams%step == default_real)  stop err_sanity // "nsteps key must be present and larger than zero."
-        if (simparams%nlattices == default_int .and. simparams%nprojectiles == default_int) stop err_sanity // "either lattice and/or projectile key must be present."
+        if (simparams%start == default_int)  stop err // "start key must be present and larger than zero."
+        if (simparams%ntrajs == default_int) stop err // "ntrajs key must be present and larger than zero."
+        if (simparams%nsteps == default_int) stop err // "nsteps key must be present and larger than zero."
+        if (simparams%step == default_real)  stop err // "nsteps key must be present and larger than zero."
+        if (simparams%nlattices == default_int .and. simparams%nprojectiles == default_int) stop err // "either lattice and/or projectile key must be present."
         if (simparams%nprojectiles == default_int) simparams%nprojectiles = 0
         if (simparams%nlattices == default_int) simparams%nlattices = 0
 
-        if (simparams%nprojectiles > 0 .and. .not. allocated(simparams%name_p)) stop err_sanity // "projectile names not set."
-        if (simparams%nprojectiles > 0 .and. .not. allocated(simparams%mass_p)) stop err_sanity // "projectile masses not set."
-        if (simparams%nprojectiles > 0 .and. .not. allocated(simparams%mass_p)) stop err_sanity // "projectile masses not set."
-        if (simparams%nprojectiles > 0 .and. .not. allocated(simparams%md_algo_p)) stop err_sanity // "projectile propagation algorithm not set."
+        if (simparams%nprojectiles > 0 .and. .not. allocated(simparams%name_p)) stop err // "projectile names not set."
+        if (simparams%nprojectiles > 0 .and. .not. allocated(simparams%mass_p)) stop err // "projectile masses not set."
+        if (simparams%nprojectiles > 0 .and. .not. allocated(simparams%mass_p)) stop err // "projectile masses not set."
+        if (simparams%nprojectiles > 0 .and. .not. allocated(simparams%md_algo_p)) stop err // "projectile propagation algorithm not set."
 
-        if (simparams%nlattices > 0 .and. .not. allocated(simparams%mass_l)) stop err_sanity // "lattice masses not set."
-        if (simparams%nlattices > 0 .and. .not. allocated(simparams%name_l)) stop err_sanity // "lattice names not set."
-        if (simparams%nlattices > 0 .and. .not. allocated(simparams%mass_l)) stop err_sanity // "lattice masses not set."
-        if (simparams%nlattices > 0 .and. .not. allocated(simparams%md_algo_l)) stop err_sanity // "lattice propagation algorithm not set."
+        if (simparams%nlattices > 0 .and. .not. allocated(simparams%mass_l)) stop err // "lattice masses not set."
+        if (simparams%nlattices > 0 .and. .not. allocated(simparams%name_l)) stop err // "lattice names not set."
+        if (simparams%nlattices > 0 .and. .not. allocated(simparams%mass_l)) stop err // "lattice masses not set."
+        if (simparams%nlattices > 0 .and. .not. allocated(simparams%md_algo_l)) stop err // "lattice propagation algorithm not set."
+
+        if (simparams%output(1) == default_int) stop err // "output format (argument 1) not set."
+        if (simparams%output(2) == default_int) stop err // "output frequency (argument 2) not set."
 
         ! If one of them is set, the others must be set as well.
         if ( (allocated(simparams%einc) .neqv. allocated(simparams%inclination)) .or. &
             (allocated(simparams%einc) .neqv. allocated(simparams%azimuth)) ) &
-            stop err_sanity // "incidence conditions ambiguous."
+            stop err // "incidence conditions ambiguous."
 
             ! TODO: to be completed
 

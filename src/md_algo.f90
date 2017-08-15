@@ -38,7 +38,7 @@ contains
         do i = 1, atoms%natoms
             select case(atoms%algo(atoms%idx(i)))
                 case (prop_id_verlet)
-                    call set_acceleration(atoms, i)
+                    call set_acceleration(atoms)
                     call verlet_2(atoms, i)
 
                 case default
@@ -52,14 +52,14 @@ contains
 
 
 
-
-
-    subroutine set_acceleration(atoms, i)
+    subroutine set_acceleration(atoms)
 
         type(universe), intent(inout) :: atoms
-        integer, intent(in) :: i
+        integer :: i
 
-        where(.not. atoms%is_fixed(:,:,i)) atoms%a(:,:,i) = atoms%f(:,:,i)/atoms%m(atoms%idx(i))
+        forall (i = 1 : atoms%natoms)
+            where(.not. atoms%is_fixed(:,:,i)) atoms%a(:,:,i) = atoms%f(:,:,i)/atoms%m(atoms%idx(i))
+        end forall
 
     end subroutine set_acceleration
 
@@ -70,8 +70,10 @@ contains
         type(universe), intent(inout) :: atoms
         integer, intent(in) :: i
 
-        where(.not. atoms%is_fixed(:,:,i)) atoms%v(:,:,i) = atoms%v(:,:,i) + 0.5_dp * simparams%step * atoms%a(:,:,i)
-        where(.not. atoms%is_fixed(:,:,i)) atoms%r(:,:,i) = atoms%r(:,:,i) +          simparams%step * atoms%v(:,:,i)
+        where(.not. atoms%is_fixed(:,:,i))
+            atoms%v(:,:,i) = atoms%v(:,:,i) + 0.5_dp * simparams%step * atoms%a(:,:,i)
+            atoms%r(:,:,i) = atoms%r(:,:,i) +          simparams%step * atoms%v(:,:,i)
+        end where
 
     end subroutine verlet_1
 
