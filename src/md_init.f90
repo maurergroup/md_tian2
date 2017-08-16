@@ -238,6 +238,7 @@ contains
     read(geo_unit, '(A)', iostat=ios) buffer
     if (ios == iostat_end) then
         ! eof of file, don't read anything more
+        atoms%v = 0.0_dp
 
     else if (ios == 0 .and. len_trim(buffer) == 0) then
         ! blank line after coordinate section and no eof yet -> read velocities

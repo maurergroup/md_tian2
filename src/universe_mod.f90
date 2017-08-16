@@ -155,7 +155,7 @@ contains
 
         if (idx == default_int) stop "Error in get_idx_from_name(): make sure you & 
                         correctly assign element names to projectile and slab in both &
-                        *.inp and *.pes files."     
+                        *.inp and *.pes files."        
 
     end function get_idx_from_name
 
@@ -208,10 +208,9 @@ contains
             do j = -rep(2), rep(2)
                 ! This map -i, -i+1, ... , i-1, i and -j, -j+1, ... , j-1, j
                 !  to 1, 2, 3, ... , #total_repetitions
-                start = (rep(1) * (i+rep(1)) * (1+2*rep(2)) + rep(2) + j)     * (this%natoms-nprojs) + 1
-                end   = (rep(1) * (i+rep(1)) * (1+2*rep(2)) + rep(2) + j + 1) * (this%natoms-nprojs)
 
-                !                print *, i, j, nprojs+start, nprojs+end
+                start = ((i+rep(1))*(1+2*rep(2))+(j+rep(1)))   * (this%natoms-nprojs)+1
+                end   = ((i+rep(1))*(1+2*rep(2))+(j+rep(1))+1) * (this%natoms-nprojs)
 
                 other%r( 1 , :, nprojs+start : nprojs+end ) = this%r(1,:,nprojs+1:) + i
                 other%r( 2 , :, nprojs+start : nprojs+end ) = this%r(2,:,nprojs+1:) + j
@@ -224,7 +223,6 @@ contains
 
             end do
         end do
-
         !        print *, "after"
         !        print *, other%r
 

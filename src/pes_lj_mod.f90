@@ -14,7 +14,7 @@ module pes_lj_mod
         real(dp), allocatable :: eps(:,:)
         real(dp), allocatable :: sigma(:,:)
         real(dp), allocatable :: shift(:,:)
-        real(dp) ::  cutoff
+        real(dp)              :: cutoff
 
 
     end type lj_pes
@@ -48,6 +48,7 @@ contains
             pes_lj%eps   = default_real
             pes_lj%sigma = default_real
             pes_lj%shift = default_real
+
             forall (i = 1 : 3) temp3(i) = sqrt(sum(atoms%simbox(:,i)*atoms%simbox(:,i)))
             pes_lj%cutoff = minval(temp3(:))
         end if
@@ -85,10 +86,13 @@ contains
 
             ! pes block terminated, set shift
             if (nwords == 0 .or. ios /= 0) then
+
                 pes_lj%shift(idx1,idx2) = 4.0_dp * pes_lj%eps(idx1,idx2) * &
                     ( (pes_lj%sigma(idx1,idx2)/pes_lj%cutoff)**12 &
                     - (pes_lj%sigma(idx1,idx2)/pes_lj%cutoff)**6 )
-                pes_lj%shift(idx2,idx1) = pes_lj%shift(idx1,idx2)
+
+                pes_lj%shift(idx2,idx1)  = pes_lj%shift(idx1,idx2)
+
                 exit
 
             ! something went wrong
@@ -129,7 +133,7 @@ contains
         real(dp), dimension(atoms%nbeads) :: sig_r, sig_r_2, sig_r_6, sig_r_12, r
         real(dp), dimension(atoms%nbeads) :: nrg, vdr
         real(dp), dimension(3, atoms%nbeads) :: f, vec
-        real(dp) :: tmp
+        !        real(dp) :: tmp
 
         nrg = 0.0_dp
         vdr = 0.0_dp
@@ -146,26 +150,25 @@ contains
 
         where (r < tolerance) r = tolerance
 
-        where (r < pes_lj%cutoff)
 
-            sig_r = pes_lj%sigma(idx_i,idx_j) / r
-            sig_r_2 = sig_r * sig_r
-            sig_r_6 = sig_r_2 * sig_r_2 * sig_r_2
-            sig_r_12 = sig_r_6 * sig_r_6
+        sig_r = pes_lj%sigma(idx_i,idx_j) / r
+        sig_r_2 = sig_r * sig_r
+        sig_r_6 = sig_r_2 * sig_r_2 * sig_r_2
+        sig_r_12 = sig_r_6 * sig_r_6
 
-            nrg = 4*pes_lj%eps(idx_i,idx_j) * ( (sig_r_12-sig_r_6)  &
-                + (6*sig_rc_12-3*sig_rc_6)*(r/pes_lj%cutoff)**2 &
-                - 7*sig_rc_12 + 4*sig_rc_6 )
+        nrg = 4*pes_lj%eps(idx_i,idx_j) * ( (sig_r_12-sig_r_6)  &
+            + (6*sig_rc_12-3*sig_rc_6)*(r/pes_lj%cutoff)**2 &
+            - 7*sig_rc_12 + 4*sig_rc_6 )
 
-            atoms%epot = atoms%epot + nrg
+        atoms%epot = atoms%epot + nrg
 
-        end where
 
         if (flag == energy_and_force) then
 
 
-            where (r < pes_lj%cutoff) vdr = (24/pes_lj%cutoff**2)*r*pes_lj%eps(idx_i,idx_j)*sig_rc_6*(2*sig_rc_6-1) &
-                                              - (24/r)*pes_lj%eps(idx_i,idx_j)*sig_r_6*(2*sig_r_6-1)
+
+            vdr = (24/pes_lj%cutoff**2)*r*pes_lj%eps(idx_i,idx_j)*sig_rc_6*(2*sig_rc_6-1) &
+                - (24/r)*pes_lj%eps(idx_i,idx_j)*sig_r_6*(2*sig_r_6-1)
             !
             !
             !                        r2 = r*r
@@ -179,6 +182,7 @@ contains
             atoms%f(:,:,atom_j) = atoms%f(:,:,atom_j) - f
 
         end if
+
 
     end subroutine compute_lj
 

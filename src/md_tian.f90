@@ -31,17 +31,31 @@ program md_tian
     do itraj = simparams%start, simparams%start+simparams%ntrajs-1
 
         call calc_force(atoms)
-        call set_acceleration(atoms)
+
+!        print *, atoms%r
+!        print *, ""
+!        print *, atoms%f
+!        print *, ""
+!        print *, atoms%a
+!                print *, ""
+
 
         do istep = 1, simparams%nsteps
 
             call propagate_1(atoms)
+!            print *, atoms%r
 
             if (atoms%nbeads > 1) call ring_polymer_step(atoms)
             call calc_force(atoms)
             call propagate_2(atoms)
 
-            if (mod(simparams%output(2), istep) == 0) call output(atoms, itraj, simparams%output(1))
+!            print *, atoms%r
+!            print *, ""
+!            print *, atoms%f
+!        print *, ""
+!        print *, atoms%a
+
+            if (mod(istep, simparams%output(2)) == 0) call output(atoms, itraj, simparams%output(1))
 
 
 
