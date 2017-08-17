@@ -51,6 +51,8 @@ contains
         call ensure_input_sanity()
         call read_geometry(atoms, simparams%confname_file)
         call read_pes(atoms)
+        call remove_com_velocity(atoms)
+
 
     !TODO: Do not forget to convert the angles from degrees to program units
 
@@ -278,6 +280,7 @@ contains
 
     end if
 
+    call set_atomic_dofs(atoms)
     call set_atomic_indices(atoms, natoms)
     call set_atomic_masses(atoms)
     call set_atomic_names(atoms, elements)
@@ -368,6 +371,8 @@ subroutine ensure_input_sanity()
 
 
 end subroutine ensure_input_sanity
+
+
 
 
 
@@ -478,6 +483,15 @@ subroutine set_prop_algos(atoms)
     end if
 
 end subroutine set_prop_algos
+
+
+subroutine set_atomic_dofs(atoms)
+
+    type(universe), intent(inout) :: atoms
+
+    atoms%dof = 3*atoms%natoms*atoms%nbeads - count(atoms%is_fixed)
+
+end subroutine set_atomic_dofs
 
 !
 !subroutine read_conf(nr_at_layer, nlnofix, nlno, n_p, n_l, n_p0, &

@@ -42,6 +42,7 @@ module universe_mod
         logical, allocatable          :: is_proj(:)      ! defines projectile and lattice via idx
 
         real(dp), allocatable         :: epot(:)
+        integer                       :: dof             ! degrees of freedom
 
         real(dp)                      :: simbox(3,3)     ! simulation cell
         real(dp)                      :: isimbox(3,3)    ! inverse simulation cell
@@ -90,74 +91,16 @@ contains
         new_atoms%is_proj  = .false.
         new_atoms%is_cart  = .false.
         new_atoms%idx   = default_int
+        new_atoms%dof   = default_int
         new_atoms%pes   = default_int
         new_atoms%algo  = default_int
         new_atoms%simbox  = default_real
         new_atoms%isimbox = default_real
     end function
 
-
-    subroutine to_cartesian(this)
-
-        type(universe), intent(inout) :: this
-        integer :: i,j
-
-        if (this%is_cart) then
-            print *,"Cannot convert cartesian to cartesian coordinates" ; call abort
-        end if
-
-        do i = 1, this%natoms
-            do j = 1, this%nbeads
-                this%r(:,j,i) = matmul(this%simbox, this%r(:,j,i))
-            end do
-        end do
-
-        this%is_cart = .not. this%is_cart
-
-    end subroutine
-
-
-    subroutine to_direct(this)
-
-        type(universe), intent(inout) :: this
-        integer :: i,j
-
-        if (.not. this%is_cart) then
-            print *,"Cannot convert direct to direct coordinates" ; call abort
-        end if
-
-        do i = 1, this%natoms
-            do j = 1, this%nbeads
-                this%r(:,j,i) = matmul(this%isimbox, this%r(:,j,i))
-            end do
-        end do
-
-        this%is_cart = .not. this%is_cart
-
-    end subroutine
-
-
-    integer function get_idx_from_name(this, name, is_proj) result(idx)
-
-        type(universe), intent(in) :: this
-        character(len=3), intent(in) :: name
-        logical, intent(in) :: is_proj
-
-        integer :: i
-
-        idx = default_int
-        do i = 1, this%natoms
-            if (this%name(this%idx(i)) == name .and. this%is_proj(this%idx(i)) == is_proj) then
-                idx = this%idx(i)
-                exit
-            end if
-        end do
-
-        if (idx == default_int) stop "Error in get_idx_from_name(): make sure you & 
-                        correctly assign element names to projectile and slab in both &
-                        *.inp and *.pes files."        
-
-    end function get_idx_from_name
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    !!  procedures that change the object !!
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 
     subroutine create_repetitions(this, rep)
@@ -242,11 +185,154 @@ contains
     end subroutine create_repetitions
 
 
-    subroutine minimg_one(this, i, j, b, r, vec)
-            !
-            ! Purpose: Distance between this a and b and vector a-->b
-            !          with taking into account the periodic boundary conditions
-            !
+
+    subroutine remove_com_velocity(this)
+
+        type(universe), intent(inout) :: this
+        real(dp) :: v_cm(3), target_T, current_T
+        integer :: i, b
+
+        ! instant system temperature
+        target_T = calc_instant_temperature(this)
+
+        v_cm = calc_com_velocity(this)
+
+        do i = 1, this%natoms
+            do b = 1, this%nbeads
+                this%v(:,b,i) = this%v(:,b,i) - v_cm
+            end do
+        end do
+
+        ! velocities and temperature decreased -> scale 'em up
+        current_T = calc_instant_temperature(this)
+
+        if (target_T < tolerance .or. current_T < tolerance) then
+            this%v = 0.0_dp
+            return
+        end if
+
+        this%v = this%v * sqrt(target_T/current_T)
+
+    end subroutine remove_com_velocity
+
+
+
+    subroutine to_cartesian(this)
+
+        type(universe), intent(inout) :: this
+        integer :: i,j
+
+        if (this%is_cart) then
+            print *,"Cannot convert cartesian to cartesian coordinates" ; call abort
+        end if
+
+        do i = 1, this%natoms
+            do j = 1, this%nbeads
+                this%r(:,j,i) = matmul(this%simbox, this%r(:,j,i))
+            end do
+        end do
+
+        this%is_cart = .not. this%is_cart
+
+    end subroutine
+
+
+
+    subroutine to_direct(this)
+
+        type(universe), intent(inout) :: this
+        integer :: i,j
+
+        if (.not. this%is_cart) then
+            print *,"Cannot convert direct to direct coordinates" ; call abort
+        end if
+
+        do i = 1, this%natoms
+            do j = 1, this%nbeads
+                this%r(:,j,i) = matmul(this%isimbox, this%r(:,j,i))
+            end do
+        end do
+
+        this%is_cart = .not. this%is_cart
+
+    end subroutine
+
+
+
+
+     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+     !!  procedures that derive quantities !!
+     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+
+    pure function calc_com_velocity(this) result(v_cm)
+
+        ! v_cm = sum(m_i*v_i) / sum(m_i)
+
+        type(universe), intent(in) :: this
+        real(dp), dimension(3) :: v_cm, num, denom
+        integer :: i
+
+        num = 0.0_dp
+        denom = 0.0_dp
+        do i = 1, this%natoms
+            num   = num   + sum(this%v(:,:,i), dim=2) * this%m(this%idx(i))
+            denom = denom + this%m(this%idx(i))
+        end do
+
+        v_cm = num / denom
+
+    end function calc_com_velocity
+
+
+
+    pure real(dp) function calc_instant_temperature(this) result(temperature)
+
+        type(universe), intent(in) :: this
+        real(8)                    :: temp
+        integer :: i, b
+
+        temp = 0.0_dp
+        do i = 1, this%natoms
+            do b = 1, this%nbeads
+                temp = temp + this%m(this%idx(i)) * sum(this%v(:,b,i))**2
+            end do
+        end do
+
+        temperature = temp / kB / this%dof
+
+    end function calc_instant_temperature
+
+
+
+    integer function get_idx_from_name(this, name, is_proj) result(idx)
+
+        type(universe), intent(in) :: this
+        character(len=3), intent(in) :: name
+        logical, intent(in) :: is_proj
+
+        integer :: i
+
+        idx = default_int
+        do i = 1, this%natoms
+            if (this%name(this%idx(i)) == name .and. this%is_proj(this%idx(i)) == is_proj) then
+                idx = this%idx(i)
+                exit
+            end if
+        end do
+
+        if (idx == default_int) stop "Error in get_idx_from_name(): make sure you & 
+                        correctly assign element names to projectile and slab in both &
+                        *.inp and *.pes files."        
+
+    end function get_idx_from_name
+
+
+
+    pure subroutine minimg_one(this, i, j, b, r, vec)
+
+        ! Calculates the minimum image vector and distance
+        ! between beads b of atoms i and j
 
         type(universe), intent(in)         :: this
         integer, intent(in)                :: i, j, b
@@ -256,7 +342,7 @@ contains
         vec = this%r(:,b,j)-this%r(:,b,i)   ! distance vector from a to b
 
         vec = matmul(this%isimbox, vec)   ! transform to direct coordinates
-        vec = vec - Anint(vec)            ! imaging
+        vec = vec - anint(vec)            ! imaging
         vec = matmul(this%simbox, vec)    ! back to cartesian coordinates
 
         r =  sqrt(sum(vec*vec))      ! distance
@@ -264,11 +350,11 @@ contains
     end subroutine minimg_one
 
 
+
     subroutine minimg_beads(this, i, j, r, vec)
-            !
-            ! Purpose: Distance between this a and b and vector a-->b
-            !          with taking into account the periodic boundary conditions
-            !
+
+        ! Calculates the minimum image vector and distance
+        ! between all beads of atoms i and j
 
         type(universe), intent(in) :: this
         integer, intent(in)        :: i, j
@@ -278,7 +364,7 @@ contains
         vec = this%r(:,:,j)-this%r(:,:,i)   ! distance vector from a to b
 
         vec = matmul(this%isimbox, vec)   ! transform to direct coordinates
-        vec = vec - Anint(vec)            ! imaging
+        vec = vec - anint(vec)            ! imaging
         vec = matmul(this%simbox, vec)    ! back to cartesian coordinates
 
         r =  sqrt(sum(vec*vec))      ! distance
@@ -287,8 +373,27 @@ contains
 
 
 
+    pure subroutine simple_ekin(this, ekin_p, ekin_l)
 
+        type(universe), intent(in) :: this
+        real(dp), intent(out)      :: ekin_p, ekin_l
+        integer :: i
 
+        ekin_p = 0.0_dp
+        ekin_l = 0.0_dp
+
+        do i = 1, this%natoms
+            if (this%is_proj(this%idx(i))) then
+                ekin_p = ekin_p + this%m(this%idx(i))*sum(this%v(:,:,i))**2
+            else
+                ekin_l = ekin_l + this%m(this%idx(i))*sum(this%v(:,:,i))**2
+            end if
+        end do
+
+        ekin_p = 0.5_dp * ekin_p
+        ekin_l = 0.5_dp * ekin_l
+
+    end subroutine simple_ekin
 
 
 

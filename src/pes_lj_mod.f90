@@ -16,12 +16,9 @@ module pes_lj_mod
         real(dp), allocatable :: shift(:,:)
         real(dp)              :: cutoff
 
-
     end type lj_pes
 
     type(lj_pes) :: pes_lj
-
-
 
 contains
 
@@ -50,7 +47,7 @@ contains
             pes_lj%shift = default_real
 
             forall (i = 1 : 3) temp3(i) = sqrt(sum(atoms%simbox(:,i)*atoms%simbox(:,i)))
-            pes_lj%cutoff = minval(temp3(:))
+            pes_lj%cutoff = minval(temp3(:))/2
         end if
 
         ! line should read something like "H   H   proj    proj"
@@ -133,7 +130,6 @@ contains
         real(dp), dimension(atoms%nbeads) :: sig_r, sig_r_2, sig_r_6, sig_r_12, r
         real(dp), dimension(atoms%nbeads) :: nrg, vdr
         real(dp), dimension(3, atoms%nbeads) :: f, vec
-        !        real(dp) :: tmp
 
         nrg = 0.0_dp
         vdr = 0.0_dp
@@ -150,7 +146,6 @@ contains
 
         where (r < tolerance) r = tolerance
 
-
         sig_r = pes_lj%sigma(idx_i,idx_j) / r
         sig_r_2 = sig_r * sig_r
         sig_r_6 = sig_r_2 * sig_r_2 * sig_r_2
@@ -165,16 +160,8 @@ contains
 
         if (flag == energy_and_force) then
 
-
-
             vdr = (24/pes_lj%cutoff**2)*r*pes_lj%eps(idx_i,idx_j)*sig_rc_6*(2*sig_rc_6-1) &
                 - (24/r)*pes_lj%eps(idx_i,idx_j)*sig_r_6*(2*sig_r_6-1)
-            !
-            !
-            !                        r2 = r*r
-            !                        fr2 = pes_lj%sigma(idx_i,idx_j) / r2
-            !                        fr6 = fr2 * fr2 * fr2
-            !                        fpr = 48._dp * pes_lj%eps(idx_i,idx_j) * fr6 * (fr6 - 0.5_dp) / r2   ! f/r
 
             forall(b = 1 : atoms%nbeads) f(:,b) = vdr(b) * vec(:,b)/r(b)
 

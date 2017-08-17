@@ -55,6 +55,7 @@ module constants
 
     ! Output
     integer, parameter :: format_xyz = 1
+    integer, parameter :: format_nrg = 2
 
     ! Conversion constants to program units
     !

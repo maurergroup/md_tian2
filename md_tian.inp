@@ -2,11 +2,11 @@ run md
 
 start 1
 ntrajs 1
-nsteps 1000
-step 1
+nsteps 100000
+step 0.01
 
-!projectile 2  H    1.0079 ver    D   2.015 ver
-lattice    2 Au 196.96657 ver   Ag 107.87  ver
+projectile 2  H    1.0 ver    D   1.0 ver
+!lattice    2 Au 196.96657 ver   Ag 107.87  ver
 
 
 incidence 3.33 180 90 3.33 180 90
@@ -18,7 +18,7 @@ pip r r 6
 !Tsurf 300
 !annealing 1000 25 5
 
-conf poscar 'cart.POSCAR'  2 2
+conf poscar 'lj.POSCAR'  2 2
 !conf poscar 'test.POSCAR' 1 2
 
 
@@ -26,7 +26,7 @@ conf poscar 'cart.POSCAR'  2 2
 !pes definition
 pes './md_tian_v2.pes'
 
-output 1 1
+output 2 20
 
 
 

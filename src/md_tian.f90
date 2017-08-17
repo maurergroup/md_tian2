@@ -17,16 +17,21 @@ program md_tian
     use md_init
     use pes_lj_mod
     use rpmd
-    use universe_mod, only : universe
+    use universe_mod
     use output_mod, only : output
 
     implicit none
 
-    integer :: itraj, istep
+    integer :: itraj, istep, i, j, b
     type(universe) :: atoms
+
+
+    real(dp) :: tmp, vcm(3), nom(3), denom(3), tinit, tinter
+
 
     call simbox_init(atoms)
     !call output_run_details()
+
 
     do itraj = simparams%start, simparams%start+simparams%ntrajs-1
 
@@ -55,7 +60,7 @@ program md_tian
 !        print *, ""
 !        print *, atoms%a
 
-            if (mod(istep, simparams%output(2)) == 0) call output(atoms, itraj, simparams%output(1))
+            if (mod(istep, simparams%output(2)) == 0) call output(atoms, itraj, istep, simparams%output(1))
 
 
 

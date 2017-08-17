@@ -48,9 +48,9 @@ contains
         type(universe), intent(inout) :: atoms
         integer :: i
 
-        forall (i = 1 : atoms%natoms)
+        do i = 1, atoms%natoms
             where(.not. atoms%is_fixed(:,:,i)) atoms%a(:,:,i) = atoms%f(:,:,i)/atoms%m(atoms%idx(i))
-        end forall
+        end do
 
     end subroutine set_acceleration
 
