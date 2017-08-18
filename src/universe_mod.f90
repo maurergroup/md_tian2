@@ -377,25 +377,28 @@ contains
 
         type(universe), intent(in) :: this
         real(dp), intent(out)      :: ekin_p, ekin_l
+        real(dp)                   :: nrg
         integer :: i
 
         ekin_p = 0.0_dp
         ekin_l = 0.0_dp
 
         do i = 1, this%natoms
+
+            nrg = this%m(this%idx(i))*sum(this%v(:,:,i)*this%v(:,:,i))
+
             if (this%is_proj(this%idx(i))) then
-                ekin_p = ekin_p + this%m(this%idx(i))*sum(this%v(:,:,i))**2
+                ekin_p = ekin_p + nrg
             else
-                ekin_l = ekin_l + this%m(this%idx(i))*sum(this%v(:,:,i))**2
+                ekin_l = ekin_l + nrg
             end if
+
         end do
 
         ekin_p = 0.5_dp * ekin_p
         ekin_l = 0.5_dp * ekin_l
 
     end subroutine simple_ekin
-
-
 
 
 end module universe_mod

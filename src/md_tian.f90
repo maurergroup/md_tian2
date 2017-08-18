@@ -28,7 +28,6 @@ program md_tian
 
     real(dp) :: tmp, vcm(3), nom(3), denom(3), tinit, tinter
 
-
     call simbox_init(atoms)
     !call output_run_details()
 

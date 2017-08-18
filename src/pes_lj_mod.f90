@@ -2,7 +2,7 @@
 module pes_lj_mod
 
     use constants
-    use useful_things, only : split_string
+    use useful_things, only : split_string, lower_case
     use universe_mod
 
     implicit none
@@ -29,7 +29,7 @@ contains
         type(universe), intent(inout) :: atoms
         integer, intent(in) :: inp_unit
 
-        integer :: nwords = 0, ios = 0, i
+        integer :: nwords, ios = 0, i
         character(len=max_string_length) :: buffer
         character(len=max_string_length) :: words(100)
         integer  :: idx1, idx2, ntypes
@@ -97,6 +97,8 @@ contains
                 stop "Error in the PES file: PES parameters must consist of key value pairs. A parameter block must be terminated by a blank line."
             end if
 
+            call lower_case(words(1))
+
             select case (words(1))
 
                 case ('sigma')      ! given in angstrom
@@ -119,6 +121,89 @@ contains
     end subroutine read_lj
 
 
+
+    subroutine read_simple_lj(atoms, inp_unit)
+
+        use run_config, only : simparams
+
+        type(universe), intent(inout) :: atoms
+        integer, intent(in) :: inp_unit
+
+        integer :: nwords, ios = 0
+        character(len=max_string_length) :: buffer
+        character(len=max_string_length) :: words(100)
+        integer  :: idx1, idx2, ntypes
+        character(len=*), parameter :: err = "Error in read_simple_lj: "
+
+        ntypes = simparams%nprojectiles+simparams%nlattices
+
+        if (.not. allocated(pes_lj%eps)) then
+            allocate(pes_lj%eps(ntypes, ntypes), pes_lj%sigma(ntypes, ntypes))
+            pes_lj%eps   = default_real
+            pes_lj%sigma = default_real
+        end if
+
+        ! line should read something like "H   H   proj    proj"
+        read(inp_unit, '(A)', iostat=ios) buffer
+        call split_string(buffer, words, nwords)
+
+        if (nwords /= 4) stop err // "need four entries in interaction-defining lines"
+
+        if (words(3) == "proj" .and. words(4) == "proj" .or. &
+            words(3) == "proj" .and. words(4) == "latt" .or. &
+            words(3) == "latt" .and. words(4) == "proj" .or. &
+            words(3) == "latt" .and. words(4) == "latt") then
+
+            idx1 = get_idx_from_name(atoms, words(1), is_proj=(words(3)=="proj"))
+            idx2 = get_idx_from_name(atoms, words(2), is_proj=(words(4)=="proj"))
+
+            if (atoms%pes(idx1,idx2) /= default_int) then
+                print *, err // "pes already defined for atoms", words(1), words(3), words(2), words(4)
+                stop
+            end if
+
+        else
+            stop err // "interaction must be defined via 'proj' and 'latt' keywords"
+        end if
+
+        ! set the pes type in the atoms object
+        atoms%pes(idx1,idx2) = pes_id_simple_lj
+        atoms%pes(idx2,idx1) = pes_id_simple_lj
+
+        do
+            read(inp_unit, '(A)', iostat=ios) buffer
+            call split_string(buffer, words, nwords)
+
+            ! pes block terminated, set shift
+            if (nwords == 0 .or. ios /= 0) then
+                exit
+
+            ! something went wrong
+            else if (nwords /= 2) then
+                stop "Error in the PES file: PES parameters must consist of key value pairs. A parameter block must be terminated by a blank line."
+            end if
+
+            select case (words(1))
+
+                case ('sigma')      ! given in angstrom
+                    read(words(2), *) pes_lj%sigma(idx1, idx2)
+                    read(words(2), *) pes_lj%sigma(idx2, idx1)
+
+                case ('epsilon')    ! given in kelvin
+                    read(words(2), *) pes_lj%eps(idx1, idx2)
+                    read(words(2), *) pes_lj%eps(idx2, idx1)
+                    pes_lj%eps(idx1, idx2) = pes_lj%eps(idx1, idx2) * kelvin2ev
+                    pes_lj%eps(idx2, idx1) = pes_lj%eps(idx2, idx1) * kelvin2ev
+
+                case default
+                    print *, "Error in the PES file: unknown LJ parameter", words(1)
+                    stop
+
+            end select
+        end do
+    end subroutine
+
+
     subroutine compute_lj(atoms, atom_i, atom_j, flag)
 
         type(universe), intent(inout) :: atoms
@@ -132,7 +217,6 @@ contains
         real(dp), dimension(3, atoms%nbeads) :: f, vec
 
         nrg = 0.0_dp
-        vdr = 0.0_dp
 
         idx_i = atoms%idx(atom_i)
         idx_j = atoms%idx(atom_j)
@@ -172,6 +256,44 @@ contains
 
 
     end subroutine compute_lj
+
+
+
+    subroutine compute_simple_lj(atoms, atom_i, atom_j, flag)
+
+        type(universe), intent(inout) :: atoms
+        integer, intent(in)           :: atom_i, atom_j
+        integer, intent(in)           :: flag
+
+        integer ::  idx_i, idx_j, b
+
+        real(dp), dimension(3, atoms%nbeads) :: f, vec
+        real(dp), dimension(atoms%nbeads) :: r2, fr2, fr6, fpr, nrg, r
+
+        nrg = 0.0_dp
+
+        idx_i = atoms%idx(atom_i)
+        idx_j = atoms%idx(atom_j)
+
+        call minimg_beads(atoms, atom_i, atom_j, r, vec)
+
+        r2  = sum(vec*vec, dim=1)
+        fr2 = pes_lj%sigma(idx_i, idx_j)**2 / r2
+        fr6 = fr2 * fr2 * fr2
+
+        nrg =  4.0_dp * pes_lj%eps(idx_i, idx_j) * fr6 * (fr6 - 1.0_dp)
+        atoms%Epot = atoms%Epot + nrg
+
+        if (flag == energy_and_force) then
+            fpr = 24 * pes_lj%eps(idx_i, idx_j) * fr6 * (1 - 2*fr6) / r2
+
+            forall(b = 1 : atoms%nbeads) f(:,b) = fpr(b) * vec(:,b)
+
+            atoms%f(:,:,atom_i) = atoms%f(:,:,atom_i) + f
+            atoms%f(:,:,atom_j) = atoms%f(:,:,atom_j) - f
+        end if
+
+    end subroutine compute_simple_lj
 
 
 

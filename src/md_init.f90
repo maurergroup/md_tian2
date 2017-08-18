@@ -18,6 +18,7 @@ module md_init
     use useful_things
     use run_config
     use constants
+    use pes_lj_mod
 
     implicit none
 
@@ -62,7 +63,6 @@ contains
     subroutine read_pes(atoms)
 
         use open_file, only : open_for_read
-        use pes_lj_mod, only : read_lj
 
         type(universe), intent(inout) :: atoms
 
@@ -93,6 +93,9 @@ contains
 
                         case ('lj')
                             call read_lj(atoms, pes_unit)
+
+                        case ('slj')
+                            call read_simple_lj(atoms, pes_unit)
 
                         !                        case ('morse')
                         !                            call read_morse(pes_unit)
@@ -279,7 +282,6 @@ contains
         stop err_read_poscar // "reading coordinate system type (cartesian/direct)"
 
     end if
-
     call set_atomic_dofs(atoms)
     call set_atomic_indices(atoms, natoms)
     call set_atomic_masses(atoms)

@@ -9,10 +9,10 @@ module constants
     integer, parameter :: dp = REAL64
 
     ! Physical and mathematical constants
-    real(dp), parameter :: sqrt2    = sqrt(2._dp)
-    real(dp), parameter :: isqrt2   = 1._dp/sqrt2
-    real(dp), parameter :: sqrt3    = sqrt(3._dp)
-    real(dp), parameter :: pi       = acos(-1._dp)
+    real(dp), parameter :: sqrt2    = sqrt(2.0_dp)
+    real(dp), parameter :: isqrt2   = 1.0_dp/sqrt2
+    real(dp), parameter :: sqrt3    = sqrt(3.0_dp)
+    real(dp), parameter :: pi       = acos(-1.0_dp)
     real(dp), parameter :: kB       = 8.61733238496e-5_dp
     real(dp), parameter :: hbar     = 0.6582119280967_dp
     real(dp), parameter :: twelfth  = 1.0_dp/12.0_dp
@@ -24,11 +24,12 @@ module constants
     integer, parameter :: nparams_emt   = 7
     integer, parameter :: nparams_rebo  = 13
 
-    integer, parameter :: pes_id_lj    = 2001
-    integer, parameter :: pes_id_morse = 2002
-    integer, parameter :: pes_id_emt   = 2003
-    integer, parameter :: pes_id_rebo  = 2004
-    integer, parameter :: pes_id_ho    = 2005
+    integer, parameter :: pes_id_lj        = 2001
+    integer, parameter :: pes_id_morse     = 2002
+    integer, parameter :: pes_id_emt       = 2003
+    integer, parameter :: pes_id_rebo      = 2004
+    integer, parameter :: pes_id_ho        = 2005
+    integer, parameter :: pes_id_simple_lj = 2006
 
 
     ! Internal program constants

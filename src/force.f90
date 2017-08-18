@@ -2,7 +2,7 @@ module force
 
     use constants
     use universe_mod, only : universe
-    use pes_lj_mod, only : compute_lj
+    use pes_lj_mod, only : compute_lj, compute_simple_lj
 
     implicit none
 
@@ -24,6 +24,9 @@ contains
                 select case (atoms%pes( atoms%idx(i),atoms%idx(j) ))
                     case (pes_id_lj)
                         call compute_lj(atoms, i, j, energy_and_force)
+
+                    case (pes_id_simple_lj)
+                        call compute_simple_lj(atoms, i, j, energy_and_force)
 
                     case (default_int)
                         print *, err // "pes not specified for atoms", i, j
