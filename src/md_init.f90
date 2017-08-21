@@ -67,12 +67,13 @@ contains
         type(universe), intent(inout) :: atoms
 
         character(len=*), parameter :: err_pes_init = "Error in pes_init: "
-        integer :: ios = 0, nwords
+        integer :: ios = 0, nwords, i
         integer, parameter :: pes_unit = 38
         character(len=max_string_length) :: buffer
         character(len=max_string_length) :: words(100)
+        character(len=*), parameter :: err = "Erorr in read_pes(): "
 
-        if (.not. file_exists(simparams%pes_file)) stop "Error: PES file does not exist"
+        if (.not. file_exists(simparams%pes_file)) stop err // "PES file does not exist"
 
         call open_for_read(pes_unit, simparams%pes_file)
         ! ios < 0: end of record condition encountered or endfile condition detected
@@ -107,7 +108,7 @@ contains
                         !                            call read_rebo(pes_unit)
 
                         case default
-                            print *, "Unknown potential in PES file:", words(2)
+                            print *, err // "unknown potential in PES file:", words(2)
                             stop
 
                     end select
@@ -118,6 +119,12 @@ contains
         end do
 
         close(pes_unit)
+
+        if (any(atoms%pes == default_int)) then
+            print *, err // "pes matrix incomplete"
+            print *, (atoms%pes(:,i), i=1,atoms%ntypes)
+            stop
+        end if
 
     end subroutine read_pes
 

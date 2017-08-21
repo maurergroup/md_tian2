@@ -204,13 +204,12 @@ contains
     end subroutine
 
 
-    subroutine compute_lj(atoms, atom_i, atom_j, flag)
+    subroutine compute_lj(atoms, flag)
 
         type(universe), intent(inout) :: atoms
-        integer, intent(in)           :: atom_i, atom_j
         integer, intent(in)           :: flag
 
-        integer ::  idx_i, idx_j, b
+        integer ::  idx_i, idx_j, i, j, b
         real(dp) :: sig_rc, sig_rc_2, sig_rc_6, sig_rc_12
         real(dp), dimension(atoms%nbeads) :: sig_r, sig_r_2, sig_r_6, sig_r_12, r
         real(dp), dimension(atoms%nbeads) :: nrg, vdr
@@ -218,81 +217,99 @@ contains
 
         nrg = 0.0_dp
 
-        idx_i = atoms%idx(atom_i)
-        idx_j = atoms%idx(atom_j)
+        do i = 1, atoms%natoms-1
+            do j = i+1, atoms%natoms
 
-        call minimg_beads(atoms, atom_i, atom_j, r, vec)
+                idx_i = atoms%idx(i)
+                idx_j = atoms%idx(j)
 
-        sig_rc = pes_lj%sigma(idx_i,idx_j) / pes_lj%cutoff
-        sig_rc_2 = sig_rc * sig_rc
-        sig_rc_6 = sig_rc_2 * sig_rc_2 * sig_rc_2
-        sig_rc_12 = sig_rc_6 * sig_rc_6
+                if (atoms%pes(idx_i,idx_j) /= pes_id_lj) cycle
 
-        where (r < tolerance) r = tolerance
+                call minimg_beads(atoms, i, j, r, vec)
 
-        sig_r = pes_lj%sigma(idx_i,idx_j) / r
-        sig_r_2 = sig_r * sig_r
-        sig_r_6 = sig_r_2 * sig_r_2 * sig_r_2
-        sig_r_12 = sig_r_6 * sig_r_6
+                sig_rc = pes_lj%sigma(idx_i,idx_j) / pes_lj%cutoff
+                sig_rc_2 = sig_rc * sig_rc
+                sig_rc_6 = sig_rc_2 * sig_rc_2 * sig_rc_2
+                sig_rc_12 = sig_rc_6 * sig_rc_6
 
-        nrg = 4*pes_lj%eps(idx_i,idx_j) * ( (sig_r_12-sig_r_6)  &
-            + (6*sig_rc_12-3*sig_rc_6)*(r/pes_lj%cutoff)**2 &
-            - 7*sig_rc_12 + 4*sig_rc_6 )
+                where (r < tolerance) r = tolerance
 
-        atoms%epot = atoms%epot + nrg
+                sig_r = pes_lj%sigma(idx_i,idx_j) / r
+                sig_r_2 = sig_r * sig_r
+                sig_r_6 = sig_r_2 * sig_r_2 * sig_r_2
+                sig_r_12 = sig_r_6 * sig_r_6
+
+                nrg = 4*pes_lj%eps(idx_i,idx_j) * ( (sig_r_12-sig_r_6)  &
+                    + (6*sig_rc_12-3*sig_rc_6)*(r/pes_lj%cutoff)**2 &
+                    - 7*sig_rc_12 + 4*sig_rc_6 )
+
+                atoms%epot = atoms%epot + nrg
 
 
-        if (flag == energy_and_force) then
+                if (flag == energy_and_force) then
 
-            vdr = (24/pes_lj%cutoff**2)*r*pes_lj%eps(idx_i,idx_j)*sig_rc_6*(2*sig_rc_6-1) &
-                - (24/r)*pes_lj%eps(idx_i,idx_j)*sig_r_6*(2*sig_r_6-1)
+                    vdr = (24/pes_lj%cutoff**2)*r*pes_lj%eps(idx_i,idx_j)*sig_rc_6*(2*sig_rc_6-1) &
+                        - (24/r)*pes_lj%eps(idx_i,idx_j)*sig_r_6*(2*sig_r_6-1)
 
-            forall(b = 1 : atoms%nbeads) f(:,b) = vdr(b) * vec(:,b)/r(b)
+                    do b = 1, atoms%nbeads
+                        f(:,b) = vdr(b) * vec(:,b)/r(b)
+                    end do
 
-            atoms%f(:,:,atom_i) = atoms%f(:,:,atom_i) + f
-            atoms%f(:,:,atom_j) = atoms%f(:,:,atom_j) - f
+                    atoms%f(:,:,i) = atoms%f(:,:,i) + f
+                    atoms%f(:,:,j) = atoms%f(:,:,j) - f
 
-        end if
+                end if
+
+            end do
+        end do
 
 
     end subroutine compute_lj
 
 
 
-    subroutine compute_simple_lj(atoms, atom_i, atom_j, flag)
+    subroutine compute_simple_lj(atoms, flag)
 
         type(universe), intent(inout) :: atoms
-        integer, intent(in)           :: atom_i, atom_j
         integer, intent(in)           :: flag
 
-        integer ::  idx_i, idx_j, b
+        integer ::  idx_i, idx_j, i, j, b
 
         real(dp), dimension(3, atoms%nbeads) :: f, vec
         real(dp), dimension(atoms%nbeads) :: r2, fr2, fr6, fpr, nrg, r
 
         nrg = 0.0_dp
 
-        idx_i = atoms%idx(atom_i)
-        idx_j = atoms%idx(atom_j)
+        do i = 1, atoms%natoms-1
+            do j = i+1, atoms%natoms
 
-        call minimg_beads(atoms, atom_i, atom_j, r, vec)
+                idx_i = atoms%idx(i)
+                idx_j = atoms%idx(j)
 
-        r2  = sum(vec*vec, dim=1)
-        fr2 = pes_lj%sigma(idx_i, idx_j)**2 / r2
-        fr6 = fr2 * fr2 * fr2
+                if (atoms%pes(idx_i,idx_j) /= pes_id_simple_lj) cycle
 
-        nrg =  4.0_dp * pes_lj%eps(idx_i, idx_j) * fr6 * (fr6 - 1.0_dp)
-        atoms%Epot = atoms%Epot + nrg
+                call minimg_beads(atoms, i, j, r, vec)
 
-        if (flag == energy_and_force) then
-            fpr = 24 * pes_lj%eps(idx_i, idx_j) * fr6 * (1 - 2*fr6) / r2
 
-            forall(b = 1 : atoms%nbeads) f(:,b) = fpr(b) * vec(:,b)
+                r2  = sum(vec*vec, dim=1)
+                fr2 = pes_lj%sigma(idx_i, idx_j)**2 / r2
+                fr6 = fr2 * fr2 * fr2
 
-            atoms%f(:,:,atom_i) = atoms%f(:,:,atom_i) + f
-            atoms%f(:,:,atom_j) = atoms%f(:,:,atom_j) - f
-        end if
+                nrg =  4.0_dp * pes_lj%eps(idx_i, idx_j) * fr6 * (fr6 - 1.0_dp)
+                atoms%Epot = atoms%Epot + nrg
 
+                if (flag == energy_and_force) then
+                    fpr = 24 * pes_lj%eps(idx_i, idx_j) * fr6 * (1 - 2*fr6) / r2
+
+                    do b = 1, atoms%nbeads
+                        f(:,b) = fpr(b) * vec(:,b)
+                    end do
+
+                    atoms%f(:,:,i) = atoms%f(:,:,i) + f
+                    atoms%f(:,:,j) = atoms%f(:,:,j) - f
+                end if
+            end do
+        end do
     end subroutine compute_simple_lj
 
 

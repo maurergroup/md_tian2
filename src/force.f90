@@ -3,6 +3,7 @@ module force
     use constants
     use universe_mod, only : universe
     use pes_lj_mod, only : compute_lj, compute_simple_lj
+    use pes_emt_mod, only : compute_emt
 
     implicit none
 
@@ -18,28 +19,10 @@ contains
         atoms%a = 0.0_dp
         atoms%epot = 0.0_dp
 
-        do i = 1, atoms%natoms-1
-            do j = i+1, atoms%natoms
+        if (any(atoms%pes == pes_id_lj))        call compute_lj(atoms, energy_and_force)
+        if (any(atoms%pes == pes_id_simple_lj)) call compute_simple_lj(atoms, energy_and_force)
+        if (any(atoms%pes == pes_id_emt))       call compute_emt(atoms, energy_and_force)
 
-                select case (atoms%pes( atoms%idx(i),atoms%idx(j) ))
-                    case (pes_id_lj)
-                        call compute_lj(atoms, i, j, energy_and_force)
-
-                    case (pes_id_simple_lj)
-                        call compute_simple_lj(atoms, i, j, energy_and_force)
-
-                    case (default_int)
-                        print *, err // "pes not specified for atoms", i, j
-                        stop
-
-                    case default
-                        print *, err // "unknown force field:", atoms%pes(atoms%idx(i),atoms%idx(j))
-                        stop
-
-                end select
-
-            end do
-        end do
 
         call set_acceleration(atoms)
 
