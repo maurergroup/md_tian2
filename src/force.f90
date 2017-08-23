@@ -12,7 +12,6 @@ contains
     subroutine calc_force(atoms)
 
         type(universe), intent(inout) :: atoms
-        integer :: i, j
         character(len=*), parameter :: err = "Error in calc_force(): "
 
         atoms%f = 0.0_dp

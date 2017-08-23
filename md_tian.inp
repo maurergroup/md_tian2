@@ -2,31 +2,31 @@ run md
 
 start 1
 ntrajs 1
-nsteps 50000
+nsteps 0
 step 0.1
 
-!projectile 2  H    1.0 ver    D   1.0 ver
-lattice    2 Au 196.96657 ver   Ag 107.87  ver
+projectile 1  H    1.0 ver   
+lattice    1 Au 196.96657 ver 
 
 
 incidence 3.33 180 90 3.33 180 90
 inc_rot energy <3 orientation angles>
 inc_vib energy
 
-pip r r 6
+!pip r r 6
 
 !Tsurf 300
 !annealing 1000 25 5
 
-conf poscar 'lj.POSCAR'  1 1
+conf poscar 'cart.POSCAR' 
 !conf poscar 'test.POSCAR' 1 2
 
 
 
 !pes definition
-pes './md_tian_v2.pes'
+pes './HAu.pes'
 
-output 1 10
+output 1 100000
 
 
 

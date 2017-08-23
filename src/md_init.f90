@@ -19,6 +19,7 @@ module md_init
     use run_config
     use constants
     use pes_lj_mod
+    use pes_emt_mod
 
     implicit none
 
@@ -100,9 +101,9 @@ contains
 
                         !                        case ('morse')
                         !                            call read_morse(pes_unit)
-                        !
-                        !                        case ('emt')
-                        !                            call read_emt(pes_unit)
+
+                        case ('emt')
+                            call read_emt(atoms, pes_unit)
                         !
                         !                        case ('rebo')
                         !                            call read_rebo(pes_unit)
