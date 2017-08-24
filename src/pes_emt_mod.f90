@@ -517,26 +517,21 @@ contains
 
         real(dp), dimension(3,atoms%ntypes,atoms%ntypes) ::  r3temp, x, rnn
         real(dp), dimension(3) :: vec
-        real(dp) :: r, theta, rtemp, rtemp1
+        real(dp) :: r, theta, rtemp!, rtemp1
 
 
-        real(dp), dimension(3) :: dtheta
+ !       real(dp), dimension(3) :: dtheta
 
 
-        real(dp), dimension(atoms%nbeads,atoms%natoms) :: sigma
 
 
-        real(dp), dimension(atoms%ntypes,atoms%ntypes,atoms%nbeads) :: V_idx
-        real(dp), dimension(atoms%ntypes,atoms%ntypes,atoms%nbeads,atoms%natoms) :: sigma_idx
+        real(dp), dimension(atoms%ntypes,atoms%ntypes,atoms%nbeads) :: V, V_ref
+        real(dp), dimension(atoms%ntypes,atoms%ntypes,atoms%nbeads,atoms%natoms) :: sigma, Ecoh
 
 
-        real(dp), dimension(atoms%ntypes,atoms%ntypes,atoms%nbeads,atoms%natoms) :: s_idx
-
-        real(dp) :: Ecoh, vref
+        real(dp), dimension(atoms%ntypes,atoms%ntypes,atoms%nbeads,atoms%natoms) :: s
 
         real(dp), dimension(3) :: nneighs
-
-        real(dp) :: s
 
 
 
@@ -557,7 +552,10 @@ contains
 
         ! 'coupling' parameters between p and l
         chi = pes_emt%n0 / transpose(pes_emt%n0) &
-            * exp(0.5_dp/bohr2ang*(pes_emt%s0-transpose(pes_emt%s0)))
+            * exp(0.5_dp/bohr2ang*(transpose(pes_emt%s0)-pes_emt%s0))
+
+        print *, "chi"
+        print  '(2f19.15)', chi
 
         ! Distances to the nearest, next-nearest and next-next-nearest neighbours
         rnn(1,:,:) = betas0
@@ -577,7 +575,7 @@ contains
         print  '(2f19.15)', rcut
 
         !rcut = a_lat * sqrt3 * isqrt2
-        rr = 4.0_dp * rcut / (sqrt3 + 2.0_dp)
+        rr = select_rr('fcc', rcut)
         acut = 9.21034037197618_dp/(rr - rcut) ! ln(10000)
 
         print *, "acut"
@@ -590,7 +588,7 @@ contains
 
         print *, "x"
         do i = 1, 3
-             print '(2f19.15)', x(i,:,:)
+            print '(2f19.15)', x(i,:,:)
         end do
         !-----------------------------------GAMMA--------------------------------------
         ! Gamma enforces the cut-off together with theta (see below)
@@ -603,8 +601,8 @@ contains
             igamma1(:,:) = igamma1(:,:) + x(k,:,:)*exp(-pes_emt%eta2 * r3temp(k,:,:))
             igamma2(:,:) = igamma2(:,:) + x(k,:,:)*exp(-kappadbeta   * r3temp(k,:,:))
         end do
-        igamma1 = 1.0_dp / igamma1
-        igamma2 = 1.0_dp / igamma2
+        igamma1 = 1.0_dp / transpose(igamma1)
+        igamma2 = 1.0_dp / transpose(igamma2)
 
         print *, "igamma1"
         print '(2f19.15)', igamma1
@@ -620,9 +618,9 @@ contains
         !------------------------------------------------------------------------------
 
         ! initialize accumulators
-        sigma_idx       = 0.0_dp
-        V_idx           = 0.0_dp
-        vref      = 0.0_dp
+        sigma       = 0.0_dp
+        V           = 0.0_dp
+        V_ref      = 0.0_dp
 
 
         do i = 1, atoms%natoms-1
@@ -651,109 +649,122 @@ contains
 
                     ! sigma_1
                     rtemp = theta*exp(-pes_emt%eta2(idx_i,idx_j) * (r - betas0(idx_i,idx_j)))   ! sigma_ij*gamma1
-                    sigma_idx(idx_i,idx_j,b,i) = sigma_idx(idx_i,idx_j,b,i) + rtemp
+                    sigma(idx_i,idx_j,b,i) = sigma(idx_i,idx_j,b,i) + rtemp
 
                     rtemp = theta*exp(-pes_emt%eta2(idx_j,idx_i) * (r - betas0(idx_j,idx_i)))
-                    sigma_idx(idx_j,idx_i,b,j) = sigma_idx(idx_j,idx_i,b,j) + rtemp
-!                    if (rtemp >tolerance) then
-!                        print *, "rtemp", i, j, rtemp
-!                    end if
+                    sigma(idx_j,idx_i,b,j) = sigma(idx_j,idx_i,b,j) + rtemp
+                    !                    if (rtemp >tolerance) then
+                    !                        print *, "rtemp", i, j, rtemp
+                    !                    end if
 
 
                     ! sigma_2
                     rtemp = theta*exp(-kappadbeta(idx_i,idx_j)   * (r - betas0(idx_i,idx_j)))
-                    V_idx(idx_i,idx_j,b) = V_idx(idx_i,idx_j,b) + rtemp
+                    V(idx_i,idx_j,b) = V(idx_i,idx_j,b) + rtemp
 
                     rtemp = theta*exp(-kappadbeta(idx_j,idx_i)   * (r - betas0(idx_j,idx_i)))
-                    V_idx(idx_j,idx_i,b) = V_idx(idx_j,idx_i,b) + rtemp
+                    V(idx_j,idx_i,b) = V(idx_j,idx_i,b) + rtemp
 
 
                 end do
             end do
         end do
 
-        do i =  1, atoms%natoms
-        print *, "sigma sum", V_idx
+        print *, "sigma"
+        print '(2f15.8)', sum(sum(sigma, dim=4), dim=3)
+
+        print *, "V", sum(V)
+        print '(2f15.8)', V(:,:,1)
+
+
+
+        ! divide by cut-off scaling factors
+        do b = 1, atoms%nbeads
+            V(:,:,b) = V(:,:,b) * igamma2 * transpose(pes_emt%v0) * chi
+            do i = 1, atoms%natoms
+                sigma(:,:,b,i) = sigma(:,:,b,i) * igamma1
+            end do
         end do
-    !
-    !
-    !        ! divide by cut-off scaling factors
-    !        do b = 1, atoms%nbeads
-    !            V_idx(:,:,b) = V_idx(:,:,b) * igamma2 * pes_emt%v0 * chi
-    !            do i = 1, atoms%natoms
-    !                sigma_idx(:,:,b,i) = sigma_idx(:,:,b,i) * igamma1
-    !            end do
-    !        end do
-    !
-    !
-    !
-    !        !-----------------------------NEUTRAL SPHERE RADIUS----------------------------
-    !        do i = 1, atoms%natoms
-    !            do b = 1, atoms%nbeads
-    !                s_idx(:,:,b,i) = -log(sigma_idx(:,:,b,i) * chi * twelfth / betaeta2)
-    !            end do
-    !        end do
-    !
-    !
-    !        !----------------------EMBEDDED ELECTRON DENSITY-------------------------------
-    !
-    !        do i = 1, atoms%natoms
-    !            idx_i = atoms%idx(i)
-    !            do b = 1, atoms%nbeads
-    !                dens(b,i) = sum(pes_emt%n0(idx_i,:) * &
-    !                    exp((0.5_dp/bohr2ang - betaeta2(idx_i,:))*s_idx(idx_i,:,b,i)))
-    !            end do
-    !        end do
-    !
-    !
-    !
-    !        !---------------------------COHESIVE FUNCTION-----------------------------------
-    !        do i = 1, atoms%natoms
-    !            idx_i = atoms%idx(i)
-    !            do b = 1, atoms%nbeads
-    !            do n = 1, atoms%ntypes
-    !                Ecoh(idx_i) = Ecoh(idx_i) + ((1.0_dp + pes_emt%lambda(idx_i,:)) * s_idx(idx_i,:,b,i)) &
-    !                        * exp(-pes_emt%lambda(idx_i,:) * s_idx(idx_i,:,b,i)) -1.0_dp
-    !
-    !
-    !                sum(((1.0_dp + pes_emt%lambda(:,:)*s_idx(:,:,b,i) * &
-    !                    exp(-pes_emt%lambda(:,:)*s_idx(:,:,b,i) - 1.0_dp)  *pes_emt%e0(:,:)
-    !            end do
-    !        end do
-    !
-    !        ! dEcoh_l_l and dEcoh_p_l
-    !        do i = 1, slab%n_atoms
-    !
-    !            dEcoh_l_l(1,i) = sum(s_l*exp(-pars_l(4)*s_l)*ds_l_l(1,i,:))
-    !            dEcoh_l_l(2,i) = sum(s_l*exp(-pars_l(4)*s_l)*ds_l_l(2,i,:))
-    !            dEcoh_l_l(3,i) = sum(s_l*exp(-pars_l(4)*s_l)*ds_l_l(3,i,:))
-    !
-    !            dEcoh_p_l(1,i) = sum(s_p*exp(-pars_p(4)*s_p)*ds_p_l(1,i,:))
-    !            dEcoh_p_l(2,i) = sum(s_p*exp(-pars_p(4)*s_p)*ds_p_l(2,i,:))
-    !            dEcoh_p_l(3,i) = sum(s_p*exp(-pars_p(4)*s_p)*ds_p_l(3,i,:))
-    !
-    !        end do
-    !        dEcoh_l_l = pars_l(3)*pars_l(4)*pars_l(4)*dEcoh_l_l
-    !        dEcoh_p_l = pars_p(3)*pars_p(4)*pars_p(4)*dEcoh_p_l
-    !
-    !        ! dEcoh_l_p and dEcoh_p_p
-    !        do i = 1, teil%n_atoms
-    !
-    !            dEcoh_l_p(1,i) = sum(s_l*exp(-pars_l(4)*s_l)*ds_l_p(1,i,:))
-    !            dEcoh_l_p(2,i) = sum(s_l*exp(-pars_l(4)*s_l)*ds_l_p(2,i,:))
-    !            dEcoh_l_p(3,i) = sum(s_l*exp(-pars_l(4)*s_l)*ds_l_p(3,i,:))
-    !
-    !            dEcoh_p_p(1,i) = sum(s_p*exp(-pars_p(4)*s_p)*ds_p_p(1,i,:))
-    !            dEcoh_p_p(2,i) = sum(s_p*exp(-pars_p(4)*s_p)*ds_p_p(2,i,:))
-    !            dEcoh_p_p(3,i) = sum(s_p*exp(-pars_p(4)*s_p)*ds_p_p(3,i,:))
-    !
-    !        end do
-    !        dEcoh_l_p = pars_l(3)*pars_l(4)*pars_l(4)*dEcoh_l_p
-    !        dEcoh_p_p = pars_p(3)*pars_p(4)*pars_p(4)*dEcoh_p_p
-    !
-    !        !----------------REFERENCE PAIR POTENTIAL CONTRIBUTIONS------------------------
-    !
-    !        do i=1,slab%n_atoms
+
+
+        print *, "sigma idx scaled"
+        print '(2f15.8)', sum(sum(sigma, dim=4), dim=3)
+
+        print *, "V_idx scaled"
+        print '(2f15.8)', sum(V, dim=3)
+
+
+
+
+        !-----------------------------NEUTRAL SPHERE RADIUS----------------------------
+        do i = 1, atoms%natoms
+            do b = 1, atoms%nbeads
+                s(:,:,b,i) = sigma(:,:,b,i) * chi
+            end do
+        end do
+
+        print *, "s"
+        print '(2f15.8)',   sum(sum(s, dim=4), dim=3)
+
+
+        do i = 1, atoms%natoms
+            do b = 1, atoms%nbeads
+                where (s(:,:,b,i) > tolerance)
+                    s(:,:,b,i) = -log(s(:,:,b,i)*twelfth)/transpose(betaeta2)
+                end where
+            end do
+        end do
+
+        print *, "s2"
+        print '(2f15.8)',   sum(sum(s, dim=4), dim=3)
+
+        !----------------------EMBEDDED ELECTRON DENSITY-------------------------------
+
+        dens = 0.0_dp
+        do i = 1, atoms%natoms
+            do j = 1, atoms%natoms
+                if (i == j) cycle
+                idx_i = atoms%idx(i)
+                idx_j = atoms%idx(j)
+                do b = 1, atoms%nbeads
+                    dens(b,i) = dens(b,i) + pes_emt%n0(idx_i,idx_j) * &
+                        exp((0.5_dp/bohr2ang - betaeta2(idx_i,idx_j))*s(idx_j,idx_i,b,j))
+                end do
+            end do
+        end do
+
+        print *, "dens"
+        print '(2f15.8)', dens
+
+
+        !---------------------------COHESIVE FUNCTION-----------------------------------
+
+print '(2f15.8)',pes_emt%lambda
+print '(2f15.8)',pes_emt%e0
+
+        Ecoh = 0.0_dp
+        do i = 1, atoms%natoms
+            do j = 1, atoms%natoms
+                if (i == j) cycle
+                idx_i = atoms%idx(i)
+                idx_j = atoms%idx(j)
+                do b = 1, atoms%nbeads
+                    Ecoh(idx_i,idx_j,b,i) = Ecoh(idx_i,idx_j,b,i) + &
+                        ((1.0_dp + pes_emt%lambda(idx_i,idx_j)*s(idx_j,idx_i,b,j)) * &
+                        exp(-pes_emt%lambda(idx_i,idx_j)*s(idx_j,idx_i,b,j)) - 1.0_dp) * &
+                        pes_emt%e0(idx_i,idx_j)
+                end do
+            end do
+        end do
+    !sum((1.0d0 + pars_l(4)*s_l)*exp(-pars_l(4)*s_l) - 1.0d0)*pars_l(3)
+
+    print *, "Ecoh"
+        print '(2f15.8)', sum(sum(sum(Ecoh, dim=1), dim=1), dim=1)
+stop 111
+
+        !----------------REFERENCE PAIR POTENTIAL CONTRIBUTIONS------------------------
+
+    !        do i = 1 , atoms%natoms
     !
     !            rtemp = exp(-pars_l(6)*s_l(i))
     !            vref_l = vref_l + rtemp
@@ -829,10 +840,31 @@ contains
         select case (geom)
             case ('fcc')
                 beta = (16.0_dp*pi/3)**(1.0_dp/3)*isqrt2
+            case ('bcc')
+                beta = (3.0_dp*pi*pi)**(1.0_dp/6.0_dp)
             case default
                 print *, "Error in select_beta(): unknown lattice structure", geom ; call abort
         end select
 
     end function select_beta
+
+
+    function select_rr(geom, rcut) result(rr)
+
+        character(len=3), intent(in) :: geom
+        real(dp), intent(in) :: rcut(:,:)
+        real(dp)             :: rr(size(rcut),size(rcut))
+
+        select case (geom)
+            case ('fcc')
+                rr = 4.0_dp * rcut / (sqrt3 + 2.0_dp)
+            case ('bcc')
+                rr = 4.0_dp * rcut / (sqrt(8.0_dp/3.0_dp) + sqrt(11.0_dp/3.0_dp))
+            case default
+                print *, "Error in select_rr(): unknown lattice structure", geom ; call abort
+        end select
+
+    end function select_rr
+
 
 end module pes_emt_mod
