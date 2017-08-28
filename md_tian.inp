@@ -27,6 +27,3 @@ conf poscar 'cart.POSCAR'
 pes './HAu.pes'
 
 output 1 100000
-
-
-
