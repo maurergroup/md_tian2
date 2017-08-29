@@ -198,8 +198,10 @@ contains
 
         real(dp), dimension(3) :: dtheta
 
-        real(dp), dimension(3, atoms%nbeads, atoms%ntypes, atoms%natoms, atoms%natoms) :: dsigma
-
+        real(dp), dimension(3, atoms%nbeads, atoms%ntypes, atoms%natoms, atoms%natoms) :: ds
+        real(dp), dimension(3, atoms%nbeads, atoms%ntypes, atoms%ntypes, &
+            atoms%natoms, atoms%natoms) :: dsigma, dV
+        real(dp), dimension(3, atoms%nbeads, atoms%ntypes, atoms%ntypes, atoms%natoms) :: dsigmat
 
 
 
@@ -295,14 +297,17 @@ contains
         !------------------------------------------------------------------------------
 
         ! initialize accumulators
-        sigma       = 0.0_dp
-        V           = 0.0_dp
-        V_ref      = 0.0_dp
-        s = 0.0_dp
-        Ecoh = 0.0_dp
-        dens = 0.0_dp
+        sigma = 0.0_dp
+        V     = 0.0_dp
+        V_ref = 0.0_dp
+        s     = 0.0_dp
+        Ecoh  = 0.0_dp
+        dens  = 0.0_dp
 
         dsigma = 0.0_dp
+        dsigmat  = 0.0_dp
+        dV = 0.0_dp
+        ds = 0.0_dp
 
         do i = 1, atoms%natoms-1
             do j = i+1, atoms%natoms
@@ -333,41 +338,79 @@ contains
                     rtemp = theta*exp(-pes_emt%eta2(idx_i) * (r - betas0(idx_i)))
                     sigma(b,i,j) = sigma(b,i,j) + rtemp
                     dtheta = (pes_emt%eta2(idx_i) + rtemp1)*rtemp*vec
-                    dsigma(:,b,idx_i,i,j) = dsigma(:,b,idx_i,i,j) + dtheta
-                    dsigma(:,b,idx_i,j,i) = dsigma(:,b,idx_i,j,j) - dtheta
+                    dsigmat(:,b,idx_j,idx_i,j) = dsigmat(:,b,idx_j,idx_i,j) - dtheta
+                    dsigma(:,b,idx_j,idx_i,j,i) = dtheta
+
 
                     ! sigma_1  j <- i
                     rtemp = theta*exp(-pes_emt%eta2(idx_j) * (r - betas0(idx_j)))
                     sigma(b,j,i) = sigma(b,j,i) + rtemp
                     dtheta = (pes_emt%eta2(idx_j) + rtemp1)*rtemp*vec
-                    dsigma(:,b,idx_j,j,i) = dsigma(:,b,idx_j,j,i) - dtheta
-                    dsigma(:,b,idx_j,i,j) = dsigma(:,b,idx_j,i,j) + dtheta
+                    dsigmat(:,b,idx_i,idx_j,i) = dsigmat(:,b,idx_i,idx_j,i) + dtheta
+                    dsigma(:,b,idx_i,idx_j,i,j) =  -dtheta
+
 
                     ! sigma_2
                     rtemp = theta*exp(-kappadbeta(idx_i)   * (r - betas0(idx_i)))
                     V(idx_i,idx_j,b) = V(idx_i,idx_j,b) + rtemp
+                    dtheta = (kappadbeta(idx_i) + rtemp1) * rtemp * vec
+                    dV(:,b,idx_j,idx_i,i,j) = dV(:,b,idx_j,idx_i,i,j) + dtheta
+                    dV(:,b,idx_j,idx_i,j,i) = dV(:,b,idx_j,idx_i,j,i) - dtheta
 
                     rtemp = theta*exp(-kappadbeta(idx_j)   * (r - betas0(idx_j)))
                     V(idx_j,idx_i,b) = V(idx_j,idx_i,b) + rtemp
+                    dtheta = (kappadbeta(idx_j) + rtemp1) * rtemp * vec
+                    dV(:,b,idx_i,idx_j,j,i) = dV(:,b,idx_i,idx_j,j,i) + dtheta
+                    dV(:,b,idx_i,idx_j,i,j) = dV(:,b,idx_i,idx_j,i,j) - dtheta
+
 
                 end do
             end do
         end do
 
-!        print *, "sigma"
-!        print '(3f15.8)', sigma
 
-        print *, "dsigma"
-        do i = 1, atoms%natoms
-            do j = 1, atoms%natoms
-                do n = 1, atoms%ntypes
-                    print '(3i4, 3f12.5)', n, i, j, dsigma(:,1,n,i,j)
-                end do
-            end do
-        end do
+        !        print *, "dV"
+        !        do i = 1, atoms%natoms
+        !            do j = 1, atoms%natoms
+        !                do k = 1, atoms%ntypes
+        !                    do n = 1, atoms%ntypes
+        !                        print '(4i4, 3f12.5)', k, n, i, j, dV(:,:,k,n,i,j)
+        !                    end do
+        !                end do
+        !            end do
+        !        end do
+        !        print *, "sigma"
+        !        print '(3f15.8)', sigma
 
-!        print *, "V", sum(V)
-!        print '(2f15.8)', V(:,:,1)
+        !        print *, "dsigma"
+        !        do i = 1, atoms%natoms
+        !            do j = 1, atoms%natoms
+        !                do k = 1, atoms%ntypes
+        !                    do n = 1, atoms%ntypes
+        !                        print '(4i4, 3f12.5)',k, n, i, j, dsigma(:,1,k,n,i,j)
+        !                    end do
+        !                end do
+        !            end do
+        !        end do
+        !
+        !        print *, "dsigma"
+        !        do i = 1, atoms%natoms
+        !            do j = 1, atoms%natoms
+        !                print '(2i4, 3f12.5)', i, j, sum(sum(dsigma(:,:,:,:,i,j), dim=3), dim=3)
+        !            end do
+        !        end do
+        !
+        !        print *, "dsigmat"
+        !        do i = 1, atoms%natoms
+        !            do k = 1, atoms%ntypes
+        !                do n = 1, atoms%ntypes
+        !                    print '(3i4, 3f12.5)', k,n, i, dsigmat(:,:,k,n,i)
+        !                end do
+        !            end do
+        !        end do
+
+        !        print *, "V", sum(V)
+        !        print '(2f15.8)', V(:,:,1)
 
 
         ! divide by cut-off scaling factors
@@ -378,42 +421,75 @@ contains
             end do
         end do
 
-
         do j = 1, atoms%natoms
             idx_j = atoms%idx(j)
             sigma(:,:,j) = sigma(:,:,j) * igamma1(idx_j)
         end do
 
-        do j = 1, atoms%natoms
-            idx_j = atoms%idx(j)
-            dsigma(:,:,idx_j,:,j) = dsigma(:,:,idx_j,:,j) * igamma1(idx_j)
+        do n = 1, atoms%ntypes
+            dsigma (:,:,n,:,:,:) = dsigma (:,:,n,:,:,:) * igamma1(n)
+            dsigmat(:,:,n,:,:)   = dsigmat(:,:,n,:,:)   * igamma1(n)
         end do
 
+        do k = 1, atoms%ntypes
+            do n = 1, atoms%ntypes
+                dV(:,:,n,k,:,:) = dV(:,:,n,k,:,:) * igamma2(n) *  pes_emt%v0(n) * chi(k,n)
+            end do
+        end do
 
-!        print *, "sigma scaled"
-!        print '(3f15.8)', sigma
+        !        print *, "dV scaled"
+        !        do i = 1, atoms%natoms
+        !            do j = 1, atoms%natoms
+        !                do k = 1, atoms%ntypes
+        !                    do n = 1, atoms%ntypes
+        !                        print '(4i4, 3f12.5)',n, k, i, j, dV(:,:,n,k,i,j)
+        !                    end do
+        !                end do
+        !            end do
+        !        end do
+
+
+        !        do j = 1, atoms%natoms
+        !            idx_j = atoms%idx(j)
+        !            dsigma(:,:,:,j) = dsigma(:,:,:,j) * igamma1(idx_j)
+        !        end do
+
+        !        print *, "sigma scaled"
+        !        print '(3f15.8)', sigma
+
+
 
         print *, "dsigma scaled"
         do i = 1, atoms%natoms
             do j = 1, atoms%natoms
-                do n = 1, atoms%ntypes
-                    print '(3i4, 3f12.5)', n, i, j, dsigma(:,1,n,i,j)
+                do k = 1, atoms%ntypes
+                    do n = 1, atoms%ntypes
+                        print '(4i4, 3f12.5)',k, n, i, j, dsigma(:,1,k,n,i,j)
+                    end do
                 end do
             end do
         end do
 
-        stop
+        print *, "dsigmat scaled"
+        do i = 1, atoms%natoms
+            do k = 1, atoms%ntypes
+                do n = 1, atoms%ntypes
+                    print '(3i4, 3f12.5)', k,n, i, dsigmat(:,:,k,n,i)
+                end do
+            end do
+        end do
 
-        print *, "V scaled"
-        print '(2f15.8)', V(:,:,1)
 
+
+        !        print *, "V scaled"
+        !        print '(2f15.8)', V(:,:,1)
 
 
 
         !-----------------------------NEUTRAL SPHERE RADIUS----------------------------
 
-        print *, "chi"
-        print *, chi
+        !        print *, "chi"
+        !        print *, chi
         do i = 1, atoms%natoms
             idx_i = atoms%idx(i)
             do j = 1, atoms%natoms
@@ -422,13 +498,40 @@ contains
             end do
         end do
 
-        print *, "s"
-        print '(3f15.8)',   s
+        do j = 1, atoms%natoms
+            idx_j = atoms%idx(j)
+            do i = 1, atoms%natoms
+                idx_i = atoms%idx(i)
+                if (idx_i == idx_j) then
+                    ds(:,:,idx_i,i,j) = dsigma (:,:,idx_i,idx_j,i,j)
+                    ds(:,:,idx_i,j,j) = dsigmat(:,:,idx_i,idx_j,j)
+                end if
+            end do
+        end do
 
-        print *, "betaeta2"
-        print '(2f15.8)', betaeta2
+        !        print *, "s"
+        !        print '(3f15.8)',   s
+        !
+        !        print *, "betaeta2"
+        !        print '(2f15.8)', betaeta2
+
+!        print *, "ds"
+!        do j = 1, atoms%natoms
+!            do i = 1, atoms%natoms
+!                print '(2i, 3f12.5)', i, j,  ds(:,:,i,j)
+!            end do
+!        end do
+
+        do i = 1, atoms%natoms
+            idx_i = atoms%idx(i)
+            do n = 1, atoms%ntypes
+            ds(:,:,n,i,i) = ds(:,:,n,i,i) - chi(n,idx_i)*dsigmat(:,:,n,idx_i,i)
+            print *, ds(:,:,n,i,i)
+        end do
+        end do
 
 
+stop
         do i = 1, atoms%natoms
             idx_i = atoms%idx(i)
             do b = 1, atoms%nbeads
