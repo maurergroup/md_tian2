@@ -49,6 +49,7 @@ module constants
     integer, parameter :: prop_id_beeman          = 1002
     integer, parameter :: prop_id_langevin        = 1003
     integer, parameter :: prop_id_langevin_series = 1004
+    integer, parameter :: prop_id_andersen        = 1005
 
     integer, parameter :: energy_and_force = 3001
     integer, parameter :: energy_only      = 3002

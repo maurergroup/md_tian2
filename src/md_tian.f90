@@ -42,6 +42,7 @@ program md_tian
 !        print *, ""
 !        print *, atoms%a
 !                print *, ""
+    print *, "Eref", atoms%epot
 
 
         do istep = 1, simparams%nsteps

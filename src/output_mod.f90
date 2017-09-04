@@ -2,7 +2,6 @@ module output_mod
 
     use universe_mod
     use useful_things
-    use deriv_qntts
     use open_file
     use constants
     use run_config, only : simparams

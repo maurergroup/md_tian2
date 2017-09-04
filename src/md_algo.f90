@@ -20,6 +20,9 @@ contains
                 case (prop_id_verlet)
                     call verlet_1(atoms, i)
 
+                case (prop_id_andersen)
+                    call andersen(atoms, i)
+
                 case default
                     stop "Error in propagate_1(): Unknown propagation algorithm"
 
@@ -71,8 +74,37 @@ contains
         type(universe), intent(inout) :: atoms
         integer, intent(in) :: i
 
-        where(.not. atoms%is_fixed(:,:,i)) atoms%v(:,:,i) = atoms%v(:,:,i) + 0.5_dp * simparams%step * atoms%a(:,:,i)
+        where(.not. atoms%is_fixed(:,:,i))
+            atoms%v(:,:,i) = atoms%v(:,:,i) + 0.5_dp * simparams%step * atoms%a(:,:,i)
+        end where
 
     end subroutine verlet_2
+
+
+    subroutine andersen(atoms, i)
+
+        type(universe), intent(inout) :: atoms
+        integer,        intent(in)    :: i
+
+        real(dp), dimension(3, atoms%nbeads) :: rnd1, rnd2, rnd3, choose
+        integer :: k, b
+
+        call random_number(rnd1)
+        call random_number(rnd2)
+        rnd3 = sqrt(-2.0_dp*log(rnd1)) * cos(2.0_dp*pi*rnd2)
+
+        call random_number(choose)
+
+        do b = 1, atoms%nbeads
+        do k = 1, 3
+            if (choose(k,b) < 1.0_dp/50.0_dp .and. .not. atoms%is_fixed(k,b,i))
+                atoms%v(k,b,i) = rnd3(k,b) * sqrt(atoms%m(atoms%idx(i))/Tsurf)
+            end if
+        end do
+        end do
+
+
+
+    end subroutine andersen
 
 end module md_algo

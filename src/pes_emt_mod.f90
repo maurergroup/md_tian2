@@ -198,14 +198,16 @@ contains
 
         real(dp), dimension(3) :: dtheta
 
-        real(dp), dimension(3, atoms%nbeads, atoms%ntypes, atoms%natoms, atoms%natoms) :: ds
-        real(dp), dimension(3, atoms%nbeads, atoms%ntypes, atoms%ntypes, &
-            atoms%natoms, atoms%natoms) :: dsigma, dV
-        real(dp), dimension(3, atoms%nbeads, atoms%ntypes, atoms%ntypes, atoms%natoms) :: dsigmat
-        real(dp), dimension(3, atoms%nbeads, atoms%ntypes, atoms%natoms, atoms%natoms) :: dEcoh
-        real(dp), dimension(3, atoms%nbeads, atoms%ntypes, atoms%natoms) :: dVref
         real(dp), dimension(3, atoms%nbeads, atoms%natoms) :: dVf
 
+        real(dp), dimension(3, atoms%nbeads, atoms%ntypes, atoms%natoms) :: dVref
+
+        real(dp), dimension(3, atoms%nbeads, atoms%ntypes, atoms%natoms, atoms%natoms) :: ds, dEcoh
+
+        real(dp), dimension(3, atoms%nbeads, atoms%ntypes, atoms%ntypes, atoms%natoms) :: dsigmat
+
+        real(dp), dimension(3, atoms%nbeads, atoms%ntypes, atoms%ntypes, &
+            atoms%natoms, atoms%natoms) :: dsigma, dV
 
 
         !----------------------VALUES OF FREQUENT USE ---------------------------------
@@ -216,14 +218,14 @@ contains
         ! beta * s0
         betas0 = beta * pes_emt%s0
 
-!        print *, "betas0"
-!        print '(2f12.8)', betas0
+        !        print *, "betas0"
+        !        print '(2f12.8)', betas0
 
         ! beta * eta2
         betaeta2 = beta * pes_emt%eta2
 
-!        print *, "betaeta2"
-!        print '(2f12.8)', betaeta2
+        !        print *, "betaeta2"
+        !        print '(2f12.8)', betaeta2
         ! kappa / beta
         kappadbeta = pes_emt%kappa / beta
 
@@ -235,12 +237,12 @@ contains
             end do
         end do
 
-        print *, "chi"
-        do i = 1, atoms%ntypes
-        do j = 1, atoms%ntypes
-        print  '(2i4, 2f19.15)', i,j,chi(i,j)
-        end do
-        end do
+        !        print *, "chi"
+        !        do i = 1, atoms%ntypes
+        !        do j = 1, atoms%ntypes
+        !        print  '(2i4, 2f19.15)', i,j,chi(i,j)
+        !        end do
+        !        end do
 
         ! Distances to the nearest, next-nearest and next-next-nearest neighbours
         rnn(:,1) = betas0
@@ -257,25 +259,25 @@ contains
 
         rcut = maxval(betas0) * sqrt3
 
-!        print *, "rcut"
-!        print  '(2f19.15)', rcut
+        !        print *, "rcut"
+        !        print  '(2f19.15)', rcut
 
         !rcut = a_lat * sqrt3 * isqrt2
         rr = select_rr('fcc', rcut)
         acut = 9.21034037197618_dp/(rr - rcut) ! ln(10000)
 
-!        print *, "acut"
-!        print '(2f19.15)', acut
+        !        print *, "acut"
+        !        print '(2f19.15)', acut
 
         do k = 1, 3
             x(:,k) = nneighs(k) * twelfth / (1.0_dp + exp(acut*(rnn(:,k)-rcut)))
             r3temp(:,k) = rnn(:,k) - betas0
         end do
 
-!        print *, "x"
-!        do i = 1, 3
-!            print '(2f19.15)', x(:,i)
-!        end do
+        !        print *, "x"
+        !        do i = 1, 3
+        !            print '(2f19.15)', x(:,i)
+        !        end do
         !-----------------------------------GAMMA--------------------------------------
         ! Gamma enforces the cut-off together with theta (see below)
         ! Gamma is defined as inverse.
@@ -290,10 +292,10 @@ contains
         igamma1 = 1.0_dp / igamma1
         igamma2 = 1.0_dp / igamma2
 
-!        print *, "igamma1"
-!        print '(2f19.15)', igamma1
-!        print *, "igamma2"
-!        print '(2f19.15)', igamma2
+        !        print *, "igamma1"
+        !        print '(2f19.15)', igamma1
+        !        print *, "igamma2"
+        !        print '(2f19.15)', igamma2
 
 
 
@@ -311,13 +313,13 @@ contains
         Ecoh  = 0.0_dp
         dens  = 0.0_dp
 
-        dsigma = 0.0_dp
-        dsigmat  = 0.0_dp
-        dV = 0.0_dp
-        dVf = 0.0_dp
-        ds = 0.0_dp
-        dEcoh = 0.0_dp
-        dVref = 0.0_dp
+        dsigma  = 0.0_dp
+        dsigmat = 0.0_dp
+        dV      = 0.0_dp
+        dVf     = 0.0_dp
+        ds      = 0.0_dp
+        dEcoh   = 0.0_dp
+        dVref   = 0.0_dp
 
         do i = 1, atoms%natoms-1
             idx_i = atoms%idx(i)
@@ -380,16 +382,16 @@ contains
         end do
 
 
-!        print *, "dV"
-!        do i = 1, atoms%natoms
-!            do j = 1, atoms%natoms
-!                do k = 1, atoms%ntypes
-!                    do n = 1, atoms%ntypes
-!                        print '(4i4, 3f12.5)', k, n, i, j, dV(:,:,k,n,i,j)
-!                    end do
-!                end do
-!            end do
-!        end do
+        !        print *, "dV"
+        !        do i = 1, atoms%natoms
+        !            do j = 1, atoms%natoms
+        !                do k = 1, atoms%ntypes
+        !                    do n = 1, atoms%ntypes
+        !                        print '(4i4, 3f12.5)', k, n, i, j, dV(:,:,k,n,i,j)
+        !                    end do
+        !                end do
+        !            end do
+        !        end do
         !        print *, "sigma"
         !        print '(3f15.8)', sigma
 
@@ -451,34 +453,34 @@ contains
 
         ! merge into force-suited structure (basically reverse the 1st loop)
         do i = 1, atoms%natoms-1
-        idx_i = atoms%idx(i)
+            idx_i = atoms%idx(i)
             do j = i+1, atoms%natoms
-            idx_j = atoms%idx(j)
+                idx_j = atoms%idx(j)
 
-            if (idx_i /= idx_j) then
-            dVf(:,:,i) = dVf(:,:,i) - 0.5*dV(:,:,idx_j,idx_i,i,j)
-            dVf(:,:,j) = dVf(:,:,j) - 0.5*dV(:,:,idx_j,idx_i,j,i)
+                if (idx_i /= idx_j) then
+                    dVf(:,:,i) = dVf(:,:,i) - 0.5*dV(:,:,idx_j,idx_i,i,j)
+                    dVf(:,:,j) = dVf(:,:,j) - 0.5*dV(:,:,idx_j,idx_i,j,i)
 
-            dVf(:,:,i) = dVf(:,:,i) - 0.5*dV(:,:,idx_i,idx_j,j,i)
-            dVf(:,:,j) = dVf(:,:,j) - 0.5*dV(:,:,idx_i,idx_j,i,j)
-            else
-            dVf(:,:,i) = dVf(:,:,i) - dV(:,:,idx_j,idx_i,i,j)
-            dVf(:,:,j) = dVf(:,:,j) - dV(:,:,idx_j,idx_i,j,i)
-            end if
+                    dVf(:,:,i) = dVf(:,:,i) - 0.5*dV(:,:,idx_i,idx_j,j,i)
+                    dVf(:,:,j) = dVf(:,:,j) - 0.5*dV(:,:,idx_i,idx_j,i,j)
+                else
+                    dVf(:,:,i) = dVf(:,:,i) - dV(:,:,idx_j,idx_i,i,j)
+                    dVf(:,:,j) = dVf(:,:,j) - dV(:,:,idx_j,idx_i,j,i)
+                end if
             end do
         end do
 
-        print '(3f12.5)' ,dVf
-!        print *, "dV scaled"
-!        do i = 1, atoms%natoms
-!            do j = 1, atoms%natoms
-!                do k = 1, atoms%ntypes
-!                    do n = 1, atoms%ntypes
-!                        print '(4i4, 3f12.5)',n, k, i, j, dV(:,:,n,k,i,j)
-!                    end do
-!                end do
-!            end do
-!        end do
+        !        print '(3f12.5)' ,dVf
+        !        print *, "dV scaled"
+        !        do i = 1, atoms%natoms
+        !            do j = 1, atoms%natoms
+        !                do k = 1, atoms%ntypes
+        !                    do n = 1, atoms%ntypes
+        !                        print '(4i4, 3f12.5)',n, k, i, j, dV(:,:,n,k,i,j)
+        !                    end do
+        !                end do
+        !            end do
+        !        end do
 
 
         !        do j = 1, atoms%natoms
@@ -491,25 +493,25 @@ contains
 
 
 
-!        print *, "dsigma scaled"
-!        do i = 1, atoms%natoms
-!            do j = 1, atoms%natoms
-!                do k = 1, atoms%ntypes
-!                    do n = 1, atoms%ntypes
-!                        print '(4i4, 3f12.5)',k, n, i, j, dsigma(:,1,k,n,i,j)
-!                    end do
-!                end do
-!            end do
-!        end do
+        !        print *, "dsigma scaled"
+        !        do i = 1, atoms%natoms
+        !            do j = 1, atoms%natoms
+        !                do k = 1, atoms%ntypes
+        !                    do n = 1, atoms%ntypes
+        !                        print '(4i4, 3f12.5)',k, n, i, j, dsigma(:,1,k,n,i,j)
+        !                    end do
+        !                end do
+        !            end do
+        !        end do
 
-        print *, "dsigmat scaled"
-        do i = 1, atoms%natoms
-            do k = 1, atoms%ntypes
-                do n = 1, atoms%ntypes
-                    print '(3i4, 3f12.5)', k,n, i, dsigmat(:,:,k,n,i)
-                end do
-            end do
-        end do
+        !        print *, "dsigmat scaled"
+        !        do i = 1, atoms%natoms
+        !            do k = 1, atoms%ntypes
+        !                do n = 1, atoms%ntypes
+        !                    print '(3i4, 3f12.5)', k,n, i, dsigmat(:,:,k,n,i)
+        !                end do
+        !            end do
+        !        end do
 
 
 
@@ -541,21 +543,20 @@ contains
             end do
         end do
 
-        !        print *, "s"
-        !        print '(3f15.8)',   s
-        !
-        !        print *, "betaeta2"
-        !        print '(2f15.8)', betaeta2
+                !        print *, "s"
+                !        print '(3f15.8)',   s
+                !
+                !        print *, "betaeta2"
+                !        print '(2f15.8)', betaeta2
 
-!        print *, "ds"
-!        do j = 1, atoms%natoms
-!            do i = 1, atoms%natoms
-!                do n = 1, atoms%ntypes
-!                    print '(3i, 3f12.5)', n, i, j,  ds(:,:,n,i,j)
-!                end do
-!            end do
-!        end do
-
+        !        print *, "ds"
+        !        do j = 1, atoms%natoms
+        !            do i = 1, atoms%natoms
+        !                do n = 1, atoms%ntypes
+        !                    print '(3i, 3f12.5)', n, i, j,  ds(:,:,n,i,j)
+        !                end do
+        !            end do
+        !        end do
         do i = 1, atoms%natoms
 
             idx_i = atoms%idx(i)
@@ -566,40 +567,54 @@ contains
 
             end do
 
+            !            do k = 1, 3
+            !                ds(k,:,idx_i,:,i) = ds(k,:,idx_i,:,i)/(betaeta2(idx_i)*s)
+            !            end do
+
             do k = 1, 3
-                ds(k,:,idx_i,:,i) = ds(k,:,idx_i,:,i)/(betaeta2(idx_i)*s)
+                where (s > tolerance)
+                    ds(k,:,idx_i,:,i) = ds(k,:,idx_i,:,i)/(betaeta2(idx_i)*s)
+                elsewhere
+                    ds(k,:,idx_i,:,i) = ds(k,:,idx_i,:,i)/(betaeta2(idx_i)*tolerance)
+                end where
             end do
 
             do j = 1, atoms%natoms
                 idx_j = atoms%idx(j)
                 if (idx_i /= idx_j) then
                     do k = 1, 3
-                        ds(k,:,idx_i,i,j) = -chi(idx_j,idx_i)*dsigma(k,:,idx_i,idx_j,i,j)/(betaeta2(idx_i)*s(:,i))
+                        where (s(:,i) > tolerance)
+                            ds(k,:,idx_i,i,j) = -chi(idx_j,idx_i) * &
+                                dsigma(k,:,idx_i,idx_j,i,j)/(betaeta2(idx_i)*s(:,i))
+                        elsewhere
+                            ds(k,:,idx_i,i,j) = -chi(idx_j,idx_i) * &
+                                dsigma(k,:,idx_i,idx_j,i,j)/(betaeta2(idx_i)*tolerance)
+                        end where
                     end do
                 end if
             end do
 
         end do
 
-        print *, "ds"
-        do j = 1, atoms%natoms
-            do i = 1, atoms%natoms
-                do n = 1, atoms%ntypes
-                    print '(3i, 3f12.5)', n, i, j,  ds(:,:,n,i,j)
-                end do
-            end do
-        end do
+        !        print *, "ds"
+        !        do j = 1, atoms%natoms
+        !            do i = 1, atoms%natoms
+        !                do n = 1, atoms%ntypes
+        !                    print '(3i, 3f12.5)', n, i, j,  ds(:,:,n,i,j)
+        !                end do
+        !            end do
+        !        end do
 
 
         do i = 1, atoms%natoms
             idx_i = atoms%idx(i)
             do b = 1, atoms%nbeads
-                if (s(b,i) > 0) s(b,i) = -log(s(b,i)*twelfth)/betaeta2(idx_i)
+                s(b,i) = -log(max(s(b,i), tolerance)*twelfth)/betaeta2(idx_i)
             end do
         end do
 
-!        print *, "s2"
-!        print '(3f15.8)',  s
+        !        print *, "s2"
+        !        print '(3f15.8)',  s
 
 
         !----------------------EMBEDDED ELECTRON DENSITY-------------------------------
@@ -609,8 +624,8 @@ contains
             dens(:,i) = pes_emt%n0(idx_i) * exp((0.5_dp/bohr2ang - betaeta2(idx_i))*s(:,i))
         end do
 
-!        print *, "dens"
-!        print '(3f15.8)', dens
+        !        print *, "dens"
+        !        print '(3f15.8)', dens
 
 
 
@@ -624,8 +639,8 @@ contains
                 exp(-pes_emt%lambda(idx_i)*s(:,i)) - 1.0_dp) * pes_emt%e0(idx_i)
         end do
 
-!        print *, "Ecoh"
-!        print '(2f15.8)', Ecoh
+              !  print *, "Ecoh"
+              !  print '(2f15.8)', Ecoh
 
 
         do i = 1, atoms%natoms
@@ -637,7 +652,7 @@ contains
 
                 end do
 
-!                dEcoh(k,:,i) = sum(s * exp(-pes_emt%lambda(idx_i) * s) * ds(k,:,idx_i,:,i), dim=2)
+            !                dEcoh(k,:,i) = sum(s * exp(-pes_emt%lambda(idx_i) * s) * ds(k,:,idx_i,:,i), dim=2)
             end do
         end do
 
@@ -645,14 +660,14 @@ contains
             dEcoh(:,:,n,:,:) = dEcoh(:,:,n,:,:) * pes_emt%e0(n) * pes_emt%lambda(n) * pes_emt%lambda(n)
         end do
 
-!        print *, "dEcoh"
-!        do i = 1, atoms%natoms
-!            do  j = 1, atoms%natoms
-!                do n = 1, atoms%ntypes
-!                    print '(3i4, 3f12.5)', n,i, j, dEcoh(:,:,n,i,j)
-!                end do
-!            end do
-!        end do
+        !        print *, "dEcoh"
+        !        do i = 1, atoms%natoms
+        !            do  j = 1, atoms%natoms
+        !                do n = 1, atoms%ntypes
+        !                    print '(3i4, 3f12.5)', n,i, j, dEcoh(:,:,n,i,j)
+        !                end do
+        !            end do
+        !        end do
 
 
          !----------------REFERENCE PAIR POTENTIAL CONTRIBUTIONS------------------------
@@ -664,24 +679,24 @@ contains
 
 
         do i = 1, atoms%natoms
-        do j = 1, atoms%natoms
-        do k = 1, 3
-            idx_j = atoms%idx(j)
-            dVref(k,:,idx_j,i) = dVref(k,:,idx_j,i) + exp(-pes_emt%kappa(idx_j)*s(:,j))*ds(k,:,idx_j,j,i)
-        end do
-        end do
+            do j = 1, atoms%natoms
+                do k = 1, 3
+                    idx_j = atoms%idx(j)
+                    dVref(k,:,idx_j,i) = dVref(k,:,idx_j,i) + exp(-pes_emt%kappa(idx_j)*s(:,j))*ds(k,:,idx_j,j,i)
+                end do
+            end do
         end do
 
-!        print *, "dVref"
-!        do i = 1, atoms%natoms
-!        do n = 1, atoms%ntypes
-!            print '(2i4, 3f12.5)', n, i, dVref(:,:,n,i)
-!        end do
-!        end do
-!
-!stop
-!        print *, "V_ref"
-!        print '(2f15.8)',  V_ref
+        !        print *, "dVref"
+        !        do i = 1, atoms%natoms
+        !        do n = 1, atoms%ntypes
+        !            print '(2i4, 3f12.5)', n, i, dVref(:,:,n,i)
+        !        end do
+        !        end do
+        !
+        !stop
+        !        print *, "V_ref"
+        !        print '(2f15.8)',  V_ref
 
 
         do b = 1, atoms%nbeads
@@ -692,43 +707,49 @@ contains
             dVref(:,:,n,:) = dVref(:,:,n,:) * 12.0_dp * pes_emt%v0(n) * pes_emt%kappa(n)
         end do
 
-!        print *, "V_ref_2"
-!        print '(2f15.8)',  V_ref
-!        print *, "dVref"
-!        do i = 1, atoms%natoms
-!        do n = 1, atoms%ntypes
-!            print '(2i4, 3f12.5)', n, i, dVref(:,:,n,i)
-!        end do
-!        end do
+        !        print *, "V_ref_2"
+        !        print '(2f15.8)',  V_ref
+        !        print *, "dVref"
+        !        do i = 1, atoms%natoms
+        !        do n = 1, atoms%ntypes
+        !            print '(2i4, 3f12.5)', n, i, dVref(:,:,n,i)
+        !        end do
+        !        end do
 
-        print *, "dV"
-        do i = 1, atoms%natoms
-        do j = 1, atoms%natoms
-        do n = 1, atoms%ntypes
-        do k = 1, atoms%ntypes
-            print '(4i4, 3f12.5)',  n,k,i, j,dV(:,:,n,k,i,j)
+        !        print *, "dV"
+        !        do i = 1, atoms%natoms
+        !        do j = 1, atoms%natoms
+        !        do n = 1, atoms%ntypes
+        !        do k = 1, atoms%ntypes
+        !            print '(4i4, 3f12.5)',  n,k,i, j,dV(:,:,n,k,i,j)
+        !
+        !        end do
+        !        end do
+        !        end do
+        !        end do
 
-        end do
-        end do
-        end do
-        end do
+        !        print *, "dVref"
+        !        do i = 1, atoms%natoms
+        !        do n = 1, atoms%ntypes
+        !        print '(2i4, 3f12.5)',  n,  i,  dVref(:,:,n,i)
+        !        end do
+        !        end do
 
 
 
         !-------------------------------TOTAL ENERGY---------------------------------
 
-        atoms%epot = Ecoh - 0.5_dp * (sum(sum(V, dim=1), dim=1) - sum(V_ref, dim=1))
+        atoms%epot = atoms%epot + Ecoh - 0.5_dp * (sum(sum(V, dim=1), dim=1) - sum(V_ref, dim=1))
+!print *, atoms%epot
+        atoms%f = atoms%f + sum(sum(dEcoh, dim=3), dim=3) - dVf + 0.5_dp * sum(dVref, dim=3)
+    !        print *, "atoms%f"
+    !        print '(3f12.5)', atoms%f
 
-        atoms%f = sum(sum(dEcoh, dim=3), dim=3) - dVf
-        print *, "atoms%f"
-        print '(3f12.5)', atoms%f
-
-        print *, "Epot", atoms%epot
+    !        print *, "Epot", atoms%epot
 
 
      !   slab%f = dEcoh_l_l + dEcoh_p_l - dV_ll_l - 0.50d0*(dV_lp_l + dV_pl_l - dvref_l_l - dvref_p_l)
 
-        stop
     end subroutine compute_emt
 
 

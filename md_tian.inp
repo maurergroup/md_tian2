@@ -2,11 +2,11 @@ run md
 
 start 1
 ntrajs 1
-nsteps 0
-step 0.1
+nsteps 20000
+step 1.0
 
-projectile 1  H    1.0 ver   
-lattice    1 Au 196.96657 ver 
+#projectile 1  H   1.0 ver   
+lattice    2 Ag 109.0 ver Au 196.96657 ver 
 
 
 incidence 3.33 180 90 3.33 180 90
@@ -17,13 +17,13 @@ inc_vib energy
 
 !Tsurf 300
 !annealing 1000 25 5
-
-conf poscar 'cart.POSCAR' 
+ 
+conf poscar 'AgAu.POSCAR' 1 1
 !conf poscar 'test.POSCAR' 1 2
 
 
 
 !pes definition
-pes './HAu.pes'
+pes './AgAu.pes'
 
-output 1 100000
+output 1 5
