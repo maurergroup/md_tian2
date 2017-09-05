@@ -1,13 +1,14 @@
 run md
 
-start 1
+start 2
 ntrajs 1
-nsteps 20000
-step 1.0
+nsteps 10000
+step 0.001
 
-#projectile 1  H   1.0 ver   
-lattice    2 Ag 109.0 ver Au 196.96657 ver 
+projectile 1  H   1.0 pil   
+#lattice    1 Au 196.96657 ver
 
+#pile_tau 200
 
 incidence 3.33 180 90 3.33 180 90
 inc_rot energy <3 orientation angles>
@@ -15,15 +16,17 @@ inc_vib energy
 
 !pip r r 6
 
-!Tsurf 300
+Tsurf 5
 !annealing 1000 25 5
  
-conf poscar 'AgAu.POSCAR' 1 1
+conf poscar 'lj.POSCAR' 1 1
 !conf poscar 'test.POSCAR' 1 2
 
 
 
 !pes definition
-pes './AgAu.pes'
+pes './lj.pes'
 
 output 1 5
+
+# 10 50 100 500 1000 5000 10000 200

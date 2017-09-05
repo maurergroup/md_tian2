@@ -41,6 +41,9 @@ module run_config
         character(len=3)  :: run                                    ! what to do
         integer           :: output(2)                              ! what to save
         character(len=15) :: pip(3)                                 ! determine initial projectile position
+        real(dp) :: andersen_freq                                   ! collision frequency of Andersen thermostat
+                                                                    !   draw from M.-B. distribution every nth time on avg
+        real(dp) :: pile_tau                                        ! PILE thermostat centroid mode thermostat time constant
 
     end type
 
@@ -70,6 +73,8 @@ contains
         new_simulation_parameters%run = default_string
         new_simulation_parameters%output = [default_int,default_int]
         new_simulation_parameters%pip = default_string
+        new_simulation_parameters%andersen_freq = 1.0_dp/30.0_dp
+        new_simulation_parameters%pile_tau = 200.0_dp
 
     end function
 
@@ -184,6 +189,10 @@ contains
 !                                            simparams%md_algo_l(i) = prop_id_langevin
 !                                        case ('sla')                ! langevin (series)
 !                                            simparams%md_algo_l(i) = prop_id_langevin_series
+                                        case ('and')
+                                            simparams%md_algo_l(i) = prop_id_andersen
+                                        case ('pil')
+                                            simparams%md_algo_l(i) = prop_id_pile
                                         case default
                                             print *, 'algorithm ', trim(words(2+3*i)),&
                                                 ' for lattice species ', trim(simparams%name_l(i)), ' unknown'
@@ -223,6 +232,10 @@ contains
 !                                            simparams%md_algo_p(i) = prop_id_langevin
 !                                        case ('sla')                ! langevin (series)
 !                                            simparams%md_algo_p(i) = prop_id_langevin_series
+                                        case ('and')
+                                            simparams%md_algo_p(i) = prop_id_andersen
+                                        case ('pil')
+                                            simparams%md_algo_p(i) = prop_id_pile
                                         case default
                                             print *, 'algorithm ', trim(words(2+3*i)),&
                                                 ' for projectile species ', trim(simparams%name_p(i)), ' unknown'
@@ -358,6 +371,18 @@ contains
                         if (simparams%pes_file /= default_string) stop 'Error in the input file: Multiple use of the pes key'
                         read(words(2), '(A)', iostat=ios) simparams%pes_file
                         if (ios /= 0) stop 'Error in the input file: pes file not specified'
+
+
+                    case ('andersen_freq')
+                        read(words(2), *, iostat=ios) simparams%andersen_freq
+                        simparams%andersen_freq = 1.0_dp / simparams%andersen_freq
+                        if (ios /= 0) stop 'Error in the input file: Error reading Andersen collision frequency'
+
+
+                    case ('pile_tau')
+                        read(words(2), *, iostat=ios) simparams%pile_tau
+                        if (ios /= 0) stop 'Error in the input file: Error reading Andersen collision frequency'
+
                     !TODO: add keywords for fit
 
 

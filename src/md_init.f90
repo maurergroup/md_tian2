@@ -50,7 +50,7 @@ contains
         call random_seed(size=randk)
 
         call read_input_file(input_file)        ! build the simparams object
-        call ensure_input_sanity()
+        call ensure_input_sanity(atoms)
         call read_geometry(atoms, simparams%confname_file)
         call read_pes(atoms)
         call remove_com_velocity(atoms)
@@ -301,7 +301,9 @@ end subroutine read_poscar
 
 
 
-subroutine ensure_input_sanity()
+subroutine ensure_input_sanity(atoms)
+
+    type(universe), intent(in) :: atoms
 
     character(len=*), parameter :: err = "sanity check error: "
     logical, allocatable :: interacting(:,:)
@@ -339,6 +341,9 @@ subroutine ensure_input_sanity()
         if ( (allocated(simparams%einc) .neqv. allocated(simparams%inclination)) .or. &
             (allocated(simparams%einc) .neqv. allocated(simparams%azimuth)) ) &
             stop err // "incidence conditions ambiguous."
+
+        if (atoms%nbeads > 1 .and. simparams%Tsurf == default_real) stop err // "RPMD needs system temperature."
+
 
             ! TODO: to be completed
 

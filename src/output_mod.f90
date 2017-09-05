@@ -100,7 +100,7 @@ contains
 
         character(len=8)                 :: traj_id
         character(len=max_string_length) :: fname
-        real(dp) :: avg_epot, ekin_p, ekin_l, etotal
+        real(dp) :: avg_epot, ekin_p, ekin_l, etotal, temp
 
 
         ! XXX: change system() to execute_command_line() when new compiler is available
@@ -111,7 +111,7 @@ contains
 
         if (overwrite) then
             call open_for_write(out_unit, fname)
-            write(out_unit, '(6a17)') 'time/fs', 'epot/eV', 'ekin_p/eV', 'ekin_l/eV', 'e_total/eV', 'f_total'
+            write(out_unit, '(7a17)') '#time/fs', 'T/K', 'epot/eV', 'ekin_p/eV', 'ekin_l/eV', 'e_total/eV', 'f_total'
         else
             call open_for_append(out_unit,fname)
         end if
@@ -121,7 +121,9 @@ contains
         call simple_ekin(atoms, ekin_p, ekin_l)
         etotal = ekin_p + ekin_l + avg_epot
 
-        write(out_unit, '(6e17.8e2)') istep*simparams%step, avg_epot, ekin_p, ekin_l, etotal, sum(atoms%f)
+        temp = calc_instant_temperature(atoms)
+
+        write(out_unit, '(7e17.8e2)') istep*simparams%step, temp, avg_epot, ekin_p, ekin_l, etotal, sum(atoms%f)
 
 
         close(out_unit)

@@ -179,6 +179,9 @@ contains
         ! obtain new inverse cell matrix
         other%isimbox = invert_matrix(other%simbox)
 
+        ! set DOFs
+        other%dof = this%dof * nreps
+
         ! replace old atoms
         this = other
 
@@ -259,7 +262,6 @@ contains
 
 
 
-
      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
      !!  procedures that derive quantities !!
      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -286,7 +288,7 @@ contains
 
 
 
-    pure real(dp) function calc_instant_temperature(this) result(temperature)
+    real(dp) function calc_instant_temperature(this) result(temperature)
 
         type(universe), intent(in) :: this
         real(8)                    :: temp
@@ -302,6 +304,33 @@ contains
         temperature = temp / kB / this%dof
 
     end function calc_instant_temperature
+
+
+
+    subroutine calc_momentum_all(this, p)
+
+        type(universe), intent(in)  :: this
+        real(dp),  intent(out) :: p(3, this%nbeads, this%natoms)
+
+        integer :: i
+
+        do i = 1, this%natoms
+            p(:,:,i) = this%m(this%idx(i)) * this%v(:,:,i)
+        end do
+
+    end subroutine calc_momentum_all
+
+
+
+    function calc_momentum_one(this, i) result(momentum)
+
+        type(universe), intent(in)  :: this
+        integer       , intent(in)  :: i
+        real(dp)                    :: momentum(3, this%nbeads)
+
+        momentum = this%m(this%idx(i)) * this%v(:,:,i)
+
+    end function calc_momentum_one
 
 
 
