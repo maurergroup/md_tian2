@@ -22,7 +22,6 @@ contains
         if (any(atoms%pes == pes_id_simple_lj)) call compute_simple_lj(atoms, energy_and_force)
         if (any(atoms%pes == pes_id_emt))       call compute_emt(atoms, energy_and_force)
 
-
         call set_acceleration(atoms)
 
     end subroutine calc_force

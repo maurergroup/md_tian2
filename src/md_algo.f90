@@ -98,10 +98,10 @@ contains
         integer,        intent(in)    :: i
 
         real(dp), dimension(3, atoms%nbeads) :: rnd1, rnd2, rnd3, choose
-        real(dp) :: betaN
+        real(dp) :: ibetaN
         integer :: k, b
 
-        betaN = atoms%nbeads * kB * simparams%Tsurf
+        ibetaN = atoms%nbeads * kB * simparams%Tsurf
 
         call random_number(rnd1)
         call random_number(rnd2)
@@ -112,7 +112,7 @@ contains
         do b = 1, atoms%nbeads
             do k = 1, 3
                 if (choose(k,b) < simparams%andersen_freq .and. .not. atoms%is_fixed(k,b,i)) &
-                    atoms%v(k,b,i) = rnd3(k,b) * sqrt(betaN/atoms%m(atoms%idx(i)))
+                    atoms%v(k,b,i) = rnd3(k,b) * sqrt(ibetaN/atoms%m(atoms%idx(i)))
                     !print *, rnd3(k,b), sqrt(betaN/atoms%m(atoms%idx(i)))
             end do
         end do

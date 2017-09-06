@@ -395,8 +395,7 @@ contains
         vec = matmul(this%isimbox, vec)   ! transform to direct coordinates
         vec = vec - anint(vec)            ! imaging
         vec = matmul(this%simbox, vec)    ! back to cartesian coordinates
-
-        r =  sqrt(sum(vec*vec))      ! distance
+        r =  sqrt(sum(vec*vec, dim=1))    ! distance
 
     end subroutine minimg_beads
 

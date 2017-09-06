@@ -44,6 +44,7 @@ module run_config
         real(dp) :: andersen_freq                                   ! collision frequency of Andersen thermostat
                                                                     !   draw from M.-B. distribution every nth time on avg
         real(dp) :: pile_tau                                        ! PILE thermostat centroid mode thermostat time constant
+        integer :: force_beads                                      ! inititalizes all atoms with this many beads
 
     end type
 
@@ -75,6 +76,7 @@ contains
         new_simulation_parameters%pip = default_string
         new_simulation_parameters%andersen_freq = 1.0_dp/30.0_dp
         new_simulation_parameters%pile_tau = 200.0_dp
+        new_simulation_parameters%force_beads = default_int
 
     end function
 
@@ -382,6 +384,12 @@ contains
                     case ('pile_tau')
                         read(words(2), *, iostat=ios) simparams%pile_tau
                         if (ios /= 0) stop 'Error in the input file: Error reading Andersen collision frequency'
+
+
+                    case ('force_beads')
+                       if (simparams%force_beads /= default_int) stop 'Error in the input file: Multiple use of the force_beads key'
+                       read(words(2), '(i1000)', iostat=ios) simparams%force_beads
+                       if (ios /= 0) stop 'Error in the input file: Error reading force_beads'
 
                     !TODO: add keywords for fit
 

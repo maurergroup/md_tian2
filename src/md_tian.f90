@@ -25,6 +25,8 @@ program md_tian
     integer :: itraj, istep, i, j, b
     type(universe) :: atoms
 
+    real(dp), dimension(1) :: dummy1, dummy2
+
 
     real(dp) :: tmp, vcm(3), nom(3), denom(3), tinit, tinter
 
@@ -35,6 +37,7 @@ program md_tian
     do itraj = simparams%start, simparams%start+simparams%ntrajs-1
 
         call calc_force(atoms)
+
 
 !        print *, atoms%r
 !        print *, ""
@@ -50,9 +53,14 @@ program md_tian
             call propagate_1(atoms)
 !            print *, atoms%r
 
-            if (atoms%nbeads > 1) call ring_polymer_step(atoms)
+
+
+            if (atoms%nbeads > 1) call do_ring_polymer_step(atoms)
+
+
             call calc_force(atoms)
             call propagate_2(atoms)
+            call calc_ring_polymer_energy(atoms, dummy1, dummy2)
 
 !            print *, atoms%r
 !            print *, ""

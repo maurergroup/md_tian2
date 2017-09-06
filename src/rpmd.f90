@@ -36,7 +36,7 @@ contains
     end subroutine build_cjk
 
 
-    subroutine ring_polymer_step(atoms)
+    subroutine do_ring_polymer_step(atoms)
 
         type(universe), intent(inout) :: atoms
 
@@ -45,7 +45,7 @@ contains
         real(dp) :: poly(4, atoms%nbeads)
         real(dp), dimension(3) :: p_new
         real(dp) :: twown, wk, wt, wm, cos_wt, sin_wt
-        real(dp)                                      :: betaN, piN
+        real(dp) :: betaN, piN, mass
 
         integer :: i, b, k
 
@@ -70,19 +70,19 @@ contains
         newQ = 0.0_dp
         do b = 1, atoms%nbeads
             do k = 1, atoms%nBeads
-                newP(:,b,:) = newP(:,b,:) + p(:,b,:)*cjk(k,b)
-                newQ(:,b,:) = newQ(:,b,:) + q(:,b,:)*cjk(k,b)
+                newP(:,b,:) = newP(:,b,:) + p(:,k,:)*cjk(k,b)
+                newQ(:,b,:) = newQ(:,b,:) + q(:,k,:)*cjk(k,b)
             end do
         end do
         p = newP
         q = newQ
 
-
         piN = pi / atoms%nbeads
         do i = 1, atoms%natoms
+            mass = atoms%m(atoms%idx(i))
             poly(1, 1) = 1.0_dp
             poly(2, 1) = 0.0_dp
-            poly(3, 1) = simparams%step / atoms%m(atoms%idx(i))
+            poly(3, 1) = simparams%step / mass
             poly(4, 1) = 1.0_dp
 
             if (atoms%nbeads > 1) then
@@ -90,7 +90,7 @@ contains
                 do b = 1, atoms%nbeads / 2
                     wk = twown * sin(b * piN)
                     wt = wk * simparams%step
-                    wm = wk * atoms%m(atoms%idx(i))
+                    wm = wk * mass
                     cos_wt = cos(wt)
                     sin_wt = sin(wt)
                     poly(1, b+1) =       cos_wt
@@ -121,13 +121,14 @@ contains
         end where
 
         do i = 1, atoms%natoms
+            mass = atoms%m(atoms%idx(i))
             do b = 1, atoms%nbeads
                 do k = 1, atoms%nbeads
                     !                newP(:,:,j) = newP(:,:,j) + p(:,:,k)*cjk(j,k)
                     !                newQ(:,:,j) = newQ(:,:,j) + q(:,:,k)*cjk(j,k)
                     where (.not. atoms%is_fixed(:,b,i))
                         atoms%r(:,b,i) = atoms%r(:,b,i) + q(:,k,i)*cjk(b,k)
-                        atoms%v(:,b,i) = atoms%v(:,b,i) + p(:,k,i)*cjk(b,k)/atoms%m(atoms%idx(i))
+                        atoms%v(:,b,i) = atoms%v(:,b,i) + p(:,k,i)*cjk(b,k)/mass
                     end where
                 end do
             end do
@@ -145,7 +146,57 @@ contains
 
 
 
-    end subroutine ring_polymer_step
+    end subroutine do_ring_polymer_step
 
 
-end module rpmd
+    function calc_inter_bead_distances(atoms) result (dists)
+
+        type(universe), intent(in) :: atoms
+
+        real(dp)       :: dists(atoms%nbeads, atoms%natoms)
+        real(dp)      :: vec(3, atoms%nbeads, atoms%natoms)
+        integer :: b, k
+
+        do b = 1, atoms%nbeads
+
+            k = modulo(b, atoms%nbeads)+1 ! next bead
+
+            vec(:,b,:) = atoms%r(:,b,:)-atoms%r(:,k,:)   ! distance vector from a to b
+            vec(:,b,:) = matmul(atoms%isimbox, vec(:,b,:))   ! transform to direct coordinates
+            vec(:,b,:) = vec(:,b,:) - anint(vec(:,b,:))            ! imaging
+            vec(:,b,:) = matmul(atoms%simbox, vec(:,b,:))    ! back to cartesian coordinates
+        end do
+
+        dists =  sqrt(sum(vec*vec, dim=1))    ! distance
+
+    end function calc_inter_bead_distances
+
+
+    subroutine calc_ring_polymer_energy(atoms, ekin, epot)
+
+        type(universe),                    intent(in)  :: atoms
+        real(dp), dimension(atoms%natoms), intent(out) :: ekin, epot
+
+        real(dp) :: ibetaN
+        real(dp), dimension(atoms%nbeads, atoms%natoms) :: dx
+        integer :: i
+
+        ibetaN = kB * simparams%Tsurf * atoms%nbeads
+        dx = calc_inter_bead_distances(atoms)
+
+        epot = 0.0_dp
+
+        epot = sum(dx*dx, dim=1)
+        do i = 1, atoms%natoms
+            epot(i) = epot(i) * 0.5_dp * atoms%m(atoms%idx(i)) * ibetaN * ibetaN
+            ekin(i) = 0.5_dp * atoms%m(atoms%idx(i)) * sum(atoms%v(:,:,i)*atoms%v(:,:,i))
+        end do
+
+        print *, epot(1), ekin(1)
+
+    end subroutine calc_ring_polymer_energy
+
+
+
+
+    end module rpmd

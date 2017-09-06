@@ -227,16 +227,20 @@ contains
 
                 call minimg_beads(atoms, i, j, r, vec)
 
+                if (any(r < tolerance)) then
+                    print *, "Error in compute_lj: distance too small between &
+                        beads number", minloc(r), "of atoms", i, "and", j
+                    call abort
+                end if
+
                 sig_rc = pes_lj%sigma(idx_i,idx_j) / pes_lj%cutoff
-                sig_rc_2 = sig_rc * sig_rc
-                sig_rc_6 = sig_rc_2 * sig_rc_2 * sig_rc_2
+                sig_rc_2  = sig_rc   * sig_rc
+                sig_rc_6  = sig_rc_2 * sig_rc_2 * sig_rc_2
                 sig_rc_12 = sig_rc_6 * sig_rc_6
 
-                where (r < tolerance) r = tolerance
-
                 sig_r = pes_lj%sigma(idx_i,idx_j) / r
-                sig_r_2 = sig_r * sig_r
-                sig_r_6 = sig_r_2 * sig_r_2 * sig_r_2
+                sig_r_2  = sig_r   * sig_r
+                sig_r_6  = sig_r_2 * sig_r_2 * sig_r_2
                 sig_r_12 = sig_r_6 * sig_r_6
 
                 nrg = 4*pes_lj%eps(idx_i,idx_j) * ( (sig_r_12-sig_r_6)  &
@@ -290,12 +294,18 @@ contains
 
                 call minimg_beads(atoms, i, j, r, vec)
 
+                if (any(r < tolerance)) then
+                    print *, "Error in compute_simple_lj: distance too small between &
+                        beads number", minloc(r), "of atoms", i, "and", j
+                    call abort
+                end if
 
                 r2  = sum(vec*vec, dim=1)
+
                 fr2 = pes_lj%sigma(idx_i, idx_j)**2 / r2
                 fr6 = fr2 * fr2 * fr2
 
-                nrg =  4.0_dp * pes_lj%eps(idx_i, idx_j) * fr6 * (fr6 - 1.0_dp)
+                nrg =  4 * pes_lj%eps(idx_i, idx_j) * fr6 * (fr6 - 1)
                 atoms%Epot = atoms%Epot + nrg
 
                 if (flag == energy_and_force) then

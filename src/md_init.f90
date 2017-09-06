@@ -27,8 +27,6 @@ contains
 
     subroutine simbox_init(atoms)
 
-        use pes_lj_mod
-
         type(universe), intent(out) :: atoms
 
         character(len=:), allocatable :: input_file
@@ -50,10 +48,15 @@ contains
         call random_seed(size=randk)
 
         call read_input_file(input_file)        ! build the simparams object
-        call ensure_input_sanity(atoms)
+        call ensure_input_sanity()
+
         call read_geometry(atoms, simparams%confname_file)
+        call ensure_geometry_sanity(atoms)
+
         call read_pes(atoms)
         call remove_com_velocity(atoms)
+        call post_process(atoms)
+
 
 
     !TODO: Do not forget to convert the angles from degrees to program units
@@ -201,9 +204,9 @@ contains
         ! read number of atoms and number of beads
         read(geo_unit, '(A)', iostat=ios) buffer
         if (ios /= 0) stop err_read_poscar // "reading number of atoms and beads"
-        pos1 = scan(string=buffer, set=":", back=.False.)
+        pos1 = scan(string=buffer, set=":", back=.false.)
         if (pos1 > 0) then  ! Number of beads is stated in the file
-            pos2 = scan(string=buffer, set=":", back=.True.)
+            pos2 = scan(string=buffer, set=":", back=.true.)
             read(buffer(pos1+1:pos2-1), '(i10)', iostat=ios) nbeads
             if (ios /= 0 .or. nbeads < 1) stop err_read_poscar // "reading number of beads"
         end if
@@ -245,7 +248,7 @@ contains
         else
         stop err_read_poscar // "cannot read coordinate section"
 
-    end if
+        end if
 
     ! Check if there is a velocity section
     read(geo_unit, '(A)', iostat=ios) buffer
@@ -301,17 +304,9 @@ end subroutine read_poscar
 
 
 
-subroutine ensure_input_sanity(atoms)
+subroutine ensure_input_sanity()
 
-    type(universe), intent(in) :: atoms
-
-    character(len=*), parameter :: err = "sanity check error: "
-    logical, allocatable :: interacting(:,:)
-    integer :: ntypes, i
-
-    ntypes = simparams%nprojectiles+simparams%nlattices
-    allocate(interacting(ntypes,ntypes))
-    interacting = .false.
+    character(len=*), parameter :: err = "input sanity check error: "
 
     ! Check the *.inp file
     !!! Perform MD
@@ -342,7 +337,6 @@ subroutine ensure_input_sanity(atoms)
             (allocated(simparams%einc) .neqv. allocated(simparams%azimuth)) ) &
             stop err // "incidence conditions ambiguous."
 
-        if (atoms%nbeads > 1 .and. simparams%Tsurf == default_real) stop err // "RPMD needs system temperature."
 
 
             ! TODO: to be completed
@@ -354,38 +348,70 @@ subroutine ensure_input_sanity(atoms)
 
 
     end if
-    !
-    !        integer :: start                                            ! a trajectory to start with
-    !        integer :: ntrajs                                           ! number of trajectories
-    !        integer :: nsteps                                           ! number of steps
-    !        real(dp):: step                                             ! time step in fs
-    !        integer :: nlattices                                        ! number of lattice species
-    !        integer :: nprojectiles                                     ! number of incident species
-    !        character(len=3), allocatable :: name_l(:), name_p(:)       ! atomic names
-    !        real(dp),         allocatable :: mass_l(:), mass_p(:)       ! atomic masses
-    !        integer,          allocatable :: md_algo_l(:), md_algo_p(:) ! and respective key
-    !        real(dp),         allocatable :: einc(:)                    ! incidence energy (eV)
-    !        real(dp),         allocatable :: inclination(:)             ! incidence polar angle (degree)
-    !        real(dp),         allocatable :: azimuth(:)                 ! incidence azimuthal angle (degree)
-    !        real(dp):: Tsurf                                            ! surface temperature in K
-    !        real(dp):: sa_Tmax                                          ! max. Tsurf for simulated annealing in K
-    !        integer :: sa_nsteps                                        ! number of steps per simulated annealing cycle
-    !        integer :: sa_interval                                      ! number of steps per temperature interval
-    !        character(len=7)    :: confname                             ! configuration key
-    !        character(len=max_string_length) :: confname_file           ! name of the system configuration file or folder
-    !        integer :: rep(2)                                           ! defines in-plane repetitions
-    !        integer :: nconfs                                           ! number of configurations to read in
-    !        character(len=max_string_length) :: pes_file                ! name of the file that stores the potential parameters
-    !        character(len=3) :: run                                     ! what to do
-    !        integer, dimension(2) :: output                             ! what to save
-    !        character(len=15) :: pip(3)                                 ! determine initial projectile position
-
-
-
 
 
 
 end subroutine ensure_input_sanity
+
+
+
+subroutine ensure_geometry_sanity(atoms)
+
+        type(universe), intent(in) :: atoms
+        character(len=*), parameter :: err = "geometry sanity check error: "
+
+
+        if (atoms%nbeads > 1 .and. simparams%Tsurf == default_real) stop err // "RPMD needs system temperature."
+        if (simparams%force_beads < 1) stop err // "Cannot force zero or less beads."
+        if (simparams%force_beads /= default_int .and. atoms%nbeads /= 1) stop err // "Cannot force any beads when system already contains multiple beads."
+
+end subroutine ensure_geometry_sanity
+
+
+
+
+subroutine post_process(this)
+
+    use run_config, only : simparams
+
+    type(universe), intent(inout) :: this
+
+    type(universe) :: other
+    integer :: b
+
+    ! possibly force the system to have multiple beads
+    if (simparams%force_beads /= default_int) then
+
+        other = new_atoms(simparams%force_beads, this%natoms, this%ntypes)
+
+        do b = 1, simparams%force_beads
+
+            other%r(:,b,:) = this%r(:,1,:)
+            other%v(:,b,:) = this%v(:,1,:)
+            other%a(:,b,:) = this%a(:,1,:)
+            other%f(:,b,:) = this%f(:,1,:)
+            other%epot(b)  = this%epot(1)
+            other%is_fixed(:,b,:) = this%is_fixed(:,1,:)
+
+        end do
+
+        other%idx     = this%idx
+        other%m       = this%m
+        other%name    = this%name
+        other%pes     = this%pes
+        other%algo    = this%algo
+        other%is_proj = this%is_proj
+
+        other%dof     = simparams%force_beads * this%dof
+        other%simbox  = this%simbox
+        other%isimbox = this%isimbox
+        other%is_cart = this%is_cart
+
+        this = other
+
+    end if
+
+end subroutine post_process
 
 
 

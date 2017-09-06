@@ -331,9 +331,14 @@ contains
 
                 do b = 1, atoms%nbeads
 
-
                     ! Applying PBCs
                     call minimg_one(atoms, i, j, b, r, vec)
+
+                    if (r < tolerance) then
+                        print *, "Error in compute_emt: distance too small between &
+                            beads number", b, "of atoms", i, "and", j
+                        call abort
+                    end if
 
                     ! drops atoms outside (cutoff*rcut)-sphere
                     !if (r > cutoff*rcut) cycle
