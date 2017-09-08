@@ -20,6 +20,7 @@ module md_init
     use constants
     use pes_lj_mod
     use pes_emt_mod
+    use pes_non_mod
 
     implicit none
 
@@ -70,12 +71,11 @@ contains
 
         type(universe), intent(inout) :: atoms
 
-        character(len=*), parameter :: err_pes_init = "Error in pes_init: "
         integer :: ios = 0, nwords, i
         integer, parameter :: pes_unit = 38
         character(len=max_string_length) :: buffer
         character(len=max_string_length) :: words(100)
-        character(len=*), parameter :: err = "Erorr in read_pes(): "
+        character(len=*), parameter :: err = "Error in read_pes(): "
 
         if (.not. file_exists(simparams%pes_file)) stop err // "PES file does not exist"
 
@@ -110,6 +110,9 @@ contains
                         !
                         !                        case ('rebo')
                         !                            call read_rebo(pes_unit)
+
+                        case ('non')
+                            call read_non_interacting(atoms, pes_unit)
 
                         case default
                             print *, err // "unknown potential in PES file:", words(2)

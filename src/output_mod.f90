@@ -10,6 +10,7 @@ module output_mod
 
     logical :: overwrite = .true.
     integer, parameter :: out_unit = 86
+    integer :: out_id = 1
 
 
 contains
@@ -27,6 +28,10 @@ contains
 
             case (format_nrg)
                 call output_nrg(atoms, itraj, istep)
+
+            case (format_poscar)
+                call output_poscar(atoms)
+                out_id = out_id + 1
 
             case (default_int)
                 print *,  err // "output format not specified"
@@ -67,7 +72,7 @@ contains
 
         forall (i = 1 : atoms%natoms) cart_coords(:,:,i) = matmul(atoms%simbox, dir_coords(:,:,i))
 
-        write(traj_id,'(I8.8)') itraj
+        write(traj_id,'(i8.8)') itraj
         fname = 'conf/mxt_conf'//traj_id//'.xyz'
 
         if (overwrite) then
@@ -106,7 +111,7 @@ contains
         ! XXX: change system() to execute_command_line() when new compiler is available
         if (.not. dir_exists('conf')) call system('mkdir conf')
 
-        write(traj_id,'(I8.8)') itraj
+        write(traj_id,'(i8.8)') itraj
         fname = 'conf/mxt_trj'//traj_id//'.dat'
 
         if (overwrite) then
@@ -128,7 +133,51 @@ contains
 
         close(out_unit)
 
-
     end subroutine output_nrg
+
+
+    subroutine output_poscar(atoms)
+
+        type(universe), intent(in) :: atoms
+
+        character(len=max_string_length) :: fname
+        character(len=8) :: fid
+        integer :: time_vals(8), noccurrences(atoms%ntypes)
+        integer :: i, j
+
+
+
+        write(fid,'(i8.8)') out_id
+        fname = 'conf/mxt_'//fid//'.POSCAR'
+        call open_for_write(out_unit, fname)
+
+        ! write date and time as comment line
+        call date_and_time(values=time_vals)
+        write(out_unit, '(i4, a, i2.2, a, i2.2, a, i2.2, a, i2.2)') &
+            time_vals(1), "-", time_vals(2), "-",time_vals(3), " - ",time_vals(5), ".",time_vals(6)
+
+        ! prepare arrays
+        noccurrences = 0
+        do i = 1, atoms%natoms
+            noccurrences(atoms%idx(i)) = noccurrences(atoms%idx(i)) + 1
+        end do
+
+        !if (.not. atoms%is_cart) call to_cartesian(atoms)
+
+
+        write(out_unit, '(a)') '1.0'
+        write(out_unit, '(3f23.15)') atoms%simbox
+        write(out_unit, *) atoms%name
+        write(out_unit, '(a1, i, a4, i)') ":", atoms%nbeads, ":" , 7!, noccurrences
+
+        write(out_unit, '(a)') "Cartesian" ! switch here
+
+        write(out_unit, '(3f23.15, 3l)') ((atoms%r(:,j,i), .not.atoms%is_fixed(:,j,i), j=1,atoms%nbeads), &
+                    i=1,atoms%natoms)
+
+
+        close(out_unit)
+
+    end subroutine output_poscar
 
 end module output_mod

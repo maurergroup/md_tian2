@@ -13,8 +13,8 @@ module constants
     real(dp), parameter :: isqrt2   = 1.0_dp/sqrt2
     real(dp), parameter :: sqrt3    = sqrt(3.0_dp)
     real(dp), parameter :: pi       = acos(-1.0_dp)
-    real(dp), parameter :: kB       = 8.61733238496e-5_dp
-    real(dp), parameter :: hbar     = 0.6582119280967_dp
+    real(dp), parameter :: kB       = 8.61733238496e-5_dp       ! eV / K
+    real(dp), parameter :: hbar     = 0.6582119514467406_dp     ! eV * fs
     real(dp), parameter :: twelfth  = 1.0_dp/12.0_dp
 
 
@@ -24,12 +24,13 @@ module constants
     integer, parameter :: nparams_emt   = 7
     integer, parameter :: nparams_rebo  = 13
 
-    integer, parameter :: pes_id_lj        = 2001
-    integer, parameter :: pes_id_morse     = 2002
-    integer, parameter :: pes_id_emt       = 2003
-    integer, parameter :: pes_id_rebo      = 2004
-    integer, parameter :: pes_id_ho        = 2005
-    integer, parameter :: pes_id_simple_lj = 2006
+    integer, parameter :: pes_id_lj             = 2001
+    integer, parameter :: pes_id_morse          = 2002
+    integer, parameter :: pes_id_emt            = 2003
+    integer, parameter :: pes_id_rebo           = 2004
+    integer, parameter :: pes_id_ho             = 2005
+    integer, parameter :: pes_id_simple_lj      = 2006
+    integer, parameter :: pes_id_no_interaction = 2007
 
 
     ! Internal program constants
@@ -57,8 +58,9 @@ module constants
 
 
     ! Output
-    integer, parameter :: format_xyz = 1
-    integer, parameter :: format_nrg = 2
+    integer, parameter :: format_xyz    = 1
+    integer, parameter :: format_nrg    = 2
+    integer, parameter :: format_poscar = 3
 
     ! Conversion constants to program units
     !

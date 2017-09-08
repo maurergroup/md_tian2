@@ -463,11 +463,11 @@ contains
                 idx_j = atoms%idx(j)
 
                 if (idx_i /= idx_j) then
-                    dVf(:,:,i) = dVf(:,:,i) - 0.5*dV(:,:,idx_j,idx_i,i,j)
-                    dVf(:,:,j) = dVf(:,:,j) - 0.5*dV(:,:,idx_j,idx_i,j,i)
+                    dVf(:,:,i) = dVf(:,:,i) - 0.5_dp*dV(:,:,idx_j,idx_i,i,j)
+                    dVf(:,:,j) = dVf(:,:,j) - 0.5_dp*dV(:,:,idx_j,idx_i,j,i)
 
-                    dVf(:,:,i) = dVf(:,:,i) - 0.5*dV(:,:,idx_i,idx_j,j,i)
-                    dVf(:,:,j) = dVf(:,:,j) - 0.5*dV(:,:,idx_i,idx_j,i,j)
+                    dVf(:,:,i) = dVf(:,:,i) - 0.5_dp*dV(:,:,idx_i,idx_j,j,i)
+                    dVf(:,:,j) = dVf(:,:,j) - 0.5_dp*dV(:,:,idx_i,idx_j,i,j)
                 else
                     dVf(:,:,i) = dVf(:,:,i) - dV(:,:,idx_j,idx_i,i,j)
                     dVf(:,:,j) = dVf(:,:,j) - dV(:,:,idx_j,idx_i,j,i)
@@ -563,7 +563,6 @@ contains
         !            end do
         !        end do
         do i = 1, atoms%natoms
-
             idx_i = atoms%idx(i)
             do n = 1, atoms%ntypes
                 if (idx_i /= n) then

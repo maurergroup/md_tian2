@@ -47,12 +47,11 @@ program md_tian
 !                print *, ""
     print *, "Eref", atoms%epot
 
-
+print *, simparams%nsteps
         do istep = 1, simparams%nsteps
 
             call propagate_1(atoms)
 !            print *, atoms%r
-
 
 
             if (atoms%nbeads > 1) call do_ring_polymer_step(atoms)
@@ -60,13 +59,15 @@ program md_tian
 
             call calc_force(atoms)
             call propagate_2(atoms)
-            call calc_ring_polymer_energy(atoms, dummy1, dummy2)
+           ! if (atoms%nbeads > 1) call calc_ring_polymer_energy(atoms, dummy1, dummy2)
+
 
 !            print *, atoms%r
 !            print *, ""
 !            print *, atoms%f
 !        print *, ""
 !        print *, atoms%a
+           ! print *,  calc_centroid_ekin(atoms), sum(atoms%epot)
 
             if (mod(istep, simparams%output(2)) == 0) call output(atoms, itraj, istep, simparams%output(1))
 

@@ -117,6 +117,12 @@ contains
         !        print *, "before"
         !        print *, this%r
 
+        ! XXX: ONLY WORKS FOR rep(1) == rep(2)
+        if (rep(1) /= rep(2)) then
+            print *, "Repetition does not work yet for asymmetrical repetitions."
+            call abort
+        end if
+
         if (this%is_cart) call to_direct(this)
         nreps = (1+2*rep(1)) * (1+2*rep(2))
 
@@ -292,13 +298,11 @@ contains
 
         type(universe), intent(in) :: this
         real(8)                    :: temp
-        integer :: i, b
+        integer :: i
 
         temp = 0.0_dp
         do i = 1, this%natoms
-            do b = 1, this%nbeads
-                temp = temp + this%m(this%idx(i)) * sum(this%v(:,b,i))**2
-            end do
+            temp = temp + this%m(this%idx(i)) * sum(this%v(:,:,i)*this%v(:,:,i))
         end do
 
         temperature = temp / kB / this%dof
@@ -310,7 +314,7 @@ contains
     subroutine calc_momentum_all(this, p)
 
         type(universe), intent(in)  :: this
-        real(dp),  intent(out) :: p(3, this%nbeads, this%natoms)
+        real(dp), intent(out) :: p(3, this%nbeads, this%natoms)
 
         integer :: i
 

@@ -12,10 +12,10 @@ contains
     subroutine calc_force(atoms)
 
         type(universe), intent(inout) :: atoms
-        character(len=*), parameter :: err = "Error in calc_force(): "
+        character(len=*), parameter   :: err = "Error in calc_force(): "
 
-        atoms%f = 0.0_dp
-        atoms%a = 0.0_dp
+        atoms%f    = 0.0_dp
+        atoms%a    = 0.0_dp
         atoms%epot = 0.0_dp
 
         if (any(atoms%pes == pes_id_lj))        call compute_lj(atoms, energy_and_force)

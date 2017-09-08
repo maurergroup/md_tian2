@@ -161,10 +161,10 @@ contains
 
             k = modulo(b, atoms%nbeads)+1 ! next bead
 
-            vec(:,b,:) = atoms%r(:,b,:)-atoms%r(:,k,:)   ! distance vector from a to b
-            vec(:,b,:) = matmul(atoms%isimbox, vec(:,b,:))   ! transform to direct coordinates
-            vec(:,b,:) = vec(:,b,:) - anint(vec(:,b,:))            ! imaging
-            vec(:,b,:) = matmul(atoms%simbox, vec(:,b,:))    ! back to cartesian coordinates
+            vec(:,b,:) = atoms%r(:,b,:) - atoms%r(:,k,:)    ! distance vector from a to b
+            vec(:,b,:) = matmul(atoms%isimbox, vec(:,b,:))  ! transform to direct coordinates
+            vec(:,b,:) = vec(:,b,:) - anint(vec(:,b,:))     ! imaging
+            vec(:,b,:) = matmul(atoms%simbox, vec(:,b,:))   ! back to cartesian coordinates
         end do
 
         dists =  sqrt(sum(vec*vec, dim=1))    ! distance
@@ -192,11 +192,24 @@ contains
             ekin(i) = 0.5_dp * atoms%m(atoms%idx(i)) * sum(atoms%v(:,:,i)*atoms%v(:,:,i))
         end do
 
-        print *, epot(1), ekin(1)
+        !print *, epot(1), ekin(1)
 
     end subroutine calc_ring_polymer_energy
 
 
+    real(dp) function calc_centroid_ekin(atoms) result(ekin)
+
+        type(universe), intent(in) :: atoms
+
+        integer :: i
+
+            ekin = 0.0_dp
+            do i = 1, atoms%natoms
+                ekin = ekin + atoms%m(atoms%idx(i)) * sum(atoms%v(:,:,i)*atoms%v(:,:,i))
+            end do
+            ekin = 0.5_dp * ekin
+
+    end function calc_centroid_ekin
 
 
     end module rpmd

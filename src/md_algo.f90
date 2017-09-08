@@ -21,12 +21,12 @@ contains
                     call verlet_1(atoms, i)
 
                 case (prop_id_andersen)
-                    call andersen(atoms, i)
                     call verlet_1(atoms, i)
+                    call andersen(atoms, i)
 
                 case (prop_id_pile)
-                    call pile_thermo(atoms, i)
                     call verlet_1(atoms, i)
+                    call pile_thermo(atoms, i)
 
                 case default
                     stop "Error in propagate_1(): Unknown propagation algorithm"
@@ -111,9 +111,12 @@ contains
 
         do b = 1, atoms%nbeads
             do k = 1, 3
-                if (choose(k,b) < simparams%andersen_freq .and. .not. atoms%is_fixed(k,b,i)) &
+                if (choose(k,b) < simparams%andersen_freq .and. .not. atoms%is_fixed(k,b,i)) then
                     atoms%v(k,b,i) = rnd3(k,b) * sqrt(ibetaN/atoms%m(atoms%idx(i)))
-                    !print *, rnd3(k,b), sqrt(betaN/atoms%m(atoms%idx(i)))
+    !                 if ( rnd3(k,b) > 0) print *, &
+     !                atoms%m(atoms%idx(i)) * sum(atoms%v(:,b,i)*atoms%v(:,b,i))/kB/3
+                end if
+
             end do
         end do
 
