@@ -362,17 +362,17 @@ contains
 
 
 
-    pure subroutine minimg_one(this, i, j, b, r, vec)
+    pure subroutine minimg_one(this, i, j, bi, bj, r, vec)
 
         ! Calculates the minimum image vector and distance
         ! between beads b of atoms i and j
 
         type(universe), intent(in)         :: this
-        integer, intent(in)                :: i, j, b
+        integer, intent(in)                :: i, j, bi, bj
         real(8),               intent(out) :: r
         real(8), dimension(3), intent(out) :: vec
 
-        vec = this%r(:,b,j)-this%r(:,b,i)   ! distance vector from a to b
+        vec = this%r(:,bj,j)-this%r(:,bi,i)   ! distance vector from a to b
 
         vec = matmul(this%isimbox, vec)   ! transform to direct coordinates
         vec = vec - anint(vec)            ! imaging
@@ -431,6 +431,63 @@ contains
         ekin_l = 0.5_dp * ekin_l
 
     end subroutine simple_ekin
+
+
+    subroutine centroid_virial_ekin(this, ekin_p, ekin_l)
+
+        type(universe), intent(in)  :: this
+        real(dp),       intent(out) :: ekin_p, ekin_l
+
+        real(dp) :: centroids(3, this%natoms), vec(3)
+        integer  :: i, b
+
+        call simple_ekin(this, ekin_p, ekin_l)
+
+        if (this%nbeads > 1) then
+
+            centroids = centroid_positions(this)
+
+            do i = 1, this%natoms
+                do b = 1, this%nbeads
+
+                    vec = this%r(:,b,i) - centroids(:,i)
+                    vec = matmul(this%isimbox, vec)   ! transform to direct coordinates
+                    vec = vec - anint(vec)            ! imaging
+                    vec = matmul(this%simbox, vec)    ! back to cartesian coordinates
+
+                    if (this%is_proj(this%idx(i))) then
+                        ekin_p = ekin_p + sum(vec*this%f(:,b,i)) / (2.0_dp * this%nbeads)
+                    else
+                        ekin_l = ekin_l + sum(vec*this%f(:,b,i)) / (2.0_dp * this%nbeads)
+                    end if
+
+                end do
+            end do
+
+        end if
+
+    end subroutine centroid_virial_ekin
+
+
+    function centroid_positions(this) result(cents)
+
+        type(universe), intent(in) :: this
+        real(dp)                   :: cents(3, this%natoms)
+
+
+        integer  :: i
+
+        if (this%nbeads > 1) then
+
+            do i = 1, this%natoms
+                cents(:,i) = sum(this%r(:,:,i), dim=2)/this%nbeads
+            end do
+
+        else
+            cents = this%r(:,1,:)
+        end if
+
+    end function centroid_positions
 
 
 end module universe_mod

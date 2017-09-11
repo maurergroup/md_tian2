@@ -68,7 +68,7 @@ contains
 
         forall (i = 1 : atoms%natoms) dir_coords(:,:,i) = matmul(atoms%isimbox, atoms%r(:,:,i))
 
-        dir_coords(:,:,:) = dir_coords - anint(dir_coords-0.5)
+        dir_coords = dir_coords - anint(dir_coords-0.5_dp)
 
         forall (i = 1 : atoms%natoms) cart_coords(:,:,i) = matmul(atoms%simbox, dir_coords(:,:,i))
 
@@ -99,6 +99,7 @@ contains
     subroutine output_nrg(atoms, itraj, istep)
 
         ! time, epot, ekin_p, ekin_l, etotal,
+        use rpmd
 
         type(universe), intent(in) :: atoms
         integer, intent(in)        :: itraj, istep
@@ -106,6 +107,7 @@ contains
         character(len=8)                 :: traj_id
         character(len=max_string_length) :: fname
         real(dp) :: avg_epot, ekin_p, ekin_l, etotal, temp
+        real(dp), dimension(atoms%natoms) ::  epot, ekin
 
 
         ! XXX: change system() to execute_command_line() when new compiler is available
@@ -116,19 +118,21 @@ contains
 
         if (overwrite) then
             call open_for_write(out_unit, fname)
-            write(out_unit, '(7a17)') '#time/fs', 'T/K', 'epot/eV', 'ekin_p/eV', 'ekin_l/eV', 'e_total/eV', 'f_total'
+            write(out_unit, '(7a17)') '#time/fs', 'T/K', 'epot/eV', 'epot_rmpd/eV', 'ekin/eV', 'e_total/eV', 'f_total'
         else
             call open_for_append(out_unit,fname)
         end if
 
-        avg_epot = sum(atoms%epot)/atoms%nbeads
+        call calc_ring_polymer_energy(atoms, ekin, epot)
 
-        call simple_ekin(atoms, ekin_p, ekin_l)
-        etotal = ekin_p + ekin_l + avg_epot
+        !call simple_ekin(atoms, sekin_p, sekin_l)
+        !call centroid_virial_ekin(atoms, ekin_p, ekin_l)
+
+        etotal = sum(atoms%epot)+ sum(epot)+ sum(ekin)
 
         temp = calc_instant_temperature(atoms)
 
-        write(out_unit, '(7e17.8e2)') istep*simparams%step, temp, avg_epot, ekin_p, ekin_l, etotal, sum(atoms%f)
+        write(out_unit, '(7e17.8e2)') istep*simparams%step, temp, sum(atoms%epot), sum(epot), sum(ekin), etotal, sum(atoms%f)
 
 
         close(out_unit)
@@ -141,12 +145,19 @@ contains
         type(universe), intent(in) :: atoms
 
         character(len=max_string_length) :: fname
-        character(len=8) :: fid
-        integer :: time_vals(8), noccurrences(atoms%ntypes)
-        integer :: i, j
+        character(len=8)                 :: fid
+        integer :: time_vals(8), noccurrences(atoms%ntypes), i, j
 
+        ! XXX: change system() to execute_command_line() when new compiler is available
+        if (.not. dir_exists('conf')) call system('mkdir conf')
 
+        ! prepare arrays
+        noccurrences = 0
+        do i = 1, atoms%natoms
+            noccurrences(atoms%idx(i)) = noccurrences(atoms%idx(i)) + 1
+        end do
 
+        ! open file conf/mxt_%08d.POSCAR
         write(fid,'(i8.8)') out_id
         fname = 'conf/mxt_'//fid//'.POSCAR'
         call open_for_write(out_unit, fname)
@@ -156,24 +167,22 @@ contains
         write(out_unit, '(i4, a, i2.2, a, i2.2, a, i2.2, a, i2.2)') &
             time_vals(1), "-", time_vals(2), "-",time_vals(3), " - ",time_vals(5), ".",time_vals(6)
 
-        ! prepare arrays
-        noccurrences = 0
-        do i = 1, atoms%natoms
-            noccurrences(atoms%idx(i)) = noccurrences(atoms%idx(i)) + 1
-        end do
-
-        !if (.not. atoms%is_cart) call to_cartesian(atoms)
-
-
-        write(out_unit, '(a)') '1.0'
+        write(out_unit, '(a)')       '1.0'                    ! scaling constant
         write(out_unit, '(3f23.15)') atoms%simbox
-        write(out_unit, *) atoms%name
-        write(out_unit, '(a1, i, a4, i)') ":", atoms%nbeads, ":" , 7!, noccurrences
+        write(out_unit, *)           atoms%name
+        write(out_unit, '(a2, i0, a1, 100i6)') ":", atoms%nbeads, ":" , (noccurrences(i), i=1,atoms%ntypes)
 
-        write(out_unit, '(a)') "Cartesian" ! switch here
+        if (atoms%is_cart) then
+            write(out_unit, '(a)') "Cartesian"
+        else
+            write(out_unit, '(a)') "Direct"
+        end if
 
-        write(out_unit, '(3f23.15, 3l)') ((atoms%r(:,j,i), .not.atoms%is_fixed(:,j,i), j=1,atoms%nbeads), &
-                    i=1,atoms%natoms)
+        ! positions and velocities
+        write(out_unit, '(3f23.15, 3l)') ((atoms%r(:,j,i), &
+            .not.atoms%is_fixed(:,j,i), j=1,atoms%nbeads), i=1,atoms%natoms)
+        write(out_unit, '(a)') ""
+        write(out_unit, '(3f23.15)') atoms%v
 
 
         close(out_unit)

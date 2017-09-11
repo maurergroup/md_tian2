@@ -86,7 +86,7 @@ contains
             poly(4, 1) = 1.0_dp
 
             if (atoms%nbeads > 1) then
-                twown = 2.0_dp / betaN
+                twown = 2.0_dp / betaN / hbar
                 do b = 1, atoms%nbeads / 2
                     wk = twown * sin(b * piN)
                     wt = wk * simparams%step
@@ -153,21 +153,16 @@ contains
 
         type(universe), intent(in) :: atoms
 
-        real(dp)       :: dists(atoms%nbeads, atoms%natoms)
-        real(dp)      :: vec(3, atoms%nbeads, atoms%natoms)
+        real(dp) :: dists(atoms%nbeads, atoms%natoms)
+        real(dp) :: vec(3, atoms%nbeads, atoms%natoms)
         integer :: b, k
 
         do b = 1, atoms%nbeads
-
-            k = modulo(b, atoms%nbeads)+1 ! next bead
-
-            vec(:,b,:) = atoms%r(:,b,:) - atoms%r(:,k,:)    ! distance vector from a to b
-            vec(:,b,:) = matmul(atoms%isimbox, vec(:,b,:))  ! transform to direct coordinates
-            vec(:,b,:) = vec(:,b,:) - anint(vec(:,b,:))     ! imaging
-            vec(:,b,:) = matmul(atoms%simbox, vec(:,b,:))   ! back to cartesian coordinates
+            k = modulo(b, atoms%nbeads)+1                   ! bead b+1
+            vec(:,b,:) = atoms%r(:,b,:) - atoms%r(:,k,:)    ! distance vector
         end do
 
-        dists =  sqrt(sum(vec*vec, dim=1))    ! distance
+        dists = sqrt(sum(vec*vec, dim=1))    ! distance
 
     end function calc_inter_bead_distances
 
@@ -177,18 +172,18 @@ contains
         type(universe),                    intent(in)  :: atoms
         real(dp), dimension(atoms%natoms), intent(out) :: ekin, epot
 
-        real(dp) :: ibetaN
+        real(dp) :: wn
         real(dp), dimension(atoms%nbeads, atoms%natoms) :: dx
         integer :: i
 
-        ibetaN = kB * simparams%Tsurf * atoms%nbeads
+        wn = sqrt(real(atoms%nbeads, kind=dp)) * kB * simparams%Tsurf / hbar
         dx = calc_inter_bead_distances(atoms)
 
         epot = 0.0_dp
 
         epot = sum(dx*dx, dim=1)
         do i = 1, atoms%natoms
-            epot(i) = epot(i) * 0.5_dp * atoms%m(atoms%idx(i)) * ibetaN * ibetaN
+            epot(i) = epot(i) * 0.5_dp * atoms%m(atoms%idx(i)) * wn * wn
             ekin(i) = 0.5_dp * atoms%m(atoms%idx(i)) * sum(atoms%v(:,:,i)*atoms%v(:,:,i))
         end do
 

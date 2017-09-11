@@ -265,7 +265,8 @@ contains
         if (ios /= 0) stop err_read_poscar // "cannot read initial atom velocities"
 
     else
-        stop err_read_poscar // "cannot read initial atom velocities"
+        stop err_read_poscar // "cannot read initial atom velocities. Did you specify &
+            all species in the *.inp file?"
     end if
 
     ! Set the simulation box

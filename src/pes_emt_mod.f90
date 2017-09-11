@@ -332,7 +332,7 @@ contains
                 do b = 1, atoms%nbeads
 
                     ! Applying PBCs
-                    call minimg_one(atoms, i, j, b, r, vec)
+                    call minimg_one(atoms, i, j, b, b, r, vec)
 
                     if (r < tolerance) then
                         print *, "Error in compute_emt: distance too small between &
