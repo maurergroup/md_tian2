@@ -195,6 +195,7 @@ contains
 
 
 
+
     subroutine remove_com_velocity(this)
 
         type(universe), intent(inout) :: this
@@ -226,6 +227,7 @@ contains
 
 
 
+
     subroutine to_cartesian(this)
 
         type(universe), intent(inout) :: this
@@ -244,6 +246,7 @@ contains
         this%is_cart = .not. this%is_cart
 
     end subroutine
+
 
 
 
@@ -273,7 +276,7 @@ contains
      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 
-    pure function calc_com_velocity(this) result(v_cm)
+    function calc_com_velocity(this) result(v_cm)
 
         ! v_cm = sum(m_i*v_i) / sum(m_i)
 
@@ -294,6 +297,7 @@ contains
 
 
 
+
     real(dp) function calc_instant_temperature(this) result(temperature)
 
         type(universe), intent(in) :: this
@@ -305,9 +309,10 @@ contains
             temp = temp + this%m(this%idx(i)) * sum(this%v(:,:,i)*this%v(:,:,i))
         end do
 
-        temperature = temp / kB / this%dof
+        temperature = temp / kB / this%dof / this%nbeads
 
     end function calc_instant_temperature
+
 
 
 
@@ -326,6 +331,7 @@ contains
 
 
 
+
     function calc_momentum_one(this, i) result(momentum)
 
         type(universe), intent(in)  :: this
@@ -335,6 +341,7 @@ contains
         momentum = this%m(this%idx(i)) * this%v(:,:,i)
 
     end function calc_momentum_one
+
 
 
 
@@ -362,7 +369,8 @@ contains
 
 
 
-    pure subroutine minimg_one(this, i, j, bi, bj, r, vec)
+
+    subroutine minimg_one(this, i, j, bi, bj, r, vec)
 
         ! Calculates the minimum image vector and distance
         ! between beads b of atoms i and j
@@ -381,6 +389,7 @@ contains
         r =  sqrt(sum(vec*vec))      ! distance
 
     end subroutine minimg_one
+
 
 
 
@@ -405,7 +414,8 @@ contains
 
 
 
-    pure subroutine simple_ekin(this, ekin_p, ekin_l)
+
+    subroutine simple_ekin(this, ekin_p, ekin_l)
 
         type(universe), intent(in) :: this
         real(dp), intent(out)      :: ekin_p, ekin_l
@@ -427,67 +437,9 @@ contains
 
         end do
 
-        ekin_p = 0.5_dp * ekin_p
-        ekin_l = 0.5_dp * ekin_l
+        ekin_p = 0.5_dp * ekin_p / this%nbeads / this%nbeads
+        ekin_l = 0.5_dp * ekin_l / this%nbeads / this%nbeads
 
     end subroutine simple_ekin
-
-
-    subroutine centroid_virial_ekin(this, ekin_p, ekin_l)
-
-        type(universe), intent(in)  :: this
-        real(dp),       intent(out) :: ekin_p, ekin_l
-
-        real(dp) :: centroids(3, this%natoms), vec(3)
-        integer  :: i, b
-
-        call simple_ekin(this, ekin_p, ekin_l)
-
-        if (this%nbeads > 1) then
-
-            centroids = centroid_positions(this)
-
-            do i = 1, this%natoms
-                do b = 1, this%nbeads
-
-                    vec = this%r(:,b,i) - centroids(:,i)
-                    vec = matmul(this%isimbox, vec)   ! transform to direct coordinates
-                    vec = vec - anint(vec)            ! imaging
-                    vec = matmul(this%simbox, vec)    ! back to cartesian coordinates
-
-                    if (this%is_proj(this%idx(i))) then
-                        ekin_p = ekin_p + sum(vec*this%f(:,b,i)) / (2.0_dp * this%nbeads)
-                    else
-                        ekin_l = ekin_l + sum(vec*this%f(:,b,i)) / (2.0_dp * this%nbeads)
-                    end if
-
-                end do
-            end do
-
-        end if
-
-    end subroutine centroid_virial_ekin
-
-
-    function centroid_positions(this) result(cents)
-
-        type(universe), intent(in) :: this
-        real(dp)                   :: cents(3, this%natoms)
-
-
-        integer  :: i
-
-        if (this%nbeads > 1) then
-
-            do i = 1, this%natoms
-                cents(:,i) = sum(this%r(:,:,i), dim=2)/this%nbeads
-            end do
-
-        else
-            cents = this%r(:,1,:)
-        end if
-
-    end function centroid_positions
-
 
 end module universe_mod

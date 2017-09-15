@@ -58,9 +58,13 @@ module constants
 
 
     ! Output
-    integer, parameter :: format_xyz    = 1
-    integer, parameter :: format_nrg    = 2
-    integer, parameter :: format_poscar = 3
+    character(len=*), parameter :: output_key_xyz    = "xyz"
+    character(len=*), parameter :: output_key_energy = "energy"
+    character(len=*), parameter :: output_key_poscar = "poscar"
+
+    integer, parameter :: output_id_xyz    = 1
+    integer, parameter :: output_id_energy = 2
+    integer, parameter :: output_id_poscar = 3
 
     ! Conversion constants to program units
     !

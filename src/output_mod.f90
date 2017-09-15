@@ -8,41 +8,40 @@ module output_mod
 
     implicit none
 
-    logical :: overwrite = .true.
+    logical :: overwrite_nrg = .true.
+    logical :: overwrite_xyz = .true.
     integer, parameter :: out_unit = 86
     integer :: out_id = 1
 
 
 contains
 
-    subroutine output(atoms, itraj, istep, format)
+    subroutine output(atoms, itraj, istep)
 
         type(universe), intent(in) :: atoms
-        integer, intent(in)        :: itraj, istep, format
+        integer, intent(in)        :: itraj, istep
 
+        integer :: i
         character(len=*), parameter :: err = "Error in output(): "
 
-        select case (format)
-            case (format_xyz)
-                call output_xyz(atoms, itraj)
+        do i = 1, size(simparams%output_type)
+            if (modulo(istep, simparams%output_interval(i)) == 0) then
+                select case (simparams%output_type(i))
+                case (output_id_xyz)
+                    call output_xyz(atoms, itraj)
 
-            case (format_nrg)
-                call output_nrg(atoms, itraj, istep)
+                case (output_id_energy)
+                    call output_nrg(atoms, itraj, istep)
 
-            case (format_poscar)
-                call output_poscar(atoms)
-                out_id = out_id + 1
+                case (output_id_poscar)
+                    call output_poscar(atoms)
+                    out_id = out_id + 1
 
-            case (default_int)
-                print *,  err // "output format not specified"
-                stop
-
-            case default
-                print *, err // "unknown output format", format
-                stop
-        end select
-
-        overwrite = .false.
+                case default
+                    stop err // "unknown output format"
+                end select
+            end if
+        end do
 
     end subroutine output
 
@@ -75,8 +74,9 @@ contains
         write(traj_id,'(i8.8)') itraj
         fname = 'conf/mxt_conf'//traj_id//'.xyz'
 
-        if (overwrite) then
+        if (overwrite_xyz) then
             call open_for_write(out_unit, fname)
+            overwrite_xyz = .false.
         else
             call open_for_append(out_unit,fname)
         end if
@@ -106,8 +106,10 @@ contains
 
         character(len=8)                 :: traj_id
         character(len=max_string_length) :: fname
-        real(dp) :: avg_epot, ekin_p, ekin_l, etotal, temp
-        real(dp), dimension(atoms%natoms) ::  epot, ekin
+        real(dp) :: epot,etotal, temp
+        real(dp) :: sekin_p, pqekin_p, vqekin_p, sekin_l, pqekin_l, vqekin_l
+        integer :: i
+        !real(dp), dimension(atoms%natoms) ::  epot, ekin
 
 
         ! XXX: change system() to execute_command_line() when new compiler is available
@@ -116,23 +118,27 @@ contains
         write(traj_id,'(i8.8)') itraj
         fname = 'conf/mxt_trj'//traj_id//'.dat'
 
-        if (overwrite) then
+        if (overwrite_nrg) then
             call open_for_write(out_unit, fname)
-            write(out_unit, '(7a17)') '#time/fs', 'T/K', 'epot/eV', 'epot_rmpd/eV', 'ekin/eV', 'e_total/eV', 'f_total'
+            write(out_unit, '(8a17)') '#time/fs', 'T/K', 'sekin/eV', 'pqekin/eV', 'vqekin/eV', 'epot/eV','e_total/eV', 'f_total'
+            overwrite_nrg = .false.
         else
             call open_for_append(out_unit,fname)
         end if
 
-        call calc_ring_polymer_energy(atoms, ekin, epot)
+        !call calc_primitive_ekin(atoms, ekin_p, ekin_l)
+        call simple_ekin(atoms, sekin_p, sekin_l)
+        call calc_primitive_quantum_ekin(atoms, pqekin_p, pqekin_l)
+        call calc_virial_quantum_ekin(atoms, vqekin_p, vqekin_l)
+        epot = sum(atoms%epot)/atoms%nbeads
 
-        !call simple_ekin(atoms, sekin_p, sekin_l)
         !call centroid_virial_ekin(atoms, ekin_p, ekin_l)
 
-        etotal = sum(atoms%epot)+ sum(epot)+ sum(ekin)
+        etotal = sekin_p + sekin_l - pqekin_p - pqekin_l - epot
 
         temp = calc_instant_temperature(atoms)
 
-        write(out_unit, '(7e17.8e2)') istep*simparams%step, temp, sum(atoms%epot), sum(epot), sum(ekin), etotal, sum(atoms%f)
+        write(out_unit, '(8e17.8e2)') istep*simparams%step, temp, sekin_l, pqekin_l, vqekin_l, epot, etotal, sum(atoms%f)
 
 
         close(out_unit)

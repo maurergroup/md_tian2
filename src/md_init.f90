@@ -310,7 +310,8 @@ end subroutine read_poscar
 
 subroutine ensure_input_sanity()
 
-    character(len=*), parameter :: err = "input sanity check error: "
+    character(len=*), parameter :: err  = "input sanity check error: "
+    character(len=*), parameter :: warn = "input sanity check warning: "
 
     ! Check the *.inp file
     !!! Perform MD
@@ -333,8 +334,11 @@ subroutine ensure_input_sanity()
         if (simparams%nlattices > 0 .and. .not. allocated(simparams%mass_l)) stop err // "lattice masses not set."
         if (simparams%nlattices > 0 .and. .not. allocated(simparams%md_algo_l)) stop err // "lattice propagation algorithm not set."
 
-        if (simparams%output(1) == default_int) stop err // "output format (argument 1) not set."
-        if (simparams%output(2) == default_int) stop err // "output frequency (argument 2) not set."
+        if (.not. allocated(simparams%output_type) .or. .not. allocated(simparams%output_interval)) &
+            stop err // "output options not set."
+        if (any(simparams%output_interval > simparams%nsteps)) print *, warn // "one or more outputs will not show, since the output &
+	    interval is larger than the total number of simulation steps."
+        
 
         ! If one of them is set, the others must be set as well.
         if ( (allocated(simparams%einc) .neqv. allocated(simparams%inclination)) .or. &

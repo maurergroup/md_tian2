@@ -69,7 +69,7 @@ print *, simparams%nsteps
 !        print *, atoms%a
            ! print *,  calc_centroid_ekin(atoms), sum(atoms%epot)
 
-            if (mod(istep, simparams%output(2)) == 0) call output(atoms, itraj, istep, simparams%output(1))
+            if (any(mod(istep, simparams%output_interval) == 0)) call output(atoms, itraj, istep)
 
 
 

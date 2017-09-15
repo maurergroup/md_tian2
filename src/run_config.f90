@@ -39,7 +39,8 @@ module run_config
         integer :: nconfs                                           ! number of configurations to read in
         character(len=max_string_length) :: pes_file                ! name of the file that stores the potential parameters
         character(len=3)  :: run                                    ! what to do
-        integer           :: output(2)                              ! what to save
+        integer, allocatable :: output_type(:)                      ! what to save
+        integer, allocatable :: output_interval(:)                  ! when to save
         character(len=15) :: pip(3)                                 ! determine initial projectile position
         real(dp) :: andersen_freq                                   ! collision frequency of Andersen thermostat
                                                                     !   draw from M.-B. distribution every nth time on avg
@@ -72,7 +73,6 @@ contains
         new_simulation_parameters%nconfs  = default_int
         new_simulation_parameters%pes_file = default_string
         new_simulation_parameters%run = default_string
-        new_simulation_parameters%output = [default_int,default_int]
         new_simulation_parameters%pip = default_string
         new_simulation_parameters%andersen_freq = 1.0_dp/30.0_dp
         new_simulation_parameters%pile_tau = 200.0_dp
@@ -344,19 +344,26 @@ contains
 
                     case ('output')
 
-                        if (any(simparams%output /= default_int))   stop 'Error in the input file: Multiple use of the output key'
-                        if (words(2) /= "") then
-                            read(words(2),'(i1000)',iostat=ios) simparams%output(1)
-                            if (ios /= 0) stop 'Error in the input file: 1st output key must be integer'
-                            if (words(3) /= "") then
-                                read(words(3),'(i1000)',iostat=ios) simparams%output(2)
-                                if (ios /= 0) stop 'Error in the input file: 2nd output key must be integer'
-                            end if
-                        else
-                            stop 'Error in the input file: output key has no arguments'
-                        end if
-                        if (nwords > 3) stop 'Error in the input file: output key has too many arguments'
+                        if (allocated(simparams%output_type) .or. allocated(simparams%output_interval)) &
+                            stop 'Error in the input file: Multiple use of the output key'
+                        if (modulo(nwords, 2) /= 1) stop 'Error in the input file: number of output arguments must be even'
+                        allocate(simparams%output_type((nwords-1)/2), simparams%output_interval((nwords-1)/2))
+                        do i = 1, (nwords-1)/2
+                            select case (words(2*i))
+                            case (output_key_xyz)
+                                simparams%output_type(i) = output_id_xyz
+                            case (output_key_energy)
+                                simparams%output_type(i) = output_id_energy
+                            case (output_key_poscar)
+                                simparams%output_type(i) = output_id_poscar
+                            case default
+                                print *, 'Error in the input file: output format', words(2*i), 'unknown'
+                                stop
+                            end select
 
+                            read (words(2*i+1), '(i1000)', iostat=ios) simparams%output_interval(i)
+                            if (ios /= 0) stop 'Error in the input file: output interval must be integer'
+                        end do
 
                     case ('pip')
 

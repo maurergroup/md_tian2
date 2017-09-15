@@ -195,17 +195,11 @@ contains
 
         ! Forces
         real(dp) :: rtemp1
-
         real(dp), dimension(3) :: dtheta
-
         real(dp), dimension(3, atoms%nbeads, atoms%natoms) :: dVf
-
         real(dp), dimension(3, atoms%nbeads, atoms%ntypes, atoms%natoms) :: dVref
-
         real(dp), dimension(3, atoms%nbeads, atoms%ntypes, atoms%natoms, atoms%natoms) :: ds, dEcoh
-
         real(dp), dimension(3, atoms%nbeads, atoms%ntypes, atoms%ntypes, atoms%natoms) :: dsigmat
-
         real(dp), dimension(3, atoms%nbeads, atoms%ntypes, atoms%ntypes, &
             atoms%natoms, atoms%natoms) :: dsigma, dV
 
@@ -780,7 +774,7 @@ contains
 
         select case (geom)
             case ('fcc')
-                beta = (16.0_dp*pi/3)**(1.0_dp/3)*isqrt2
+                beta = (16.0_dp*pi/3.0_dp)**(1.0_dp/3.0_dp)*isqrt2
             case ('bcc')
                 beta = (3.0_dp*pi*pi)**(1.0_dp/6.0_dp)
             case default

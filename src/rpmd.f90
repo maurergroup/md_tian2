@@ -36,14 +36,159 @@ contains
     end subroutine build_cjk
 
 
+
+
+    !    subroutine calc_centroid_virial_ekin(atoms, ekin_p, ekin_l)
+    !
+    !        type(universe), intent(in)  :: atoms
+    !        real(dp),       intent(out) :: ekin_p, ekin_l
+    !
+    !        real(dp) :: centroids(3, atoms%natoms), vec(3)
+    !        integer  :: i, b
+    !
+    !        call simple_ekin(atoms, ekin_p, ekin_l)
+    !
+    !        if (atoms%nbeads > 1) then
+    !
+    !            centroids = calc_centroid_positions(atoms)
+    !
+    !            do i = 1, atoms%natoms
+    !                do b = 1, atoms%nbeads
+    !
+    !                    vec = atoms%r(:,b,i) - centroids(:,i)
+    !
+    !                    if (atoms%is_proj(atoms%idx(i))) then
+    !                        ekin_p = ekin_p + sum(vec*atoms%f(:,b,i)) / (2.0_dp * atoms%nbeads)
+    !                    else
+    !                        ekin_l = ekin_l + sum(vec*atoms%f(:,b,i)) / (2.0_dp * atoms%nbeads)
+    !                    end if
+    !
+    !                end do
+    !            end do
+    !
+    !        end if
+    !
+    !    end subroutine calc_centroid_virial_ekin
+
+
+
+
+    function calc_centroid_positions(atoms) result(cents)
+
+        type(universe), intent(in) :: atoms
+        real(dp)                   :: cents(3, atoms%natoms)
+
+        integer  :: i
+
+        ! active rpmd
+        if (atoms%nbeads > 1) then
+
+            do i = 1, atoms%natoms
+                cents(:,i) = sum(atoms%r(:,:,i), dim=2)/atoms%nbeads
+            end do
+
+        ! no rpmd
+        else
+            cents = atoms%r(:,1,:)
+        end if
+
+    end function calc_centroid_positions
+
+
+
+
+    function calc_inter_bead_distances(atoms) result (dists)
+
+        type(universe), intent(in) :: atoms
+
+        real(dp) :: dists(atoms%nbeads, atoms%natoms)
+        real(dp) :: vec(3, atoms%nbeads, atoms%natoms)
+        integer :: b, k
+
+        do b = 1, atoms%nbeads
+            k = modulo(b, atoms%nbeads)+1                   ! bead b+1
+            vec(:,b,:) = atoms%r(:,b,:) - atoms%r(:,k,:)    ! distance vector
+        end do
+
+        dists = sqrt(sum(vec*vec, dim=1))    ! distance
+
+    end function calc_inter_bead_distances
+
+
+
+    subroutine calc_primitive_quantum_ekin(atoms, ekin_p, ekin_l)
+
+        type(universe), intent(in)  :: atoms
+        real(dp)      , intent(out) :: ekin_p, ekin_l
+
+        real(dp) :: dx(atoms%nbeads, atoms%natoms), pref
+        integer  :: i
+
+        ekin_p = 0.0_dp
+        ekin_l = 0.0_dp
+
+        if (atoms%nbeads > 1) then
+
+            pref = 0.5_dp * kB**2 * calc_instant_temperature(atoms)**2 * atoms%nbeads / hbar**2
+            dx = calc_inter_bead_distances(atoms)
+
+            do i = 1, atoms%natoms
+               if (atoms%is_proj(atoms%idx(i))) then
+                    ekin_p = ekin_p + sum(dx(:,i)*dx(:,i))*atoms%m(atoms%idx(i))
+                else
+                    ekin_l = ekin_l + sum(dx(:,i)*dx(:,i))*atoms%m(atoms%idx(i))
+                end if
+            end do
+
+            ekin_p = ekin_p * pref
+            ekin_l = ekin_l * pref
+
+        end if
+
+    end subroutine calc_primitive_quantum_ekin
+
+
+
+    subroutine calc_virial_quantum_ekin(atoms, ekin_p, ekin_l)
+
+        type(universe), intent(in)  :: atoms
+        real(dp)      , intent(out) :: ekin_p, ekin_l
+
+        real(dp) :: cents(3, atoms%natoms)
+        integer  :: i, b
+
+        ekin_p = 0.0_dp
+        ekin_l = 0.0_dp
+
+        if (atoms%nbeads > 1) then
+
+            cents = calc_centroid_positions(atoms)
+
+            do b = 1, atoms%nbeads
+                if (atoms%is_proj(atoms%idx(i))) then
+                    ekin_p = ekin_p + sum((atoms%r(:,b,:) - cents) * -atoms%f(:,b,:))
+                else
+                    ekin_l = ekin_l + sum((atoms%r(:,b,:) - cents) * -atoms%f(:,b,:))
+                end if
+            end do
+
+            ekin_p = 0.5_dp * ekin_p / atoms%nbeads
+            ekin_l = 0.5_dp * ekin_l / atoms%nbeads
+
+        end if
+
+    end subroutine calc_virial_quantum_ekin
+
+
+
+
     subroutine do_ring_polymer_step(atoms)
 
         type(universe), intent(inout) :: atoms
 
         real(dp), dimension(3, atoms%nbeads, atoms%natoms)  :: p, q, newP, newQ
 
-        real(dp) :: poly(4, atoms%nbeads)
-        real(dp), dimension(3) :: p_new
+        real(dp) :: poly(4, atoms%nbeads), p_new(3)
         real(dp) :: twown, wk, wt, wm, cos_wt, sin_wt
         real(dp) :: betaN, piN, mass
 
@@ -51,16 +196,7 @@ contains
 
         if (.not. allocated(cjk)) call build_cjk(atoms%nbeads)
 
-        betaN = 1.0_dp / (kB * simparams%Tsurf * atoms%nbeads)
-
-
-        !        ! Transform to normal mode space
-        !        do i = 1, 3
-        !            do j = 1, nParticles
-        !                call rfft(p(i,j,:), nBeads)
-        !                call rfft(q(i,j,:), nBeads)
-        !            end do
-        !        end do
+        betaN = 1.0_dp / (kB * calc_instant_temperature(atoms) * atoms%nbeads)
 
         ! Transform to normal mode space
         call calc_momentum_all(atoms, p)
@@ -114,7 +250,6 @@ contains
         end do
 
         ! Transform back to Cartesian space
-
         where(.not. atoms%is_fixed)
             atoms%r = 0.0_dp
             atoms%v = 0.0_dp
@@ -124,8 +259,6 @@ contains
             mass = atoms%m(atoms%idx(i))
             do b = 1, atoms%nbeads
                 do k = 1, atoms%nbeads
-                    !                newP(:,:,j) = newP(:,:,j) + p(:,:,k)*cjk(j,k)
-                    !                newQ(:,:,j) = newQ(:,:,j) + q(:,:,k)*cjk(j,k)
                     where (.not. atoms%is_fixed(:,b,i))
                         atoms%r(:,b,i) = atoms%r(:,b,i) + q(:,k,i)*cjk(b,k)
                         atoms%v(:,b,i) = atoms%v(:,b,i) + p(:,k,i)*cjk(b,k)/mass
@@ -133,78 +266,8 @@ contains
                 end do
             end do
         end do
-    !        p = newP
-    !        q = newQ
-
-        ! Transform back to Cartesian space
-    !        do i = 1, 3
-    !            do j = 1, nParticles
-    !                call irfft(p(i,j,:), nBeads)
-    !                call irfft(q(i,j,:), nBeads)
-    !            end do
-    !        end do
-
-
 
     end subroutine do_ring_polymer_step
 
 
-    function calc_inter_bead_distances(atoms) result (dists)
-
-        type(universe), intent(in) :: atoms
-
-        real(dp) :: dists(atoms%nbeads, atoms%natoms)
-        real(dp) :: vec(3, atoms%nbeads, atoms%natoms)
-        integer :: b, k
-
-        do b = 1, atoms%nbeads
-            k = modulo(b, atoms%nbeads)+1                   ! bead b+1
-            vec(:,b,:) = atoms%r(:,b,:) - atoms%r(:,k,:)    ! distance vector
-        end do
-
-        dists = sqrt(sum(vec*vec, dim=1))    ! distance
-
-    end function calc_inter_bead_distances
-
-
-    subroutine calc_ring_polymer_energy(atoms, ekin, epot)
-
-        type(universe),                    intent(in)  :: atoms
-        real(dp), dimension(atoms%natoms), intent(out) :: ekin, epot
-
-        real(dp) :: wn
-        real(dp), dimension(atoms%nbeads, atoms%natoms) :: dx
-        integer :: i
-
-        wn = sqrt(real(atoms%nbeads, kind=dp)) * kB * simparams%Tsurf / hbar
-        dx = calc_inter_bead_distances(atoms)
-
-        epot = 0.0_dp
-
-        epot = sum(dx*dx, dim=1)
-        do i = 1, atoms%natoms
-            epot(i) = epot(i) * 0.5_dp * atoms%m(atoms%idx(i)) * wn * wn
-            ekin(i) = 0.5_dp * atoms%m(atoms%idx(i)) * sum(atoms%v(:,:,i)*atoms%v(:,:,i))
-        end do
-
-        !print *, epot(1), ekin(1)
-
-    end subroutine calc_ring_polymer_energy
-
-
-    real(dp) function calc_centroid_ekin(atoms) result(ekin)
-
-        type(universe), intent(in) :: atoms
-
-        integer :: i
-
-            ekin = 0.0_dp
-            do i = 1, atoms%natoms
-                ekin = ekin + atoms%m(atoms%idx(i)) * sum(atoms%v(:,:,i)*atoms%v(:,:,i))
-            end do
-            ekin = 0.5_dp * ekin
-
-    end function calc_centroid_ekin
-
-
-    end module rpmd
+end module rpmd
