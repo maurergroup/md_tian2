@@ -2,8 +2,10 @@ module force
 
     use constants
     use universe_mod, only : universe
-    use pes_lj_mod, only : compute_lj, compute_simple_lj
+
+    use pes_lj_mod,  only : compute_lj, compute_simple_lj
     use pes_emt_mod, only : compute_emt
+    use pes_ho_mod,  only : compute_ho
 
     implicit none
 
@@ -21,6 +23,7 @@ contains
         if (any(atoms%pes == pes_id_lj))        call compute_lj(atoms, energy_and_force)
         if (any(atoms%pes == pes_id_simple_lj)) call compute_simple_lj(atoms, energy_and_force)
         if (any(atoms%pes == pes_id_emt))       call compute_emt(atoms, energy_and_force)
+        if (any(atoms%pes == pes_id_ho))        call compute_ho(atoms, energy_and_force)
 
         call set_acceleration(atoms)
 

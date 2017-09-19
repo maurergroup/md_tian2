@@ -106,7 +106,7 @@ contains
 
         character(len=8)                 :: traj_id
         character(len=max_string_length) :: fname
-        real(dp) :: epot,etotal, temp
+        real(dp) :: epot,etotal, temp, gyr_rad_sq
         real(dp) :: sekin_p, pqekin_p, vqekin_p, sekin_l, pqekin_l, vqekin_l
         integer :: i
         !real(dp), dimension(atoms%natoms) ::  epot, ekin
@@ -120,7 +120,8 @@ contains
 
         if (overwrite_nrg) then
             call open_for_write(out_unit, fname)
-            write(out_unit, '(8a17)') '#time/fs', 'T/K', 'sekin/eV', 'pqekin/eV', 'vqekin/eV', 'epot/eV','e_total/eV', 'f_total'
+            write(out_unit, '(9a17)') '#time/fs', 'T/K', 'gyr_squared/A²', &
+                'sekin/eV', 'pqekin/eV', 'vqekin/eV', 'epot/eV','e_total/eV', 'f_total'
             overwrite_nrg = .false.
         else
             call open_for_append(out_unit,fname)
@@ -131,14 +132,16 @@ contains
         call calc_primitive_quantum_ekin(atoms, pqekin_p, pqekin_l)
         call calc_virial_quantum_ekin(atoms, vqekin_p, vqekin_l)
         epot = sum(atoms%epot)/atoms%nbeads
+        gyr_rad_sq = calc_radius_of_gyration(atoms)
 
         !call centroid_virial_ekin(atoms, ekin_p, ekin_l)
 
-        etotal = sekin_p + sekin_l - pqekin_p - pqekin_l - epot
+        etotal = sekin_p + sekin_l + pqekin_p + pqekin_l + epot
 
         temp = calc_instant_temperature(atoms)
 
-        write(out_unit, '(8e17.8e2)') istep*simparams%step, temp, sekin_l, pqekin_l, vqekin_l, epot, etotal, sum(atoms%f)
+        write(out_unit, '(9e17.8e2)') istep*simparams%step, temp, gyr_rad_sq, &
+            sekin_l, pqekin_l, vqekin_l, epot, etotal, sum(atoms%f)
 
 
         close(out_unit)

@@ -98,7 +98,7 @@ contains
         integer,        intent(in)    :: i
 
         real(dp), dimension(3, atoms%nbeads) :: rnd1, rnd2, rnd3, choose
-        real(dp) :: ibetaN
+        real(dp) :: ibetaN, mass
         integer :: k, b
 
         ibetaN = atoms%nbeads * kB * simparams%Tsurf
@@ -108,15 +108,12 @@ contains
         rnd3 = sqrt(-2.0_dp*log(rnd1)) * cos(2.0_dp*pi*rnd2)
 
         call random_number(choose)
+        mass = atoms%m(atoms%idx(i))
 
         do b = 1, atoms%nbeads
             do k = 1, 3
-                if (choose(k,b) < simparams%andersen_freq .and. .not. atoms%is_fixed(k,b,i)) then
-                    atoms%v(k,b,i) = rnd3(k,b) * sqrt(ibetaN/atoms%m(atoms%idx(i)))
-    !                 if ( rnd3(k,b) > 0) print *, &
-     !                atoms%m(atoms%idx(i)) * sum(atoms%v(:,b,i)*atoms%v(:,b,i))/kB/3
-                end if
-
+                if (choose(k,b) < simparams%andersen_freq .and. .not. atoms%is_fixed(k,b,i)) &
+                    atoms%v(k,b,i) = rnd3(k,b) * sqrt(ibetaN/mass)
             end do
         end do
 

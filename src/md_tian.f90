@@ -53,9 +53,7 @@ print *, simparams%nsteps
             call propagate_1(atoms)
 !            print *, atoms%r
 
-
             if (atoms%nbeads > 1) call do_ring_polymer_step(atoms)
-
 
             call calc_force(atoms)
             call propagate_2(atoms)

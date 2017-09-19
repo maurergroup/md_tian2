@@ -38,41 +38,6 @@ contains
 
 
 
-    !    subroutine calc_centroid_virial_ekin(atoms, ekin_p, ekin_l)
-    !
-    !        type(universe), intent(in)  :: atoms
-    !        real(dp),       intent(out) :: ekin_p, ekin_l
-    !
-    !        real(dp) :: centroids(3, atoms%natoms), vec(3)
-    !        integer  :: i, b
-    !
-    !        call simple_ekin(atoms, ekin_p, ekin_l)
-    !
-    !        if (atoms%nbeads > 1) then
-    !
-    !            centroids = calc_centroid_positions(atoms)
-    !
-    !            do i = 1, atoms%natoms
-    !                do b = 1, atoms%nbeads
-    !
-    !                    vec = atoms%r(:,b,i) - centroids(:,i)
-    !
-    !                    if (atoms%is_proj(atoms%idx(i))) then
-    !                        ekin_p = ekin_p + sum(vec*atoms%f(:,b,i)) / (2.0_dp * atoms%nbeads)
-    !                    else
-    !                        ekin_l = ekin_l + sum(vec*atoms%f(:,b,i)) / (2.0_dp * atoms%nbeads)
-    !                    end if
-    !
-    !                end do
-    !            end do
-    !
-    !        end if
-    !
-    !    end subroutine calc_centroid_virial_ekin
-
-
-
-
     function calc_centroid_positions(atoms) result(cents)
 
         type(universe), intent(in) :: atoms
@@ -92,8 +57,9 @@ contains
             cents = atoms%r(:,1,:)
         end if
 
-    end function calc_centroid_positions
+        !print '(3f15.8)', cents
 
+    end function calc_centroid_positions
 
 
 
@@ -116,6 +82,7 @@ contains
 
 
 
+
     subroutine calc_primitive_quantum_ekin(atoms, ekin_p, ekin_l)
 
         type(universe), intent(in)  :: atoms
@@ -133,19 +100,41 @@ contains
             dx = calc_inter_bead_distances(atoms)
 
             do i = 1, atoms%natoms
-               if (atoms%is_proj(atoms%idx(i))) then
+                if (atoms%is_proj(atoms%idx(i))) then
                     ekin_p = ekin_p + sum(dx(:,i)*dx(:,i))*atoms%m(atoms%idx(i))
                 else
                     ekin_l = ekin_l + sum(dx(:,i)*dx(:,i))*atoms%m(atoms%idx(i))
                 end if
             end do
 
-            ekin_p = ekin_p * pref
-            ekin_l = ekin_l * pref
+            ekin_p = ekin_p * pref / atoms%nbeads
+            ekin_l = ekin_l * pref / atoms%nbeads
 
         end if
 
     end subroutine calc_primitive_quantum_ekin
+
+
+
+    real(dp) function calc_radius_of_gyration(atoms) result(radius)
+
+        type(universe), intent(in) :: atoms
+
+        real(dp) :: cents(3, atoms%natoms)
+        integer  :: i, b
+
+        radius = 0.0_dp
+        cents  = calc_centroid_positions(atoms)
+
+        do i = 1, atoms%natoms
+            do b = 1, atoms%nbeads
+                radius = radius + sum( (atoms%r(:,b,i)-cents(:,i))**2 )
+            end do
+        end do
+
+        radius = radius/atoms%nbeads/atoms%natoms
+
+    end function calc_radius_of_gyration
 
 
 
@@ -155,7 +144,7 @@ contains
         real(dp)      , intent(out) :: ekin_p, ekin_l
 
         real(dp) :: cents(3, atoms%natoms)
-        integer  :: i, b
+        integer  :: b, i
 
         ekin_p = 0.0_dp
         ekin_l = 0.0_dp
@@ -164,12 +153,14 @@ contains
 
             cents = calc_centroid_positions(atoms)
 
-            do b = 1, atoms%nbeads
-                if (atoms%is_proj(atoms%idx(i))) then
-                    ekin_p = ekin_p + sum((atoms%r(:,b,:) - cents) * -atoms%f(:,b,:))
-                else
-                    ekin_l = ekin_l + sum((atoms%r(:,b,:) - cents) * -atoms%f(:,b,:))
-                end if
+            do i = 1, atoms%natoms
+                do b = 1, atoms%nbeads
+                    if (atoms%is_proj(atoms%idx(i))) then
+                        ekin_p = ekin_p + sum((atoms%r(:,b,i) - cents(:,i)) * -atoms%f(:,b,i))
+                    else
+                        ekin_l = ekin_l + sum((atoms%r(:,b,i) - cents(:,i)) * -atoms%f(:,b,i))
+                    end if
+                end do
             end do
 
             ekin_p = 0.5_dp * ekin_p / atoms%nbeads

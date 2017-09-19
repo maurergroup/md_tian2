@@ -18,10 +18,11 @@ module md_init
     use useful_things
     use run_config
     use constants
+
     use pes_lj_mod
+    use pes_ho_mod
     use pes_emt_mod
     use pes_non_mod
-
     implicit none
 
 contains
@@ -55,9 +56,8 @@ contains
         call ensure_geometry_sanity(atoms)
 
         call read_pes(atoms)
-        call remove_com_velocity(atoms)
+        !call remove_com_velocity(atoms)
         call post_process(atoms)
-
 
 
     !TODO: Do not forget to convert the angles from degrees to program units
@@ -113,6 +113,9 @@ contains
 
                         case ('non')
                             call read_non_interacting(atoms, pes_unit)
+
+                        case ('ho')
+                            call read_ho(atoms, pes_unit)
 
                         case default
                             print *, err // "unknown potential in PES file:", words(2)
@@ -369,7 +372,7 @@ subroutine ensure_geometry_sanity(atoms)
         character(len=*), parameter :: err = "geometry sanity check error: "
 
 
-        if (atoms%nbeads > 1 .and. simparams%Tsurf == default_real) stop err // "RPMD needs system temperature."
+        !if (atoms%nbeads > 1 .and. simparams%Tsurf == default_real) stop err // "RPMD needs system temperature."
         if (simparams%force_beads < 1) stop err // "Cannot force zero or less beads."
         if (simparams%force_beads /= default_int .and. atoms%nbeads /= 1) stop err // "Cannot force any beads when system already contains multiple beads."
 

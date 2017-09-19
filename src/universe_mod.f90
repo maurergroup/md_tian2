@@ -437,9 +437,12 @@ contains
 
         end do
 
-        ekin_p = 0.5_dp * ekin_p / this%nbeads / this%nbeads
-        ekin_l = 0.5_dp * ekin_l / this%nbeads / this%nbeads
+        ekin_p = 0.5_dp * ekin_p / this%nbeads
+        ekin_l = 0.5_dp * ekin_l / this%nbeads 
 
     end subroutine simple_ekin
+
+
+
 
 end module universe_mod
