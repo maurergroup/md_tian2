@@ -56,7 +56,7 @@ contains
         call ensure_geometry_sanity(atoms)
 
         call read_pes(atoms)
-        !call remove_com_velocity(atoms)
+        call remove_com_velocity(atoms)
         call post_process(atoms)
 
 

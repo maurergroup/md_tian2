@@ -6,7 +6,7 @@ module md_algo
 
     implicit none
 
-
+integer :: count = 0
 
 contains
 
@@ -112,8 +112,10 @@ contains
 
         do b = 1, atoms%nbeads
             do k = 1, 3
-                if (choose(k,b) < simparams%andersen_freq .and. .not. atoms%is_fixed(k,b,i)) &
+                if (choose(k,b) < simparams%andersen_freq .and. .not. atoms%is_fixed(k,b,i)) then!  .and. count < 2) then
                     atoms%v(k,b,i) = rnd3(k,b) * sqrt(ibetaN/mass)
+                end if
+
             end do
         end do
 
@@ -156,8 +158,8 @@ contains
             if (k .eq. 0) then  ! centroid mode
                 gammak(k+1) = 1.0_dp/simparams%pile_tau
             else
-                wn = 1.0_dp/betaN
-                wk = 2.0_dp*wn*sin(k*pi/atoms%nbeads)
+                wn = 1.0_dp/ betaN / hbar
+                wk = 2.0_dp * wn * sin(k*pi/atoms%nbeads)
                 gammak(k+1) = 2.0_dp*wk
             end if
         end do

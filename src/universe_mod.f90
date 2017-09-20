@@ -301,17 +301,18 @@ contains
     real(dp) function calc_instant_temperature(this) result(temperature)
 
         type(universe), intent(in) :: this
-        real(8)                    :: temp
+        real(dp)                   :: temp
         integer :: i
 
         temp = 0.0_dp
         do i = 1, this%natoms
-            temp = temp + this%m(this%idx(i)) * sum(this%v(:,:,i)*this%v(:,:,i))
+            temp = temp + this%m(this%idx(i)) * sum(this%v(:,:,i))**2
         end do
 
         temperature = temp / kB / this%dof / this%nbeads
 
     end function calc_instant_temperature
+
 
 
 
@@ -437,8 +438,8 @@ contains
 
         end do
 
-        ekin_p = 0.5_dp * ekin_p / this%nbeads
-        ekin_l = 0.5_dp * ekin_l / this%nbeads 
+        ekin_p = 0.5_dp * ekin_p! / this%nbeads / this%nbeads
+        ekin_l = 0.5_dp * ekin_l! / this%nbeads / this%nbeads
 
     end subroutine simple_ekin
 

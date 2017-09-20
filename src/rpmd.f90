@@ -36,6 +36,23 @@ contains
     end subroutine build_cjk
 
 
+    real(dp) function calc_bead_temperature(atoms) result(temperature)
+
+        type(universe), intent(in) :: atoms
+        real(dp)                   :: temp
+        integer :: b, i
+
+        temp = 0.0_dp
+        do i = 1, atoms%natoms
+            !do b = 1, atoms%nbeads
+                temp = temp + atoms%m(atoms%idx(i)) * sum(atoms%v(:,:,i)*atoms%v(:,:,i))
+            !end do
+        end do
+
+        temperature = temp / kB / atoms%dof
+
+    end function calc_bead_temperature
+
 
 
     function calc_centroid_positions(atoms) result(cents)
@@ -138,6 +155,25 @@ contains
 
 
 
+    real(dp) function calc_ring_epot(atoms) result(epot)
+
+        type(universe), intent(in) :: atoms
+
+        real(dp) :: dx(atoms%nbeads, atoms%natoms), wn2
+        integer  :: i
+
+        wn2 = (kb * calc_instant_temperature(atoms) * atoms%nbeads / hbar)**2
+        dx  = calc_inter_bead_distances(atoms)
+
+        epot = 0.0_dp
+        do i = 1, atoms%natoms
+            epot = epot + atoms%m(atoms%idx(i)) * sum(dx(:,i) * dx(:,i))
+        end do
+        epot = 0.5_dp * wn2 * epot
+
+    end function calc_ring_epot
+
+
     subroutine calc_virial_quantum_ekin(atoms, ekin_p, ekin_l)
 
         type(universe), intent(in)  :: atoms
@@ -187,11 +223,29 @@ contains
 
         if (.not. allocated(cjk)) call build_cjk(atoms%nbeads)
 
-        betaN = 1.0_dp / (kB * calc_instant_temperature(atoms) * atoms%nbeads)
+!        betaN = 1.0_dp / (kB * max(tolerance, calc_instant_temperature(atoms)) * atoms%nbeads)
+        betaN = 1.0_dp / (kB * simparams%Tsurf * atoms%nbeads)
+!        betaN = 1.0_dp / (kB * max(tolerance, calc_bead_temperature(atoms)))
+
+
+     !   print *, calc_bead_temperature(atoms)
+
+
+
+!        print *, "atoms%v", atoms%v(:,1,1)
+!            print *, cjk
+
 
         ! Transform to normal mode space
         call calc_momentum_all(atoms, p)
         q = atoms%r
+
+!        do k = 1, 3
+!            do i = 1, atoms%natoms
+!                call rfft(p(k,:,i), atoms%nbeads)
+!                call rfft(q(k,:,i), atoms%nbeads)
+!            end do
+!        end do
 
         newP = 0.0_dp
         newQ = 0.0_dp
@@ -201,6 +255,7 @@ contains
                 newQ(:,b,:) = newQ(:,b,:) + q(:,k,:)*cjk(k,b)
             end do
         end do
+!        print *, "firstp", newP(:,1,1)
         p = newP
         q = newQ
 
@@ -235,6 +290,10 @@ contains
 
             do b = 1, atoms%nbeads
                 p_new = p(:,b,i) * poly(1,b) + q(:,b,i) * poly(2,b)
+!                if (b == 1 .and. i == 1) then
+!                    print *, "secondp", p(:,b,i)
+!                    print *, "secondq", q(:,b,i)
+!                end if
                 q(:,b,i) = p(:,b,i) * poly(3,b) + q(:,b,i) * poly(4,b)
                 p(:,b,i) = p_new
             end do
@@ -246,19 +305,110 @@ contains
             atoms%v = 0.0_dp
         end where
 
+        !print *, "lastp", p(:,1,1)
+
         do i = 1, atoms%natoms
-            mass = atoms%m(atoms%idx(i))
             do b = 1, atoms%nbeads
                 do k = 1, atoms%nbeads
                     where (.not. atoms%is_fixed(:,b,i))
                         atoms%r(:,b,i) = atoms%r(:,b,i) + q(:,k,i)*cjk(b,k)
-                        atoms%v(:,b,i) = atoms%v(:,b,i) + p(:,k,i)*cjk(b,k)/mass
+                        atoms%v(:,b,i) = atoms%v(:,b,i) + p(:,k,i)*cjk(b,k)/atoms%m(atoms%idx(i))
                     end where
                 end do
             end do
+           ! atoms%v(:,:,i) = atoms%v(:,:,i)
         end do
 
+!        do k = 1, 3
+!            do i = 1, atoms%natoms
+!                call irfft(p(k,:,i), atoms%nbeads)
+!                call irfft(q(k,:,i), atoms%nbeads)
+!            end do
+!        end do
+!
+!        do i = 1, atoms%natoms
+!            where(.not. atoms%is_fixed(:,:,i))
+!                atoms%r(:,:,i) = q(:,:,i)
+!                atoms%v(:,:,i) = p(:,:,i)/atoms%m(atoms%idx(i))
+!            end where
+!        end do
+
+
+
     end subroutine do_ring_polymer_step
+
+
+
+
+    ! Compute the real fast Fourier transform of the given array of data.
+    ! Parameters:
+    !   x - The array of data to transform
+    !   N - The length of the array of data
+    ! Returns:
+    !   x - The transformed array of data, in half-complex form
+    subroutine rfft(x,N)
+        implicit none
+
+        integer, intent(in) :: N
+        double precision, intent(inout) :: x(N)
+
+        integer, parameter :: Nmax = 1024
+        integer :: Np
+        double precision :: copy(Nmax), factor
+        integer(8) :: plan
+
+
+        data Np /0/
+        save copy, factor, plan, Np
+
+        if (N .ne. Np) then
+            if (Np .ne. 0) call dfftw_destroy_plan(plan)
+            call dfftw_plan_r2r_1d(plan,N,copy,copy,0,64)
+            factor = sqrt(1.0d0/N)
+            Np = N
+        end if
+
+        copy(1:N) = x
+        call dfftw_execute(plan)
+        x = factor * copy(1:N)
+
+    end subroutine rfft
+
+    ! Compute the inverse real fast Fourier transform of the given array of data.
+    ! Parameters:
+    !   x - The array of data to transform, in half-complex form
+    !   N - The length of the array of data
+    ! Returns:
+    !   x - The transformed array of data
+    subroutine irfft(x,N)
+
+        implicit none
+        integer, intent(in) :: N
+        double precision, intent(inout) :: x(N)
+
+        integer, parameter :: Nmax = 1024
+        integer :: Np
+        double precision :: copy(Nmax), factor
+        integer(8) :: plan
+
+        data Np /0/
+        save copy, factor, plan, Np
+
+        if (N .ne. Np) then
+            ! The input array is a different length than the last array, so we
+            ! must generate a new FFTW plan for the transform
+            ! First delete the previous plan
+            if (Np .ne. 0) call dfftw_destroy_plan(plan)
+            call dfftw_plan_r2r_1d(plan,N,copy,copy,1,64)
+            factor = sqrt(1.0d0/N)
+            Np = N
+        end if
+
+        copy(1:N) = x
+        call dfftw_execute(plan)
+        x = factor * copy(1:N)
+
+    end subroutine irfft
 
 
 end module rpmd
