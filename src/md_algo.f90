@@ -68,13 +68,10 @@ contains
 
         type(universe), intent(inout) :: atoms
         integer, intent(in) :: i
-        !        print *, "in verlet_1"
-        !        print *, atoms%r
-        !        print *, "end verlet_1"
 
         where(.not. atoms%is_fixed(:,:,i))
             atoms%v(:,:,i) = atoms%v(:,:,i) + 0.5_dp * simparams%step * atoms%a(:,:,i)
-            atoms%r(:,:,i) = atoms%r(:,:,i) +          simparams%step * atoms%v(:,:,i)
+            !atoms%r(:,:,i) = atoms%r(:,:,i) +          simparams%step * atoms%v(:,:,i)
         end where
 
     end subroutine verlet_1
@@ -112,10 +109,9 @@ contains
 
         do b = 1, atoms%nbeads
             do k = 1, 3
-                if (choose(k,b) < simparams%andersen_freq .and. .not. atoms%is_fixed(k,b,i)) then!  .and. count < 2) then
+                if (choose(k,b) < simparams%andersen_freq .and. .not. atoms%is_fixed(k,b,i)) then
                     atoms%v(k,b,i) = rnd3(k,b) * sqrt(ibetaN/mass)
                 end if
-
             end do
         end do
 
@@ -142,25 +138,21 @@ contains
         ! Transform to normal mode space
         newP = 0.0_dp
         atomP = calc_momentum_one(atoms, i)
-!        do k = 1, atoms%nbeads
-!            do j = 1, atoms%nbeads
-!                newP(:,k) = newP(:,k) + atomP(:,k)*cjk(j,k)
-!            end do
-!        end do
 
         do b = 1, atoms%nbeads
-            newP(:,b) = atomP(:,b) * sum(cjk(:,b))
+            do k = 1, atoms%nBeads
+                newP(:,b) = newP(:,b) + atomP(:,k)*cjk(k,b)
+            end do
         end do
-
 
         ! generate gamma coefficients for all beads
         do k = 0, atoms%nbeads-1
             if (k .eq. 0) then  ! centroid mode
                 gammak(k+1) = 1.0_dp/simparams%pile_tau
             else
-                wn = 1.0_dp/ betaN / hbar
+                wn = 1.0_dp / betaN / hbar
                 wk = 2.0_dp * wn * sin(k*pi/atoms%nbeads)
-                gammak(k+1) = 2.0_dp*wk
+                gammak(k+1) = 2.0_dp * wk
             end if
         end do
 
@@ -174,21 +166,19 @@ contains
         zeta = sqrt(-2.0_dp*log(rnd1)) * cos(2.0_dp*pi*rnd2)
 
         do b = 1, atoms%nbeads
-            where(.not. atoms%is_fixed(:,b,i)) &
-                newP(:,b) = c1(k)*newP(:,b) + sqrt(atoms%m(atoms%idx(i))/betaN)*c2(b)*zeta(:,b)
+            newP(:,b) = c1(b)*newP(:,b) + sqrt(atoms%m(atoms%idx(i))/betaN)*c2(b)*zeta(:,b)
         end do
 
         ! Transform back to Cartesian space
-!        atoms%v(:,:,i) = 0.0_dp
-!        do k = 1, atoms%nbeads
-!            do j = 1, atoms%nbeads
-!                atoms%v(:,j,i) = atoms%v(:,j,i) + newP(:,j)*cjk(j,k)/atoms%m(atoms%idx(i))
-!            end do
-!        end do
-        atoms%v(:,:,i) = 0.0_dp
+        atomP = 0.0_dp
         do b = 1, atoms%nbeads
-            atoms%v(:,b,i) = newP(:,b)*sum(cjk(b,:))/atoms%m(atoms%idx(i))
+            do k = 1, atoms%nbeads
+                where (.not. atoms%is_fixed(:,b,i))
+                     atomP(:,b) = atomP(:,b) + newP(:,k)*cjk(b,k)
+                end where
+            end do
         end do
+        atoms%v(:,:,i) = atomP/atoms%m(atoms%idx(i))
 
     end subroutine pile_thermo
 

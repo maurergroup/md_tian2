@@ -1,15 +1,15 @@
 run md
 
-start 1
+start 16
 ntrajs 1
-nsteps 20000
-step 0.1
+nsteps 4000000
+step 0.01
 
 #projectile 1  H   1.0 and   
-lattice   1  Au 40.0  and
+lattice   1  Au 40.0  pil
 
-force_beads 14
-andersen_freq 500
+force_beads 16
+pile_tau 100
 
 incidence 3.33 180 90 3.33 180 90
 inc_rot energy <3 orientation angles>
@@ -20,13 +20,13 @@ inc_vib energy
 Tsurf 50
 !annealing 1000 25 5
  
-conf poscar 'au111_2x2x6.POSCAR'  1 1
+conf poscar 'au111_2x2x6.POSCAR' 3 3
 
 !196.96657
 
 !pes definition
-pes './Au.pes'
+pes './free.pes'
 
-output energy 50
+output  energy 40
 
 

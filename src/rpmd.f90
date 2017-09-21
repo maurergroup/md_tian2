@@ -36,22 +36,23 @@ contains
     end subroutine build_cjk
 
 
+
+
     real(dp) function calc_bead_temperature(atoms) result(temperature)
 
         type(universe), intent(in) :: atoms
         real(dp)                   :: temp
-        integer :: b, i
+        integer :: i
 
         temp = 0.0_dp
         do i = 1, atoms%natoms
-            !do b = 1, atoms%nbeads
-                temp = temp + atoms%m(atoms%idx(i)) * sum(atoms%v(:,:,i)*atoms%v(:,:,i))
-            !end do
+            temp = temp + atoms%m(atoms%idx(i)) * sum(atoms%v(:,:,i)*atoms%v(:,:,i))
         end do
 
         temperature = temp / kB / atoms%dof
 
     end function calc_bead_temperature
+
 
 
 
@@ -100,39 +101,6 @@ contains
 
 
 
-    subroutine calc_primitive_quantum_ekin(atoms, ekin_p, ekin_l)
-
-        type(universe), intent(in)  :: atoms
-        real(dp)      , intent(out) :: ekin_p, ekin_l
-
-        real(dp) :: dx(atoms%nbeads, atoms%natoms), pref
-        integer  :: i
-
-        ekin_p = 0.0_dp
-        ekin_l = 0.0_dp
-
-        if (atoms%nbeads > 1) then
-
-            pref = 0.5_dp * kB**2 * calc_instant_temperature(atoms)**2 * atoms%nbeads / hbar**2
-            dx = calc_inter_bead_distances(atoms)
-
-            do i = 1, atoms%natoms
-                if (atoms%is_proj(atoms%idx(i))) then
-                    ekin_p = ekin_p + sum(dx(:,i)*dx(:,i))*atoms%m(atoms%idx(i))
-                else
-                    ekin_l = ekin_l + sum(dx(:,i)*dx(:,i))*atoms%m(atoms%idx(i))
-                end if
-            end do
-
-            ekin_p = ekin_p * pref / atoms%nbeads
-            ekin_l = ekin_l * pref / atoms%nbeads
-
-        end if
-
-    end subroutine calc_primitive_quantum_ekin
-
-
-
     real(dp) function calc_radius_of_gyration(atoms) result(radius)
 
         type(universe), intent(in) :: atoms
@@ -155,14 +123,15 @@ contains
 
 
 
-    real(dp) function calc_ring_epot(atoms) result(epot)
+
+    real(dp) function calc_bead_epot(atoms) result(epot)
 
         type(universe), intent(in) :: atoms
 
         real(dp) :: dx(atoms%nbeads, atoms%natoms), wn2
         integer  :: i
 
-        wn2 = (kb * calc_instant_temperature(atoms) * atoms%nbeads / hbar)**2
+        wn2 = (kb * simparams%Tsurf * atoms%nbeads / hbar)**2
         dx  = calc_inter_bead_distances(atoms)
 
         epot = 0.0_dp
@@ -171,7 +140,9 @@ contains
         end do
         epot = 0.5_dp * wn2 * epot
 
-    end function calc_ring_epot
+    end function calc_bead_epot
+
+
 
 
     subroutine calc_virial_quantum_ekin(atoms, ekin_p, ekin_l)
@@ -223,18 +194,7 @@ contains
 
         if (.not. allocated(cjk)) call build_cjk(atoms%nbeads)
 
-!        betaN = 1.0_dp / (kB * max(tolerance, calc_instant_temperature(atoms)) * atoms%nbeads)
         betaN = 1.0_dp / (kB * simparams%Tsurf * atoms%nbeads)
-!        betaN = 1.0_dp / (kB * max(tolerance, calc_bead_temperature(atoms)))
-
-
-     !   print *, calc_bead_temperature(atoms)
-
-
-
-!        print *, "atoms%v", atoms%v(:,1,1)
-!            print *, cjk
-
 
         ! Transform to normal mode space
         call calc_momentum_all(atoms, p)
@@ -336,6 +296,36 @@ contains
 
 
     end subroutine do_ring_polymer_step
+
+
+
+
+    subroutine bead_ekin(atoms, ekin_p, ekin_l)
+
+        type(universe), intent(in) :: atoms
+        real(dp), intent(out)      :: ekin_p, ekin_l
+        real(dp)                   :: nrg
+        integer :: i
+
+        ekin_p = 0.0_dp
+        ekin_l = 0.0_dp
+
+        do i = 1, atoms%natoms
+
+            nrg = atoms%m(atoms%idx(i))*sum(atoms%v(:,:,i)*atoms%v(:,:,i))
+
+            if (atoms%is_proj(atoms%idx(i))) then
+                ekin_p = ekin_p + nrg
+            else
+                ekin_l = ekin_l + nrg
+            end if
+
+        end do
+
+        ekin_p = 0.5_dp * ekin_p
+        ekin_l = 0.5_dp * ekin_l
+
+    end subroutine bead_ekin
 
 
 

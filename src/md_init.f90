@@ -518,17 +518,17 @@ subroutine set_prop_algos(atoms)
 
     ! Either (md_algo_p or md_algo_l) or both are allocated
 
-    if (allocated(simparams%md_algo_p(:)) .and. allocated(simparams%md_algo_l(:))) then
-        atoms%algo(:) = [simparams%md_algo_p(:), simparams%md_algo_l(:)]
+    if (allocated(simparams%md_algo_p) .and. allocated(simparams%md_algo_l)) then
+        atoms%algo = [simparams%md_algo_p, simparams%md_algo_l]
         if (size(atoms%algo) /= size([simparams%md_algo_p, simparams%md_algo_l])) stop err // "more algorithms than species"
 
-    else if (allocated(simparams%md_algo_p(:))) then
-        atoms%algo(:) = simparams%md_algo_p(:)
-        if (size(atoms%algo) /= size(simparams%md_algo_p(:))) stop err // "more algorithms than species"
+    else if (allocated(simparams%md_algo_p)) then
+        atoms%algo = simparams%md_algo_p
+        if (size(atoms%algo) /= size(simparams%md_algo_p)) stop err // "more algorithms than species"
 
-    else if (allocated(simparams%md_algo_l(:))) then
-        atoms%algo(:) = simparams%md_algo_l(:)
-        if (size(atoms%algo) /= size(simparams%md_algo_l(:))) stop err // "more algorithms than species"
+    else if (allocated(simparams%md_algo_l)) then
+        atoms%algo = simparams%md_algo_l
+        if (size(atoms%algo) /= size(simparams%md_algo_l)) stop err // "more algorithms than species"
 
     else
         stop err // "neither projectile nor slab exist"

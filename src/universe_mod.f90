@@ -203,7 +203,7 @@ contains
         integer :: i, b
 
         ! instant system temperature
-        target_T = calc_instant_temperature(this)
+        target_T = calc_atom_temperature(this)
 
         v_cm = calc_com_velocity(this)
 
@@ -214,7 +214,7 @@ contains
         end do
 
         ! velocities and temperature decreased -> scale 'em up
-        current_T = calc_instant_temperature(this)
+        current_T = calc_atom_temperature(this)
 
         if (target_T < tolerance .or. current_T < tolerance) then
             this%v = 0.0_dp
@@ -298,7 +298,7 @@ contains
 
 
 
-    real(dp) function calc_instant_temperature(this) result(temperature)
+    real(dp) function calc_atom_temperature(this) result(temperature)
 
         type(universe), intent(in) :: this
         real(dp)                   :: temp
@@ -306,12 +306,12 @@ contains
 
         temp = 0.0_dp
         do i = 1, this%natoms
-            temp = temp + this%m(this%idx(i)) * sum(this%v(:,:,i))**2
+            temp = temp + this%m(this%idx(i)) * sum(sum(this%v(:,:,i), dim=2)**2)
         end do
 
         temperature = temp / kB / this%dof / this%nbeads
 
-    end function calc_instant_temperature
+    end function calc_atom_temperature
 
 
 
@@ -416,7 +416,7 @@ contains
 
 
 
-    subroutine simple_ekin(this, ekin_p, ekin_l)
+    subroutine atom_ekin(this, ekin_p, ekin_l)
 
         type(universe), intent(in) :: this
         real(dp), intent(out)      :: ekin_p, ekin_l
@@ -428,7 +428,7 @@ contains
 
         do i = 1, this%natoms
 
-            nrg = this%m(this%idx(i))*sum(this%v(:,:,i)*this%v(:,:,i))
+            nrg = this%m(this%idx(i))*sum(sum(this%v(:,:,i), dim=2)**2)
 
             if (this%is_proj(this%idx(i))) then
                 ekin_p = ekin_p + nrg
@@ -438,10 +438,10 @@ contains
 
         end do
 
-        ekin_p = 0.5_dp * ekin_p! / this%nbeads / this%nbeads
-        ekin_l = 0.5_dp * ekin_l! / this%nbeads / this%nbeads
+        ekin_p = 0.5_dp * ekin_p / this%nbeads / this%nbeads
+        ekin_l = 0.5_dp * ekin_l / this%nbeads / this%nbeads
 
-    end subroutine simple_ekin
+    end subroutine atom_ekin
 
 
 
