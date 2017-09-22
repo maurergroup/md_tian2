@@ -106,7 +106,7 @@ contains
 
         character(len=8)                 :: traj_id
         character(len=max_string_length) :: fname
-        real(dp) :: atom_temp, bead_temp, gyr_rad_sq, a_ekin_p, a_ekin_l
+        real(dp) :: atom_temp, bead_temp, gyr_rad_sq, a_ekin_p, a_ekin_l, q_ekin_l, q_ekin_p
         real(dp) :: b_ekin_p, b_ekin_l, atom_epot, bead_epot, etotal, b2b_dist
 
 
@@ -119,7 +119,8 @@ contains
         if (overwrite_nrg) then
             call open_for_write(out_unit, fname)
             write(out_unit, '(11a17)') '#time/fs', 'atom T/K', 'bead T/K', 'gyr_squared/A²', &
-                'atom ekin/eV', 'bead ekin/eV', 'atom epot/eV', 'bead epot/eV','e_total/eV', 'f_total', 'b2b dist/A'
+                'atom ekin/eV', 'bead ekin/eV', 'qntm ekin/eV', 'atom epot/eV', 'bead epot/eV', &
+                'e_total/eV', 'f_total'
             overwrite_nrg = .false.
         else
             call open_for_append(out_unit,fname)
@@ -132,15 +133,15 @@ contains
 
         call atom_ekin(atoms, a_ekin_p, a_ekin_l)
         call bead_ekin(atoms, b_ekin_p, b_ekin_l)
+        call virial_quantum_ekin(atoms, q_ekin_p, q_ekin_l)
 
         atom_epot = sum(atoms%epot)/atoms%nbeads
         bead_epot = calc_bead_epot(atoms)
-        b2b_dist = sum(calc_inter_bead_distances(atoms))/atoms%natoms/atoms%nbeads
 
         etotal = 0
 
         write(out_unit, '(11e17.8e2)') istep*simparams%step, atom_temp, bead_temp, &
-            gyr_rad_sq, a_ekin_l, b_ekin_l, atom_epot, bead_epot, etotal, sum(atoms%f), b2b_dist
+            gyr_rad_sq, a_ekin_l, b_ekin_l, q_ekin_l, atom_epot, bead_epot, etotal, sum(atoms%f)
 
         close(out_unit)
 

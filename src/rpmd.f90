@@ -46,7 +46,7 @@ contains
 
         temp = 0.0_dp
         do i = 1, atoms%natoms
-            temp = temp + atoms%m(atoms%idx(i)) * sum(atoms%v(:,:,i)*atoms%v(:,:,i))
+            temp = temp + atoms%m(i) * sum(atoms%v(:,:,i)*atoms%v(:,:,i))
         end do
 
         temperature = temp / kB / atoms%dof
@@ -136,7 +136,7 @@ contains
 
         epot = 0.0_dp
         do i = 1, atoms%natoms
-            epot = epot + atoms%m(atoms%idx(i)) * sum(dx(:,i) * dx(:,i))
+            epot = epot + atoms%m(i) * sum(dx(:,i) * dx(:,i))
         end do
         epot = 0.5_dp * wn2 * epot
 
@@ -145,7 +145,7 @@ contains
 
 
 
-    subroutine calc_virial_quantum_ekin(atoms, ekin_p, ekin_l)
+    subroutine virial_quantum_ekin(atoms, ekin_p, ekin_l)
 
         type(universe), intent(in)  :: atoms
         real(dp)      , intent(out) :: ekin_p, ekin_l
@@ -163,19 +163,19 @@ contains
             do i = 1, atoms%natoms
                 do b = 1, atoms%nbeads
                     if (atoms%is_proj(atoms%idx(i))) then
-                        ekin_p = ekin_p + sum((atoms%r(:,b,i) - cents(:,i)) * -atoms%f(:,b,i))
+                        ekin_p = ekin_p + sum((cents(:,i)-atoms%r(:,b,i)) * atoms%f(:,b,i))
                     else
-                        ekin_l = ekin_l + sum((atoms%r(:,b,i) - cents(:,i)) * -atoms%f(:,b,i))
+                        ekin_l = ekin_l + sum((cents(:,i)-atoms%r(:,b,i)) * atoms%f(:,b,i))
                     end if
                 end do
             end do
 
-            ekin_p = 0.5_dp * ekin_p / atoms%nbeads
-            ekin_l = 0.5_dp * ekin_l / atoms%nbeads
+            ekin_p = 0.5_dp * ekin_p! / atoms%nbeads
+            ekin_l = 0.5_dp * ekin_l! / atoms%nbeads
 
         end if
 
-    end subroutine calc_virial_quantum_ekin
+    end subroutine virial_quantum_ekin
 
 
 
@@ -200,12 +200,14 @@ contains
         call calc_momentum_all(atoms, p)
         q = atoms%r
 
-!        do k = 1, 3
-!            do i = 1, atoms%natoms
-!                call rfft(p(k,:,i), atoms%nbeads)
-!                call rfft(q(k,:,i), atoms%nbeads)
-!            end do
-!        end do
+        !        do k = 1, 3
+        !            do i = 1, atoms%natoms
+        !                call rfft(p(k,:,i), atoms%nbeads)
+        !                call rfft(q(k,:,i), atoms%nbeads)
+        !            end do
+        !        end do
+
+        ! TODO: Intel MKL 3D-FFT should be faster
 
         newP = 0.0_dp
         newQ = 0.0_dp
@@ -215,13 +217,13 @@ contains
                 newQ(:,b,:) = newQ(:,b,:) + q(:,k,:)*cjk(k,b)
             end do
         end do
-!        print *, "firstp", newP(:,1,1)
+        !        print *, "firstp", newP(:,1,1)
         p = newP
         q = newQ
 
         piN = pi / atoms%nbeads
         do i = 1, atoms%natoms
-            mass = atoms%m(atoms%idx(i))
+            mass = atoms%m(i)
             poly(1, 1) = 1.0_dp
             poly(2, 1) = 0.0_dp
             poly(3, 1) = simparams%step / mass
@@ -250,10 +252,10 @@ contains
 
             do b = 1, atoms%nbeads
                 p_new = p(:,b,i) * poly(1,b) + q(:,b,i) * poly(2,b)
-!                if (b == 1 .and. i == 1) then
-!                    print *, "secondp", p(:,b,i)
-!                    print *, "secondq", q(:,b,i)
-!                end if
+                !                if (b == 1 .and. i == 1) then
+                !                    print *, "secondp", p(:,b,i)
+                !                    print *, "secondq", q(:,b,i)
+                !                end if
                 q(:,b,i) = p(:,b,i) * poly(3,b) + q(:,b,i) * poly(4,b)
                 p(:,b,i) = p_new
             end do
@@ -272,28 +274,26 @@ contains
                 do k = 1, atoms%nbeads
                     where (.not. atoms%is_fixed(:,b,i))
                         atoms%r(:,b,i) = atoms%r(:,b,i) + q(:,k,i)*cjk(b,k)
-                        atoms%v(:,b,i) = atoms%v(:,b,i) + p(:,k,i)*cjk(b,k)/atoms%m(atoms%idx(i))
+                        atoms%v(:,b,i) = atoms%v(:,b,i) + p(:,k,i)*cjk(b,k)/atoms%m(i)
                     end where
                 end do
             end do
            ! atoms%v(:,:,i) = atoms%v(:,:,i)
         end do
 
-!        do k = 1, 3
-!            do i = 1, atoms%natoms
-!                call irfft(p(k,:,i), atoms%nbeads)
-!                call irfft(q(k,:,i), atoms%nbeads)
-!            end do
-!        end do
-!
-!        do i = 1, atoms%natoms
-!            where(.not. atoms%is_fixed(:,:,i))
-!                atoms%r(:,:,i) = q(:,:,i)
-!                atoms%v(:,:,i) = p(:,:,i)/atoms%m(atoms%idx(i))
-!            end where
-!        end do
-
-
+        !        do k = 1, 3
+        !            do i = 1, atoms%natoms
+        !                call irfft(p(k,:,i), atoms%nbeads)
+        !                call irfft(q(k,:,i), atoms%nbeads)
+        !            end do
+        !        end do
+        !
+        !        do i = 1, atoms%natoms
+        !            where(.not. atoms%is_fixed(:,:,i))
+        !                atoms%r(:,:,i) = q(:,:,i)
+        !                atoms%v(:,:,i) = p(:,:,i)/atoms%m(i)
+        !            end where
+        !        end do
 
     end subroutine do_ring_polymer_step
 
@@ -312,7 +312,7 @@ contains
 
         do i = 1, atoms%natoms
 
-            nrg = atoms%m(atoms%idx(i))*sum(atoms%v(:,:,i)*atoms%v(:,:,i))
+            nrg = atoms%m(i)*sum(atoms%v(:,:,i)*atoms%v(:,:,i))
 
             if (atoms%is_proj(atoms%idx(i))) then
                 ekin_p = ekin_p + nrg

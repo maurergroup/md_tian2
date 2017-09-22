@@ -1,14 +1,14 @@
 run md
 
-start 16
+start 1
 ntrajs 1
-nsteps 4000000
-step 0.01
+nsteps 1
+step 0.0000000001
 
 #projectile 1  H   1.0 and   
 lattice   1  Au 40.0  pil
 
-force_beads 16
+force_beads 1
 pile_tau 100
 
 incidence 3.33 180 90 3.33 180 90
@@ -17,16 +17,16 @@ inc_vib energy
 
 !pip r r 6
 
-Tsurf 50
+Tsurf 600
 !annealing 1000 25 5
  
-conf poscar 'au111_2x2x6.POSCAR' 3 3
+conf poscar 'au111.POSCAR' 1 1
 
 !196.96657
 
 !pes definition
-pes './free.pes'
+pes './Au.pes'
 
-output  energy 40
+output  energy 1
 
 

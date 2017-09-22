@@ -32,10 +32,10 @@ module universe_mod
         real(dp), allocatable         :: v(:,:,:)        ! velocities
         real(dp), allocatable         :: f(:,:,:)        ! forces
         real(dp), allocatable         :: a(:,:,:)        ! acceleration
+        real(dp), allocatable         :: m(:)            ! mass
         logical,  allocatable         :: is_fixed(:,:,:) ! mask array defining frozen atoms (T is frozen)
 
         integer, allocatable          :: idx(:)          ! index of atom type used in program
-        real(dp),         allocatable :: m(:)            ! mass
         character(len=3), allocatable :: name(:)         ! atomic name
         integer, allocatable          :: pes(:,:)        ! defines idx-dependent pes
         integer, allocatable          :: algo(:)         ! defines idx-dependent propagation algorithm
@@ -66,6 +66,7 @@ contains
         allocate(new_atoms%v(3,nbeads,natoms))
         allocate(new_atoms%f(3,nbeads,natoms))
         allocate(new_atoms%a(3,nbeads,natoms))
+        allocate(new_atoms%m(natoms))
         allocate(new_atoms%is_fixed(3,nbeads,natoms))
 
         allocate(new_atoms%idx(natoms))
@@ -74,7 +75,6 @@ contains
 
         allocate(new_atoms%pes(ntypes,ntypes))
         allocate(new_atoms%name(ntypes))
-        allocate(new_atoms%m(ntypes))
         allocate(new_atoms%algo(ntypes))
         allocate(new_atoms%is_proj(ntypes))
 
@@ -139,6 +139,7 @@ contains
             other%v(:,:,:nprojs) = this%v(:,:,:nprojs)
             other%a(:,:,:nprojs) = this%a(:,:,:nprojs)
             other%f(:,:,:nprojs) = this%f(:,:,:nprojs)
+            other%m(:nprojs) = this%m(:nprojs)
             other%is_fixed(:,:,:nprojs) = this%is_fixed(:,:,:nprojs)
             other%idx(:nprojs) = this%idx(:nprojs)
 
@@ -146,7 +147,6 @@ contains
             other = new_atoms(this%nbeads, nreps*this%natoms, this%ntypes)
         end if
 
-        other%m = this%m
         other%pes = this%pes
         other%algo = this%algo
         other%name = this%name
@@ -165,6 +165,7 @@ contains
                 other%r( 2 , :, nprojs+start : nprojs+end ) = this%r(2,:,nprojs+1:) + j
                 other%r( 3 , :, nprojs+start : nprojs+end ) = this%r(3,:,nprojs+1:)
 
+                other%m(        nprojs+start : nprojs+end ) = this%m(nprojs+1:)
                 other%idx(      nprojs+start : nprojs+end ) = this%idx(nprojs+1:)
                 other%v( : , :, nprojs+start : nprojs+end ) = this%v(:,:,nprojs+1:)
                 other%f( : , :, nprojs+start : nprojs+end ) = this%f(:,:,nprojs+1:)
@@ -281,17 +282,15 @@ contains
         ! v_cm = sum(m_i*v_i) / sum(m_i)
 
         type(universe), intent(in) :: this
-        real(dp), dimension(3) :: v_cm, num, denom
+        real(dp), dimension(3) :: v_cm, num
         integer :: i
 
         num = 0.0_dp
-        denom = 0.0_dp
         do i = 1, this%natoms
-            num   = num   + sum(this%v(:,:,i), dim=2) * this%m(this%idx(i))
-            denom = denom + this%m(this%idx(i))
+            num = num + sum(this%v(:,:,i), dim=2) * this%m(i)
         end do
 
-        v_cm = num / denom
+        v_cm = num / sum(this%m)
 
     end function calc_com_velocity
 
@@ -306,7 +305,7 @@ contains
 
         temp = 0.0_dp
         do i = 1, this%natoms
-            temp = temp + this%m(this%idx(i)) * sum(sum(this%v(:,:,i), dim=2)**2)
+            temp = temp + this%m(i) * sum(sum(this%v(:,:,i), dim=2)**2)
         end do
 
         temperature = temp / kB / this%dof / this%nbeads
@@ -325,7 +324,7 @@ contains
         integer :: i
 
         do i = 1, this%natoms
-            p(:,:,i) = this%m(this%idx(i)) * this%v(:,:,i)
+            p(:,:,i) = this%m(i) * this%v(:,:,i)
         end do
 
     end subroutine calc_momentum_all
@@ -339,7 +338,7 @@ contains
         integer       , intent(in)  :: i
         real(dp)                    :: momentum(3, this%nbeads)
 
-        momentum = this%m(this%idx(i)) * this%v(:,:,i)
+        momentum = this%m(i) * this%v(:,:,i)
 
     end function calc_momentum_one
 
@@ -428,7 +427,7 @@ contains
 
         do i = 1, this%natoms
 
-            nrg = this%m(this%idx(i))*sum(sum(this%v(:,:,i), dim=2)**2)
+            nrg = this%m(i)*sum(sum(this%v(:,:,i), dim=2)**2)
 
             if (this%is_proj(this%idx(i))) then
                 ekin_p = ekin_p + nrg

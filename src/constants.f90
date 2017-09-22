@@ -4,8 +4,6 @@ module constants
 
     implicit none
 
-    public         ! public for performance in accessing components
-
     integer, parameter :: dp = REAL64
 
     ! Physical and mathematical constants
@@ -40,8 +38,8 @@ module constants
 
 
     ! Defaults
-    integer, parameter :: default_int = huge(0_4)
-    real(dp), parameter :: default_real = huge(0_dp)
+    integer, parameter   :: default_int    = huge(0_4)
+    real(dp), parameter  :: default_real   = huge(0_dp)
     character, parameter :: default_string = ""
 
 
@@ -82,8 +80,5 @@ module constants
     real(dp), parameter :: p2GPa     = 160.2176565_dp
     real(dp), parameter :: joule2ev  = 6.2415093433e+18_dp
     real(dp), parameter :: kelvin2ev = kB
-
-
-
 
 end module constants

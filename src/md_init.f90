@@ -199,13 +199,13 @@ contains
         !        print *, scaling_const
 
         ! read the cell vectors and multiply with scaling constant
-        read(geo_unit, *, iostat=ios) simbox(:,:)
+        read(geo_unit, *, iostat=ios) simbox
         if (ios /= 0) stop err_read_poscar // "reading simulation box"
 
         ! read atom types
         read(geo_unit, '(A)', iostat=ios) buffer
         if (ios /= 0) stop err_read_poscar // "reading atom type"
-        call split_string(buffer, elements(:), nwords)
+        call split_string(buffer, elements, nwords)
 
         ! read number of atoms and number of beads
         read(geo_unit, '(A)', iostat=ios) buffer
@@ -216,7 +216,7 @@ contains
             read(buffer(pos1+1:pos2-1), '(i10)', iostat=ios) nbeads
             if (ios /= 0 .or. nbeads < 1) stop err_read_poscar // "reading number of beads"
         end if
-        read(buffer(pos2+1:), *, iostat=ios) natoms(:)
+        read(buffer(pos2+1:), *, iostat=ios) natoms
         if (ios /= 0) stop err_read_poscar // "reading number of atoms"
 
         ! now we have everything to construct atom types
@@ -254,7 +254,7 @@ contains
         else
         stop err_read_poscar // "cannot read coordinate section"
 
-        end if
+    end if
 
     ! Check if there is a velocity section
     read(geo_unit, '(A)', iostat=ios) buffer
@@ -269,7 +269,7 @@ contains
 
     else
         stop err_read_poscar // "cannot read initial atom velocities. Did you specify &
-            all species in the *.inp file?"
+            all species in the *.inp file?"        
     end if
 
     ! Set the simulation box
@@ -302,7 +302,7 @@ contains
     end if
     call set_atomic_dofs(atoms)
     call set_atomic_indices(atoms, natoms)
-    call set_atomic_masses(atoms)
+    call set_atomic_masses(atoms, natoms)
     call set_atomic_names(atoms, elements)
     call set_prop_algos(atoms)
     call create_repetitions(atoms, simparams%rep)
@@ -340,7 +340,7 @@ subroutine ensure_input_sanity()
         if (.not. allocated(simparams%output_type) .or. .not. allocated(simparams%output_interval)) &
             stop err // "output options not set."
         if (any(simparams%output_interval > simparams%nsteps)) print *, warn // "one or more outputs will not show, since the output &
-	    interval is larger than the total number of simulation steps."
+	    interval is larger than the total number of simulation steps."        
         
 
         ! If one of them is set, the others must be set as well.
@@ -368,13 +368,13 @@ end subroutine ensure_input_sanity
 
 subroutine ensure_geometry_sanity(atoms)
 
-        type(universe), intent(in) :: atoms
-        character(len=*), parameter :: err = "geometry sanity check error: "
+    type(universe), intent(in) :: atoms
+    character(len=*), parameter :: err = "geometry sanity check error: "
 
 
-        !if (atoms%nbeads > 1 .and. simparams%Tsurf == default_real) stop err // "RPMD needs system temperature."
-        if (simparams%force_beads < 1) stop err // "Cannot force zero or less beads."
-        if (simparams%force_beads /= default_int .and. atoms%nbeads /= 1) stop err // "Cannot force any beads when system already contains multiple beads."
+    !if (atoms%nbeads > 1 .and. simparams%Tsurf == default_real) stop err // "RPMD needs system temperature."
+    if (simparams%force_beads < 1) stop err // "Cannot force zero or less beads."
+    if (simparams%force_beads /= default_int .and. atoms%nbeads /= 1) stop err // "Cannot force any beads when system already contains multiple beads."
 
 end subroutine ensure_geometry_sanity
 
@@ -461,14 +461,14 @@ subroutine set_atomic_names(atoms, elements)
 
     ! Check if element names from *.inp file and poscar file are in agreement
 
-    if (allocated(simparams%name_p(:)) .and. allocated(simparams%name_l(:))) then
+    if (allocated(simparams%name_p) .and. allocated(simparams%name_l)) then
         if (any(elements /= [simparams%name_p, simparams%name_l])) stop err // "atomic names in *.inp and poscar files differ"
 
-    else if (allocated(simparams%name_p(:))) then
-        if (any(elements /= simparams%name_p(:))) stop err // "atomic names in *.inp and poscar files differ"
+    else if (allocated(simparams%name_p)) then
+        if (any(elements /= simparams%name_p)) stop err // "atomic names in *.inp and poscar files differ"
 
-    else if (allocated(simparams%name_l(:))) then
-        if (any(elements /= simparams%name_l(:))) stop err // "atomic names in *.inp and poscar files differ"
+    else if (allocated(simparams%name_l)) then
+        if (any(elements /= simparams%name_l)) stop err // "atomic names in *.inp and poscar files differ"
 
     else
         stop err // "neither projectile nor slab exist"
@@ -479,28 +479,28 @@ subroutine set_atomic_names(atoms, elements)
 end subroutine set_atomic_names
 
 
-subroutine set_atomic_masses(atoms)
+subroutine set_atomic_masses(atoms, natoms)
 
     type(universe), intent(inout) :: atoms
+    integer, intent(in) :: natoms(:)
+
+    integer :: i
+    real(dp) :: masses(size(natoms))
     character(len=*), parameter :: err = "Error in set_atomic_masses: "
 
-    ! Either (mass_p or mass_l) or both are allocated
-
-    if (allocated(simparams%mass_p(:)) .and. allocated(simparams%mass_l(:))) then
-        atoms%m(:) = [simparams%mass_p(:), simparams%mass_l(:)]
-        if (size(atoms%m) /= size([simparams%mass_p, simparams%mass_l])) stop err // "more masses than species"
-
-    else if (allocated(simparams%mass_p(:))) then
-        atoms%m(:) = simparams%mass_p(:)
-        if (size(atoms%m) /= size(simparams%mass_p(:))) stop err // "more masses than species"
-
-    else if (allocated(simparams%mass_l(:))) then
-        atoms%m(:) = simparams%mass_l(:)
-        if (size(atoms%m) /= size(simparams%mass_l(:))) stop err // "more masses than species"
-
+    if (allocated(simparams%mass_p) .and. allocated(simparams%mass_l)) then
+        masses = [simparams%mass_p, simparams%mass_l]
+    else if (allocated(simparams%mass_p)) then
+        masses = simparams%mass_p
+    else if (allocated(simparams%mass_l)) then
+        masses = simparams%mass_l
     else
         stop err // "neither projectile nor slab exist"
     end if
+
+    do i = 1, size(natoms)
+        atoms%m(sum(natoms(:i-1))+1:sum(natoms(:i))) = masses(i)
+    end do
 
     ! To program units
     atoms%m = atoms%m * amu2mass

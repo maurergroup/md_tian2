@@ -6,8 +6,6 @@ module md_algo
 
     implicit none
 
-integer :: count = 0
-
 contains
 
     subroutine propagate_1(atoms)
@@ -71,8 +69,14 @@ contains
 
         where(.not. atoms%is_fixed(:,:,i))
             atoms%v(:,:,i) = atoms%v(:,:,i) + 0.5_dp * simparams%step * atoms%a(:,:,i)
-            !atoms%r(:,:,i) = atoms%r(:,:,i) +          simparams%step * atoms%v(:,:,i)
         end where
+
+        ! if rpmd, the positions are being updated in the do_ring_polymer_step subroutine
+        if (atoms%nbeads == 1) then
+            where(.not. atoms%is_fixed(:,:,i))
+                atoms%r(:,:,i) = atoms%r(:,:,i) + simparams%step * atoms%v(:,:,i)
+            end where
+        end if
 
     end subroutine verlet_1
 
@@ -105,7 +109,7 @@ contains
         rnd3 = sqrt(-2.0_dp*log(rnd1)) * cos(2.0_dp*pi*rnd2)
 
         call random_number(choose)
-        mass = atoms%m(atoms%idx(i))
+        mass = atoms%m(i)
 
         do b = 1, atoms%nbeads
             do k = 1, 3
@@ -134,7 +138,6 @@ contains
 
         betaN   = 1.0_dp / (kB * simparams%Tsurf * atoms%nbeads)
 
-
         ! Transform to normal mode space
         newP = 0.0_dp
         atomP = calc_momentum_one(atoms, i)
@@ -156,7 +159,6 @@ contains
             end if
         end do
 
-
         c1 = exp(-0.5_dp * simparams%step*gammak)
         c2 = sqrt(1.0_dp - c1*c1)
 
@@ -166,7 +168,7 @@ contains
         zeta = sqrt(-2.0_dp*log(rnd1)) * cos(2.0_dp*pi*rnd2)
 
         do b = 1, atoms%nbeads
-            newP(:,b) = c1(b)*newP(:,b) + sqrt(atoms%m(atoms%idx(i))/betaN)*c2(b)*zeta(:,b)
+            newP(:,b) = c1(b)*newP(:,b) + sqrt(atoms%m(i)/betaN)*c2(b)*zeta(:,b)
         end do
 
         ! Transform back to Cartesian space
@@ -178,7 +180,7 @@ contains
                 end where
             end do
         end do
-        atoms%v(:,:,i) = atomP/atoms%m(atoms%idx(i))
+        atoms%v(:,:,i) = atomP/atoms%m(i)
 
     end subroutine pile_thermo
 

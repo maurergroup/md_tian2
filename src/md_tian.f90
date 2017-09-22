@@ -22,53 +22,27 @@ program md_tian
 
     implicit none
 
-    integer :: itraj, istep, i, j, b
+    integer :: itraj, istep
     type(universe) :: atoms
 
-    real(dp), dimension(1) :: dummy1, dummy2
 
-
-    real(dp) :: tmp, vcm(3), nom(3), denom(3), tinit, tinter
 
     call simbox_init(atoms)
-    !call output_run_details()
 
 
     do itraj = simparams%start, simparams%start+simparams%ntrajs-1
 
-        call calc_force(atoms)
+        call calc_force(atoms, energy_and_force)
+        print *, "Eref", atoms%epot
 
-
-!        print *, atoms%r
-!        print *, ""
-!        print *, atoms%f
-!        print *, ""
-!        print *, atoms%a
-!                print *, ""
-    print *, "Eref", atoms%epot
-
-print *, simparams%nsteps
         do istep = 1, simparams%nsteps
 
             call propagate_1(atoms)
-!            print *, atoms%r
             if (atoms%nbeads > 1) call do_ring_polymer_step(atoms)
-
-            call calc_force(atoms)
+            call calc_force(atoms, energy_and_force)
             call propagate_2(atoms)
-           ! if (atoms%nbeads > 1) call calc_ring_polymer_energy(atoms, dummy1, dummy2)
-
-
-!            print *, atoms%r
-!            print *, ""
-!            print *, atoms%f
-!        print *, ""
-!        print *, atoms%a
-           ! print *,  calc_centroid_ekin(atoms), sum(atoms%epot)
 
             if (any(mod(istep, simparams%output_interval) == 0)) call output(atoms, itraj, istep)
-
-
 
         end do
     end do
