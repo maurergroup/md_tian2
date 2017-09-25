@@ -19,6 +19,7 @@ program md_tian
     use rpmd
     use universe_mod
     use output_mod, only : output
+    use geometry_opt
 
     implicit none
 
@@ -26,8 +27,9 @@ program md_tian
     type(universe) :: atoms
 
 
-
     call simbox_init(atoms)
+    call optimize_geometry(atoms, geometry_opt_fire)
+    call output(atoms, 1, 1)
 
 
     do itraj = simparams%start, simparams%start+simparams%ntrajs-1

@@ -55,6 +55,10 @@ module constants
     integer, parameter :: energy_only      = 3002
 
 
+    ! Geometry optimization
+    integer, parameter :: geometry_opt_fire = 4001
+
+
     ! Output
     character(len=*), parameter :: output_key_xyz    = "xyz"
     character(len=*), parameter :: output_key_energy = "energy"

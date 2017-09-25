@@ -3,7 +3,7 @@ run md
 start 1
 ntrajs 1
 nsteps 1
-step 0.0000000001
+step 0.000000001
 
 #projectile 1  H   1.0 and   
 lattice   1  Au 40.0  pil
@@ -27,6 +27,6 @@ conf poscar 'au111.POSCAR' 1 1
 !pes definition
 pes './Au.pes'
 
-output  energy 1
+output poscar 1
 
 
