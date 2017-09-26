@@ -138,7 +138,7 @@ contains
         do i = 1, atoms%natoms
             epot = epot + atoms%m(i) * sum(dx(:,i) * dx(:,i))
         end do
-        epot = 0.5_dp * wn2 * epot
+        epot = 0.5_dp * wn2 * epot / atoms%nbeads
 
     end function calc_bead_epot
 
@@ -170,8 +170,8 @@ contains
                 end do
             end do
 
-            ekin_p = 0.5_dp * ekin_p! / atoms%nbeads
-            ekin_l = 0.5_dp * ekin_l! / atoms%nbeads
+            ekin_p = 0.5_dp * ekin_p / atoms%nbeads
+            ekin_l = 0.5_dp * ekin_l / atoms%nbeads
 
         end if
 
@@ -300,6 +300,23 @@ contains
 
 
 
+    subroutine do_ring_polymer_step_with_forces(atoms, forces)
+
+        type(universe), intent(inout) :: atoms
+        real(dp), intent(out)         :: forces(3, atoms%nbeads, atoms%natoms)
+
+        real(dp), dimension(3,atoms%nbeads,atoms%natoms) :: momenta_init, momenta_final
+
+        call calc_momentum_all(atoms, momenta_init)
+        call do_ring_polymer_step(atoms)
+        call calc_momentum_all(atoms, momenta_final)
+        forces = (momenta_final - momenta_init) / simparams%step
+
+    end subroutine do_ring_polymer_step_with_forces
+
+
+
+
     subroutine bead_ekin(atoms, ekin_p, ekin_l)
 
         type(universe), intent(in) :: atoms
@@ -322,8 +339,8 @@ contains
 
         end do
 
-        ekin_p = 0.5_dp * ekin_p
-        ekin_l = 0.5_dp * ekin_l
+        ekin_p = 0.5_dp * ekin_p / atoms%nbeads
+        ekin_l = 0.5_dp * ekin_l / atoms%nbeads
 
     end subroutine bead_ekin
 

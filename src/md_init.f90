@@ -171,7 +171,7 @@ contains
         type(universe), intent(out) :: atoms
         character(len=*), intent(in) :: infile
 
-        character(len=*), parameter :: err_read_poscar = "Error in read_poscar: "
+        character(len=*), parameter :: err = "Error in read_poscar: "
         real(dp) :: scaling_const
         real(dp) :: simbox(3,3)
         integer, allocatable :: natoms(:)
@@ -190,53 +190,51 @@ contains
         call open_for_read(geo_unit, infile)
 
         read(geo_unit, '(A)', iostat=ios) buffer    ! first line is comment
-        if (ios /= 0) stop err_read_poscar // "reading comment line"
+        if (ios /= 0) stop err // "reading comment line"
 
         read(geo_unit, *, iostat=ios) scaling_const             ! second line is scaling constant
-        if (ios /= 0) stop err_read_poscar // "reading scaling constant"
-
-        !        print *, buffer
-        !        print *, scaling_const
+        if (ios /= 0) stop err // "reading scaling constant"
 
         ! read the cell vectors and multiply with scaling constant
         read(geo_unit, *, iostat=ios) simbox
-        if (ios /= 0) stop err_read_poscar // "reading simulation box"
+        if (ios /= 0) stop err // "reading simulation box"
 
         ! read atom types
         read(geo_unit, '(A)', iostat=ios) buffer
-        if (ios /= 0) stop err_read_poscar // "reading atom type"
+        if (ios /= 0) stop err // "reading atom type"
         call split_string(buffer, elements, nwords)
 
         ! read number of atoms and number of beads
         read(geo_unit, '(A)', iostat=ios) buffer
-        if (ios /= 0) stop err_read_poscar // "reading number of atoms and beads"
+        if (ios /= 0) stop err // "reading number of atoms and beads"
         pos1 = scan(string=buffer, set=":", back=.false.)
         if (pos1 > 0) then  ! Number of beads is stated in the file
             pos2 = scan(string=buffer, set=":", back=.true.)
             read(buffer(pos1+1:pos2-1), '(i10)', iostat=ios) nbeads
-            if (ios /= 0 .or. nbeads < 1) stop err_read_poscar // "reading number of beads"
+            if (ios /= 0 .or. nbeads < 1) stop err // "reading number of beads"
         end if
         read(buffer(pos2+1:), *, iostat=ios) natoms
-        if (ios /= 0) stop err_read_poscar // "reading number of atoms"
+        if (any(natoms <= 0)) stop err // "number of atoms could not be read"
+        if (ios /= 0) stop err // "reading number of atoms"
 
         ! now we have everything to construct atom types
         atoms = new_atoms(nbeads, sum(natoms), ntypes)
 
         ! Direct or Cartesian coordinates, needed later
         read(geo_unit, '(A)', iostat=ios) c_system
-        if (ios /= 0) stop err_read_poscar // "reading coordinate system type (cartesian/direct)"
+        if (ios /= 0) stop err // "reading coordinate system type (cartesian/direct)"
 
         ! if coordinate section has 3 entries per line, no atoms are fixed
         ! if coordinate section has 6 entries per line, some might be fixed
         read(geo_unit, '(A)', iostat=ios) buffer
-        if (ios /= 0) stop err_read_poscar // "reading start of coordinate section"
+        if (ios /= 0) stop err // "reading start of coordinate section"
         backspace(geo_unit)
         call split_string(buffer, words, nwords)
 
         if (nwords == 3) then
 
             read(geo_unit, *, iostat=ios) atoms%r
-            if (ios /= 0) stop err_read_poscar // "reading coordinates"
+            if (ios /= 0) stop err // "reading coordinates"
 
         else if (nwords == 6) then
 
@@ -244,15 +242,15 @@ contains
                 allocate (can_move(3, atoms%nbeads, atoms%natoms))
                 read(geo_unit, *, iostat=ios) ((atoms%r(:,j,i), can_move(:,j,i), j=1,atoms%nbeads), &
                     i=1,atoms%natoms)
-                if (ios /= 0) stop err_read_poscar // "reading atom coordinates and mobility flags"
+                if (ios /= 0) stop err // "reading atom coordinates and mobility flags"
                 where (can_move == "F") atoms%is_fixed = .true.
                 deallocate (can_move)
             else
-                stop err_read_poscar // "reading projectile coordinates and mobility flags"
+                stop err // "reading projectile coordinates and mobility flags"
             end if
 
         else
-        stop err_read_poscar // "cannot read coordinate section"
+        stop err // "cannot read coordinate section"
 
     end if
 
@@ -265,10 +263,10 @@ contains
     else if (ios == 0 .and. len_trim(buffer) == 0) then
         ! blank line after coordinate section and no eof yet -> read velocities
         read(geo_unit, *, iostat=ios) atoms%v
-        if (ios /= 0) stop err_read_poscar // "cannot read initial atom velocities"
+        if (ios /= 0) stop err // "cannot read initial atom velocities"
 
     else
-        stop err_read_poscar // "cannot read initial atom velocities. Did you specify &
+        stop err // "cannot read initial atom velocities. Did you specify &
             all species in the *.inp file?"        
     end if
 
@@ -297,7 +295,7 @@ contains
         call to_direct(atoms)
 
     else
-        stop err_read_poscar // "reading coordinate system type (cartesian/direct)"
+        stop err // "reading coordinate system type (cartesian/direct)"
 
     end if
     call set_atomic_dofs(atoms)
@@ -352,11 +350,21 @@ subroutine ensure_input_sanity()
 
             ! TODO: to be completed
 
+    else if (simparams%run == "min") then
+        if (simparams%nlattices == default_int .and. &
+            simparams%nprojectiles == default_int) stop err // &
+            "either lattice and/or projectile key must be present."
+        if (simparams%nprojectiles == default_int) simparams%nprojectiles = 0
+        if (simparams%nlattices == default_int) simparams%nlattices = 0
+
 
 
     !!! Perform fit
     else if (simparams%run == "fit") then
 
+    else
+        print *, err // "unknown run command", simparams%run
+        stop
 
     end if
 

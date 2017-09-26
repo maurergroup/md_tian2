@@ -84,9 +84,9 @@ contains
         new_atoms%name  = default_string
         new_atoms%r     = default_real
         new_atoms%v     = default_real
-        new_atoms%f     = default_real
+        new_atoms%f     = 0.0_dp
         new_atoms%m     = default_real
-        new_atoms%a     = default_real
+        new_atoms%a     = 0.0_dp
         new_atoms%is_fixed = .false.
         new_atoms%is_proj  = .false.
         new_atoms%is_cart  = .false.

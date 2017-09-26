@@ -100,7 +100,7 @@ contains
 
         real(dp), dimension(3, atoms%nbeads) :: rnd1, rnd2, rnd3, choose
         real(dp) :: ibetaN, mass
-        integer :: k, b
+        integer  :: k, b
 
         ibetaN = atoms%nbeads * kB * simparams%Tsurf
 
@@ -136,7 +136,7 @@ contains
 
         if (.not. allocated(cjk)) call build_cjk(atoms%nbeads)
 
-        betaN   = 1.0_dp / (kB * simparams%Tsurf * atoms%nbeads)
+        betaN = 1.0_dp / (kB * simparams%Tsurf * atoms%nbeads)
 
         ! Transform to normal mode space
         newP = 0.0_dp

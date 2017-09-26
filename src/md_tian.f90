@@ -28,8 +28,13 @@ program md_tian
 
 
     call simbox_init(atoms)
-    call optimize_geometry(atoms, geometry_opt_fire)
-    call output(atoms, 1, 1)
+
+    if (simparams%run == "min") then
+        call optimize_geometry(atoms, geometry_opt_fire)
+        call output(atoms, 1, 1)
+        print *, atoms%epot
+        stop
+    end if
 
 
     do itraj = simparams%start, simparams%start+simparams%ntrajs-1
