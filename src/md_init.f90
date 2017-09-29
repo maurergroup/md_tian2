@@ -18,12 +18,16 @@ module md_init
     use useful_things
     use run_config
     use constants
+    use open_file
 
     use pes_lj_mod
     use pes_ho_mod
     use pes_emt_mod
     use pes_non_mod
     implicit none
+
+    integer, parameter :: pes_unit = 38
+    integer, parameter :: geo_unit = 55
 
 contains
 
@@ -36,14 +40,12 @@ contains
         integer :: randk
 
         ! Read in name of input file
-
         if (command_argument_count() == 0) stop " I need an input file"
 
         call get_command(length=input_file_length)
         allocate(character(input_file_length) :: input_file)
         call get_command_argument(1, input_file, input_file_length, input_file_status)
         if (input_file_status /= 0) stop " Error by reading the command line"
-
 
         ! size of seed for random number generator
         randk=size(randseed)
@@ -56,23 +58,19 @@ contains
         call ensure_geometry_sanity(atoms)
 
         call read_pes(atoms)
-        call remove_com_velocity(atoms)
+        !call remove_com_velocity(atoms)
         call post_process(atoms)
-
-
-    !TODO: Do not forget to convert the angles from degrees to program units
 
     end subroutine simbox_init
 
 
-    subroutine read_pes(atoms)
 
-        use open_file, only : open_for_read
+
+    subroutine read_pes(atoms)
 
         type(universe), intent(inout) :: atoms
 
         integer :: ios = 0, nwords, i
-        integer, parameter :: pes_unit = 38
         character(len=max_string_length) :: buffer
         character(len=max_string_length) :: words(100)
         character(len=*), parameter :: err = "Error in read_pes(): "
@@ -156,6 +154,9 @@ contains
             case ("poscar")
                 call read_poscar(atoms, infile)
 
+            case ("mxt")
+                call read_mxt(atoms, infile)
+
             case default
                 stop "Error: conf keyword unknown"
 
@@ -164,9 +165,9 @@ contains
     end subroutine read_geometry
 
 
-    subroutine read_poscar(atoms, infile)
 
-        use open_file, only : open_for_read
+
+    subroutine read_poscar(atoms, infile)
 
         type(universe), intent(out) :: atoms
         character(len=*), intent(in) :: infile
@@ -175,7 +176,6 @@ contains
         real(dp) :: scaling_const
         real(dp) :: simbox(3,3)
         integer, allocatable :: natoms(:)
-        integer, parameter :: geo_unit = 55
         integer :: ios, nwords, ntypes, i, j
         integer :: nbeads = 1, pos1 = 0, pos2 = 0
         character(len=3), allocatable :: elements(:)
@@ -309,6 +309,44 @@ end subroutine read_poscar
 
 
 
+
+subroutine read_mxt(atoms, infile)
+
+    type(universe), intent(out)  :: atoms
+    character(len=*), intent(in) :: infile
+
+    character(len=*), parameter  :: err = "Error in read_mxt(): "
+    integer :: natoms, nbeads, ntypes, ios, i
+    integer, allocatable :: atom_list(:)
+
+    open(geo_unit, file=infile, form="unformatted")
+
+    read(geo_unit, iostat=ios) natoms, nbeads, ntypes
+    if (ios /= 0) stop err // "cannot read universe type constructor arguments"
+    atoms = new_atoms(nbeads, natoms, ntypes)
+
+    read(geo_unit, iostat=ios) atoms%r, atoms%v, atoms%is_cart, atoms%is_fixed, atoms%idx, &
+        atoms%name, atoms%is_proj, atoms%simbox, atoms%isimbox
+    if (ios /= 0) stop err // "cannot read file"
+
+    close(geo_unit)
+
+    allocate(atom_list(atoms%ntypes))
+    atom_list = 0
+    print *, atoms%ntypes
+    do i = 1, atoms%natoms
+        atom_list(atoms%idx(i)) = atom_list(atoms%idx(i)) + 1
+    end do
+
+    call set_atomic_dofs(atoms)
+    call set_atomic_masses(atoms, atom_list)
+    call set_prop_algos(atoms)
+
+end subroutine read_mxt
+
+
+
+
 subroutine ensure_input_sanity()
 
     character(len=*), parameter :: err  = "input sanity check error: "
@@ -435,7 +473,6 @@ end subroutine post_process
 
 
 
-
 subroutine set_atomic_indices(atoms, natoms)
 
     ! Each atom has a unique index 1, 2, ..., n, where n is the number of species in
@@ -459,6 +496,8 @@ subroutine set_atomic_indices(atoms, natoms)
     if (size(natoms) > size(atoms%idx)) stop "Error in set_atomic_indices: more atoms than indices."
 
 end subroutine set_atomic_indices
+
+
 
 
 subroutine set_atomic_names(atoms, elements)
@@ -485,6 +524,8 @@ subroutine set_atomic_names(atoms, elements)
     atoms%name = elements
 
 end subroutine set_atomic_names
+
+
 
 
 subroutine set_atomic_masses(atoms, natoms)
@@ -543,6 +584,8 @@ subroutine set_prop_algos(atoms)
     end if
 
 end subroutine set_prop_algos
+
+
 
 
 subroutine set_atomic_dofs(atoms)

@@ -11,7 +11,8 @@ module output_mod
     logical :: overwrite_nrg = .true.
     logical :: overwrite_xyz = .true.
     integer, parameter :: out_unit = 86
-    integer :: out_id = 1
+    integer :: out_id_poscar = 1
+    integer :: out_id_mxt    = 1
 
 
 contains
@@ -26,7 +27,9 @@ contains
 
         do i = 1, size(simparams%output_type)
             if (modulo(istep, simparams%output_interval(i)) == 0) then
+
                 select case (simparams%output_type(i))
+
                 case (output_id_xyz)
                     call output_xyz(atoms, itraj)
 
@@ -35,7 +38,11 @@ contains
 
                 case (output_id_poscar)
                     call output_poscar(atoms)
-                    out_id = out_id + 1
+                    out_id_poscar = out_id_poscar + 1
+
+                case (output_id_mxt)
+                    call output_mxt(atoms)
+                    out_id_mxt = out_id_mxt + 1
 
                 case default
                     stop err // "unknown output format"
@@ -44,6 +51,7 @@ contains
         end do
 
     end subroutine output
+
 
 
 
@@ -59,16 +67,12 @@ contains
         integer :: i, j
         real(dp), dimension(3, atoms%nbeads, atoms%natoms) :: dir_coords, cart_coords
 
-
         ! XXX: change system() to execute_command_line() when new compiler is available
         if (.not. dir_exists('conf')) call system('mkdir conf')
 
         ! to direct, fold into simbox, to cartesian
-
         forall (i = 1 : atoms%natoms) dir_coords(:,:,i) = matmul(atoms%isimbox, atoms%r(:,:,i))
-
         dir_coords = dir_coords - anint(dir_coords-0.5_dp)
-
         forall (i = 1 : atoms%natoms) cart_coords(:,:,i) = matmul(atoms%simbox, dir_coords(:,:,i))
 
         write(traj_id,'(i8.8)') itraj
@@ -96,6 +100,7 @@ contains
 
 
 
+
     subroutine output_nrg(atoms, itraj, istep)
 
         ! time, epot, ekin_p, ekin_l, etotal,
@@ -106,8 +111,9 @@ contains
 
         character(len=8)                 :: traj_id
         character(len=max_string_length) :: fname
+        integer  :: i
         real(dp) :: atom_temp, bead_temp, gyr_rad_sq, a_ekin_p, a_ekin_l, q_ekin_l, q_ekin_p
-        real(dp) :: b_ekin_p, b_ekin_l, atom_epot, bead_epot, etotal, b2b_dist
+        real(dp) :: b_ekin_p, b_ekin_l, atom_epot, bead_epot, etotal
 
 
         ! XXX: change system() to execute_command_line() when new compiler is available
@@ -118,9 +124,12 @@ contains
 
         if (overwrite_nrg) then
             call open_for_write(out_unit, fname)
-            write(out_unit, '(11a17)') '#time/fs', 'atom T/K', 'bead T/K', 'gyr_squared/A²', &
-                'atom ekin/eV', 'bead ekin/eV', 'qntm ekin/eV', 'atom epot/eV', 'bead epot/eV', &
-                'e_total/eV', 'f_total'
+            write(out_unit, '(a)') '# All energies are given in eV.'
+            write(out_unit, '(a1, i8, 13i17)') "#", (i, i = 1, 14)
+            write(out_unit, '(14a17)') '#time/fs', 'atom T/K', 'bead T/K', 'gyr_squared/A²', &
+                'atom ekin proj', 'atom ekin latt', 'bead ekin proj', 'bead ekin latt', &
+                'qntm ekin proj', 'qntm ekin latt', 'atom epot', 'bead epot', &
+                'e_total', 'f_total/(eV/A)'
             overwrite_nrg = .false.
         else
             call open_for_append(out_unit,fname)
@@ -138,14 +147,21 @@ contains
         atom_epot = sum(atoms%epot)/atoms%nbeads
         bead_epot = calc_bead_epot(atoms)
 
-        etotal = 0
+        etotal = a_ekin_l + a_ekin_p - q_ekin_l - q_ekin_p + atom_epot
 
-        write(out_unit, '(11e17.8e2)') istep*simparams%step, atom_temp, bead_temp, &
-            gyr_rad_sq, a_ekin_l, b_ekin_l, q_ekin_l, atom_epot, bead_epot, etotal, sum(atoms%f)
+        ! primitive quantum kinetic energy estimator, do not use, just for completeness
+        ! source: J. Chem. Phys. 123, 134502 (2005)
+        ! q_ekin = (0.5 * atoms%dof * kb * bead_temp - bead_epot)/atoms%nbeads
+
+        write(out_unit, '(14e17.8e2)') istep*simparams%step, atom_temp, bead_temp, &
+            gyr_rad_sq, a_ekin_p, a_ekin_l, b_ekin_p, b_ekin_l, q_ekin_p, q_ekin_l, &
+            atom_epot, bead_epot, etotal, sum(atoms%f)
 
         close(out_unit)
 
     end subroutine output_nrg
+
+
 
 
     subroutine output_poscar(atoms)
@@ -165,9 +181,9 @@ contains
             noccurrences(atoms%idx(i)) = noccurrences(atoms%idx(i)) + 1
         end do
 
-        ! open file conf/mxt_%08d.POSCAR
-        write(fid,'(i8.8)') out_id
-        fname = 'conf/mxt_'//fid//'.POSCAR'
+        ! open file conf/poscar_%08d.dat
+        write(fid,'(i8.8)') out_id_poscar
+        fname = 'conf/poscar_'//fid//'.dat'
         call open_for_write(out_unit, fname)
 
         ! write date and time as comment line
@@ -192,9 +208,34 @@ contains
         write(out_unit, '(a)') ""
         write(out_unit, '(3f23.15)') atoms%v
 
-
         close(out_unit)
 
     end subroutine output_poscar
+
+
+
+
+    subroutine output_mxt(atoms)
+
+        type(universe), intent(in) :: atoms
+
+        character(len=max_string_length) :: fname
+        character(len=8)                 :: fid
+
+        ! XXX: change system() to execute_command_line() when new compiler is available
+        if (.not. dir_exists('conf')) call system('mkdir conf')
+
+        ! open file conf/mxt_%08d.dat
+        write(fid,'(i8.8)') out_id_mxt
+        fname = 'conf/mxt_'//fid//'.dat'
+        open(out_unit, file=fname, form="unformatted", status="replace")
+
+        write(out_unit) atoms%natoms, atoms%nbeads, atoms%ntypes
+        write(out_unit) atoms%r, atoms%v, atoms%is_cart, atoms%is_fixed, &
+            atoms%idx, atoms%name, atoms%is_proj, atoms%simbox, atoms%isimbox
+
+        close(out_unit)
+
+    end subroutine output_mxt
 
 end module output_mod

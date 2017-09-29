@@ -246,7 +246,7 @@ contains
 
         this%is_cart = .not. this%is_cart
 
-    end subroutine
+    end subroutine to_cartesian
 
 
 
@@ -268,7 +268,7 @@ contains
 
         this%is_cart = .not. this%is_cart
 
-    end subroutine
+    end subroutine to_direct
 
 
 

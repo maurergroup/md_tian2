@@ -137,6 +137,9 @@ contains
                 if (atoms%pes(idx_i,idx_j) /= pes_id_ho) cycle
 
                 call minimg_beads(atoms, i, j, r, vec)
+
+                if (any(r > 1.5*pes_ho%r0(idx_i,idx_j))) cycle
+
                 if (any(r < tolerance)) then
                     print *, "Error in compute_ho: distance too small between &
                         beads number", minloc(r), "of atoms", i, "and", j

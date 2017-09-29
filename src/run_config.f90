@@ -45,7 +45,7 @@ module run_config
         real(dp) :: andersen_freq                                   ! collision frequency of Andersen thermostat
                                                                     !   draw from M.-B. distribution every nth time on avg
         real(dp) :: pile_tau                                        ! PILE thermostat centroid mode thermostat time constant
-        integer :: force_beads                                      ! inititalizes all atoms with this many beads
+        integer  :: force_beads                                     ! inititalizes all atoms with this many beads
 
     end type
 
@@ -85,6 +85,7 @@ contains
         character(len=*), intent(in) :: input_file
 
         integer :: i, ios = 0, line = 0, nwords
+        real(dp) :: rnd
         character(len=max_string_length) :: buffer
         character(len=max_string_length) :: words(100)
         integer, parameter :: inp_unit = 38
@@ -301,7 +302,7 @@ contains
 
                     case ('conf')
 
-                        if (simparams%confname /= default_string)   stop 'Error in the input file: Multiple use of the conf key'
+                        if (simparams%confname /= default_string) stop 'Error in the input file: Multiple use of the conf key'
                         if (nwords > 2) then
                             read(words(2),'(A)') simparams%confname
                             call lower_case(simparams%confname)
@@ -310,7 +311,7 @@ contains
                             select case (simparams%confname)
 
                                 case ('poscar')
-
+                                    ! conf poscar <poscar_file> <x_rep> <y_rep>
                                     if (nwords > 5) stop 'Error in the input file: conf key - poscar argument number is too large'
                                     if (words(4) /= "") then
                                         read(words(4),'(i1000)',iostat=ios) simparams%rep(1)
@@ -329,13 +330,15 @@ contains
                                     if (nwords == 4) then
                                         read(words(4),'(i1000)',iostat=ios) simparams%nconfs
                                         if (ios /= 0) stop 'Error in the input file: conf key - mxt argument must be integer'
+                                        call random_number(rnd)
+                                        write(simparams%confname_file, '(2a, i8.8, a)') trim(simparams%confname_file), "/mxt_", int(rnd*simparams%nconfs)+1, ".dat"
                                     end if
-                                    if (nwords < 4) stop 'Error in the input file: conf key - too few mxt arguments'
+                                    if (nwords < 3) stop 'Error in the input file: conf key - too few mxt arguments'
                                     if (nwords > 4) stop 'Error in the input file: conf key - too many mxt arguments'
-
 
                                 case default
                                     stop 'Error in the input file: conf key - unknown conf name'
+
                             end select
                         else
                             stop 'Error in the input file: conf key needs at least 2 arguments'
@@ -356,8 +359,10 @@ contains
                                 simparams%output_type(i) = output_id_energy
                             case (output_key_poscar)
                                 simparams%output_type(i) = output_id_poscar
+                            case (output_key_mxt)
+                                simparams%output_type(i) = output_id_mxt
                             case default
-                                print *, 'Error in the input file: output format', words(2*i), 'unknown'
+                                print *, 'Error in the input file: output format ', trim(words(2*i)), ' unknown'
                                 stop
                             end select
 
