@@ -45,7 +45,8 @@ contains
                     out_id_mxt = out_id_mxt + 1
 
                 case default
-                    stop err // "unknown output format"
+                    print *, err // "unknown output format"
+                    stop
                 end select
             end if
         end do

@@ -2,13 +2,13 @@ run md
 
 start 1
 ntrajs 1
-nsteps 10
+nsteps 10000
 step 0.1
 
 #projectile 1  H   1.0 and   
-lattice   1  Au 40.0  ver
+lattice   1  C 12.0  ver
 
-!force_beads 16
+!force_beads 32
 !pile_tau 100
 !andersen_freq 1000
 
@@ -21,16 +21,14 @@ inc_vib energy
 Tsurf 300
 !annealing 1000 25 5
  
-#conf poscar 'conf/mxt_00000008.POSCAR'
-conf mxt 'conf' 10
+conf poscar graph.POSCAR
 
 !196.96657
 
 !pes definition
-pes './Au.pes'
+pes 'Carbon.pes'
 
-output  mxt 1
-#output poscar 1
+output energy 1
 
 # 16.1037494599217
 

@@ -70,7 +70,8 @@ contains
             end if
 
         else
-            stop err // "interaction must be defined via 'proj' and 'latt' keywords"
+            print *, err // "interaction must be defined via 'proj' and 'latt' keywords"
+            stop
         end if
 
         ! set the pes type in the atoms object
@@ -163,7 +164,8 @@ contains
             end if
 
         else
-            stop err // "interaction must be defined via 'proj' and 'latt' keywords"
+            print *, err // "interaction must be defined via 'proj' and 'latt' keywords"
+            stop
         end if
 
         ! set the pes type in the atoms object

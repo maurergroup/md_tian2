@@ -27,11 +27,12 @@ program md_tian
     real(dp) :: tmp
     type(universe) :: atoms
 
+    call simbox_init(atoms)
+
     select case (simparams%run)
 
-        case ("min")
+        case ('min')
 
-            call simbox_init(atoms)
             call optimize_geometry(atoms, geometry_opt_fire)
             call output(atoms, 1, 1)
 
@@ -39,7 +40,6 @@ program md_tian
 
             do itraj = simparams%start, simparams%start+simparams%ntrajs-1
 
-                call simbox_init(atoms)
                 call calc_force(atoms, energy_and_force)
                 print *, "Eref", atoms%epot
 

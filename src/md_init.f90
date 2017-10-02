@@ -20,10 +20,12 @@ module md_init
     use constants
     use open_file
 
-    use pes_lj_mod
-    use pes_ho_mod
-    use pes_emt_mod
-    use pes_non_mod
+    use pes_lj_mod,   only : read_lj, read_simple_lj
+    use pes_ho_mod,   only : read_ho
+    use pes_emt_mod,  only : read_emt
+    use pes_non_mod,  only : read_non_interacting
+    use pes_rebo_mod, only : read_rebo
+
     implicit none
 
     integer, parameter :: pes_unit = 38
@@ -106,8 +108,8 @@ contains
                         case ('emt')
                             call read_emt(atoms, pes_unit)
                         !
-                        !                        case ('rebo')
-                        !                            call read_rebo(pes_unit)
+                        case ('rebo')
+                            call read_rebo(atoms, pes_unit)
 
                         case ('non')
                             call read_non_interacting(atoms, pes_unit)
@@ -246,355 +248,361 @@ contains
                 where (can_move == "F") atoms%is_fixed = .true.
                 deallocate (can_move)
             else
-                stop err // "reading projectile coordinates and mobility flags"
+                print *, err // "reading projectile coordinates and mobility flags"
+                stop
             end if
 
         else
-        stop err // "cannot read coordinate section"
+            print *, err // "cannot read coordinate section"
+            stop
+        end if
 
-    end if
+        ! Check if there is a velocity section
+        read(geo_unit, '(A)', iostat=ios) buffer
+        if (ios == iostat_end) then
+            ! eof of file, don't read anything more
+            atoms%v = 0.0_dp
 
-    ! Check if there is a velocity section
-    read(geo_unit, '(A)', iostat=ios) buffer
-    if (ios == iostat_end) then
-        ! eof of file, don't read anything more
-        atoms%v = 0.0_dp
+        else if (ios == 0 .and. len_trim(buffer) == 0) then
+            ! blank line after coordinate section and no eof yet -> read velocities
+            read(geo_unit, *, iostat=ios) atoms%v
+            if (ios /= 0) stop err // "cannot read initial atom velocities"
 
-    else if (ios == 0 .and. len_trim(buffer) == 0) then
-        ! blank line after coordinate section and no eof yet -> read velocities
-        read(geo_unit, *, iostat=ios) atoms%v
-        if (ios /= 0) stop err // "cannot read initial atom velocities"
+        else
+            print *,  err // "cannot read initial atom velocities. Did you specify &
+            all species in the *.inp file?"            
+            stop
+        end if
 
-    else
-        stop err // "cannot read initial atom velocities. Did you specify &
-            all species in the *.inp file?"        
-    end if
+        ! Set the simulation box
+        simbox = simbox * scaling_const
+        atoms%simbox  = simbox
+        atoms%isimbox = invert_matrix(simbox)
 
-    ! Set the simulation box
-    simbox = simbox * scaling_const
-    atoms%simbox  = simbox
-    atoms%isimbox = invert_matrix(simbox)
+        ! Set the projectile identification
+        if (simparams%nprojectiles > 0) atoms%is_proj(1:simparams%nprojectiles)  = .true.
+        if (simparams%nlattices    > 0) atoms%is_proj(simparams%nprojectiles+1:) = .false.
 
-    ! Set the projectile identification
-    if (simparams%nprojectiles > 0) atoms%is_proj(1:simparams%nprojectiles)  = .true.
-    if (simparams%nlattices    > 0) atoms%is_proj(simparams%nprojectiles+1:) = .false.
+        ! If system was given in cartesian coordinates, convert to direct
+        call lower_case(c_system)
+        if (trim(adjustl(c_system)) == "d" .or. &
+            trim(adjustl(c_system)) == "direct") then
 
-    ! If system was given in cartesian coordinates, convert to direct
-    call lower_case(c_system)
-    if (trim(adjustl(c_system)) == "d" .or. &
-        trim(adjustl(c_system)) == "direct") then
+            atoms%is_cart = .false.
 
-        atoms%is_cart = .false.
+        else if (trim(adjustl(c_system)) == "c" .or. &
+            trim(adjustl(c_system)) == "cart" .or. &
+            trim(adjustl(c_system)) == "cartesian") then
 
-    else if (trim(adjustl(c_system)) == "c" .or. &
-        trim(adjustl(c_system)) == "cart" .or. &
-        trim(adjustl(c_system)) == "cartesian") then
+            atoms%is_cart = .true.
+            atoms%r = atoms%r * scaling_const
+            call to_direct(atoms)
 
-        atoms%is_cart = .true.
-        atoms%r = atoms%r * scaling_const
-        call to_direct(atoms)
+        else
+            print *, err // "reading coordinate system type (cartesian/direct)"
+            stop
+        end if
+        call set_atomic_dofs(atoms)
+        call set_atomic_indices(atoms, natoms)
+        call set_atomic_masses(atoms, natoms)
+        call set_atomic_names(atoms, elements)
+        call set_prop_algos(atoms)
+        call create_repetitions(atoms, simparams%rep)
 
-    else
-        stop err // "reading coordinate system type (cartesian/direct)"
-
-    end if
-    call set_atomic_dofs(atoms)
-    call set_atomic_indices(atoms, natoms)
-    call set_atomic_masses(atoms, natoms)
-    call set_atomic_names(atoms, elements)
-    call set_prop_algos(atoms)
-    call create_repetitions(atoms, simparams%rep)
-
-end subroutine read_poscar
-
-
-
-
-subroutine read_mxt(atoms, infile)
-
-    type(universe), intent(out)  :: atoms
-    character(len=*), intent(in) :: infile
-
-    character(len=*), parameter  :: err = "Error in read_mxt(): "
-    integer :: natoms, nbeads, ntypes, ios, i
-    integer, allocatable :: atom_list(:)
-
-    open(geo_unit, file=infile, form="unformatted")
-
-    read(geo_unit, iostat=ios) natoms, nbeads, ntypes
-    if (ios /= 0) stop err // "cannot read universe type constructor arguments"
-    atoms = new_atoms(nbeads, natoms, ntypes)
-
-    read(geo_unit, iostat=ios) atoms%r, atoms%v, atoms%is_cart, atoms%is_fixed, atoms%idx, &
-        atoms%name, atoms%is_proj, atoms%simbox, atoms%isimbox
-    if (ios /= 0) stop err // "cannot read file"
-
-    close(geo_unit)
-
-    allocate(atom_list(atoms%ntypes))
-    atom_list = 0
-    print *, atoms%ntypes
-    do i = 1, atoms%natoms
-        atom_list(atoms%idx(i)) = atom_list(atoms%idx(i)) + 1
-    end do
-
-    call set_atomic_dofs(atoms)
-    call set_atomic_masses(atoms, atom_list)
-    call set_prop_algos(atoms)
-
-end subroutine read_mxt
+    end subroutine read_poscar
 
 
 
 
-subroutine ensure_input_sanity()
+    subroutine read_mxt(atoms, infile)
 
-    character(len=*), parameter :: err  = "input sanity check error: "
-    character(len=*), parameter :: warn = "input sanity check warning: "
+        type(universe), intent(out)  :: atoms
+        character(len=*), intent(in) :: infile
 
-    ! Check the *.inp file
-    !!! Perform MD
-    if (simparams%run == "md") then
-        if (simparams%start == default_int)  stop err // "start key must be present and larger than zero."
-        if (simparams%ntrajs == default_int) stop err // "ntrajs key must be present and larger than zero."
-        if (simparams%nsteps == default_int) stop err // "nsteps key must be present and larger than zero."
-        if (simparams%step == default_real)  stop err // "nsteps key must be present and larger than zero."
-        if (simparams%nlattices == default_int .and. simparams%nprojectiles == default_int) stop err // "either lattice and/or projectile key must be present."
-        if (simparams%nprojectiles == default_int) simparams%nprojectiles = 0
-        if (simparams%nlattices == default_int) simparams%nlattices = 0
+        character(len=*), parameter  :: err = "Error in read_mxt(): "
+        integer :: natoms, nbeads, ntypes, ios, i
+        integer, allocatable :: atom_list(:)
 
-        if (simparams%nprojectiles > 0 .and. .not. allocated(simparams%name_p)) stop err // "projectile names not set."
-        if (simparams%nprojectiles > 0 .and. .not. allocated(simparams%mass_p)) stop err // "projectile masses not set."
-        if (simparams%nprojectiles > 0 .and. .not. allocated(simparams%mass_p)) stop err // "projectile masses not set."
-        if (simparams%nprojectiles > 0 .and. .not. allocated(simparams%md_algo_p)) stop err // "projectile propagation algorithm not set."
+        open(geo_unit, file=infile, form="unformatted")
 
-        if (simparams%nlattices > 0 .and. .not. allocated(simparams%mass_l)) stop err // "lattice masses not set."
-        if (simparams%nlattices > 0 .and. .not. allocated(simparams%name_l)) stop err // "lattice names not set."
-        if (simparams%nlattices > 0 .and. .not. allocated(simparams%mass_l)) stop err // "lattice masses not set."
-        if (simparams%nlattices > 0 .and. .not. allocated(simparams%md_algo_l)) stop err // "lattice propagation algorithm not set."
+        read(geo_unit, iostat=ios) natoms, nbeads, ntypes
+        if (ios /= 0) stop err // "cannot read universe type constructor arguments"
+        atoms = new_atoms(nbeads, natoms, ntypes)
 
-        if (.not. allocated(simparams%output_type) .or. .not. allocated(simparams%output_interval)) &
-            stop err // "output options not set."
-        if (any(simparams%output_interval > simparams%nsteps)) print *, warn // "one or more outputs will not show, since the output &
-	    interval is larger than the total number of simulation steps."        
+        read(geo_unit, iostat=ios) atoms%r, atoms%v, atoms%is_cart, atoms%is_fixed, atoms%idx, &
+            atoms%name, atoms%is_proj, atoms%simbox, atoms%isimbox
+        if (ios /= 0) stop err // "cannot read file"
+
+        close(geo_unit)
+
+        allocate(atom_list(atoms%ntypes))
+        atom_list = 0
+        print *, atoms%ntypes
+        do i = 1, atoms%natoms
+            atom_list(atoms%idx(i)) = atom_list(atoms%idx(i)) + 1
+        end do
+
+        call set_atomic_dofs(atoms)
+        call set_atomic_masses(atoms, atom_list)
+        call set_prop_algos(atoms)
+
+    end subroutine read_mxt
+
+
+
+
+    subroutine ensure_input_sanity()
+
+        character(len=*), parameter :: err  = "input sanity check error: "
+        character(len=*), parameter :: warn = "input sanity check warning: "
+
+        ! Check the *.inp file
+        !!! Perform MD
+
+        if (simparams%run == "md") then
+            if (simparams%start == default_int)  stop err // "start key must be present and larger than zero."
+            if (simparams%ntrajs == default_int) stop err // "ntrajs key must be present and larger than zero."
+            if (simparams%nsteps == default_int) stop err // "nsteps key must be present and larger than zero."
+            if (simparams%step == default_real)  stop err // "nsteps key must be present and larger than zero."
+            if (simparams%nlattices == default_int .and. simparams%nprojectiles == default_int) stop err // "either lattice and/or projectile key must be present."
+            if (simparams%nprojectiles == default_int) simparams%nprojectiles = 0
+            if (simparams%nlattices == default_int) simparams%nlattices = 0
+
+            if (simparams%nprojectiles > 0 .and. .not. allocated(simparams%name_p)) stop err // "projectile names not set."
+            if (simparams%nprojectiles > 0 .and. .not. allocated(simparams%mass_p)) stop err // "projectile masses not set."
+            if (simparams%nprojectiles > 0 .and. .not. allocated(simparams%mass_p)) stop err // "projectile masses not set."
+            if (simparams%nprojectiles > 0 .and. .not. allocated(simparams%md_algo_p)) stop err // "projectile propagation algorithm not set."
+
+            if (simparams%nlattices > 0 .and. .not. allocated(simparams%mass_l)) stop err // "lattice masses not set."
+            if (simparams%nlattices > 0 .and. .not. allocated(simparams%name_l)) stop err // "lattice names not set."
+            if (simparams%nlattices > 0 .and. .not. allocated(simparams%mass_l)) stop err // "lattice masses not set."
+            if (simparams%nlattices > 0 .and. .not. allocated(simparams%md_algo_l)) stop err // "lattice propagation algorithm not set."
+
+            if (.not. allocated(simparams%output_type) .or. .not. allocated(simparams%output_interval)) &
+                stop err // "output options not set."
+            if (any(simparams%output_interval > simparams%nsteps)) print *, warn // "one or more outputs will not show, since the output &
+	    interval is larger than the total number of simulation steps."            
         
 
-        ! If one of them is set, the others must be set as well.
-        if ( (allocated(simparams%einc) .neqv. allocated(simparams%inclination)) .or. &
-            (allocated(simparams%einc) .neqv. allocated(simparams%azimuth)) ) &
-            stop err // "incidence conditions ambiguous."
+            ! If one of them is set, the others must be set as well.
+            if ( (allocated(simparams%einc) .neqv. allocated(simparams%inclination)) .or. &
+                (allocated(simparams%einc) .neqv. allocated(simparams%azimuth)) ) &
+                stop err // "incidence conditions ambiguous."
 
 
 
-            ! TODO: to be completed
+                ! TODO: to be completed
 
-    else if (simparams%run == "min") then
-        if (simparams%nlattices == default_int .and. &
-            simparams%nprojectiles == default_int) stop err // &
-            "either lattice and/or projectile key must be present."
-        if (simparams%nprojectiles == default_int) simparams%nprojectiles = 0
-        if (simparams%nlattices == default_int) simparams%nlattices = 0
-
-
-
-    !!! Perform fit
-    else if (simparams%run == "fit") then
-
-    else
-        print *, err // "unknown run command", simparams%run
-        stop
-
-    end if
+        else if (simparams%run == "min") then
+            if (simparams%nlattices == default_int .and. &
+                simparams%nprojectiles == default_int) stop err // &
+                "either lattice and/or projectile key must be present."
+            if (simparams%nprojectiles == default_int) simparams%nprojectiles = 0
+            if (simparams%nlattices == default_int) simparams%nlattices = 0
 
 
 
-end subroutine ensure_input_sanity
+        !!! Perform fit
+        else if (simparams%run == "fit") then
+
+        else
+            print *, err // "unknown run command", simparams%run
+            stop
+
+        end if
 
 
 
-subroutine ensure_geometry_sanity(atoms)
-
-    type(universe), intent(in) :: atoms
-    character(len=*), parameter :: err = "geometry sanity check error: "
-
-
-    !if (atoms%nbeads > 1 .and. simparams%Tsurf == default_real) stop err // "RPMD needs system temperature."
-    if (simparams%force_beads < 1) stop err // "Cannot force zero or less beads."
-    if (simparams%force_beads /= default_int .and. atoms%nbeads /= 1) stop err // "Cannot force any beads when system already contains multiple beads."
-
-end subroutine ensure_geometry_sanity
+    end subroutine ensure_input_sanity
 
 
 
+    subroutine ensure_geometry_sanity(atoms)
 
-subroutine post_process(this)
+        type(universe), intent(in) :: atoms
+        character(len=*), parameter :: err = "geometry sanity check error: "
 
-    use run_config, only : simparams
 
-    type(universe), intent(inout) :: this
+        !if (atoms%nbeads > 1 .and. simparams%Tsurf == default_real) stop err // "RPMD needs system temperature."
+        if (simparams%force_beads < 1) stop err // "Cannot force zero or less beads."
+        if (simparams%force_beads /= default_int .and. atoms%nbeads /= 1) stop err // "Cannot force any beads when system already contains multiple beads."
 
-    type(universe) :: other
-    integer :: b
+    end subroutine ensure_geometry_sanity
 
-    ! possibly force the system to have multiple beads
-    if (simparams%force_beads /= default_int) then
 
-        other = new_atoms(simparams%force_beads, this%natoms, this%ntypes)
 
-        do b = 1, simparams%force_beads
 
-            other%r(:,b,:) = this%r(:,1,:)
-            other%v(:,b,:) = this%v(:,1,:)
-            other%a(:,b,:) = this%a(:,1,:)
-            other%f(:,b,:) = this%f(:,1,:)
-            other%epot(b)  = this%epot(1)
-            other%is_fixed(:,b,:) = this%is_fixed(:,1,:)
+    subroutine post_process(this)
 
+        use run_config, only : simparams
+
+        type(universe), intent(inout) :: this
+
+        type(universe) :: other
+        integer :: b
+
+        ! possibly force the system to have multiple beads
+        if (simparams%force_beads /= default_int) then
+
+            other = new_atoms(simparams%force_beads, this%natoms, this%ntypes)
+
+            do b = 1, simparams%force_beads
+
+                other%r(:,b,:) = this%r(:,1,:)
+                other%v(:,b,:) = this%v(:,1,:)
+                other%a(:,b,:) = this%a(:,1,:)
+                other%f(:,b,:) = this%f(:,1,:)
+                other%epot(b)  = this%epot(1)
+                other%is_fixed(:,b,:) = this%is_fixed(:,1,:)
+
+            end do
+
+            other%idx     = this%idx
+            other%m       = this%m
+            other%name    = this%name
+            other%pes     = this%pes
+            other%algo    = this%algo
+            other%is_proj = this%is_proj
+
+            other%dof     = simparams%force_beads * this%dof
+            other%simbox  = this%simbox
+            other%isimbox = this%isimbox
+            other%is_cart = this%is_cart
+
+            this = other
+
+        end if
+
+    end subroutine post_process
+
+
+
+
+    subroutine set_atomic_indices(atoms, natoms)
+
+        ! Each atom has a unique index 1, 2, ..., n, where n is the number of species in
+        !  the system.
+        !  The order is given in the *.inp file. It has to match the order in the geometry file.
+
+        type(universe), intent(inout) :: atoms
+        integer, intent(in) :: natoms(:)
+
+        integer :: i, j, counter
+
+        counter = 1
+        !print *, natoms
+        do i = 1, size(natoms)
+            do j = 1, natoms(i)
+                atoms%idx(counter) = i
+                counter = counter + 1
+            end do
+        end do
+        if (any(atoms%idx == default_int))  stop "Error in set_atomic_indices: not all atom indices set."
+        if (size(natoms) > size(atoms%idx)) stop "Error in set_atomic_indices: more atoms than indices."
+
+    end subroutine set_atomic_indices
+
+
+
+
+    subroutine set_atomic_names(atoms, elements)
+
+        type(universe), intent(inout) :: atoms
+        character(len=3), intent(in) :: elements(:)
+        character(len=*), parameter :: err = "Error in set_atomic_names: "
+
+        ! Check if element names from *.inp file and poscar file are in agreement
+
+        if (allocated(simparams%name_p) .and. allocated(simparams%name_l)) then
+            if (any(elements /= [simparams%name_p, simparams%name_l])) stop err // "atomic names in *.inp and poscar files differ"
+
+        else if (allocated(simparams%name_p)) then
+            if (any(elements /= simparams%name_p)) stop err // "atomic names in *.inp and poscar files differ"
+
+        else if (allocated(simparams%name_l)) then
+            if (any(elements /= simparams%name_l)) stop err // "atomic names in *.inp and poscar files differ"
+
+        else
+            print *, err // "neither projectile nor slab exist"
+            stop
+        end if
+
+        atoms%name = elements
+
+    end subroutine set_atomic_names
+
+
+
+
+    subroutine set_atomic_masses(atoms, natoms)
+
+        type(universe), intent(inout) :: atoms
+        integer, intent(in) :: natoms(:)
+
+        integer :: i
+        real(dp) :: masses(size(natoms))
+        character(len=*), parameter :: err = "Error in set_atomic_masses: "
+
+        if (allocated(simparams%mass_p) .and. allocated(simparams%mass_l)) then
+            masses = [simparams%mass_p, simparams%mass_l]
+        else if (allocated(simparams%mass_p)) then
+            masses = simparams%mass_p
+        else if (allocated(simparams%mass_l)) then
+            masses = simparams%mass_l
+        else
+            print *, err // "neither projectile nor slab exist"
+            stop
+        end if
+
+        do i = 1, size(natoms)
+            atoms%m(sum(natoms(:i-1))+1:sum(natoms(:i))) = masses(i)
         end do
 
-        other%idx     = this%idx
-        other%m       = this%m
-        other%name    = this%name
-        other%pes     = this%pes
-        other%algo    = this%algo
-        other%is_proj = this%is_proj
+        ! To program units
+        atoms%m = atoms%m * amu2mass
 
-        other%dof     = simparams%force_beads * this%dof
-        other%simbox  = this%simbox
-        other%isimbox = this%isimbox
-        other%is_cart = this%is_cart
-
-        this = other
-
-    end if
-
-end subroutine post_process
+    end subroutine set_atomic_masses
 
 
 
 
-subroutine set_atomic_indices(atoms, natoms)
+    subroutine set_prop_algos(atoms)
 
-    ! Each atom has a unique index 1, 2, ..., n, where n is the number of species in
-    !  the system.
-    !  The order is given in the *.inp file. It has to match the order in the geometry file.
+        type(universe), intent(inout) :: atoms
 
-    type(universe), intent(inout) :: atoms
-    integer, intent(in) :: natoms(:)
+        character(len=*), parameter :: err = "Error in set_prop_algos: "
 
-    integer :: i, j, counter
+        ! Either (md_algo_p or md_algo_l) or both are allocated
 
-    counter = 1
-    !print *, natoms
-    do i = 1, size(natoms)
-        do j = 1, natoms(i)
-            atoms%idx(counter) = i
-            counter = counter + 1
-        end do
-    end do
-    if (any(atoms%idx == default_int))  stop "Error in set_atomic_indices: not all atom indices set."
-    if (size(natoms) > size(atoms%idx)) stop "Error in set_atomic_indices: more atoms than indices."
+        if (allocated(simparams%md_algo_p) .and. allocated(simparams%md_algo_l)) then
+            atoms%algo = [simparams%md_algo_p, simparams%md_algo_l]
+            if (size(atoms%algo) /= size([simparams%md_algo_p, simparams%md_algo_l])) stop err // "more algorithms than species"
 
-end subroutine set_atomic_indices
+        else if (allocated(simparams%md_algo_p)) then
+            atoms%algo = simparams%md_algo_p
+            if (size(atoms%algo) /= size(simparams%md_algo_p)) stop err // "more algorithms than species"
 
+        else if (allocated(simparams%md_algo_l)) then
+            atoms%algo = simparams%md_algo_l
+            if (size(atoms%algo) /= size(simparams%md_algo_l)) stop err // "more algorithms than species"
 
+        else
+            print *, err // "neither projectile nor slab exist"
+            stop
+        end if
 
-
-subroutine set_atomic_names(atoms, elements)
-
-    type(universe), intent(inout) :: atoms
-    character(len=3), intent(in) :: elements(:)
-    character(len=*), parameter :: err = "Error in set_atomic_names: "
-
-    ! Check if element names from *.inp file and poscar file are in agreement
-
-    if (allocated(simparams%name_p) .and. allocated(simparams%name_l)) then
-        if (any(elements /= [simparams%name_p, simparams%name_l])) stop err // "atomic names in *.inp and poscar files differ"
-
-    else if (allocated(simparams%name_p)) then
-        if (any(elements /= simparams%name_p)) stop err // "atomic names in *.inp and poscar files differ"
-
-    else if (allocated(simparams%name_l)) then
-        if (any(elements /= simparams%name_l)) stop err // "atomic names in *.inp and poscar files differ"
-
-    else
-        stop err // "neither projectile nor slab exist"
-    end if
-
-    atoms%name = elements
-
-end subroutine set_atomic_names
+    end subroutine set_prop_algos
 
 
 
 
-subroutine set_atomic_masses(atoms, natoms)
+    subroutine set_atomic_dofs(atoms)
 
-    type(universe), intent(inout) :: atoms
-    integer, intent(in) :: natoms(:)
+        type(universe), intent(inout) :: atoms
 
-    integer :: i
-    real(dp) :: masses(size(natoms))
-    character(len=*), parameter :: err = "Error in set_atomic_masses: "
+        atoms%dof = 3*atoms%natoms*atoms%nbeads - count(atoms%is_fixed)
 
-    if (allocated(simparams%mass_p) .and. allocated(simparams%mass_l)) then
-        masses = [simparams%mass_p, simparams%mass_l]
-    else if (allocated(simparams%mass_p)) then
-        masses = simparams%mass_p
-    else if (allocated(simparams%mass_l)) then
-        masses = simparams%mass_l
-    else
-        stop err // "neither projectile nor slab exist"
-    end if
-
-    do i = 1, size(natoms)
-        atoms%m(sum(natoms(:i-1))+1:sum(natoms(:i))) = masses(i)
-    end do
-
-    ! To program units
-    atoms%m = atoms%m * amu2mass
-
-end subroutine set_atomic_masses
-
-
-
-
-subroutine set_prop_algos(atoms)
-
-    type(universe), intent(inout) :: atoms
-
-    character(len=*), parameter :: err = "Error in set_prop_algos: "
-
-    ! Either (md_algo_p or md_algo_l) or both are allocated
-
-    if (allocated(simparams%md_algo_p) .and. allocated(simparams%md_algo_l)) then
-        atoms%algo = [simparams%md_algo_p, simparams%md_algo_l]
-        if (size(atoms%algo) /= size([simparams%md_algo_p, simparams%md_algo_l])) stop err // "more algorithms than species"
-
-    else if (allocated(simparams%md_algo_p)) then
-        atoms%algo = simparams%md_algo_p
-        if (size(atoms%algo) /= size(simparams%md_algo_p)) stop err // "more algorithms than species"
-
-    else if (allocated(simparams%md_algo_l)) then
-        atoms%algo = simparams%md_algo_l
-        if (size(atoms%algo) /= size(simparams%md_algo_l)) stop err // "more algorithms than species"
-
-    else
-        stop err // "neither projectile nor slab exist"
-    end if
-
-end subroutine set_prop_algos
-
-
-
-
-subroutine set_atomic_dofs(atoms)
-
-    type(universe), intent(inout) :: atoms
-
-    atoms%dof = 3*atoms%natoms*atoms%nbeads - count(atoms%is_fixed)
-
-end subroutine set_atomic_dofs
+    end subroutine set_atomic_dofs
 
 !
 !subroutine read_conf(nr_at_layer, nlnofix, nlno, n_p, n_l, n_p0, &

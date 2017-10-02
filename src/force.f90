@@ -3,9 +3,10 @@ module force
     use constants
     use universe_mod, only : universe
 
-    use pes_lj_mod,  only : compute_lj, compute_simple_lj
-    use pes_emt_mod, only : compute_emt
-    use pes_ho_mod,  only : compute_ho
+    use pes_lj_mod,   only : compute_lj, compute_simple_lj
+    use pes_emt_mod,  only : compute_emt
+    use pes_ho_mod,   only : compute_ho
+    use pes_rebo_mod, only : compute_rebo
 
     implicit none
 
@@ -25,6 +26,7 @@ contains
         if (any(atoms%pes == pes_id_simple_lj)) call compute_simple_lj(atoms, flag)
         if (any(atoms%pes == pes_id_emt))       call compute_emt      (atoms, flag)
         if (any(atoms%pes == pes_id_ho))        call compute_ho       (atoms, flag)
+        if (any(atoms%pes == pes_id_rebo))      call compute_rebo     (atoms, flag)
 
         call set_acceleration(atoms)
 

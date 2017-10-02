@@ -24,8 +24,8 @@ contains
             call fire_geometry_optimization(atoms)
 
         case default
-            stop err // "unknown optimization algorithm"
-
+            print *, err // "unknown optimization algorithm"
+            stop
         end select
 
     end subroutine optimize_geometry
