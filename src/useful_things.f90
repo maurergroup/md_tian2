@@ -61,6 +61,9 @@ contains
         end do
     end subroutine lower_case
 
+
+
+
     subroutine split_string ( line, words, nw )
         character(*), intent(in)  :: line
         character(*), intent(out) :: words(:)

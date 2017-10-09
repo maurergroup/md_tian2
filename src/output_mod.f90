@@ -11,8 +11,8 @@ module output_mod
     logical :: overwrite_nrg = .true.
     logical :: overwrite_xyz = .true.
     integer, parameter :: out_unit = 86
-    integer :: out_id_poscar = 1
-    integer :: out_id_mxt    = 1
+    integer :: out_id_poscar = 0
+    integer :: out_id_mxt    = 0
 
 
 contains
@@ -183,7 +183,7 @@ contains
         end do
 
         ! open file conf/poscar_%08d.dat
-        write(fid,'(i8.8)') out_id_poscar
+        write(fid,'(i8.8)') out_id_poscar+simparams%start
         fname = 'conf/poscar_'//fid//'.dat'
         call open_for_write(out_unit, fname)
 
@@ -227,7 +227,7 @@ contains
         if (.not. dir_exists('conf')) call system('mkdir conf')
 
         ! open file conf/mxt_%08d.dat
-        write(fid,'(i8.8)') out_id_mxt
+        write(fid,'(i8.8)') out_id_mxt+simparams%start
         fname = 'conf/mxt_'//fid//'.dat'
         open(out_unit, file=fname, form="unformatted", status="replace")
 

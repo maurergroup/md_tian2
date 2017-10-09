@@ -14,6 +14,7 @@ module constants
     real(dp), parameter :: kB       = 8.61733238496e-5_dp       ! eV / K
     real(dp), parameter :: hbar     = 0.6582119514467406_dp     ! eV * fs
     real(dp), parameter :: twelfth  = 1.0_dp/12.0_dp
+    integer,  parameter :: dimensionality = 3
 
 
     ! PES-related constants

@@ -98,9 +98,10 @@ contains
         type(universe), intent(inout) :: atoms
         integer,        intent(in)    :: i
 
-        real(dp), dimension(3, atoms%nbeads) :: rnd1, rnd2, rnd3, choose
-        real(dp) :: ibetaN, mass
-        integer  :: k, b
+        real(dp), dimension(3, atoms%nbeads) :: rnd1, rnd2, rnd3
+        real(dp), dimension(atoms%nbeads)    :: choose
+        real(dp) :: ibetaN, mass, andersen_threshold
+        integer  :: b
 
         ibetaN = atoms%nbeads * kB * simparams%Tsurf
 
@@ -110,13 +111,12 @@ contains
 
         call random_number(choose)
         mass = atoms%m(i)
+        andersen_threshold = simparams%step / simparams%andersen_time
 
         do b = 1, atoms%nbeads
-            do k = 1, 3
-                if (choose(k,b) < simparams%andersen_freq .and. .not. atoms%is_fixed(k,b,i)) then
-                    atoms%v(k,b,i) = rnd3(k,b) * sqrt(ibetaN/mass)
-                end if
-            end do
+            if (choose(b) < andersen_threshold .and. .not. atoms%is_fixed(1,b,i)) then
+                atoms%v(:,b,i) = rnd3(:,b) * sqrt(ibetaN/mass)
+            end if
         end do
 
     end subroutine andersen

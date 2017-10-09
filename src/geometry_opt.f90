@@ -66,7 +66,7 @@ contains
         opt_steps = 0
         ring_polymer_forces = 0.0_dp
 
-        print *, "# optimization step   power/eV*fs   Epot/eV"
+        print '(a2, a17, 2a18)', "# ", "optimization step", "power/eV*fs", "Epot/eV"
 
         do while (.true.)
 
@@ -83,7 +83,7 @@ contains
             ! F1
             atoms%f = atoms%f + ring_polymer_forces
             power = sum(atoms%f * atoms%v)
-            print '(i6, 3f18.11)', opt_steps, power, atoms%epot
+            print '(i19, 2f18.11)', opt_steps, power, atoms%epot
 
             ! F2
             do i = 1, atoms%natoms

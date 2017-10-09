@@ -130,6 +130,156 @@ module pes_rebo_mod
 
 contains
 
+    subroutine read_rebo(atoms, inp_unit)
+
+        use run_config, only : simparams
+
+        type(universe), intent(inout) :: atoms
+        integer, intent(in) :: inp_unit
+
+        integer :: nwords, ios = 0, i
+        character(len=max_string_length) :: buffer
+        character(len=max_string_length) :: words(100)
+        integer  :: idx1, idx2, ntypes
+        real(dp) :: temp3(3)
+        character(len=*), parameter :: err = "Error in read_rebo: "
+
+        call rebosi_initialize()
+
+        ntypes = simparams%nprojectiles+simparams%nlattices
+
+        if (.not. allocated(pes_rebo%Q)) then
+            allocate(pes_rebo%Dmin(ntypes, ntypes),  &
+                pes_rebo%Dmax(ntypes, ntypes),  &
+                pes_rebo%Dmaxp(ntypes, ntypes), &
+                pes_rebo%Q(ntypes, ntypes),     &
+                pes_rebo%A(ntypes, ntypes),     &
+                pes_rebo%alpha(ntypes, ntypes), &
+                pes_rebo%rho(ntypes, ntypes),   &
+                pes_rebo%B(3, ntypes, ntypes),  &
+                pes_rebo%beta(3, ntypes, ntypes))
+
+            pes_rebo%Dmin  = default_real
+            pes_rebo%Dmax  = default_real
+            pes_rebo%Dmaxp = default_real
+            pes_rebo%Q     = default_real
+            pes_rebo%A     = default_real
+            pes_rebo%alpha = default_real
+            pes_rebo%rho   = default_real
+            pes_rebo%B     = default_real
+            pes_rebo%beta  = default_real
+
+        end if
+
+        ! line should read something like "H   H   proj    proj"
+        read(inp_unit, '(A)', iostat=ios) buffer
+        call split_string(buffer, words, nwords)
+
+        if (nwords /= 4) stop err // "need four entries in interaction-defining lines"
+
+        if (words(3) == "proj" .and. words(4) == "proj" .or. &
+            words(3) == "proj" .and. words(4) == "latt" .or. &
+            words(3) == "latt" .and. words(4) == "proj" .or. &
+            words(3) == "latt" .and. words(4) == "latt") then
+
+            idx1 = get_idx_from_name(atoms, words(1), is_proj=(words(3)=="proj"))
+            idx2 = get_idx_from_name(atoms, words(2), is_proj=(words(4)=="proj"))
+
+            if (atoms%pes(idx1,idx2) /= default_int) then
+                print *, err // "pes already defined for atoms", words(1), words(3), words(2), words(4)
+                stop
+            end if
+
+        else
+            print *, err // "interaction must be defined via 'proj' and 'latt' keywords"
+            stop
+        end if
+
+        ! set the pes type in the atoms object
+        atoms%pes(idx1,idx2) = pes_id_rebo
+        atoms%pes(idx2,idx1) = pes_id_rebo
+
+        do
+            read(inp_unit, '(A)', iostat=ios) buffer
+            call split_string(buffer, words, nwords)
+
+            ! pes block terminated, set shift
+            if (nwords == 0 .or. ios /= 0) then
+                exit
+
+            ! something went wrong
+            else if (nwords /= 2) then
+                stop "Error in the PES file: PES parameters must consist of key value pairs. A parameter block must be terminated by a blank line."
+            end if
+
+            call lower_case(words(1))
+
+            select case (words(1))
+
+                case ('dmin')
+                    read(words(2), *) pes_rebo%Dmin(idx1, idx2)
+                    read(words(2), *) pes_rebo%Dmin(idx2, idx1)
+
+                case ('dmax')
+                    read(words(2), *) pes_rebo%Dmax(idx1, idx2)
+                    read(words(2), *) pes_rebo%Dmax(idx2, idx1)
+
+                case ('dmaxp')
+                    read(words(2), *) pes_rebo%Dmaxp(idx1, idx2)
+                    read(words(2), *) pes_rebo%Dmaxp(idx2, idx1)
+
+                case ('q')
+                    read(words(2), *) pes_rebo%Q(idx1, idx2)
+                    read(words(2), *) pes_rebo%Q(idx2, idx1)
+
+                case ('a')
+                    read(words(2), *) pes_rebo%A(idx1, idx2)
+                    read(words(2), *) pes_rebo%A(idx2, idx1)
+
+                case ('alpha')
+                    read(words(2), *) pes_rebo%alpha(idx1, idx2)
+                    read(words(2), *) pes_rebo%alpha(idx2, idx1)
+
+                case ('rho')
+                    read(words(2), *) pes_rebo%rho(idx1, idx2)
+                    read(words(2), *) pes_rebo%rho(idx2, idx1)
+
+                case ('b1')
+                    read(words(2), *) pes_rebo%B(1, idx1, idx2)
+                    read(words(2), *) pes_rebo%B(1, idx2, idx1)
+
+                case ('b2')
+                    read(words(2), *) pes_rebo%B(2, idx1, idx2)
+                    read(words(2), *) pes_rebo%B(2, idx2, idx1)
+
+                case ('b3')
+                    read(words(2), *) pes_rebo%B(3, idx1, idx2)
+                    read(words(2), *) pes_rebo%B(3, idx2, idx1)
+
+                case ('beta1')
+                    read(words(2), *) pes_rebo%beta(1, idx1, idx2)
+                    read(words(2), *) pes_rebo%beta(1, idx2, idx1)
+
+                case ('beta2')
+                    read(words(2), *) pes_rebo%beta(2, idx1, idx2)
+                    read(words(2), *) pes_rebo%beta(2, idx2, idx1)
+
+                case ('beta3')
+                    read(words(2), *) pes_rebo%beta(3, idx1, idx2)
+                    read(words(2), *) pes_rebo%beta(3, idx2, idx1)
+
+                case default
+                    print *, "Error in the PES file: unknown REBO parameter", words(1)
+                    stop
+
+            end select
+        end do
+
+    end subroutine read_rebo
+
+
+
+
     subroutine rebosi_initialize()
 
         ! Do not initialize twice
@@ -1264,24 +1414,26 @@ contains
     end subroutine cufu
 
 
-    logical function is_carbon(atoms, type)
+    integer function is_carbon(atoms, type)
 
         type(universe), intent(in) :: atoms
         integer, intent(in)        :: type
 
-        is_carbon = atoms%name(type) == "C"
+        is_carbon = 0
+        if (atoms%name(type) == "C") is_carbon = 1
 
     end function is_carbon
 
 
-    logical function is_hydrogen(atoms, type)
+    integer function is_hydrogen(atoms, type)
 
         type(universe), intent(in) :: atoms
         integer, intent(in)        :: type
 
-        is_hydrogen = atoms%name(type) == "H" .or. &
+        is_hydrogen = 0
+        if (atoms%name(type) == "H" .or. &
             atoms%name(type) == "D" .or. &
-            atoms%name(type) == "T"
+            atoms%name(type) == "T") is_hydrogen = 1
 
     end function is_hydrogen
 
@@ -1290,7 +1442,7 @@ contains
 
     integer function kronecker(a,b)
 
-        integer, intent(in) :: a, b
+        character(len=3), intent(in) :: a, b
 
         kronecker = 0
         if (a==b) kronecker = 1
@@ -1405,6 +1557,7 @@ contains
         NijH = nH(:,i) - wij*is_hydrogen(atoms, jtype)
         NjiC = nC(:,j) - wij*is_carbon(atoms, itype)
         NjiH = nH(:,j) - wij*is_hydrogen(atoms, itype)
+
 
         ! initialize accumulators to zero
         bij = 0.0_dp
@@ -1566,7 +1719,7 @@ contains
                 rjlmag = distances(:,j,l)
                 ltype = atoms%idx(l)
                 call cufu(rjlmag, pes_rebo%Dmin(jtype,ltype), pes_rebo%Dmax(jtype,ltype), wjl, dwjl)
-                if (all(wik < TOLERANCE)) cycle
+                if (all(wjl < TOLERANCE)) cycle
 
                 rjl = vectors(:,:,j,l)
 
@@ -1587,7 +1740,7 @@ contains
                 Etmp = Etmp + (wjl*g*exp(lamdaijl))
                 tmp3 = tmp3 + (wjl*dgdN*exp(lamdaijl))
                 call cufu(Nlj, CSF_LOW, CSF_HIGH, SpN, dummy)
-                NconjtmpJ = NconjtmpJ + is_carbon(atoms, jtype) * wjl * SpN
+                NconjtmpJ = NconjtmpJ + is_carbon(atoms, ltype) * wjl * SpN
 
             end if
         end do
@@ -1869,7 +2022,7 @@ contains
                     cos321 = min(cos321,  1.0_dp)
                     cos321 = max(cos321, -1.0_dp)
                     sin321 = sqrt(1.0_dp - cos321*cos321)
-                    if (any(sin321 > TOLERANCE) .and. any(r21mag > TOLERANCE)) then
+                    if (all(sin321 > TOLERANCE) .and. all(r21mag > TOLERANCE)) then
 
                         sink2i = 1.0_dp / (sin321*sin321)
                         rik2i  = 1.0_dp / (r21mag*r21mag)
@@ -1904,7 +2057,7 @@ contains
                                 cos234 = min(cos234,  1.0_dp)
                                 cos234 = max(cos234, -1.0_dp)
                                 sin234 = sqrt(1.0_dp - cos234*cos234)
-                                if (any(sin234 > TOLERANCE) .and. any(r34mag > TOLERANCE)) then
+                                if (all(sin234 > TOLERANCE) .and. all(r34mag > TOLERANCE)) then
 
                                     sinl2i = 1.0_dp / (sin234*sin234)
                                     rjl2i  = 1.0_dp / (r34mag*r34mag)
@@ -2126,6 +2279,8 @@ contains
         bij = 0.5_dp*(pij+pji) + Tij*Etmp + piRC !+ (Tij*Etmp)
         !        bij = Tij
 
+        print '(f18.11)' , distances(:,i,j)
+
 
         if (DEBUG ) then ! .and. (neigh_c_i < 2 .or. neigh_c_j < 2).and. j.eq.natoms
             print *, i, j
@@ -2153,152 +2308,7 @@ contains
 
 
 
-    subroutine read_rebo(atoms, inp_unit)
 
-        use run_config, only : simparams
-
-        type(universe), intent(inout) :: atoms
-        integer, intent(in) :: inp_unit
-
-        integer :: nwords, ios = 0, i
-        character(len=max_string_length) :: buffer
-        character(len=max_string_length) :: words(100)
-        integer  :: idx1, idx2, ntypes
-        real(dp) :: temp3(3)
-        character(len=*), parameter :: err = "Error in read_rebo: "
-
-        call rebosi_initialize()
-
-        ntypes = simparams%nprojectiles+simparams%nlattices
-
-        if (.not. allocated(pes_rebo%Q)) then
-            allocate(pes_rebo%Dmin(ntypes, ntypes),  &
-                pes_rebo%Dmax(ntypes, ntypes),  &
-                pes_rebo%Dmaxp(ntypes, ntypes), &
-                pes_rebo%Q(ntypes, ntypes),     &
-                pes_rebo%A(ntypes, ntypes),     &
-                pes_rebo%alpha(ntypes, ntypes), &
-                pes_rebo%rho(ntypes, ntypes),   &
-                pes_rebo%B(3, ntypes, ntypes),  &
-                pes_rebo%beta(3, ntypes, ntypes))
-
-            pes_rebo%Dmin  = default_real
-            pes_rebo%Dmax  = default_real
-            pes_rebo%Dmaxp = default_real
-            pes_rebo%Q     = default_real
-            pes_rebo%A     = default_real
-            pes_rebo%alpha = default_real
-            pes_rebo%rho   = default_real
-            pes_rebo%B     = default_real
-            pes_rebo%beta  = default_real
-
-        end if
-
-        ! line should read something like "H   H   proj    proj"
-        read(inp_unit, '(A)', iostat=ios) buffer
-        call split_string(buffer, words, nwords)
-
-        if (nwords /= 4) stop err // "need four entries in interaction-defining lines"
-
-        if (words(3) == "proj" .and. words(4) == "proj" .or. &
-            words(3) == "proj" .and. words(4) == "latt" .or. &
-            words(3) == "latt" .and. words(4) == "proj" .or. &
-            words(3) == "latt" .and. words(4) == "latt") then
-
-            idx1 = get_idx_from_name(atoms, words(1), is_proj=(words(3)=="proj"))
-            idx2 = get_idx_from_name(atoms, words(2), is_proj=(words(4)=="proj"))
-
-            if (atoms%pes(idx1,idx2) /= default_int) then
-                print *, err // "pes already defined for atoms", words(1), words(3), words(2), words(4)
-                stop
-            end if
-
-        else
-            print *, err // "interaction must be defined via 'proj' and 'latt' keywords"
-            stop
-        end if
-
-        ! set the pes type in the atoms object
-        atoms%pes(idx1,idx2) = pes_id_rebo
-        atoms%pes(idx2,idx1) = pes_id_rebo
-
-        do
-            read(inp_unit, '(A)', iostat=ios) buffer
-            call split_string(buffer, words, nwords)
-
-            ! pes block terminated, set shift
-            if (nwords == 0 .or. ios /= 0) then
-                exit
-
-            ! something went wrong
-            else if (nwords /= 2) then
-                stop "Error in the PES file: PES parameters must consist of key value pairs. A parameter block must be terminated by a blank line."
-            end if
-
-            call lower_case(words(1))
-
-            select case (words(1))
-
-                case ('dmin')
-                    read(words(2), *) pes_rebo%Dmin(idx1, idx2)
-                    read(words(2), *) pes_rebo%Dmin(idx2, idx1)
-
-                case ('dmax')
-                    read(words(2), *) pes_rebo%Dmax(idx1, idx2)
-                    read(words(2), *) pes_rebo%Dmax(idx2, idx1)
-
-                case ('dmaxp')
-                    read(words(2), *) pes_rebo%Dmaxp(idx1, idx2)
-                    read(words(2), *) pes_rebo%Dmaxp(idx2, idx1)
-
-                case ('q')
-                    read(words(2), *) pes_rebo%Q(idx1, idx2)
-                    read(words(2), *) pes_rebo%Q(idx2, idx1)
-
-                case ('a')
-                    read(words(2), *) pes_rebo%A(idx1, idx2)
-                    read(words(2), *) pes_rebo%A(idx2, idx1)
-
-                case ('alpha')
-                    read(words(2), *) pes_rebo%alpha(idx1, idx2)
-                    read(words(2), *) pes_rebo%alpha(idx2, idx1)
-
-                case ('rho')
-                    read(words(2), *) pes_rebo%rho(idx1, idx2)
-                    read(words(2), *) pes_rebo%rho(idx2, idx1)
-
-                case ('b1')
-                    read(words(2), *) pes_rebo%B(1, idx1, idx2)
-                    read(words(2), *) pes_rebo%B(1, idx2, idx1)
-
-                case ('b2')
-                    read(words(2), *) pes_rebo%B(2, idx1, idx2)
-                    read(words(2), *) pes_rebo%B(2, idx2, idx1)
-
-                case ('b3')
-                    read(words(2), *) pes_rebo%B(3, idx1, idx2)
-                    read(words(2), *) pes_rebo%B(3, idx2, idx1)
-
-                case ('beta1')
-                    read(words(2), *) pes_rebo%beta(1, idx1, idx2)
-                    read(words(2), *) pes_rebo%beta(1, idx2, idx1)
-
-                case ('beta2')
-                    read(words(2), *) pes_rebo%beta(2, idx1, idx2)
-                    read(words(2), *) pes_rebo%beta(2, idx2, idx1)
-
-                case ('beta3')
-                    read(words(2), *) pes_rebo%beta(3, idx1, idx2)
-                    read(words(2), *) pes_rebo%beta(3, idx2, idx1)
-
-                case default
-                    print *, "Error in the PES file: unknown REBO parameter", words(1)
-                    stop
-
-            end select
-        end do
-
-    end subroutine read_rebo
 
 
 

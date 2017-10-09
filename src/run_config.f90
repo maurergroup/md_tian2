@@ -42,8 +42,7 @@ module run_config
         integer, allocatable :: output_type(:)                      ! what to save
         integer, allocatable :: output_interval(:)                  ! when to save
         character(len=15) :: pip(3)                                 ! determine initial projectile position
-        real(dp) :: andersen_freq                                   ! collision frequency of Andersen thermostat
-                                                                    !   draw from M.-B. distribution every nth time on avg
+        real(dp) :: andersen_time                                   ! average time between collsions per atom
         real(dp) :: pile_tau                                        ! PILE thermostat centroid mode thermostat time constant
         integer  :: force_beads                                     ! inititalizes all atoms with this many beads
 
@@ -74,7 +73,7 @@ contains
         new_simulation_parameters%pes_file = default_string
         new_simulation_parameters%run = default_string
         new_simulation_parameters%pip = default_string
-        new_simulation_parameters%andersen_freq = 1.0_dp/30.0_dp
+        new_simulation_parameters%andersen_time = 30.0_dp
         new_simulation_parameters%pile_tau = 200.0_dp
         new_simulation_parameters%force_beads = default_int
 
@@ -387,15 +386,14 @@ contains
                         if (ios /= 0) stop 'Error in the input file: pes file not specified'
 
 
-                    case ('andersen_freq')
-                        read(words(2), *, iostat=ios) simparams%andersen_freq
-                        simparams%andersen_freq = 1.0_dp / simparams%andersen_freq
-                        if (ios /= 0) stop 'Error in the input file: Error reading Andersen collision frequency'
+                    case ('andersen_time')
+                        read(words(2), *, iostat=ios) simparams%andersen_time
+                        if (ios /= 0) stop 'Error in the input file: Error reading Andersen collision time'
 
 
                     case ('pile_tau')
                         read(words(2), *, iostat=ios) simparams%pile_tau
-                        if (ios /= 0) stop 'Error in the input file: Error reading Andersen collision frequency'
+                        if (ios /= 0) stop 'Error in the input file: Error reading PILE tau'
 
 
                     case ('force_beads')
