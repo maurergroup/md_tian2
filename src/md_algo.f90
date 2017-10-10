@@ -3,6 +3,7 @@ module md_algo
     use universe_mod
     use constants
     use run_config
+    use useful_things
 
     implicit none
 
@@ -93,29 +94,167 @@ contains
     end subroutine verlet_2
 
 
+
+    subroutine langevin_1(atoms, i)
+        !
+        ! Purpose:
+        !           1st step of Langevin Dynamics algorithm,
+        !           Allen & Tildesley, Computer Simulation of Liquids (1987), page 261.
+        !           Li & Wahnström, Phys. Rev. B (1992).
+        !
+
+        use pes_emt_mod, only : dens
+
+        type(universe), intent(inout) :: atoms
+        integer, intent(in)           :: i
+
+        real(dp)                             :: temp
+        real(dp), dimension(atoms%nbeads)    :: c0, c1, c2, xidt, xidt2, ixidt, &
+            sigma_r, sigma_v, c_rv
+        real(dp), dimension(3, atoms%nbeads) :: randy
+        integer :: b
+
+
+        temp = kB * simparams%Tsurf / atoms%m(i)
+        xidt = dens(:,i) * simparams%step
+        xidt2 = xidt * xidt
+        ixidt = simparams%step/xidt   ! 1/dens
+
+        ! Preventing problems due to precision issues
+        if (all(xidt > tolerance) .and. simparams%Tsurf > tolerance) then
+
+            c0 = exp(-xidt)
+            c1 = (1 - c0) * ixidt
+            c2 = (1 - c1/simparams%step)*ixidt
+
+            sigma_r = ixidt * sqrt(temp*(2*xidt - 3 + 4*c0 - c0*c0))
+            sigma_v = sqrt(temp * (1 - c0*c0))
+
+            c_rv    = ixidt*temp*(1 - c0)**2/(sigma_r*sigma_v)
+
+        else ! use series up to 2nd order in xi*dt
+
+            c0 = 1 - xidt + 0.5*xidt2
+            c1 = (1 - 0.5*xidt + 2*twelfth*xidt2)*simparams%step
+            c2 = (0.5 - 2*twelfth*xidt + 0.5*twelfth*xidt2)*simparams%step
+
+            if (atoms%nbeads > 1) &
+                sigma_r = simparams%step * sqrt(temp*(8*twelfth*xidt - 0.5*xidt2))
+            sigma_v = sqrt(2 * temp * xidt * (1 - xidt))
+            c_rv    = 0.5 * sqrt3 * (1 - 0.125*xidt)
+
+        end if
+
+        call normal_deviate(0.0_dp, 1.0_dp, randy)
+
+        ! propagate positions
+        if (atoms%nbeads == 1) then
+            do b = 1, atoms%nbeads
+                where (.not. atoms%is_fixed(:,b,i))
+                    atoms%r(:,b,i) = atoms%r(:,b,i) + c1(b)*atoms%v(:,b,i) + &
+                        c2(b)*simparams%step*atoms%a(:,b,i) + sigma_r(b)*randy(:,b)
+                end where
+            end do
+        end if
+
+        ! partially propagate velocities
+        do b = 1, atoms%nbeads
+            where (.not. atoms%is_fixed(:,b,i))
+                atoms%v(:,b,i) = c0(b)*atoms%v(:,b,i) + &
+                    (c1(b)-c2(b))*atoms%a(:,b,i) + sigma_v(b)*c_rv(b)*randy(:,b)
+            end where
+        end do
+
+
+    end subroutine langevin_1
+
+
+
+    subroutine langevin_2(atoms, i)
+            !
+        ! Purpose:
+        !           1st step of Langevin Dynamics algorithm,
+        !           Dellago et al. JCP 108 (1998) 1964
+        !
+
+        use pes_emt_mod, only : dens
+
+        type(universe), intent(inout) :: atoms
+        integer, intent(in)           :: i
+
+        real(dp)                             :: temp
+        real(dp), dimension(atoms%nbeads)    :: c0, c1, c2, xidt, xidt2, ixidt, &
+            sigma_r, sigma_v, c_rv
+        real(dp), dimension(3, atoms%nbeads) :: randy
+        integer :: b
+
+
+        temp = kB * simparams%Tsurf / atoms%m(i)
+        xidt = dens(:,i) * simparams%step
+        xidt2 = xidt * xidt
+        ixidt = simparams%step / xidt   ! 1/dens
+
+        ! Preventing problems due to precision issues
+        if (all(xidt > tolerance) .and. simparams%Tsurf > tolerance) then
+
+            c0 = exp(-xidt)
+            c1 = (1 - c0) * ixidt
+            c2 = (1 - c1/simparams%step)*ixidt
+
+            sigma_r = ixidt*sqrt(temp*(2*xidt - 3 + 4*c0 - c0*c0))
+            sigma_v = sqrt(temp * (1 - c0*c0))
+
+            c_rv    = ixidt*temp*(1 - c0)**2/(sigma_r*sigma_v)
+
+        else ! use series up to 2nd order in xi*dt
+
+            c0 = 1 - xidt + 0.5*xidt2
+            c1 = (1 - 0.5*xidt + 2*twelfth*xidt2)*simparams%step
+            c2 = (0.5 - 2*twelfth*xidt + 0.5*twelfth*xidt2)*simparams%step
+
+            if (atoms%nbeads > 1) &
+                sigma_r = simparams%step * sqrt(temp*(8*twelfth*xidt - 0.5*xidt2))
+            sigma_v = sqrt(2 * temp * xidt * (1 - xidt))
+            c_rv    = 0.5 * sqrt3 * (1 - 0.125*xidt)
+
+        end if
+
+        call normal_deviate(0.0_dp, 1.0_dp, randy)
+
+        ! partially propagate velocities
+        do b = 1, atoms%nbeads
+            where (.not. atoms%is_fixed(:,b,i))
+                atoms%v(:,b,i) = atoms%v(:,b,i) + c2(b)*atoms%a(:,b,i) + &
+                    sigma_v(b)*sqrt(1-c_rv(b)*c_rv(b))*randy(:,b)
+            end where
+        end do
+
+    end subroutine langevin_2
+
+
+
+
     subroutine andersen(atoms, i)
 
         type(universe), intent(inout) :: atoms
         integer,        intent(in)    :: i
 
-        real(dp), dimension(3, atoms%nbeads) :: rnd1, rnd2, rnd3
+        real(dp), dimension(3, atoms%nbeads) :: new_v
         real(dp), dimension(atoms%nbeads)    :: choose
         real(dp) :: ibetaN, mass, andersen_threshold
         integer  :: b
 
         ibetaN = atoms%nbeads * kB * simparams%Tsurf
+        mass = atoms%m(i)
 
-        call random_number(rnd1)
-        call random_number(rnd2)
-        rnd3 = sqrt(-2.0_dp*log(rnd1)) * cos(2.0_dp*pi*rnd2)
+        call normal_deviate(0.0_dp, sqrt(ibetaN/mass), new_v)
 
         call random_number(choose)
-        mass = atoms%m(i)
         andersen_threshold = simparams%step / simparams%andersen_time
 
         do b = 1, atoms%nbeads
             if (choose(b) < andersen_threshold .and. .not. atoms%is_fixed(1,b,i)) then
-                atoms%v(:,b,i) = rnd3(:,b) * sqrt(ibetaN/mass)
+                atoms%v(:,b,i) = new_v(:,b)
             end if
         end do
 
@@ -132,7 +271,7 @@ contains
         integer :: b, k
         real(8) :: wk, wn, betaN
         real(8), dimension(atoms%nbeads)    :: c1, c2, gammak
-        real(8), dimension(3, atoms%nbeads) :: rnd1, rnd2, zeta, newP, atomP
+        real(8), dimension(3, atoms%nbeads) :: zeta, newP, atomP
 
         if (.not. allocated(cjk)) call build_cjk(atoms%nbeads)
 
@@ -163,9 +302,7 @@ contains
         c2 = sqrt(1.0_dp - c1*c1)
 
         ! generate random number with zero mean and unit stddev
-        call random_number(rnd1)
-        call random_number(rnd2)
-        zeta = sqrt(-2.0_dp*log(rnd1)) * cos(2.0_dp*pi*rnd2)
+        call normal_deviate(0.0_dp, 1.0_dp, zeta)
 
         do b = 1, atoms%nbeads
             newP(:,b) = c1(b)*newP(:,b) + sqrt(atoms%m(i)/betaN)*c2(b)*zeta(:,b)
@@ -176,7 +313,7 @@ contains
         do b = 1, atoms%nbeads
             do k = 1, atoms%nbeads
                 where (.not. atoms%is_fixed(:,b,i))
-                     atomP(:,b) = atomP(:,b) + newP(:,k)*cjk(b,k)
+                    atomP(:,b) = atomP(:,b) + newP(:,k)*cjk(b,k)
                 end where
             end do
         end do

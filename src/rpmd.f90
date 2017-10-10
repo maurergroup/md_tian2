@@ -101,29 +101,6 @@ contains
 
 
 
-    real(dp) function calc_radius_of_gyration(atoms) result(radius)
-
-        type(universe), intent(in) :: atoms
-
-        real(dp) :: cents(3, atoms%natoms)
-        integer  :: i, b
-
-        radius = 0.0_dp
-        cents  = calc_centroid_positions(atoms)
-
-        do i = 1, atoms%natoms
-            do b = 1, atoms%nbeads
-                radius = radius + sum( (atoms%r(:,b,i)-cents(:,i))**2 )
-            end do
-        end do
-
-        radius = radius/atoms%nbeads/atoms%natoms
-
-    end function calc_radius_of_gyration
-
-
-
-
     real(dp) function calc_bead_epot(atoms) result(epot)
 
         type(universe), intent(in) :: atoms
@@ -313,6 +290,43 @@ contains
         forces = (momenta_final - momenta_init) / simparams%step
 
     end subroutine do_ring_polymer_step_with_forces
+
+
+
+
+    subroutine radius_of_gyration(atoms, rgyr_p, rgyr_l)
+
+        type(universe), intent(in) :: atoms
+        real(dp), intent(out)      :: rgyr_p, rgyr_l
+
+        real(dp) :: cents(3, atoms%natoms)
+        integer  :: i, b, nprojs
+
+        rgyr_p = 0.0_dp
+        rgyr_l = 0.0_dp
+
+        if (atoms%nbeads == 1) return
+
+        cents  = calc_centroid_positions(atoms)
+        nprojs = 0
+
+        do i = 1, atoms%natoms
+            if (atoms%is_proj(atoms%idx(i))) then
+                nprojs = nprojs + 1
+                do b = 1, atoms%nbeads
+                    rgyr_p = rgyr_p + sum( (atoms%r(:,b,i)-cents(:,i))**2 )
+                end do
+            else
+                do b = 1, atoms%nbeads
+                    rgyr_l = rgyr_l + sum( (atoms%r(:,b,i)-cents(:,i))**2 )
+                end do
+            end if
+        end do
+
+        rgyr_p = rgyr_p/atoms%nbeads/nprojs
+        rgyr_l = rgyr_l/atoms%nbeads/(atoms%natoms-nprojs)
+
+    end subroutine radius_of_gyration
 
 
 

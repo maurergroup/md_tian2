@@ -13,6 +13,15 @@ module useful_things
 
     implicit none
 
+    interface normal_deviate
+        module procedure normal_deviate_0d
+        module procedure normal_deviate_1d
+        module procedure normal_deviate_2d
+        module procedure normal_deviate_3d
+    end interface
+
+    public :: normal_deviate
+
 contains
 
 
@@ -48,6 +57,63 @@ contains
 !        normal=tmp*sigma+mean
 !        return
 !    end function normal
+
+    subroutine normal_deviate_0d(mu, sigma, nrml_dvt)
+
+        real(dp), intent(in)  :: mu, sigma
+        real(dp), intent(out) :: nrml_dvt
+        real(dp)              :: rnd1, rnd2
+
+        call random_number(rnd1)
+        call random_number(rnd2)
+        nrml_dvt = sqrt(-2*log(rnd1)) * cos(2*pi*rnd2) * sigma + mu
+
+    end subroutine normal_deviate_0d
+
+
+    subroutine normal_deviate_1d(mu, sigma, nrml_dvt)
+
+        real(dp), intent(in)                :: mu, sigma
+        real(dp), intent(out)               :: nrml_dvt(:)
+        real(dp), dimension(size(nrml_dvt)) :: rnd1, rnd2
+
+        call random_number(rnd1)
+        call random_number(rnd2)
+        nrml_dvt = sqrt(-2*log(rnd1)) * cos(2*pi*rnd2) * sigma + mu
+
+    end subroutine normal_deviate_1d
+
+
+    subroutine normal_deviate_2d(mu, sigma, nrml_dvt)
+
+        real(dp), intent(in)   :: mu, sigma
+        real(dp), intent(out)  :: nrml_dvt(:,:)
+        real(dp), dimension(size(nrml_dvt, dim=1), &
+                            size(nrml_dvt, dim=2)) :: rnd1, rnd2
+
+        call random_number(rnd1)
+        call random_number(rnd2)
+        nrml_dvt = sqrt(-2*log(rnd1)) * cos(2*pi*rnd2) * sigma + mu
+
+    end subroutine normal_deviate_2d
+
+
+    subroutine normal_deviate_3d(mu, sigma, nrml_dvt)
+
+        real(dp), intent(in)   :: mu, sigma
+        real(dp), intent(out)  :: nrml_dvt(:,:,:)
+        real(dp), dimension(size(nrml_dvt, dim=1), &
+                            size(nrml_dvt, dim=2), &
+                            size(nrml_dvt, dim=3)) :: rnd1, rnd2
+
+        call random_number(rnd1)
+        call random_number(rnd2)
+        nrml_dvt = sqrt(-2*log(rnd1)) * cos(2*pi*rnd2) * sigma + mu
+
+    end subroutine normal_deviate_3d
+
+
+
 
     subroutine lower_case(str)
         character(*), intent(in out) :: str

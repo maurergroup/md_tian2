@@ -113,8 +113,8 @@ contains
         character(len=8)                 :: traj_id
         character(len=max_string_length) :: fname
         integer  :: i
-        real(dp) :: atom_temp, bead_temp, gyr_rad_sq, a_ekin_p, a_ekin_l, q_ekin_l, q_ekin_p
-        real(dp) :: b_ekin_p, b_ekin_l, atom_epot, bead_epot, etotal
+        real(dp) :: atom_temp, bead_temp, rgyr_p, rgyr_l , a_ekin_p, a_ekin_l, &
+            q_ekin_l, q_ekin_p, b_ekin_p, b_ekin_l, atom_epot, bead_epot, etotal
 
 
         ! XXX: change system() to execute_command_line() when new compiler is available
@@ -126,11 +126,11 @@ contains
         if (overwrite_nrg) then
             call open_for_write(out_unit, fname)
             write(out_unit, '(a)') '# All energies are given in eV.'
-            write(out_unit, '(a1, i8, 13i17)') "#", (i, i = 1, 14)
-            write(out_unit, '(14a17)') '#time/fs', 'atom T/K', 'bead T/K', 'gyr_squared/A²', &
-                'atom ekin proj', 'atom ekin latt', 'bead ekin proj', 'bead ekin latt', &
-                'qntm ekin proj', 'qntm ekin latt', 'atom epot', 'bead epot', &
-                'e_total', 'f_total/(eV/A)'
+            write(out_unit, '(a1, i8, 14i17)') "#", (i, i = 1, 15)
+            write(out_unit, '(15a17)') '#time/fs', 'atom T/K', 'bead T/K', 'r_gyr_sq_p/A²', &
+                'r_gyr_sq_l/A²', 'atom ekin proj', 'atom ekin latt', 'bead ekin proj', &
+                'bead ekin latt', 'qntm ekin proj', 'qntm ekin latt', 'atom epot', &
+                'bead epot', 'e_total', 'f_total/(eV/A)'
             overwrite_nrg = .false.
         else
             call open_for_append(out_unit,fname)
@@ -139,8 +139,7 @@ contains
         atom_temp = calc_atom_temperature(atoms)
         bead_temp = calc_bead_temperature(atoms)
 
-        gyr_rad_sq = calc_radius_of_gyration(atoms)
-
+        call radius_of_gyration(atoms, rgyr_p, rgyr_l)
         call atom_ekin(atoms, a_ekin_p, a_ekin_l)
         call bead_ekin(atoms, b_ekin_p, b_ekin_l)
         call virial_quantum_ekin(atoms, q_ekin_p, q_ekin_l)
@@ -154,8 +153,8 @@ contains
         ! source: J. Chem. Phys. 123, 134502 (2005)
         ! q_ekin = (0.5 * atoms%dof * kb * bead_temp - bead_epot)/atoms%nbeads
 
-        write(out_unit, '(14e17.8e2)') istep*simparams%step, atom_temp, bead_temp, &
-            gyr_rad_sq, a_ekin_p, a_ekin_l, b_ekin_p, b_ekin_l, q_ekin_p, q_ekin_l, &
+        write(out_unit, '(15e17.8e2)') istep*simparams%step, atom_temp, bead_temp, &
+            rgyr_p, rgyr_l, a_ekin_p, a_ekin_l, b_ekin_p, b_ekin_l, q_ekin_p, q_ekin_l, &
             atom_epot, bead_epot, etotal, sum(atoms%f)
 
         close(out_unit)
