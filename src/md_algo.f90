@@ -27,6 +27,9 @@ contains
                     call verlet_1(atoms, i)
                     call pile_thermo(atoms, i)
 
+                case (prop_id_langevin)
+                    call langevin_1(atoms, i)
+
                 case default
                     stop "Error in propagate_1(): Unknown propagation algorithm"
 
@@ -52,6 +55,10 @@ contains
 
                 case (prop_id_pile)
                     call verlet_2(atoms, i)
+
+                case (prop_id_langevin)
+                    call ldfa(atoms, i)
+                    call langevin_2(atoms, i)
 
                 case default
                     stop "Error in propagate_2(): Unknown propagation algorithm"
@@ -115,13 +122,13 @@ contains
         integer :: b
 
 
-        temp = kB * simparams%Tsurf / atoms%m(i)
+        temp = kB * atoms%nbeads * simparams%Tsurf / atoms%m(i)
         xidt = dens(:,i) * simparams%step
         xidt2 = xidt * xidt
         ixidt = simparams%step/xidt   ! 1/dens
 
         ! Preventing problems due to precision issues
-        if (all(xidt > tolerance) .and. simparams%Tsurf > tolerance) then
+        if (all(xidt > 1e-2) .and. simparams%Tsurf > tolerance) then
 
             c0 = exp(-xidt)
             c1 = (1 - c0) * ixidt
@@ -189,35 +196,41 @@ contains
         integer :: b
 
 
-        temp = kB * simparams%Tsurf / atoms%m(i)
+        temp = kB * atoms%nbeads * simparams%Tsurf / atoms%m(i)
         xidt = dens(:,i) * simparams%step
         xidt2 = xidt * xidt
         ixidt = simparams%step / xidt   ! 1/dens
 
-        ! Preventing problems due to precision issues
-        if (all(xidt > tolerance) .and. simparams%Tsurf > tolerance) then
+        do b = 1, atoms%nbeads
 
-            c0 = exp(-xidt)
-            c1 = (1 - c0) * ixidt
-            c2 = (1 - c1/simparams%step)*ixidt
+            ! Preventing problems due to precision issues
+            if (xidt(b) > 1e-2 .and. simparams%Tsurf > tolerance) then
 
-            sigma_r = ixidt*sqrt(temp*(2*xidt - 3 + 4*c0 - c0*c0))
-            sigma_v = sqrt(temp * (1 - c0*c0))
+                c0(b) = exp(-xidt(b))
+                c1(b) = (1 - c0(b)) * ixidt(b)
+                c2(b) = (1 - c1(b)/simparams%step)*ixidt(b)
 
-            c_rv    = ixidt*temp*(1 - c0)**2/(sigma_r*sigma_v)
+                sigma_r(b) = ixidt(b)*sqrt(temp*(2*xidt(b) - 3 + 4*c0(b) - c0(b)*c0(b)))
+                sigma_v(b) = sqrt(temp * (1 - c0(b)*c0(b)))
 
-        else ! use series up to 2nd order in xi*dt
+                c_rv(b)    = ixidt(b)*temp*(1 - c0(b))**2/(sigma_r(b)*sigma_v(b))
 
-            c0 = 1 - xidt + 0.5*xidt2
-            c1 = (1 - 0.5*xidt + 2*twelfth*xidt2)*simparams%step
-            c2 = (0.5 - 2*twelfth*xidt + 0.5*twelfth*xidt2)*simparams%step
+            else ! use series up to 2nd order in xi*dt
 
-            if (atoms%nbeads > 1) &
-                sigma_r = simparams%step * sqrt(temp*(8*twelfth*xidt - 0.5*xidt2))
-            sigma_v = sqrt(2 * temp * xidt * (1 - xidt))
-            c_rv    = 0.5 * sqrt3 * (1 - 0.125*xidt)
+                c0(b) = 1 - xidt(b) + 0.5*xidt2(b)
+                c1(b) = (1 - 0.5*xidt(b) + 2*twelfth*xidt2(b))*simparams%step
+                c2(b) = (0.5 - 2*twelfth*xidt(b) + 0.5*twelfth*xidt2(b))*simparams%step
 
-        end if
+                !            if (atoms%nbeads > 1) &
+                !                sigma_r = simparams%step * sqrt(temp*(8*twelfth*xidt - 0.5*xidt2))
+
+                !print *, 2 * temp * xidt * (1 - xidt)
+                sigma_v(b) = sqrt(2 * temp * xidt(b) * (1 - xidt(b)))
+                c_rv(b)    = 0.5 * sqrt3 * (1 - 0.125*xidt(b))
+
+            end if
+
+        end do
 
         call normal_deviate(0.0_dp, 1.0_dp, randy)
 
@@ -320,5 +333,73 @@ contains
         atoms%v(:,:,i) = atomP/atoms%m(i)
 
     end subroutine pile_thermo
+
+
+
+    subroutine ldfa(atoms, i)
+        !
+        ! Purpose:
+        !           Calculate the friction coefficient
+        !
+
+        use pes_emt_mod, only : dens
+
+        type(universe), intent(in) :: atoms
+        integer, intent(in) :: i
+        integer :: j, b
+        real(dp) :: fric(atoms%nbeads)
+        real(dp) :: temp
+        ! As implemented here, the friction coefficient is only applicable for the
+        ! H-atom as calculated by Li and Wahnstrom(PRB46(1992)14528)
+        ! according to Puska and Nieminen (PRB, 27, 1983, 6121), the mass still
+        ! needs to be applied
+        ! hbar*eta = hbar**2/mass Q(kf) (conversion between PN and LW)
+        character(len=*), parameter :: err = "Error in ldfa(): "
+        real(dp), parameter :: convert   = 1.00794_dp * amu2mass
+        real(dp), parameter :: coefs(12) = [0.0802484_dp, -1.12851_dp, 9.28508_dp,   &
+            2.10064_dp, -843.419_dp, 8.85354e3_dp, -4.89023e4_dp, 1.6741e5_dp, &
+            -3.67098e5_dp, 5.03476e5_dp, -3.9426e5_dp, 1.34763e5_dp]
+
+        !   12th order cubic spline fit interpolated from DFT data points of friction
+        !   coefficient vs. electron density (calculated from DFT with VASP)
+
+        if (.not. allocated(dens)) then
+            print *, err, "EMT density array not allocated. Cannot compute friction."
+            stop
+        end if
+
+        !print *, "pre", dens(:,i)
+        fric = dens(:,i)
+        ! hbar*xi in eV
+        do b = 1, atoms%nbeads
+            if (-1e-12 <= fric(b) .and. fric(b) <= 0.36) then  ! removed offset parameter
+                fric(b) = 0.0d0
+                temp = dens(b,i)
+                do j = 1, size(coefs)
+                    fric(b) = fric(b) + coefs(j)*temp
+                    temp = temp*dens(b,i)
+                end do
+            else if (fric(b) > 0.36) then
+                fric(b) = 0.001_dp * (4.7131_dp - exp(-4.41305_dp*fric(b)))
+            else
+                print *, fric(b), dens(b,i), i, shape(dens)
+                print *, err, "EMT density array contains negative values."
+                stop
+            end if
+            dens(b,i) = fric(b)
+        end do
+        dens(:,i) = dens(:,i) * convert / hbar / atoms%m(i)
+        !print *, "post", dens(:,i)
+        ! xi in 1/fs
+
+        ! For simulated annealing, the Langevin dynamics are used as a heat bath
+        ! But using the Au-atomic densities is too inefficient, so in this case
+        ! a friction coefficient is set that is of the order of magnitude of
+        ! the friction an H-atom experiences when running through Au.
+        ! The friction coefficient is now 0.003 1/fs.
+
+        ! if (sasteps > 0) s%dens = 0.003d0 !0.000015231d0/(imass*convert)
+
+    end subroutine ldfa
 
 end module md_algo

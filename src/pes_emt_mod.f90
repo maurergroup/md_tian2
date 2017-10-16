@@ -623,7 +623,7 @@ contains
             dens(:,i) = pes_emt%n0(idx_i) * exp((0.5_dp/bohr2ang - betaeta2(idx_i))*s(:,i))
         end do
 
-        !        print *, "dens"
+                print *, dens(:,1)
         !        print '(3f15.8)', dens
 
 

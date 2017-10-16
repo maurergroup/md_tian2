@@ -1,14 +1,14 @@
 run md
 
-start 1
+start 2
 ntrajs 1
-nsteps 320000
-step 0.1
+nsteps 10000
+step 0.05
 
-#projectile 1  H   1.0 and   
-lattice   1  C 12.0  ver
+projectile 1  H   1.0 ver   
+lattice   1  Au 196.0  ver
 
-!force_beads 2
+!force_beads 16
 !pile_tau 100
 !andersen_time 50
 
@@ -22,13 +22,13 @@ Tsurf 300
 !annealing 1000 25 5
  
 !conf poscar 'graph.POSCAR'
-conf poscar 'conf/poscar_00000001.dat'
+conf poscar 'conf/AuH_300K.POSCAR'
 
 
 !pes definition
-pes 'pes/CarbonLammps.pes'
+pes 'pes/HAu.pes'
 
-output energy 10
+output energy 1 xyz 20
 
 
 

@@ -187,8 +187,8 @@ contains
                                             simparams%md_algo_l(i) = prop_id_verlet
 !                                        case ('bee')                ! beeman
 !                                            simparams%md_algo_l(i) = prop_id_beeman
-!                                        case ('lan')                ! langevin
-!                                            simparams%md_algo_l(i) = prop_id_langevin
+                                        case ('lan')                ! langevin
+                                            simparams%md_algo_l(i) = prop_id_langevin
 !                                        case ('sla')                ! langevin (series)
 !                                            simparams%md_algo_l(i) = prop_id_langevin_series
                                         case ('and')
@@ -230,8 +230,8 @@ contains
                                             simparams%md_algo_p(i) = prop_id_verlet
 !                                        case ('bee')                ! beeman
 !                                            simparams%md_algo_p(i) = prop_id_beeman
-!                                        case ('lan')                ! langevin
-!                                            simparams%md_algo_p(i) = prop_id_langevin
+                                        case ('lan')                ! langevin
+                                            simparams%md_algo_p(i) = prop_id_langevin
 !                                        case ('sla')                ! langevin (series)
 !                                            simparams%md_algo_p(i) = prop_id_langevin_series
                                         case ('and')

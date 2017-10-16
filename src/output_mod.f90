@@ -147,7 +147,7 @@ contains
         atom_epot = sum(atoms%epot)/atoms%nbeads
         bead_epot = calc_bead_epot(atoms)
 
-        etotal = a_ekin_l + a_ekin_p - q_ekin_l - q_ekin_p + atom_epot
+        etotal = b_ekin_p + b_ekin_l + atom_epot + bead_epot
 
         ! primitive quantum kinetic energy estimator, do not use, just for completeness
         ! source: J. Chem. Phys. 123, 134502 (2005)
