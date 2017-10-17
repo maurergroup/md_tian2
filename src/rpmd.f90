@@ -42,7 +42,7 @@ contains
 
         type(universe), intent(in) :: atoms
         real(dp)                   :: temp
-        integer :: i
+        integer                    :: i
 
         temp = 0.0_dp
         do i = 1, atoms%natoms
@@ -323,8 +323,8 @@ contains
             end if
         end do
 
-        rgyr_p = rgyr_p/atoms%nbeads/nprojs
-        rgyr_l = rgyr_l/atoms%nbeads/(atoms%natoms-nprojs)
+        rgyr_p = rgyr_p/atoms%nbeads/max(nprojs, 1)
+        rgyr_l = rgyr_l/atoms%nbeads/max((atoms%natoms-nprojs), 1)
 
     end subroutine radius_of_gyration
 

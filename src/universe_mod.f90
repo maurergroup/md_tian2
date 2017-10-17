@@ -200,11 +200,8 @@ contains
     subroutine remove_com_velocity(this)
 
         type(universe), intent(inout) :: this
-        real(dp) :: v_cm(3), target_T, current_T
+        real(dp) :: v_cm(3)
         integer :: i, b
-
-        ! instant system temperature
-        target_T = calc_atom_temperature(this)
 
         v_cm = calc_com_velocity(this)
 
@@ -213,16 +210,6 @@ contains
                 this%v(:,b,i) = this%v(:,b,i) - v_cm
             end do
         end do
-
-        ! velocities and temperature decreased -> scale 'em up
-        current_T = calc_atom_temperature(this)
-
-        if (target_T < tolerance .or. current_T < tolerance) then
-            this%v = 0.0_dp
-            return
-        end if
-
-        this%v = this%v * sqrt(target_T/current_T)
 
     end subroutine remove_com_velocity
 
@@ -290,7 +277,7 @@ contains
             num = num + sum(this%v(:,:,i), dim=2) * this%m(i)
         end do
 
-        v_cm = num / sum(this%m)
+        v_cm = num / sum(this%m) / this%nbeads / this%natoms
 
     end function calc_com_velocity
 
