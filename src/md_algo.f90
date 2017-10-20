@@ -76,7 +76,7 @@ contains
         integer, intent(in) :: i
 
         where(.not. atoms%is_fixed(:,:,i))
-            atoms%v(:,:,i) = atoms%v(:,:,i) + 0.5_dp * simparams%step * atoms%a(:,:,i)
+            atoms%v(:,:,i) = atoms%v(:,:,i) + 0.5 * simparams%step * atoms%a(:,:,i)
         end where
 
         ! if rpmd, the positions are being updated in the do_ring_polymer_step subroutine
@@ -95,7 +95,7 @@ contains
         integer, intent(in) :: i
 
         where(.not. atoms%is_fixed(:,:,i))
-            atoms%v(:,:,i) = atoms%v(:,:,i) + 0.5_dp * simparams%step * atoms%a(:,:,i)
+            atoms%v(:,:,i) = atoms%v(:,:,i) + 0.5 * simparams%step * atoms%a(:,:,i)
         end where
 
     end subroutine verlet_2
@@ -303,16 +303,16 @@ contains
         ! generate gamma coefficients for all beads
         do k = 0, atoms%nbeads-1
             if (k .eq. 0) then  ! centroid mode
-                gammak(k+1) = 1.0_dp/simparams%pile_tau
+                gammak(k+1) = 1 / simparams%pile_tau
             else
-                wn = 1.0_dp / betaN / hbar
-                wk = 2.0_dp * wn * sin(k*pi/atoms%nbeads)
-                gammak(k+1) = 2.0_dp * wk
+                wn = 1 / betaN / hbar
+                wk = 2 * wn * sin(k*pi/atoms%nbeads)
+                gammak(k+1) = 2 * wk
             end if
         end do
 
-        c1 = exp(-0.5_dp * simparams%step*gammak)
-        c2 = sqrt(1.0_dp - c1*c1)
+        c1 = exp(-0.5 * simparams%step*gammak)
+        c2 = sqrt(1 - c1*c1)
 
         ! generate random number with zero mean and unit stddev
         call normal_deviate(0.0_dp, 1.0_dp, zeta)
@@ -373,7 +373,7 @@ contains
         ! hbar*xi in eV
         do b = 1, atoms%nbeads
             if (-1e-12 <= fric(b) .and. fric(b) <= 0.36) then  ! removed offset parameter
-                fric(b) = 0.0d0
+                fric(b) = 0.0_dp
                 temp = dens(b,i)
                 do j = 1, size(coefs)
                     fric(b) = fric(b) + coefs(j)*temp

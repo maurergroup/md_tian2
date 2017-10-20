@@ -117,12 +117,13 @@ contains
         !        print *, "before"
         !        print *, this%r
 
-        ! XXX: ONLY WORKS FOR rep(1) == rep(2)
-        if (rep(1) /= rep(2)) then
-            print *, "Repetition does not work yet for asymmetrical repetitions."
-            call abort
-        end if
+!        ! XXX: ONLY WORKS FOR rep(1) == rep(2)
+!        if (rep(1) /= rep(2)) then
+!            print *, "Repetition does not work yet for asymmetrical repetitions."
+!            call abort
+!        end if
 
+        ! convert to direct coordinates
         if (this%is_cart) call to_direct(this)
         nreps = (1+2*rep(1)) * (1+2*rep(2))
 
@@ -147,32 +148,35 @@ contains
             other = new_atoms(this%nbeads, nreps*this%natoms, this%ntypes)
         end if
 
-        other%pes = this%pes
-        other%algo = this%algo
-        other%name = this%name
-        other%simbox = this%simbox
+        other%pes     = this%pes
+        other%algo    = this%algo
+        other%name    = this%name
+        other%simbox  = this%simbox
         other%is_proj = this%is_proj
 
+        start = nprojs + 1
+        end = this%natoms
         do i = -rep(1), rep(1)
             do j = -rep(2), rep(2)
                 ! This map -i, -i+1, ... , i-1, i and -j, -j+1, ... , j-1, j
                 !  to 1, 2, 3, ... , #total_repetitions
 
-                start = ((i+rep(1))*(1+2*rep(2))+(j+rep(1)))   * (this%natoms-nprojs)+1
-                end   = ((i+rep(1))*(1+2*rep(2))+(j+rep(1))+1) * (this%natoms-nprojs)
+                other%r( 1 , : , start : end ) = this%r(1,:,nprojs+1:) + i
+                other%r( 2 , : , start : end ) = this%r(2,:,nprojs+1:) + j
+                other%r( 3 , : , start : end ) = this%r(3,:,nprojs+1:)
 
-                other%r( 1 , :, nprojs+start : nprojs+end ) = this%r(1,:,nprojs+1:) + i
-                other%r( 2 , :, nprojs+start : nprojs+end ) = this%r(2,:,nprojs+1:) + j
-                other%r( 3 , :, nprojs+start : nprojs+end ) = this%r(3,:,nprojs+1:)
+                other%m(         start : end ) = this%m(nprojs+1:)
+                other%idx(       start : end ) = this%idx(nprojs+1:)
+                other%v( : , : , start : end ) = this%v(:,:,nprojs+1:)
+                other%f( : , : , start : end ) = this%f(:,:,nprojs+1:)
+                other%is_fixed( : , : , start : end ) = this%is_fixed(:,:,nprojs+1:)
 
-                other%m(        nprojs+start : nprojs+end ) = this%m(nprojs+1:)
-                other%idx(      nprojs+start : nprojs+end ) = this%idx(nprojs+1:)
-                other%v( : , :, nprojs+start : nprojs+end ) = this%v(:,:,nprojs+1:)
-                other%f( : , :, nprojs+start : nprojs+end ) = this%f(:,:,nprojs+1:)
-                other%is_fixed( : , :, nprojs+start : nprojs+end ) = this%is_fixed(:,:,nprojs+1:)
-
+                start = end + 1
+                end = end + this%natoms - nprojs
             end do
         end do
+
+
         !        print *, "after"
         !        print *, other%r
 
@@ -187,7 +191,7 @@ contains
         other%isimbox = invert_matrix(other%simbox)
 
         ! set DOFs
-        other%dof = this%dof * nreps
+        other%dof = 3*other%natoms*other%nbeads - count(other%is_fixed)
 
         ! replace old atoms
         this = other
@@ -256,6 +260,55 @@ contains
         this%is_cart = .not. this%is_cart
 
     end subroutine to_direct
+
+
+
+    subroutine merge_universes(this, other)
+        ! add other universe to this universe
+
+        type(universe), intent(inout) :: this
+        type(universe), intent(inout) :: other
+
+        type(universe) :: new
+        character(len=*), parameter :: err = "Error in merge_universes: "
+
+        if (this%nbeads /= other%nbeads) stop err // "mxt and merge files differ in number of beads"
+        if (any(this%is_proj)) stop err // "mxt file contains projectile atoms"
+        if (any(.not. other%is_proj)) stop err // "merge file contains lattice atoms"
+
+        if (.not. this%is_cart)  call to_cartesian(this)
+        if (.not. other%is_cart) call to_cartesian(other)
+
+        new = new_atoms(this%nbeads, this%natoms+other%natoms, this%ntypes+other%ntypes)
+
+        new%r(:,:,:other%natoms)        = other%r
+        new%v(:,:,:other%natoms)        = other%v
+        new%f(:,:,:other%natoms)        = other%f
+        new%a(:,:,:other%natoms)        = other%a
+        new%m(:other%natoms)            = other%m
+        new%idx(:other%natoms)          = other%idx
+        new%name(:other%ntypes)         = other%name
+        new%algo(:other%ntypes)         = other%algo
+        new%is_proj(:other%ntypes)      = other%is_proj
+        new%is_fixed(:,:,:other%natoms) = other%is_fixed
+
+        new%r(:,:,other%natoms+1:)        = this%r
+        new%v(:,:,other%natoms+1:)        = this%v
+        new%f(:,:,other%natoms+1:)        = this%f
+        new%a(:,:,other%natoms+1:)        = this%a
+        new%m(other%natoms+1:)            = this%m
+        new%idx(other%natoms+1:)          = this%idx
+        new%name(other%ntypes+1:)         = this%name
+        new%algo(other%ntypes+1:)         = this%algo
+        new%is_proj(other%ntypes+1:)      = this%is_proj
+        new%is_fixed(:,:,other%natoms+1:) = this%is_fixed
+
+        new%dof = this%dof + other%dof
+        new%simbox = this%simbox
+        new%isimbox = this%isimbox
+        new%is_cart = .true.
+
+    end subroutine merge_universes
 
 
 

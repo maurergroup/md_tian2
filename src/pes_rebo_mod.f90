@@ -2279,8 +2279,6 @@ contains
         bij = 0.5_dp*(pij+pji) + Tij*Etmp + piRC !+ (Tij*Etmp)
         !        bij = Tij
 
-        print '(f18.11)' , distances(:,i,j)
-
 
         if (DEBUG ) then ! .and. (neigh_c_i < 2 .or. neigh_c_j < 2).and. j.eq.natoms
             print *, i, j

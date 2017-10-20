@@ -35,8 +35,10 @@ module run_config
         integer :: sa_interval                                      ! number of steps per temperature interval
         character(len=7)    :: confname                             ! configuration key
         character(len=max_string_length) :: confname_file           ! name of the system configuration file or folder
-        integer :: rep(2)                                           ! defines in-plane repetitions
         integer :: nconfs                                           ! number of configurations to read in
+        character(len=max_string_length) :: merge_file              ! name of folder containing projecile configuration
+        integer :: nmerge                                           ! number of projectile configurations
+        integer :: rep(2)                                           ! defines in-plane repetitions
         character(len=max_string_length) :: pes_file                ! name of the file that stores the potential parameters
         character(len=3)  :: run                                    ! what to do
         integer, allocatable :: output_type(:)                      ! what to save
@@ -68,6 +70,9 @@ contains
         new_simulation_parameters%sa_nsteps = default_int
         new_simulation_parameters%sa_interval = default_int
         new_simulation_parameters%confname = default_string
+        new_simulation_parameters%confname_file = default_string
+        new_simulation_parameters%merge_file = default_string
+        new_simulation_parameters%nmerge = default_int
         new_simulation_parameters%rep = [0,0]
         new_simulation_parameters%nconfs  = default_int
         new_simulation_parameters%pes_file = default_string
@@ -301,16 +306,15 @@ contains
 
                     case ('conf')
 
-                        if (simparams%confname /= default_string) stop 'Error in the input file: Multiple use of the conf key'
                         if (nwords > 2) then
                             read(words(2),'(A)') simparams%confname
                             call lower_case(simparams%confname)
-                            read(words(3),'(A)') simparams%confname_file
 
                             select case (simparams%confname)
 
                                 case ('poscar')
                                     ! conf poscar <poscar_file> <x_rep> <y_rep>
+                                    read(words(3),'(A)') simparams%confname_file
                                     if (nwords > 5) stop 'Error in the input file: conf key - poscar argument number is too large'
                                     if (words(4) /= "") then
                                         read(words(4),'(i1000)',iostat=ios) simparams%rep(1)
@@ -326,11 +330,25 @@ contains
                                 case ('mxt')
                                     ! conf mxt <mxt_file.dat>: use this mxt file as system config
                                     ! conf mxt <mxt_folder> <n>: randomly select mxt files 1<=x<=n from folder
+                                    read(words(3),'(A)') simparams%confname_file
                                     if (nwords == 4) then
                                         read(words(4),'(i1000)',iostat=ios) simparams%nconfs
                                         if (ios /= 0) stop 'Error in the input file: conf key - mxt argument must be integer'
                                         call random_number(rnd)
                                         write(simparams%confname_file, '(2a, i8.8, a)') trim(simparams%confname_file), "/mxt_", int(rnd*simparams%nconfs)+1, ".dat"
+                                    end if
+                                    if (nwords < 3) stop 'Error in the input file: conf key - too few mxt arguments'
+                                    if (nwords > 4) stop 'Error in the input file: conf key - too many mxt arguments'
+
+                                case ('merge')
+                                    ! conf mergewith <mxt_folder> <n>: randomly select mxt files 1<=x<=n from folder
+                                    simparams%confname = 'mxt'
+                                    read(words(3),'(A)') simparams%merge_file
+                                    if (nwords == 4) then
+                                        read(words(4),'(i1000)',iostat=ios) simparams%nmerge
+                                        if (ios /= 0) stop 'Error in the input file: conf key - mergewith argument must be integer'
+                                        call random_number(rnd)
+                                        write(simparams%merge_file, '(2a, i8.8, a)') trim(simparams%merge_file), "/mxt_", int(rnd*simparams%nmerge)+1, ".dat"
                                     end if
                                     if (nwords < 3) stop 'Error in the input file: conf key - too few mxt arguments'
                                     if (nwords > 4) stop 'Error in the input file: conf key - too many mxt arguments'

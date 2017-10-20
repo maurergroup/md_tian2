@@ -40,6 +40,7 @@ program md_tian
 
             do itraj = simparams%start, simparams%start+simparams%ntrajs-1
 
+
                 call calc_force(atoms, energy_and_force)
                 print *, "Eref", atoms%epot
 
@@ -52,6 +53,7 @@ program md_tian
 
                     if (any(mod(istep, simparams%output_interval) == 0)) call output(atoms, itraj, istep)
 
+                    call prepare_next_traj(atoms)
                 end do
             end do
 
