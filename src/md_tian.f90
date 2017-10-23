@@ -53,8 +53,10 @@ program md_tian
 
                     if (any(mod(istep, simparams%output_interval) == 0)) call output(atoms, itraj, istep)
 
-                    call prepare_next_traj(atoms)
                 end do
+
+                if (itraj /= simparams%start+simparams%ntrajs-1) call prepare_next_traj(atoms)
+
             end do
 
         case default

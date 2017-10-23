@@ -158,7 +158,7 @@ contains
             case ("poscar")
                 call read_poscar(atoms, infile)
 
-            case ("mxt")
+            case ("mxt", "merge")
                 call read_mxt(atoms, infile)
 
             case default
@@ -166,8 +166,9 @@ contains
 
         end select
 
-        if (simparams%merge_file /= default_string) then
-            call read_mxt(proj, simparams%merge_file)
+        ! merge projectile file if present
+        if (simparams%confname == "merge") then
+            call read_mxt(proj, simparams%merge_proj_file)
             call merge_universes(atoms, proj)
         end if
 
@@ -371,7 +372,8 @@ contains
             if (simparams%ntrajs == default_int) stop err // "ntrajs key must be present and larger than zero."
             if (simparams%nsteps == default_int) stop err // "nsteps key must be present and larger than zero."
             if (simparams%step == default_real)  stop err // "nsteps key must be present and larger than zero."
-            if (simparams%nlattices == default_int .and. simparams%nprojectiles == default_int) stop err // "either lattice and/or projectile key must be present."
+            if (simparams%nlattices == default_int .and. simparams%nprojectiles == default_int) &
+                stop err // "either lattice and/or projectile key must be present."
             if (simparams%nprojectiles == default_int) simparams%nprojectiles = 0
             if (simparams%nlattices == default_int) simparams%nlattices = 0
 
@@ -387,8 +389,8 @@ contains
 
             if (.not. allocated(simparams%output_type) .or. .not. allocated(simparams%output_interval)) &
                 stop err // "output options not set."
-            if (any(simparams%output_interval > simparams%nsteps)) print *, warn // "one or more outputs will not show, since the output &
-	    interval is larger than the total number of simulation steps."            
+            if (any(simparams%output_interval > simparams%nsteps)) print *, warn // "one or more outputs will not show, &
+                since the output interval is larger than the total number of simulation steps."            
         
 
             ! If one of them is set, the others must be set as well.
@@ -396,7 +398,12 @@ contains
                 (allocated(simparams%einc) .neqv. allocated(simparams%azimuth)) ) &
                 stop err // "incidence conditions ambiguous."
 
+            if (any(simparams%pip == default_string) /= all(simparams%pip == default_string)) stop err // "you have set all pip arguments"
+
             if (simparams%force_beads /= default_int .and. simparams%confname == "mxt") stop err // "cannot force beads on mxt files"
+
+            if (simparams%confname == "merge" .and. .not. (allocated(simparams%mass_l) .and. allocated(simparams%mass_p))) &
+                stop err // "both projectile and slab have to be present in the input file to use <conf merge>"
 
 
 
@@ -437,6 +444,102 @@ contains
         if (simparams%force_beads /= default_int .and. atoms%nbeads /= 1) stop err // "Cannot force any beads when system already contains multiple beads."
 
     end subroutine ensure_geometry_sanity
+
+
+
+
+    subroutine apply_pip(atoms)
+
+        use rpmd, only : calc_centroid_positions
+
+        type(universe), intent(inout) :: atoms
+        real(dp) :: target, cents(3, atoms%natoms)
+
+        integer  :: i, b, ios
+        character(len=*), parameter :: err = "Error in apply_pip(): "
+
+        cents = calc_centroid_positions(atoms)
+
+        do i = 1, dimensionality
+            if (simparams%pip(i) == "r") then
+                call to_direct(atoms)
+                call random_number(target)
+                atoms%r(i,:,:) = atoms%r(i,:,:) - target
+            else
+                call to_cartesian(atoms)
+                write(target, *, iostat=ios) simparams%pip(i)
+                if (ios /= 0) then
+                    print *, err, "unknown pip format at position", i, "of pip array"
+                    stop
+                end if
+
+                do b = 1, atoms%nbeads
+                    atoms%r(i,b,:) = atoms%r(i,b,:) + (target - cents(i,:))
+                end do
+            end if
+        end do
+
+        call to_cartesian(atoms)
+
+    end subroutine apply_pip
+
+
+
+    subroutine merge_universes(this, other)
+        ! add other universe to this universe
+        ! projectile must be other
+
+        type(universe), intent(inout) :: this
+        type(universe), intent(inout) :: other
+
+        type(universe) :: new
+        character(len=*), parameter :: err = "Error in merge_universes: "
+
+        if (this%nbeads /= other%nbeads) stop err // "mxt and merge files differ in number of beads"
+        if (any(this%is_proj))           stop err // "mxt file contains projectile atoms"
+        if (any(.not. other%is_proj))    stop err // "merge file contains lattice atoms"
+        if (other%natoms > 1)            stop err // "multiple projectiles not implemented for use with merge option"
+
+
+        if (.not. this%is_cart)  call to_cartesian(this)
+        if (.not. other%is_cart) call to_cartesian(other)
+
+        new = new_atoms(this%nbeads, this%natoms+other%natoms, this%ntypes+other%ntypes)
+
+        if (.not. all(simparams%pip == default_string)) then
+            call apply_pip(other)
+        end if
+
+        new%r(:,:,:other%natoms)        = other%r
+        new%v(:,:,:other%natoms)        = other%v
+        new%f(:,:,:other%natoms)        = other%f
+        new%a(:,:,:other%natoms)        = other%a
+        new%m(:other%natoms)            = other%m
+        new%idx(:other%natoms)          = other%idx
+        new%name(:other%ntypes)         = other%name
+        new%algo(:other%ntypes)         = other%algo
+        new%is_proj(:other%ntypes)      = other%is_proj
+        new%is_fixed(:,:,:other%natoms) = other%is_fixed
+
+        new%r(:,:,other%natoms+1:)        = this%r
+        new%v(:,:,other%natoms+1:)        = this%v
+        new%f(:,:,other%natoms+1:)        = this%f
+        new%a(:,:,other%natoms+1:)        = this%a
+        new%m(other%natoms+1:)            = this%m
+        new%idx(other%natoms+1:)          = this%idx+maxval(other%idx)
+        new%name(other%ntypes+1:)         = this%name
+        new%algo(other%ntypes+1:)         = this%algo
+        new%is_proj(other%ntypes+1:)      = this%is_proj
+        new%is_fixed(:,:,other%natoms+1:) = this%is_fixed
+
+        new%dof     = 3*new%natoms*new%nbeads - count(new%is_fixed)
+        new%simbox  = this%simbox
+        new%isimbox = this%isimbox
+        new%is_cart = .true.
+
+        this = new
+
+    end subroutine merge_universes
 
 
 
@@ -552,14 +655,29 @@ contains
         real(dp) :: masses(size(natoms))
         character(len=*), parameter :: err = "Error in set_atomic_masses: "
 
-        if (allocated(simparams%mass_p) .and. allocated(simparams%mass_l)) then
-            masses = [simparams%mass_p, simparams%mass_l]
-        else if (allocated(simparams%mass_p)) then
-            masses = simparams%mass_p
-        else if (allocated(simparams%mass_l)) then
-            masses = simparams%mass_l
+        if (simparams%confname == "poscar" .or. simparams%confname == "mxt") then
+            if (allocated(simparams%mass_p) .and. allocated(simparams%mass_l)) then
+                masses = [simparams%mass_p, simparams%mass_l]
+            else if (allocated(simparams%mass_p)) then
+                masses = simparams%mass_p
+            else if (allocated(simparams%mass_l)) then
+                masses = simparams%mass_l
+            else
+                print *, err // "neither projectile nor slab exist"
+                stop
+            end if
+
+        else if (simparams%confname == "merge") then
+            if (all(atoms%is_proj)) then
+                masses = simparams%mass_p
+            else if (all(.not. atoms%is_proj)) then
+                masses = simparams%mass_l
+            else
+                stop err // "cannot set masses, conf merge requires seperate projectile and slab mxt files"
+            end if
+
         else
-            print *, err // "neither projectile nor slab exist"
+            print *, err, "unknown confname", simparams%confname
             stop
         end if
 
@@ -585,7 +703,7 @@ contains
 
         if (allocated(simparams%md_algo_p) .and. allocated(simparams%md_algo_l)) then
             atoms%algo = [simparams%md_algo_p, simparams%md_algo_l]
-            if (size(atoms%algo) /= size([simparams%md_algo_p, simparams%md_algo_l])) stop err // "more algorithms than species"
+            if (size(atoms%algo) /= size([simparams%md_algo_p, simparams%md_algo_l]) .and. simparams%confname /= "merge") stop err // "more algorithms than species"
 
         else if (allocated(simparams%md_algo_p)) then
             atoms%algo = simparams%md_algo_p
@@ -620,7 +738,56 @@ contains
 
         type(universe), intent(inout) :: atoms
 
-        ! read mxt and merge and merge both, set pes
+        character(len=*), parameter :: err = "Error in prepare_next_traj(): "
+        integer :: mxt_idx, dat_idx, new_conf
+        real(dp) :: rnd
+        type(universe) :: proj, slab
+
+        if (simparams%confname == "merge") then
+
+            ! renew simparams slab geometry file
+            mxt_idx = index(simparams%confname_file, "mxt_")
+            dat_idx = index(simparams%confname_file, ".dat")
+            if (mxt_idx /= 0 .and. dat_idx /= 0 .and. dat_idx == mxt_idx+12) then
+                call random_number(rnd)
+                new_conf = int(rnd*simparams%nconfs)+1
+                write(simparams%confname_file, '(a, i8.8, a)') simparams%confname_file(:mxt_idx+3), new_conf, ".dat"
+            else
+                stop err // "lattice confname_file has wrong format. It needs to end on /mxt_%08d.dat"
+            end if
+
+            call open_for_append(54, "test.dat")
+            write(54, '(i8.8)') new_conf
+
+
+            ! renew simparams projectile geometry file
+            mxt_idx = index(simparams%merge_proj_file, "mxt_")
+            dat_idx = index(simparams%merge_proj_file, ".dat")
+            if (mxt_idx /= 0 .and. dat_idx /= 0 .and. dat_idx == mxt_idx+12) then
+                call random_number(rnd)
+                new_conf = int(rnd*simparams%merge_proj_nconfs)+1
+                write(simparams%merge_proj_file, '(a, i8.8, a)') simparams%merge_proj_file(:mxt_idx+3), new_conf, ".dat"
+            else
+                stop err // "projectile confname_file has wrong format. It needs to end on /mxt_%08d.dat"
+            end if
+
+            ! read the geometry files and combine
+            call read_mxt(proj, simparams%merge_proj_file)
+            call read_mxt(slab, simparams%confname_file)
+            print *, "b4"
+            print *, proj%r
+            call merge_universes(slab, proj)
+            print *, "after"
+            print *, slab%r(:,:,1)
+
+            atoms = slab
+
+            write(54, '(i8.8)') new_conf
+            close(54)
+
+        else
+            stop err // "multiple trajectories only available for <conf merge> option"
+        end if
 
     end subroutine prepare_next_traj
 

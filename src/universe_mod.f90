@@ -103,6 +103,8 @@ contains
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 
+
+
     subroutine create_repetitions(this, rep)
 
         use useful_things, only : invert_matrix
@@ -225,9 +227,7 @@ contains
         type(universe), intent(inout) :: this
         integer :: i,j
 
-        if (this%is_cart) then
-            print *,"Cannot convert cartesian to cartesian coordinates" ; call abort
-        end if
+        if (this%is_cart) return
 
         do i = 1, this%natoms
             do j = 1, this%nbeads
@@ -247,9 +247,7 @@ contains
         type(universe), intent(inout) :: this
         integer :: i,j
 
-        if (.not. this%is_cart) then
-            print *,"Cannot convert direct to direct coordinates" ; call abort
-        end if
+        if (.not. this%is_cart) return
 
         do i = 1, this%natoms
             do j = 1, this%nbeads
@@ -263,52 +261,7 @@ contains
 
 
 
-    subroutine merge_universes(this, other)
-        ! add other universe to this universe
 
-        type(universe), intent(inout) :: this
-        type(universe), intent(inout) :: other
-
-        type(universe) :: new
-        character(len=*), parameter :: err = "Error in merge_universes: "
-
-        if (this%nbeads /= other%nbeads) stop err // "mxt and merge files differ in number of beads"
-        if (any(this%is_proj)) stop err // "mxt file contains projectile atoms"
-        if (any(.not. other%is_proj)) stop err // "merge file contains lattice atoms"
-
-        if (.not. this%is_cart)  call to_cartesian(this)
-        if (.not. other%is_cart) call to_cartesian(other)
-
-        new = new_atoms(this%nbeads, this%natoms+other%natoms, this%ntypes+other%ntypes)
-
-        new%r(:,:,:other%natoms)        = other%r
-        new%v(:,:,:other%natoms)        = other%v
-        new%f(:,:,:other%natoms)        = other%f
-        new%a(:,:,:other%natoms)        = other%a
-        new%m(:other%natoms)            = other%m
-        new%idx(:other%natoms)          = other%idx
-        new%name(:other%ntypes)         = other%name
-        new%algo(:other%ntypes)         = other%algo
-        new%is_proj(:other%ntypes)      = other%is_proj
-        new%is_fixed(:,:,:other%natoms) = other%is_fixed
-
-        new%r(:,:,other%natoms+1:)        = this%r
-        new%v(:,:,other%natoms+1:)        = this%v
-        new%f(:,:,other%natoms+1:)        = this%f
-        new%a(:,:,other%natoms+1:)        = this%a
-        new%m(other%natoms+1:)            = this%m
-        new%idx(other%natoms+1:)          = this%idx
-        new%name(other%ntypes+1:)         = this%name
-        new%algo(other%ntypes+1:)         = this%algo
-        new%is_proj(other%ntypes+1:)      = this%is_proj
-        new%is_fixed(:,:,other%natoms+1:) = this%is_fixed
-
-        new%dof = this%dof + other%dof
-        new%simbox = this%simbox
-        new%isimbox = this%isimbox
-        new%is_cart = .true.
-
-    end subroutine merge_universes
 
 
 
@@ -395,6 +348,7 @@ contains
 
         idx = default_int
         do i = 1, this%natoms
+!                print *, i, this%name(this%idx(i)), name, this%is_proj(this%idx(i)), is_proj, this%idx(i)
             if (this%name(this%idx(i)) == name .and. this%is_proj(this%idx(i)) == is_proj) then
                 idx = this%idx(i)
                 exit

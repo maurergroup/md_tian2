@@ -63,6 +63,8 @@ contains
 
         integer  :: i
 
+        if (.not. atoms%is_cart) print *, "Warning: centroid positions are being calculated from direct coordinates!"
+
         ! active rpmd
         if (atoms%nbeads > 1) then
 
@@ -75,7 +77,6 @@ contains
             cents = atoms%r(:,1,:)
         end if
 
-        !print '(3f15.8)', cents
 
     end function calc_centroid_positions
 
@@ -89,12 +90,18 @@ contains
         real(dp) :: vec(3, atoms%nbeads, atoms%natoms)
         integer :: b, k
 
-        do b = 1, atoms%nbeads
-            k = modulo(b, atoms%nbeads)+1                   ! bead b+1
-            vec(:,b,:) = atoms%r(:,b,:) - atoms%r(:,k,:)    ! distance vector
-        end do
+        ! no rpmd
+        if (atoms%nbeads == 1) then
+            dists = 0.0_dp
 
-        dists = sqrt(sum(vec*vec, dim=1))    ! distance
+        ! active rpmd
+        else
+            do b = 1, atoms%nbeads
+                k = modulo(b, atoms%nbeads)+1                   ! bead b+1
+                vec(:,b,:) = atoms%r(:,b,:) - atoms%r(:,k,:)    ! distance vector
+            end do
+            dists = sqrt(sum(vec*vec, dim=1))    ! distance
+        end if
 
     end function calc_inter_bead_distances
 

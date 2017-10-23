@@ -36,8 +36,8 @@ module run_config
         character(len=7)    :: confname                             ! configuration key
         character(len=max_string_length) :: confname_file           ! name of the system configuration file or folder
         integer :: nconfs                                           ! number of configurations to read in
-        character(len=max_string_length) :: merge_file              ! name of folder containing projecile configuration
-        integer :: nmerge                                           ! number of projectile configurations
+        character(len=max_string_length) :: merge_proj_file         ! name of folder containing projecile configuration
+        integer :: merge_proj_nconfs                                ! number of projectile configurations
         integer :: rep(2)                                           ! defines in-plane repetitions
         character(len=max_string_length) :: pes_file                ! name of the file that stores the potential parameters
         character(len=3)  :: run                                    ! what to do
@@ -71,8 +71,8 @@ contains
         new_simulation_parameters%sa_interval = default_int
         new_simulation_parameters%confname = default_string
         new_simulation_parameters%confname_file = default_string
-        new_simulation_parameters%merge_file = default_string
-        new_simulation_parameters%nmerge = default_int
+        new_simulation_parameters%merge_proj_file = default_string
+        new_simulation_parameters%merge_proj_nconfs = default_int
         new_simulation_parameters%rep = [0,0]
         new_simulation_parameters%nconfs  = default_int
         new_simulation_parameters%pes_file = default_string
@@ -93,6 +93,7 @@ contains
         character(len=max_string_length) :: buffer
         character(len=max_string_length) :: words(100)
         integer, parameter :: inp_unit = 38
+        character(len=*), parameter :: err = "Error in the input file: "
 
         simparams = new_simulation_parameters()
 
@@ -120,11 +121,11 @@ contains
 
                     case ('run')
 
-                        if (simparams%run /= default_string) stop 'Error in the input file: Multiple use of the run key'
+                        if (simparams%run /= default_string) stop err // "Multiple use of the run key"
                         if (nwords == 2) then
                             read(words(2),'(A)') simparams%run
                         else
-                            stop 'Error in the input file: run key needs a single argument'
+                            stop err // "run key needs a single argument"
                         end if
 
 
@@ -306,6 +307,7 @@ contains
 
                     case ('conf')
 
+                        if (simparams%confname /= default_string) stop 'Error in the input file: Multiple use of the conf key'
                         if (nwords > 2) then
                             read(words(2),'(A)') simparams%confname
                             call lower_case(simparams%confname)
@@ -342,16 +344,23 @@ contains
 
                                 case ('merge')
                                     ! conf mergewith <mxt_folder> <n>: randomly select mxt files 1<=x<=n from folder
-                                    simparams%confname = 'mxt'
-                                    read(words(3),'(A)') simparams%merge_file
-                                    if (nwords == 4) then
-                                        read(words(4),'(i1000)',iostat=ios) simparams%nmerge
-                                        if (ios /= 0) stop 'Error in the input file: conf key - mergewith argument must be integer'
-                                        call random_number(rnd)
-                                        write(simparams%merge_file, '(2a, i8.8, a)') trim(simparams%merge_file), "/mxt_", int(rnd*simparams%nmerge)+1, ".dat"
-                                    end if
-                                    if (nwords < 3) stop 'Error in the input file: conf key - too few mxt arguments'
-                                    if (nwords > 4) stop 'Error in the input file: conf key - too many mxt arguments'
+                                    if (nwords /= 6) stop err // "conf merge needs projectile mxt folder, # of projectile configurations therein &
+                                        lattice mxt folder and # of lattice configurations therein"
+                                    ! projectile
+                                    read(words(3),'(A)') simparams%merge_proj_file
+                                    read(words(4),'(i1000)',iostat=ios) simparams%merge_proj_nconfs
+                                    if (ios /= 0) stop err // "conf key - number of configurations must be integer"
+                                    call random_number(rnd)
+                                    write(simparams%merge_proj_file, '(2a, i8.8, a)') &
+                                        trim(simparams%merge_proj_file), "/mxt_", int(rnd*simparams%merge_proj_nconfs)+1, ".dat"
+
+                                    ! slab
+                                    read(words(5),'(A)') simparams%confname_file
+                                    read(words(6),'(i1000)',iostat=ios) simparams%nconfs
+                                    if (ios /= 0) stop err // "conf key - number of configurations must be integer"
+                                    call random_number(rnd)
+                                    write(simparams%confname_file, '(2a, i8.8, a)') &
+                                        trim(simparams%confname_file), "/mxt_", int(rnd*simparams%nconfs)+1, ".dat"
 
                                 case default
                                     stop 'Error in the input file: conf key - unknown conf name'

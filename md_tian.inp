@@ -1,34 +1,31 @@
 run md
 
-start 2
-ntrajs 1
-nsteps 10000
-step 0.05
+start 1
+ntrajs 5
+nsteps 1000
+step 0.1
 
 projectile 1  H   1.0 ver   
 lattice   1  Au 196.0  ver
 
-!force_beads 16
+!force_beads 4
 !pile_tau 100
-!andersen_time 50
+!andersen_time 10
 
 incidence 3.33 180 90 3.33 180 90
 inc_rot energy <3 orientation angles>
 inc_vib energy
 
-!pip r r 6
+pip r 2 6
 
 Tsurf 300
 !annealing 1000 25 5
  
-!conf poscar 'graph.POSCAR'
-conf poscar 'conf/AuH_300K.POSCAR'
+!conf poscar 'au111.POSCAR' 1 1
+conf merge 'proj' 5 'latt' 5
 
 
 !pes definition
-pes 'pes/HAu.pes'
+pes 'pes/free.pes'
 
-output energy 1 xyz 20
-
-
-
+output energy 1
