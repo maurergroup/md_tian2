@@ -390,13 +390,15 @@ contains
             if (.not. allocated(simparams%output_type) .or. .not. allocated(simparams%output_interval)) &
                 stop err // "output options not set."
             if (any(simparams%output_interval > simparams%nsteps)) print *, warn // "one or more outputs will not show, &
-                since the output interval is larger than the total number of simulation steps."            
+                since the output interval is larger than the total number of simulation steps."     
         
 
             ! If one of them is set, the others must be set as well.
-            if ( (allocated(simparams%einc) .neqv. allocated(simparams%inclination)) .or. &
-                (allocated(simparams%einc) .neqv. allocated(simparams%azimuth)) ) &
+            if (any([simparams%einc, simparams%polar, simparams%azimuth] == default_real) .and.  &
+                .not. all([simparams%einc, simparams%polar, simparams%azimuth] == default_real)) &
                 stop err // "incidence conditions ambiguous."
+
+            stop 111
 
             if (any(simparams%pip == default_string) /= all(simparams%pip == default_string)) stop err // "you have set all pip arguments"
 
@@ -453,35 +455,39 @@ contains
         use rpmd, only : calc_centroid_positions
 
         type(universe), intent(inout) :: atoms
-        real(dp) :: target, cents(3, atoms%natoms)
+        real(dp) :: target_position, cents(3, atoms%natoms)
 
-        integer  :: i, b, ios
+        integer  :: k, b, ios
         character(len=*), parameter :: err = "Error in apply_pip(): "
-
-        cents = calc_centroid_positions(atoms)
-
-        do i = 1, dimensionality
-            if (simparams%pip(i) == "r") then
-                call to_direct(atoms)
-                call random_number(target)
-                atoms%r(i,:,:) = atoms%r(i,:,:) - target
-            else
-                call to_cartesian(atoms)
-                write(target, *, iostat=ios) simparams%pip(i)
-                if (ios /= 0) then
-                    print *, err, "unknown pip format at position", i, "of pip array"
-                    stop
-                end if
-
-                do b = 1, atoms%nbeads
-                    atoms%r(i,b,:) = atoms%r(i,b,:) + (target - cents(i,:))
-                end do
-            end if
-        end do
+        character(len=*), parameter :: random_position = "r"
 
         call to_cartesian(atoms)
+        cents = calc_centroid_positions(atoms)
+
+        if (.not. all(atoms%is_proj)) stop err // "there are lattice atoms affected by apply_pip() subroutine"
+
+        do k = 1, dimensionality
+            ! draw random number from direct coordinates, then convert to cartesian
+            if (simparams%pip(k) == random_position) then
+                call random_number(target_position)
+                target_position = target_position * sum(atoms%simbox(:,k))
+
+            else
+                read(simparams%pip(k), *, iostat=ios) target_position
+                if (ios /= 0) then
+                    print *, err, "unknown pip format at position", k, "of pip array"
+                    stop
+                end if
+            end if
+
+            do b = 1, atoms%nbeads
+                atoms%r(k,b,:) = atoms%r(k,b,:) - cents(k,:) + target_position
+            end do
+
+        end do
 
     end subroutine apply_pip
+
 
 
 
@@ -673,7 +679,8 @@ contains
             else if (all(.not. atoms%is_proj)) then
                 masses = simparams%mass_l
             else
-                stop err // "cannot set masses, conf merge requires seperate projectile and slab mxt files"
+                print *, err, "cannot set masses, conf merge requires seperate projectile and slab mxt files"
+                stop
             end if
 
         else
@@ -753,7 +760,7 @@ contains
                 new_conf = int(rnd*simparams%nconfs)+1
                 write(simparams%confname_file, '(a, i8.8, a)') simparams%confname_file(:mxt_idx+3), new_conf, ".dat"
             else
-                stop err // "lattice confname_file has wrong format. It needs to end on /mxt_%08d.dat"
+                print *, err, "lattice confname_file has wrong format. It needs to end on /mxt_%08d.dat"; stop
             end if
 
             call open_for_append(54, "test.dat")
@@ -768,7 +775,7 @@ contains
                 new_conf = int(rnd*simparams%merge_proj_nconfs)+1
                 write(simparams%merge_proj_file, '(a, i8.8, a)') simparams%merge_proj_file(:mxt_idx+3), new_conf, ".dat"
             else
-                stop err // "projectile confname_file has wrong format. It needs to end on /mxt_%08d.dat"
+                print *, err, "projectile confname_file has wrong format. It needs to end on /mxt_%08d.dat"; stop
             end if
 
             ! read the geometry files and combine
@@ -786,7 +793,7 @@ contains
             close(54)
 
         else
-            stop err // "multiple trajectories only available for <conf merge> option"
+            print *, err, "multiple trajectories only available for <conf merge> option"; stop
         end if
 
     end subroutine prepare_next_traj

@@ -26,13 +26,13 @@ module run_config
         character(len=3), allocatable :: name_l(:), name_p(:)       ! atomic names
         real(dp),         allocatable :: mass_l(:), mass_p(:)       ! atomic masses
         integer,          allocatable :: md_algo_l(:), md_algo_p(:) ! and respective key
-        real(dp),         allocatable :: einc(:)                    ! incidence energy (eV)
-        real(dp),         allocatable :: inclination(:)             ! incidence polar angle (degree)
-        real(dp),         allocatable :: azimuth(:)                 ! incidence azimuthal angle (degree)
-        real(dp):: Tsurf                                            ! surface temperature in K
-        real(dp):: sa_Tmax                                          ! max. Tsurf for simulated annealing in K
-        integer :: sa_nsteps                                        ! number of steps per simulated annealing cycle
-        integer :: sa_interval                                      ! number of steps per temperature interval
+        real(dp) :: einc, sigma_einc                                ! incidence energy (eV)
+        real(dp) :: polar                                     ! incidence polar angle (degree)
+        real(dp) :: azimuth                                         ! incidence azimuthal angle (degree)
+        real(dp) :: Tsurf                                            ! surface temperature in K
+        real(dp) :: sa_Tmax                                          ! max. Tsurf for simulated annealing in K
+        integer  :: sa_nsteps                                        ! number of steps per simulated annealing cycle
+        integer  :: sa_interval                                      ! number of steps per temperature interval
         character(len=7)    :: confname                             ! configuration key
         character(len=max_string_length) :: confname_file           ! name of the system configuration file or folder
         integer :: nconfs                                           ! number of configurations to read in
@@ -66,6 +66,10 @@ contains
         new_simulation_parameters%nlattices = default_int
         new_simulation_parameters%nprojectiles = default_int
         new_simulation_parameters%Tsurf   = default_real
+        new_simulation_parameters%einc  = default_real
+        new_simulation_parameters%sigma_einc = default_real
+        new_simulation_parameters%polar = default_real
+        new_simulation_parameters%azimuth = default_real
         new_simulation_parameters%sa_Tmax   = default_real
         new_simulation_parameters%sa_nsteps = default_int
         new_simulation_parameters%sa_interval = default_int
@@ -125,7 +129,7 @@ contains
                         if (nwords == 2) then
                             read(words(2),'(A)') simparams%run
                         else
-                            stop err // "run key needs a single argument"
+                            print *, err, "run key needs a single argument"; stop
                         end if
 
 
@@ -134,9 +138,9 @@ contains
                         if (simparams%start /= default_int) stop 'Error in the input file: Multiple use of the start key'
                         if (nwords == 2) then
                             read(words(2),'(i1000)', iostat=ios) simparams%start
-                            if (ios /= 0)  stop 'Error in the input file: start value must be integer'
+                            if (ios /= 0) stop err // 'start value must be integer'
                         else
-                            stop 'Error in the input file: start key needs a single argument'
+                            print *, err, 'start key needs a single argument'; stop
                         end if
 
 
@@ -147,7 +151,7 @@ contains
                             read(words(2),'(i1000)', iostat=ios) simparams%ntrajs
                             if (ios /= 0) stop 'Error in the input file: ntrajs value must be integer'
                         else
-                            stop 'Error in the input file: ntrajs key needs a single argument'
+                            print *, err, 'ntrajs key needs a single argument'; stop
                         end if
 
 
@@ -158,18 +162,18 @@ contains
                             read(words(2),'(i1000)', iostat=ios) simparams%nsteps
                             if (ios /= 0) stop 'Error in the input file: nsteps value must be integer'
                         else
-                            stop 'Error in the input file: nsteps key needs a single argument'
+                            print *, err, 'nsteps key needs a single argument'
                         end if
 
 
                     case('step')
 
-                        if (simparams%step /= default_real)   stop 'Error in the input file: Multiple use of the step key'
+                        if (simparams%step /= default_real) stop err // 'Multiple use of the step key'
                         if (nwords == 2) then
                             read(words(2),*, iostat=ios) simparams%step
-                            if (ios /= 0) stop 'Error in the input file: step value must be a number'
+                            if (ios /= 0) stop err // 'step value must be a number'
                         else
-                            stop 'Error in the input file: step key needs a single argument'
+                            print *, err // 'step key needs a single argument'; stop
                         end if
 
 
@@ -191,12 +195,12 @@ contains
                                     select case (words(2+3*i))
                                         case ('ver')                ! verlet
                                             simparams%md_algo_l(i) = prop_id_verlet
-!                                        case ('bee')                ! beeman
-!                                            simparams%md_algo_l(i) = prop_id_beeman
+                                        !                                        case ('bee')                ! beeman
+                                        !                                            simparams%md_algo_l(i) = prop_id_beeman
                                         case ('lan')                ! langevin
                                             simparams%md_algo_l(i) = prop_id_langevin
-!                                        case ('sla')                ! langevin (series)
-!                                            simparams%md_algo_l(i) = prop_id_langevin_series
+                                        !                                        case ('sla')                ! langevin (series)
+                                        !                                            simparams%md_algo_l(i) = prop_id_langevin_series
                                         case ('and')
                                             simparams%md_algo_l(i) = prop_id_andersen
                                         case ('pil')
@@ -208,11 +212,11 @@ contains
                                     end select
                                 end do
                             else
-                                stop 'Error in the input file: lattice key has wrong number of arguments'
+                                print *, err, 'lattice key has wrong number of arguments'; stop
                             end if
 
                         else
-                            stop 'Error in the input file: lattice key needs arguments'
+                            print *, err, 'lattice key needs arguments'; stop
                         end if
 
 
@@ -234,12 +238,12 @@ contains
                                     select case (words(2+3*i))
                                         case ('ver')                ! verlet
                                             simparams%md_algo_p(i) = prop_id_verlet
-!                                        case ('bee')                ! beeman
-!                                            simparams%md_algo_p(i) = prop_id_beeman
+                                        !                                        case ('bee')                ! beeman
+                                        !                                            simparams%md_algo_p(i) = prop_id_beeman
                                         case ('lan')                ! langevin
                                             simparams%md_algo_p(i) = prop_id_langevin
-!                                        case ('sla')                ! langevin (series)
-!                                            simparams%md_algo_p(i) = prop_id_langevin_series
+                                        !                                        case ('sla')                ! langevin (series)
+                                        !                                            simparams%md_algo_p(i) = prop_id_langevin_series
                                         case ('and')
                                             simparams%md_algo_p(i) = prop_id_andersen
                                         case ('pil')
@@ -251,55 +255,71 @@ contains
                                     end select
                                 end do
                             else
-                                stop 'Error in the input file: projectile key has wrong number of arguments'
+                                print *, err, 'projectile key has wrong number of arguments'; stop
                             end if
 
                         else
-                            stop 'Error in the input file: projectile key needs arguments'
+                            print *, err, 'projectile key needs arguments'; stop
                         end if
 
 
-                    case('incidence')
+                    case ('Einc')
 
-                        if (allocated(simparams%einc)) stop 'Error in the input file: Multiple use of the incidence key'
-                        if (nwords > 1 .and. mod(nwords - 1, 3) == 0) then
-                            allocate(   simparams%einc((nwords-1)/3),&
-                                simparams%inclination((nwords-1)/3),&
-                                simparams%azimuth((nwords-1)/3)      )
-                            do i=0,(nwords-1)/3 -1
-                                read(words(2+3*i),*, iostat=ios) simparams%einc(i+1)
-                                if (ios /= 0) stop 'Error in the input file: incidence key - einc value must be a number'
-                                read(words(3+3*i),*, iostat=ios) simparams%inclination(i+1)
-                                if (ios /= 0) stop 'Error in the input file: incidence key - inclination value must be a number'
-                                read(words(4+3*i),*, iostat=ios) simparams%azimuth(i+1)
-                                if (ios /= 0) stop 'Error in the input file: incidence key - azimuth value must be a number'
-                            end do
+                        if (simparams%einc /= default_real) stop err // 'Multiple use of the Einc key'
+                        if (nwords == 2) then
+                            read(words(2), *, iostat=ios) simparams%einc
+                            if (ios /= 0) stop err // 'incidence energy must be a number'
+                        else if (nwords == 3) then
+                            read(words(2:3), *, iostat=ios) simparams%einc, simparams%sigma_einc
+                            if (ios /= 0) stop err // 'einc keyword only takes numerical arguments'
                         else
-                            stop 'Error in the input file: incidence key needs (3 x n_projectiles) arguments'
+                            print *, err // 'einc key needs one or two arguments'; stop
                         end if
 
 
-                    case('Tsurf')
+                    case ('polar')
 
-                        if (simparams%Tsurf /= default_real) stop 'Error in the input file: Multiple use of the Tsurf key'
+                        if (simparams%polar /= default_real) stop err // 'Multiple use of the polar key'
+                        if (nwords == 2) then
+                            read(words(2),*, iostat=ios) simparams%polar
+                            if (ios /= 0) stop err // 'polar value must be a number'
+                        else
+                            print *, err // 'polar key needs a single argument'; stop
+                        end if
+
+
+                    case ('azimuth')
+
+                        if (simparams%azimuth /= default_real) stop err // 'Multiple use of the azimuth key'
+                        if (nwords == 2) then
+                            read(words(2),*, iostat=ios) simparams%azimuth
+                            if (ios /= 0) stop err // 'azimuth value must be a number'
+                        else
+                            print *, err // 'azimuth key needs a single argument'; stop
+                        end if
+
+
+                    case ('Tsurf')
+
+                        if (simparams%Tsurf /= default_real) stop err // 'Multiple use of the Tsurf key'
                         if (nwords == 2) then
                             read(words(2),*, iostat=ios) simparams%Tsurf
-                            if (ios /= 0) stop 'Error in the input file: Tsurf value must be a number'
+                            if (ios /= 0) stop err // 'Tsurf value must be a number'
                         else
-                            stop 'Error in the input file: Tsurf key needs a single argument'
+                            print *, err, 'Tsurf key needs a single argument'; stop
                         end if
 
 
                     case('annealing')
 
-                        if (simparams%sa_Tmax /= default_real) stop 'Error in the input file: Multiple use of the annealing key'
+                        if (simparams%sa_Tmax /= default_real) stop err // 'Multiple use of the annealing key'
                         if (nwords == 4) then
                             read(words(2),*, iostat=ios) simparams%sa_Tmax
-                            if (ios /= 0) stop 'Error in the input file: annealing key - sa_Tmax value must be a number'
+                            if (ios /= 0) stop err // 'annealing key - sa_Tmax value must be a number'
                             read(words(3),'(i1000)', iostat=ios) simparams%sa_nsteps
-                            if (ios /= 0) stop 'Error in the input file: annealing key - sa_nsteps value must be integer'
+                            if (ios /= 0) stop err // 'annealing key - sa_nsteps value must be integer'
                             read(words(4),'(i1000)', iostat=ios) simparams%sa_interval
-                            if (ios /= 0) stop 'Error in the input file: annealing key - sa_interval value must be integer'
+                            if (ios /= 0) stop err // 'annealing key - sa_interval value must be integer'
                         else
                             stop 'Error in the input file: annealing key needs 3 arguments'
                         end if
@@ -307,7 +327,7 @@ contains
 
                     case ('conf')
 
-                        if (simparams%confname /= default_string) stop 'Error in the input file: Multiple use of the conf key'
+                        if (simparams%confname /= default_string) stop err // 'Multiple use of the conf key'
                         if (nwords > 2) then
                             read(words(2),'(A)') simparams%confname
                             call lower_case(simparams%confname)
@@ -317,13 +337,13 @@ contains
                                 case ('poscar')
                                     ! conf poscar <poscar_file> <x_rep> <y_rep>
                                     read(words(3),'(A)') simparams%confname_file
-                                    if (nwords > 5) stop 'Error in the input file: conf key - poscar argument number is too large'
+                                    if (nwords > 5) stop err // 'conf key - poscar argument number is too large'
                                     if (words(4) /= "") then
                                         read(words(4),'(i1000)',iostat=ios) simparams%rep(1)
-                                        if (ios /= 0) stop 'Error in the input file: conf key - poscar repetition arguments must be integer'
+                                        if (ios /= 0) stop err // 'conf key - poscar repetition arguments must be integer'
                                         if (words(5) /= "") then
                                             read(words(5),'(i1000)',iostat=ios) simparams%rep(2)
-                                            if (ios /= 0) stop 'Error in the input file: conf key - poscar repetition arguments must be integer'
+                                            if (ios /= 0) stop err // 'conf key - poscar repetition arguments must be integer'
                                         else
                                             simparams%rep(2) = simparams%rep(1)
                                         end if
@@ -335,17 +355,17 @@ contains
                                     read(words(3),'(A)') simparams%confname_file
                                     if (nwords == 4) then
                                         read(words(4),'(i1000)',iostat=ios) simparams%nconfs
-                                        if (ios /= 0) stop 'Error in the input file: conf key - mxt argument must be integer'
+                                        if (ios /= 0) stop err // 'conf key - mxt argument must be integer'
                                         call random_number(rnd)
                                         write(simparams%confname_file, '(2a, i8.8, a)') trim(simparams%confname_file), "/mxt_", int(rnd*simparams%nconfs)+1, ".dat"
                                     end if
-                                    if (nwords < 3) stop 'Error in the input file: conf key - too few mxt arguments'
-                                    if (nwords > 4) stop 'Error in the input file: conf key - too many mxt arguments'
+                                    if (nwords < 3) stop err // 'conf key - too few mxt arguments'
+                                    if (nwords > 4) stop err // 'conf key - too many mxt arguments'
 
                                 case ('merge')
                                     ! conf mergewith <mxt_folder> <n>: randomly select mxt files 1<=x<=n from folder
                                     if (nwords /= 6) stop err // "conf merge needs projectile mxt folder, # of projectile configurations therein &
-                                        lattice mxt folder and # of lattice configurations therein"
+                                        lattice mxt folder and # of lattice configurations therein"                                    
                                     ! projectile
                                     read(words(3),'(A)') simparams%merge_proj_file
                                     read(words(4),'(i1000)',iostat=ios) simparams%merge_proj_nconfs
@@ -379,17 +399,17 @@ contains
                         allocate(simparams%output_type((nwords-1)/2), simparams%output_interval((nwords-1)/2))
                         do i = 1, (nwords-1)/2
                             select case (words(2*i))
-                            case (output_key_xyz)
-                                simparams%output_type(i) = output_id_xyz
-                            case (output_key_energy)
-                                simparams%output_type(i) = output_id_energy
-                            case (output_key_poscar)
-                                simparams%output_type(i) = output_id_poscar
-                            case (output_key_mxt)
-                                simparams%output_type(i) = output_id_mxt
-                            case default
-                                print *, 'Error in the input file: output format ', trim(words(2*i)), ' unknown'
-                                stop
+                                case (output_key_xyz)
+                                    simparams%output_type(i) = output_id_xyz
+                                case (output_key_energy)
+                                    simparams%output_type(i) = output_id_energy
+                                case (output_key_poscar)
+                                    simparams%output_type(i) = output_id_poscar
+                                case (output_key_mxt)
+                                    simparams%output_type(i) = output_id_mxt
+                                case default
+                                    print *, 'Error in the input file: output format ', trim(words(2*i)), ' unknown'
+                                    stop
                             end select
 
                             read (words(2*i+1), '(i1000)', iostat=ios) simparams%output_interval(i)
@@ -424,9 +444,9 @@ contains
 
 
                     case ('force_beads')
-                       if (simparams%force_beads /= default_int) stop 'Error in the input file: Multiple use of the force_beads key'
-                       read(words(2), '(i1000)', iostat=ios) simparams%force_beads
-                       if (ios /= 0) stop 'Error in the input file: Error reading force_beads'
+                        if (simparams%force_beads /= default_int) stop 'Error in the input file: Multiple use of the force_beads key'
+                        read(words(2), '(i1000)', iostat=ios) simparams%force_beads
+                        if (ios /= 0) stop 'Error in the input file: Error reading force_beads'
 
                     !TODO: add keywords for fit
 
