@@ -2381,7 +2381,7 @@ contains
                 rij = distances(:,i,j)
                 call cufu(rij, pes_rebo%Dmin(itype,jtype), pes_rebo%Dmax(itype,jtype), wij, dwij)
 
-                if (all(wij < TOLERANCE)) cycle
+                if (all(wij < tolerance)) cycle
 
                 rsq = rij*rij
 
@@ -2390,7 +2390,8 @@ contains
                 pre = wij * pes_rebo%A(itype,jtype) * exp(-pes_rebo%alpha(itype,jtype)*rij)
                 dVRdi = pre * ( (-pes_rebo%alpha(itype,jtype)) - (pes_rebo%Q(itype,jtype)/rsq) &
                     - (pes_rebo%Q(itype,jtype)*pes_rebo%alpha(itype,jtype)/rij) )
-                dVRdi = dVRdi + VR/wij * dwij
+
+                where (wij > tolerance) dVRdi = dVRdi + VR/wij * dwij
 
                 VA = 0.0_dp
                 dVA = 0.0_dp
@@ -2399,7 +2400,8 @@ contains
                     VA   = VA + term
                     dVA  = dVA - pes_rebo%beta(k,itype,jtype) * term
                 end do
-                dVA = dVA + VA/wij * dwij
+
+                where (wij > tolerance) dVA = dVA + VA/wij * dwij
 
                 call rebo_bondorder(atoms, i, j, nC, nH, distances, vectors, VA, bij, flag)
                 dVAdi = bij*dVA

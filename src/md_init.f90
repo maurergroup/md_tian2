@@ -172,6 +172,9 @@ contains
             call merge_universes(atoms, proj)
         end if
 
+        ! prepare initial projectile velocity vector (if provided)
+        if (any(atoms%is_proj)) call set_proj_incidence(atoms)
+
     end subroutine read_geometry
 
 
@@ -390,15 +393,13 @@ contains
             if (.not. allocated(simparams%output_type) .or. .not. allocated(simparams%output_interval)) &
                 stop err // "output options not set."
             if (any(simparams%output_interval > simparams%nsteps)) print *, warn // "one or more outputs will not show, &
-                since the output interval is larger than the total number of simulation steps."     
+                since the output interval is larger than the total number of simulation steps."            
         
 
             ! If one of them is set, the others must be set as well.
             if (any([simparams%einc, simparams%polar, simparams%azimuth] == default_real) .and.  &
                 .not. all([simparams%einc, simparams%polar, simparams%azimuth] == default_real)) &
                 stop err // "incidence conditions ambiguous."
-
-            stop 111
 
             if (any(simparams%pip == default_string) /= all(simparams%pip == default_string)) stop err // "you have set all pip arguments"
 
@@ -596,6 +597,25 @@ contains
 
 
 
+    subroutine remove_atomic_com(atoms, i)
+
+        type(universe), intent(inout) :: atoms
+        integer, intent(in)           :: i
+
+        integer  :: b
+        real(dp) :: v_cm(3)
+
+        v_cm = sum(atoms%v(:,:,i), dim=2) / atoms%nbeads
+
+        do b = 1, atoms%nbeads
+            atoms%v(:,b,i) = atoms%v(:,b,i) - v_cm
+        end do
+
+    end subroutine remove_atomic_com
+
+
+
+
     subroutine set_atomic_indices(atoms, natoms)
 
         ! Each atom has a unique index 1, 2, ..., n, where n is the number of species in
@@ -730,6 +750,47 @@ contains
 
 
 
+    subroutine set_proj_incidence(atoms)
+
+        type(universe), intent(inout) :: atoms
+
+        real(dp) :: vinc, drawn_einc, proj_mass, vx, vy, vz
+        integer  :: i
+        character(len=*), parameter :: err = "Error in set_proj_incidence: "
+
+        ! return if no information is provided
+        if (all([simparams%einc, simparams%polar, simparams%azimuth] == default_real)) return
+
+        ! draw incidence energy from normal distribution
+        call normal_deviate(simparams%einc, simparams%sigma_einc, drawn_einc)
+
+        ! convert to velocity
+        proj_mass = 0.0_dp
+        do i = 1, atoms%natoms
+            if (atoms%is_proj(atoms%idx(i))) proj_mass = proj_mass + atoms%m(i)
+        end do
+
+        vinc =  sqrt(2*drawn_einc/proj_mass)
+        vx   =  vinc * sin(simparams%polar) * cos(simparams%azimuth)
+        vy   =  vinc * sin(simparams%polar) * sin(simparams%azimuth)
+        vz   = -vinc * cos(simparams%polar)
+
+        do i = 1, atoms%natoms
+            if (atoms%is_proj(atoms%idx(i))) then
+                call remove_atomic_com(atoms, i)
+                atoms%v(1,:,i) = atoms%v(1,:,i) + vx
+                atoms%v(2,:,i) = atoms%v(2,:,i) + vy
+                atoms%v(3,:,i) = atoms%v(3,:,i) + vz
+            else
+                return    ! projectiles are always at the beginning of universe object
+            end if
+        end do
+
+    end subroutine set_proj_incidence
+
+
+
+
     subroutine set_atomic_dofs(atoms)
 
         type(universe), intent(inout) :: atoms
@@ -763,10 +824,6 @@ contains
                 print *, err, "lattice confname_file has wrong format. It needs to end on /mxt_%08d.dat"; stop
             end if
 
-            call open_for_append(54, "test.dat")
-            write(54, '(i8.8)') new_conf
-
-
             ! renew simparams projectile geometry file
             mxt_idx = index(simparams%merge_proj_file, "mxt_")
             dat_idx = index(simparams%merge_proj_file, ".dat")
@@ -781,20 +838,15 @@ contains
             ! read the geometry files and combine
             call read_mxt(proj, simparams%merge_proj_file)
             call read_mxt(slab, simparams%confname_file)
-            print *, "b4"
-            print *, proj%r
+
             call merge_universes(slab, proj)
-            print *, "after"
-            print *, slab%r(:,:,1)
-
             atoms = slab
-
-            write(54, '(i8.8)') new_conf
-            close(54)
 
         else
             print *, err, "multiple trajectories only available for <conf merge> option"; stop
         end if
+
+        if (any(atoms%is_proj)) call set_proj_incidence(atoms)
 
     end subroutine prepare_next_traj
 

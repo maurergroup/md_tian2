@@ -47,6 +47,7 @@ module run_config
         real(dp) :: andersen_time                                   ! average time between collsions per atom
         real(dp) :: pile_tau                                        ! PILE thermostat centroid mode thermostat time constant
         integer  :: force_beads                                     ! inititalizes all atoms with this many beads
+        real(dp) :: proj_ul                                         ! stop trajectory if projectile's z-coordinate is higher that this value
 
     end type
 
@@ -85,6 +86,7 @@ contains
         new_simulation_parameters%andersen_time = 30.0_dp
         new_simulation_parameters%pile_tau = 200.0_dp
         new_simulation_parameters%force_beads = default_int
+        new_simulation_parameters%proj_ul = default_real
 
     end function
 
@@ -269,6 +271,7 @@ contains
                         if (nwords == 2) then
                             read(words(2), *, iostat=ios) simparams%einc
                             if (ios /= 0) stop err // 'incidence energy must be a number'
+                            simparams%sigma_einc = 0.0_dp
                         else if (nwords == 3) then
                             read(words(2:3), *, iostat=ios) simparams%einc, simparams%sigma_einc
                             if (ios /= 0) stop err // 'einc keyword only takes numerical arguments'
@@ -283,6 +286,7 @@ contains
                         if (nwords == 2) then
                             read(words(2),*, iostat=ios) simparams%polar
                             if (ios /= 0) stop err // 'polar value must be a number'
+                            simparams%polar = simparams%polar * deg2rad
                         else
                             print *, err // 'polar key needs a single argument'; stop
                         end if
@@ -294,6 +298,7 @@ contains
                         if (nwords == 2) then
                             read(words(2),*, iostat=ios) simparams%azimuth
                             if (ios /= 0) stop err // 'azimuth value must be a number'
+                            simparams%azimuth = simparams%azimuth * deg2rad
                         else
                             print *, err // 'azimuth key needs a single argument'; stop
                         end if
@@ -407,6 +412,8 @@ contains
                                     simparams%output_type(i) = output_id_poscar
                                 case (output_key_mxt)
                                     simparams%output_type(i) = output_id_mxt
+                                case (output_key_scatter)
+                                    simparams%output_type(i) = output_id_scatter
                                 case default
                                     print *, 'Error in the input file: output format ', trim(words(2*i)), ' unknown'
                                     stop
@@ -415,6 +422,7 @@ contains
                             read (words(2*i+1), '(i1000)', iostat=ios) simparams%output_interval(i)
                             if (ios /= 0) stop 'Error in the input file: output interval must be integer'
                         end do
+
 
                     case ('pip')
 
@@ -434,19 +442,28 @@ contains
 
 
                     case ('andersen_time')
+
                         read(words(2), *, iostat=ios) simparams%andersen_time
                         if (ios /= 0) stop 'Error in the input file: Error reading Andersen collision time'
 
 
                     case ('pile_tau')
+
                         read(words(2), *, iostat=ios) simparams%pile_tau
                         if (ios /= 0) stop 'Error in the input file: Error reading PILE tau'
 
 
                     case ('force_beads')
+
                         if (simparams%force_beads /= default_int) stop 'Error in the input file: Multiple use of the force_beads key'
                         read(words(2), '(i1000)', iostat=ios) simparams%force_beads
                         if (ios /= 0) stop 'Error in the input file: Error reading force_beads'
+
+
+                    case ('pul')
+                        if (simparams%proj_ul /= default_real) stop err // "projectile upper limit set mulptiple times"
+                        read(words(2), *, iostat=ios) simparams%proj_ul
+                        if (ios /= 0) stop err // "Error reading proj_upper_limit"
 
                     !TODO: add keywords for fit
 

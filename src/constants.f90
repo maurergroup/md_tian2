@@ -61,15 +61,17 @@ module constants
 
 
     ! Output
-    character(len=*), parameter :: output_key_xyz    = "xyz"
-    character(len=*), parameter :: output_key_energy = "energy"
-    character(len=*), parameter :: output_key_poscar = "poscar"
-    character(len=*), parameter :: output_key_mxt    = "mxt"
+    character(len=*), parameter :: output_key_xyz     = "xyz"
+    character(len=*), parameter :: output_key_energy  = "energy"
+    character(len=*), parameter :: output_key_poscar  = "poscar"
+    character(len=*), parameter :: output_key_mxt     = "mxt"
+    character(len=*), parameter :: output_key_scatter = "scatter"
 
-    integer, parameter :: output_id_xyz    = 1
-    integer, parameter :: output_id_energy = 2
-    integer, parameter :: output_id_poscar = 3
-    integer, parameter :: output_id_mxt    = 4
+    integer, parameter :: output_id_xyz     = 1
+    integer, parameter :: output_id_energy  = 2
+    integer, parameter :: output_id_poscar  = 3
+    integer, parameter :: output_id_mxt     = 4
+    integer, parameter :: output_id_scatter = 5
 
     ! Conversion constants to program units
     !

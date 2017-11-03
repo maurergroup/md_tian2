@@ -16,6 +16,7 @@ program md_tian
     use md_algo
     use md_init
     use pes_lj_mod
+    use constants
     use rpmd
     use universe_mod
     use output_mod, only : output
@@ -42,6 +43,7 @@ program md_tian
 
 
                 call calc_force(atoms, energy_and_force)
+                if (any(simparams%output_type == output_id_scatter)) call output(atoms, itraj, -1, "scatter_initial")
                 print *, "Eref", atoms%epot
 
                 do istep = 1, simparams%nsteps
@@ -53,9 +55,15 @@ program md_tian
 
                     if (any(mod(istep, simparams%output_interval) == 0)) call output(atoms, itraj, istep)
 
+                    if ( sum(atoms%r(3,:,1))/atoms%nbeads > simparams%proj_ul .and. atoms%is_proj(atoms%idx(1)) &
+                         .and. any(simparams%output_type == output_id_scatter)) then
+                        call output(atoms, itraj, istep, "scatter_final")
+                        exit
+                    end if
+
                 end do
 
-                if (itraj /= simparams%start+simparams%ntrajs-1) call prepare_next_traj(atoms)
+                if (itraj < simparams%start+simparams%ntrajs-1) call prepare_next_traj(atoms)
 
             end do
 

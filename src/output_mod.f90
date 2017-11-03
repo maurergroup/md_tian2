@@ -17,13 +17,19 @@ module output_mod
 
 contains
 
-    subroutine output(atoms, itraj, istep)
+    subroutine output(atoms, itraj, istep, flag)
 
         type(universe), intent(in) :: atoms
         integer, intent(in)        :: itraj, istep
+        character(len=*), intent(in), optional :: flag
 
         integer :: i
         character(len=*), parameter :: err = "Error in output(): "
+
+        ! use only for start of md trajectory
+        if (present(flag)) then
+            call output_scatter(atoms, itraj, istep, flag)
+        end if
 
         do i = 1, size(simparams%output_type)
             if (modulo(istep, simparams%output_interval(i)) == 0) then
@@ -237,5 +243,60 @@ contains
         close(out_unit)
 
     end subroutine output_mxt
+
+
+
+
+    subroutine output_scatter(atoms, itraj, istep, flag)
+
+        type(universe), intent(in) :: atoms
+        integer, intent(in) :: itraj, istep
+        character(len=*), intent(in) :: flag
+
+
+        real(dp) :: ekin_p, ekin_l, atom_epot, proj_r(3), proj_v(3), time
+        character(len=max_string_length) :: fname
+        character(len=8)                 :: fid
+        character(len=*), parameter :: err = "Error in output_scatter: "
+
+        if (count(atoms%is_proj) > 1) stop err // "output_scatter does not work for more that one projectile, please implement"
+
+        ! XXX: change system() to execute_command_line() when new compiler is available
+        if (.not. dir_exists('traj')) call system('mkdir traj')
+
+        write(fid,'(i8.8)') itraj
+        fname = 'traj/mxt_fin'//fid//'.dat'
+
+        if (flag == "scatter_initial") then
+
+            call atom_ekin(atoms, ekin_p, ekin_l)
+            atom_epot = sum(atoms%epot)/atoms%nbeads
+            proj_r = sum(atoms%r(:,:,1), dim=2)/atoms%nbeads
+            proj_v = sum(atoms%v(:,:,1), dim=2)/atoms%nbeads
+
+            call open_for_append(out_unit, fname)
+            write(out_unit, '(9f12.5)') ekin_p, ekin_l, atom_epot, proj_r, proj_v
+
+            close (out_unit)
+
+        else if (flag == "scatter_final") then
+
+            call atom_ekin(atoms, ekin_p, ekin_l)
+            atom_epot = sum(atoms%epot)/atoms%nbeads
+            proj_r = sum(atoms%r(:,:,1), dim=2)/atoms%nbeads
+            proj_v = sum(atoms%v(:,:,1), dim=2)/atoms%nbeads
+            time = istep * simparams%step
+
+            call open_for_append(out_unit, fname)
+            write(out_unit, '(10f12.5)') ekin_p, ekin_l, atom_epot, proj_r, proj_v, time
+
+            close (out_unit)
+
+        else
+            print *, err, "unknown flag", flag
+            stop
+        end if
+
+    end subroutine output_scatter
 
 end module output_mod
