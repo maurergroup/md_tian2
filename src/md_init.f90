@@ -39,7 +39,7 @@ contains
 
         character(len=:), allocatable :: input_file
         integer :: input_file_length, input_file_status
-        integer :: randk
+        integer :: i
 
         ! Read in name of input file
         if (command_argument_count() == 0) stop " I need an input file"
@@ -49,12 +49,11 @@ contains
         call get_command_argument(1, input_file, input_file_length, input_file_status)
         if (input_file_status /= 0) stop " Error by reading the command line"
 
-        ! size of seed for random number generator
-        randk=size(randseed)
-        call random_seed(size=randk)
 
-        call read_input_file(input_file)        ! build the simparams object
+        ! build the simparams object
+        call read_input_file(input_file)
         call ensure_input_sanity()
+
 
         call read_geometry(atoms, simparams%confname_file)
         call ensure_geometry_sanity(atoms)
@@ -62,6 +61,8 @@ contains
         call read_pes(atoms)
         !call remove_com_velocity(atoms)
         call post_process(atoms)
+
+
 
     end subroutine simbox_init
 

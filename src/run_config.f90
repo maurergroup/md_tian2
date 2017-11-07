@@ -94,7 +94,7 @@ contains
 
         character(len=*), intent(in) :: input_file
 
-        integer :: i, ios = 0, line = 0, nwords
+        integer :: i, ios = 0, line = 0, nwords, randk
         real(dp) :: rnd
         character(len=max_string_length) :: buffer
         character(len=max_string_length) :: words(100)
@@ -113,17 +113,50 @@ contains
         ! ios > 0: an error is detected
         ! ios = 0  otherwise
 
+        ! find the start key, to rotate random number generator
+        do while (ios == 0)
+            read(inp_unit, '(A)', iostat=ios) buffer
+            if (ios == 0) then
+                line = line + 1
+                ! Split an input string
+                call split_string(buffer, words, nwords)
+                select case (words(1))
+                    case('start')
+                        if (simparams%start /= default_int) stop 'Error in the input file: Multiple use of the start key'
+                        if (nwords == 2) then
+                            read(words(2),'(i1000)', iostat=ios) simparams%start
+                            if (ios /= 0) stop err // 'start value must be integer'
+                        else
+                            print *, err, 'start key needs a single argument'; stop
+                        end if
+                end select
+            end if
+        end do
+
+        close(inp_unit)
+
+        ! size of seed for random number generator
+        randk=size(randseed)
+        call random_seed(size=randk)
+        call random_seed(put=randseed)
+
+        ! rotate rng
+        do i = 1, 100*simparams%start
+            call random_number(rnd)
+        end do
+
+        ! read rest of the input file
+        call open_for_read(inp_unit, input_file); ios = 0
+
         do while (ios == 0)
 
             read(inp_unit, '(A)', iostat=ios) buffer
             if (ios == 0) then
-
                 line = line + 1
                 ! Split an input string
                 call split_string(buffer, words, nwords)
 
                 select case (words(1))
-
 
                     case ('run')
 
@@ -132,17 +165,6 @@ contains
                             read(words(2),'(A)') simparams%run
                         else
                             print *, err, "run key needs a single argument"; stop
-                        end if
-
-
-                    case('start')
-
-                        if (simparams%start /= default_int) stop 'Error in the input file: Multiple use of the start key'
-                        if (nwords == 2) then
-                            read(words(2),'(i1000)', iostat=ios) simparams%start
-                            if (ios /= 0) stop err // 'start value must be integer'
-                        else
-                            print *, err, 'start key needs a single argument'; stop
                         end if
 
 

@@ -36,23 +36,26 @@ contains
 
                 select case (simparams%output_type(i))
 
-                case (output_id_xyz)
-                    call output_xyz(atoms, itraj)
+                    case (output_id_xyz)
+                        call output_xyz(atoms, itraj)
 
-                case (output_id_energy)
-                    call output_nrg(atoms, itraj, istep)
+                    case (output_id_energy)
+                        call output_nrg(atoms, itraj, istep)
 
-                case (output_id_poscar)
-                    call output_poscar(atoms)
-                    out_id_poscar = out_id_poscar + 1
+                    case (output_id_poscar)
+                        call output_poscar(atoms)
+                        out_id_poscar = out_id_poscar + 1
 
-                case (output_id_mxt)
-                    call output_mxt(atoms)
-                    out_id_mxt = out_id_mxt + 1
+                    case (output_id_mxt)
+                        call output_mxt(atoms)
+                        out_id_mxt = out_id_mxt + 1
 
-                case default
-                    print *, err // "unknown output format"
-                    stop
+                    case (output_id_scatter)
+                        ! pass
+
+                    case default
+                        print *, err // "unknown output format", simparams%output_type(i)
+                        stop
                 end select
             end if
         end do
@@ -254,7 +257,7 @@ contains
         character(len=*), intent(in) :: flag
 
 
-        real(dp) :: ekin_p, ekin_l, atom_epot, proj_r(3), proj_v(3), time
+        real(dp) :: ekin_p, ekin_l, atom_epot, proj_r(3), proj_v(3), proj_polar, proj_azi, time
         character(len=max_string_length) :: fname
         character(len=8)                 :: fid
         character(len=*), parameter :: err = "Error in output_scatter: "
@@ -274,8 +277,19 @@ contains
             proj_r = sum(atoms%r(:,:,1), dim=2)/atoms%nbeads
             proj_v = sum(atoms%v(:,:,1), dim=2)/atoms%nbeads
 
-            call open_for_append(out_unit, fname)
-            write(out_unit, '(9f12.5)') ekin_p, ekin_l, atom_epot, proj_r, proj_v
+            proj_polar = 180-acos(proj_v(3)/sqrt(sum(proj_v*proj_v)))*rad2deg
+            proj_azi = atan2(proj_v(2), proj_v(1))*rad2deg
+
+            if (file_exists(fname)) then
+                open(out_unit, file=fname, status="old", position="append", action="write")
+            else
+                open(out_unit, file=fname, status="new", action="write")
+                write(out_unit, '(17a14)') "#ekin_p_i/eV", "ekin_l_i/eV", "epot/eV", "p_x_i/A", "p_y_i/A", "p_z_i/A", &
+                    "polar_i/deg", "azi_i/deg", "ekin_p_f/eV", "ekin_l_f/eV", "epot/eV", "p_x_f/A", &
+                    "p_y_f/A", "p_z_f/A", "polar_f/deg", "azi_f/deg", "time/fs"
+            end if
+
+            write(out_unit, '(8f14.7$)', advance="no") ekin_p, ekin_l, atom_epot, proj_r, proj_polar, proj_azi
 
             close (out_unit)
 
@@ -285,10 +299,14 @@ contains
             atom_epot = sum(atoms%epot)/atoms%nbeads
             proj_r = sum(atoms%r(:,:,1), dim=2)/atoms%nbeads
             proj_v = sum(atoms%v(:,:,1), dim=2)/atoms%nbeads
-            time = istep * simparams%step
+
+            proj_polar = acos(proj_v(3)/sqrt(sum(proj_v*proj_v)))*rad2deg
+            proj_azi = atan2(proj_v(2), proj_v(1))*rad2deg
+
+            time = (istep-1) * simparams%step
 
             call open_for_append(out_unit, fname)
-            write(out_unit, '(10f12.5)') ekin_p, ekin_l, atom_epot, proj_r, proj_v, time
+            write(out_unit, '(9f14.7)') ekin_p, ekin_l, atom_epot, proj_r, proj_polar, proj_azi, time
 
             close (out_unit)
 

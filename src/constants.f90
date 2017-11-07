@@ -33,7 +33,7 @@ module constants
 
 
     ! Internal program constants
-    integer, parameter :: randseed(13)   = [7,5,3,11,9,1,17,2,9,6,4,5,8]
+    integer, parameter :: randseed(13) = [7,5,3,11,9,1,17,2,9,6,4,5,8]
     integer, parameter :: max_string_length = 1000
     real(dp), parameter :: tolerance = 1.0e-9_dp
 
@@ -85,6 +85,7 @@ module constants
     !           bohr   : bohr = 0.5291772 Angstroem
     real(dp), parameter :: amu2mass  = 103.638239276_dp
     real(dp), parameter :: deg2rad   = pi/180.0_dp
+    real(dp), parameter :: rad2deg   = 180.0_dp/pi
     real(dp), parameter :: bohr2ang  = 0.529177211_dp
     real(dp), parameter :: p2GPa     = 160.2176565_dp
     real(dp), parameter :: joule2ev  = 6.2415093433e+18_dp
