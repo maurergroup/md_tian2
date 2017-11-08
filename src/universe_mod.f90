@@ -119,11 +119,11 @@ contains
         !        print *, "before"
         !        print *, this%r
 
-!        ! XXX: ONLY WORKS FOR rep(1) == rep(2)
-!        if (rep(1) /= rep(2)) then
-!            print *, "Repetition does not work yet for asymmetrical repetitions."
-!            call abort
-!        end if
+        !        ! XXX: ONLY WORKS FOR rep(1) == rep(2)
+        !        if (rep(1) /= rep(2)) then
+        !            print *, "Repetition does not work yet for asymmetrical repetitions."
+        !            call abort
+        !        end if
 
         ! convert to direct coordinates
         if (this%is_cart) call to_direct(this)
@@ -207,13 +207,18 @@ contains
 
         type(universe), intent(inout) :: this
         real(dp) :: v_cm(3)
-        integer :: i, b
+        integer :: i, b, dummy
 
-        v_cm = calc_com_velocity(this)
+        !!! FIXME: Somehow this needs to be applied very ofter to work
 
-        do i = 1, this%natoms
-            do b = 1, this%nbeads
-                this%v(:,b,i) = this%v(:,b,i) - v_cm
+        do dummy = 1, 1000
+
+            v_cm = calc_com_velocity(this)
+
+            do i = 1, this%natoms
+                do b = 1, this%nbeads
+                    this%v(:,b,i) = this%v(:,b,i) - v_cm
+                end do
             end do
         end do
 
@@ -348,7 +353,7 @@ contains
 
         idx = default_int
         do i = 1, this%natoms
-!                print *, i, this%name(this%idx(i)), name, this%is_proj(this%idx(i)), is_proj, this%idx(i)
+            !                print *, i, this%name(this%idx(i)), name, this%is_proj(this%idx(i)), is_proj, this%idx(i)
             if (this%name(this%idx(i)) == name .and. this%is_proj(this%idx(i)) == is_proj) then
                 idx = this%idx(i)
                 exit

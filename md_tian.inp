@@ -1,8 +1,8 @@
 run md
 
-start 1
-ntrajs 5
-nsteps 20
+start 4
+ntrajs 2
+nsteps 3
 step 0.1
 
 projectile 1  H   1.0 ver   
@@ -25,11 +25,11 @@ pul 3.6
 Tsurf 300
 !annealing 1000 25 5
  
-!conf poscar 'H.POSCAR'
-conf merge 'proj' 40 'latt' 40
+!conf poscar 'conf/poscar_00000009.dat'
+conf merge 'proj' 30 'latt' 30
 
 
 !pes definition
 pes 'pes/HC.pes'
 
-output energy 1
+output scatter 800

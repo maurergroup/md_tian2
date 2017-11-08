@@ -117,7 +117,6 @@ contains
         do while (ios == 0)
             read(inp_unit, '(A)', iostat=ios) buffer
             if (ios == 0) then
-                line = line + 1
                 ! Split an input string
                 call split_string(buffer, words, nwords)
                 select case (words(1))
@@ -157,6 +156,9 @@ contains
                 call split_string(buffer, words, nwords)
 
                 select case (words(1))
+
+                    case ('start')
+                        ! pass
 
                     case ('run')
 

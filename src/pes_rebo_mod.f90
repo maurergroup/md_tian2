@@ -1889,15 +1889,13 @@ contains
         !        end do
         !        stop
         !        print '(2i, 7f23.15)', i, j, NijC+NijH, NjiC+NjiH, Nijconj, piRC, dN3
-
         ! piRC forces
         if (flag == ENERGY_AND_FORCE) then
             do k = 1, atoms%natoms
                 if (k /= i .and. k /= j) then
                     rikmag = distances(:,i,k)
-                    ktype = atoms%idx(i)
+                    ktype = atoms%idx(k)
                     call cufu(rikmag, pes_rebo%Dmin(itype,ktype), pes_rebo%Dmax(itype,ktype), wik, dwik)
-
                     rik = vectors(:,:,i,k)
                     Nki = nC(:,k) + nH(:,k) - wik
                     call cufu(Nki, CSF_LOW, CSF_HIGH, SpN, dNki)
@@ -1981,7 +1979,6 @@ contains
                 end if
             end do
         end if
-
 
         Tij = 0.0_dp
         Etmp = 0.0_dp

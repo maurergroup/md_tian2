@@ -36,6 +36,10 @@ contains
             end select
         end do
 
+        if (any(atoms%algo == prop_id_andersen) .or. any(atoms%algo == prop_id_pile)) then
+            call remove_com_velocity(atoms)
+        end if
+
     end subroutine propagate_1
 
 
@@ -65,6 +69,10 @@ contains
 
             end select
         end do
+
+        if (any(atoms%algo == prop_id_andersen) .or. any(atoms%algo == prop_id_pile)) then
+            call remove_com_velocity(atoms)
+        end if
 
     end subroutine propagate_2
 
@@ -145,9 +153,9 @@ contains
             c1 = (1 - 0.5*xidt + 2*twelfth*xidt2)*simparams%step
             c2 = (0.5 - 2*twelfth*xidt + 0.5*twelfth*xidt2)*simparams%step
 
-            if (atoms%nbeads > 1) &
-                sigma_r = simparams%step * sqrt(temp*(8*twelfth*xidt - 0.5*xidt2))
+            sigma_r = simparams%step * sqrt(temp*(8*twelfth*xidt - 0.5*xidt2))
             sigma_v = sqrt(2 * temp * xidt * (1 - xidt))
+
             c_rv    = 0.5 * sqrt3 * (1 - 0.125*xidt)
 
         end if
@@ -191,46 +199,38 @@ contains
 
         real(dp)                             :: temp
         real(dp), dimension(atoms%nbeads)    :: c0, c1, c2, xidt, xidt2, ixidt, &
-            sigma_r, sigma_v, c_rv
+                                                    sigma_r, sigma_v, c_rv
         real(dp), dimension(3, atoms%nbeads) :: randy
         integer :: b
-
 
         temp = kB * atoms%nbeads * simparams%Tsurf / atoms%m(i)
         xidt = dens(:,i) * simparams%step
         xidt2 = xidt * xidt
         ixidt = simparams%step / xidt   ! 1/dens
 
-        do b = 1, atoms%nbeads
+        ! Preventing problems due to precision issues
+        if (all(xidt > 1e-2) .and. simparams%Tsurf > tolerance) then
 
-            ! Preventing problems due to precision issues
-            if (xidt(b) > 1e-2 .and. simparams%Tsurf > tolerance) then
+            c0 = exp(-xidt)
+            c1 = (1 - c0) * ixidt
+            c2 = (1 - c1/simparams%step)*ixidt
 
-                c0(b) = exp(-xidt(b))
-                c1(b) = (1 - c0(b)) * ixidt(b)
-                c2(b) = (1 - c1(b)/simparams%step)*ixidt(b)
+            sigma_r = ixidt * sqrt(temp*(2*xidt - 3 + 4*c0 - c0*c0))
+            sigma_v = sqrt(temp * (1 - c0*c0))
 
-                sigma_r(b) = ixidt(b)*sqrt(temp*(2*xidt(b) - 3 + 4*c0(b) - c0(b)*c0(b)))
-                sigma_v(b) = sqrt(temp * (1 - c0(b)*c0(b)))
+            c_rv    = ixidt*temp*(1 - c0)**2/(sigma_r*sigma_v)
 
-                c_rv(b)    = ixidt(b)*temp*(1 - c0(b))**2/(sigma_r(b)*sigma_v(b))
+        else ! use series up to 2nd order in xi*dt
 
-            else ! use series up to 2nd order in xi*dt
+            c0 = 1 - xidt + 0.5*xidt2
+            c1 = (1 - 0.5*xidt + 2*twelfth*xidt2)*simparams%step
+            c2 = (0.5 - 2*twelfth*xidt + 0.5*twelfth*xidt2)*simparams%step
 
-                c0(b) = 1 - xidt(b) + 0.5*xidt2(b)
-                c1(b) = (1 - 0.5*xidt(b) + 2*twelfth*xidt2(b))*simparams%step
-                c2(b) = (0.5 - 2*twelfth*xidt(b) + 0.5*twelfth*xidt2(b))*simparams%step
+            sigma_v = sqrt(2 * temp * xidt * (1 - xidt))
 
-                !            if (atoms%nbeads > 1) &
-                !                sigma_r = simparams%step * sqrt(temp*(8*twelfth*xidt - 0.5*xidt2))
+            c_rv    = 0.5 * sqrt3 * (1 - 0.125*xidt)
 
-                !print *, 2 * temp * xidt * (1 - xidt)
-                sigma_v(b) = sqrt(2 * temp * xidt(b) * (1 - xidt(b)))
-                c_rv(b)    = 0.5 * sqrt3 * (1 - 0.125*xidt(b))
-
-            end if
-
-        end do
+        end if
 
         call normal_deviate(0.0_dp, 1.0_dp, randy)
 
@@ -270,6 +270,7 @@ contains
                 atoms%v(:,b,i) = new_v(:,b)
             end if
         end do
+
 
     end subroutine andersen
 

@@ -82,7 +82,7 @@ contains
 
         ! to direct, fold into simbox, to cartesian
         forall (i = 1 : atoms%natoms) dir_coords(:,:,i) = matmul(atoms%isimbox, atoms%r(:,:,i))
-        dir_coords = dir_coords - anint(dir_coords-0.5_dp)
+        dir_coords = dir_coords - anint(dir_coords-0.5)
         forall (i = 1 : atoms%natoms) cart_coords(:,:,i) = matmul(atoms%simbox, dir_coords(:,:,i))
 
         write(traj_id,'(i8.8)') itraj
@@ -258,6 +258,7 @@ contains
 
 
         real(dp) :: ekin_p, ekin_l, atom_epot, proj_r(3), proj_v(3), proj_polar, proj_azi, time
+        integer  :: turning_points
         character(len=max_string_length) :: fname
         character(len=8)                 :: fid
         character(len=*), parameter :: err = "Error in output_scatter: "
@@ -267,7 +268,7 @@ contains
         ! XXX: change system() to execute_command_line() when new compiler is available
         if (.not. dir_exists('traj')) call system('mkdir traj')
 
-        write(fid,'(i8.8)') itraj
+        write(fid,'(i8.8)') simparams%start
         fname = 'traj/mxt_fin'//fid//'.dat'
 
         if (flag == "scatter_initial") then
@@ -284,12 +285,13 @@ contains
                 open(out_unit, file=fname, status="old", position="append", action="write")
             else
                 open(out_unit, file=fname, status="new", action="write")
-                write(out_unit, '(17a14)') "#ekin_p_i/eV", "ekin_l_i/eV", "epot/eV", "p_x_i/A", "p_y_i/A", "p_z_i/A", &
-                    "polar_i/deg", "azi_i/deg", "ekin_p_f/eV", "ekin_l_f/eV", "epot/eV", "p_x_f/A", &
-                    "p_y_f/A", "p_z_f/A", "polar_f/deg", "azi_f/deg", "time/fs"
+                write(out_unit, '(19a14)') "# traj_index", "ekin_p_i/eV", "ekin_l_i/eV", "epot/eV", &
+                    "p_x_i/A", "p_y_i/A", "p_z_i/A", "polar_i/deg", "azi_i/deg", "ekin_p_f/eV", &
+                    "ekin_l_f/eV", "epot/eV", "p_x_f/A", "p_y_f/A", "p_z_f/A", "polar_f/deg", &
+                    "azi_f/deg", "time/fs", "turn_pnts"
             end if
 
-            write(out_unit, '(8f14.7$)', advance="no") ekin_p, ekin_l, atom_epot, proj_r, proj_polar, proj_azi
+            write(out_unit, '(i14, 8f14.7$)', advance="no") itraj, ekin_p, ekin_l, atom_epot, proj_r, proj_polar, proj_azi
 
             close (out_unit)
 
@@ -305,8 +307,10 @@ contains
 
             time = (istep-1) * simparams%step
 
+            turning_points = calc_turning_points()
+
             call open_for_append(out_unit, fname)
-            write(out_unit, '(9f14.7)') ekin_p, ekin_l, atom_epot, proj_r, proj_polar, proj_azi, time
+            write(out_unit, '(9f14.7, i14)') ekin_p, ekin_l, atom_epot, proj_r, proj_polar, proj_azi, time, turning_points
 
             close (out_unit)
 

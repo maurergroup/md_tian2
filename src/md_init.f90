@@ -841,6 +841,7 @@ contains
             call read_mxt(slab, simparams%confname_file)
 
             call merge_universes(slab, proj)
+            slab%pes = atoms%pes
             atoms = slab
 
         else

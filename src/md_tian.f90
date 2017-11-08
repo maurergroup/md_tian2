@@ -19,14 +19,17 @@ program md_tian
     use constants
     use rpmd
     use universe_mod
-    use output_mod, only : output
+    use output_mod, only : output, record_projectile_turning_point
     use geometry_opt
 
     implicit none
 
     integer :: itraj, istep, i
-    real(dp) :: tmp, proj_v(3), dotprod, old_v(3) = [0, 0, 0]
+    real(dp) :: tmp
     type(universe) :: atoms
+
+    real(dp), allocatable :: cents(:,:)
+    real(dp) :: vec(3)
 
     call simbox_init(atoms)
 
@@ -38,39 +41,40 @@ program md_tian
             call output(atoms, 1, 1)
 
         case ('md')
-            !open(unit=78, file="bounces.dat")
+            open(unit=78, file="dists.dat")
 
             do itraj = simparams%start, simparams%start+simparams%ntrajs-1
 
-
                 call calc_force(atoms, energy_and_force)
-                if (any(simparams%output_type == output_id_scatter)) call output(atoms, itraj, -1, "scatter_initial")
+                if (.not. allocated(cents)) allocate(cents(3, atoms%natoms))
+
+                if (any(simparams%output_type == output_id_scatter)) then
+                    call output(atoms, itraj, -1, "scatter_initial")
+                end if
+
+
+
                 print *, "Eref", atoms%epot
 
                 do istep = 1, simparams%nsteps
 
+                    ! core propagation
                     call propagate_1(atoms)
                     if (atoms%nbeads > 1) call do_ring_polymer_step(atoms)
                     call calc_force(atoms, energy_and_force)
                     call propagate_2(atoms)
 
+                    ! output and exit conditionns
                     if (any(mod(istep, simparams%output_interval) == 0)) call output(atoms, itraj, istep)
 
-                    if ( sum(atoms%r(3,:,1))/atoms%nbeads > simparams%proj_ul .and. atoms%is_proj(atoms%idx(1)) &
+                    if ( all(atoms%r(3,:,1) > simparams%proj_ul) .and. atoms%is_proj(atoms%idx(1)) &
                         .and. any(simparams%output_type == output_id_scatter)) exit
 
 
-!                    !!! test bounce recognition !!!
-!                    proj_v = sum(atoms%v(:,:,1), dim=2)/atoms%nbeads
-!                    if (istep > 1) then
-!                        dotprod = sum(old_v/sqrt(sum(old_v**2)) * proj_v/sqrt(sum(proj_v**2)))
-!                        write(78, '(i, 3f12.6)') istep, &   ! time step
-!                            180-acos(proj_v(3)/sqrt(sum(proj_v*proj_v)))*rad2deg, & ! polar
-!                            atan2(proj_v(2), proj_v(1))*rad2deg, & ! azi
-!                            dotprod
-!                    end if
-!                    old_v = proj_v
+                    ! recond bounces
+                    call record_projectile_turning_point(sum(atoms%r(3,:,1))/atoms%nbeads, istep)
 
+                    !if (mod(istep, 10)) print *, sum(sum(atoms%r(:,:,:), dim=2), dim=2)/atoms%natoms/atoms%nbeads
 
                 end do
                 close(78)

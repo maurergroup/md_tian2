@@ -13,6 +13,9 @@ module useful_things
 
     implicit none
 
+    real(dp), allocatable, private :: projectile_z_recorder(:)
+
+
     interface normal_deviate
         module procedure normal_deviate_0d
         module procedure normal_deviate_1d
@@ -267,6 +270,47 @@ contains
         B(2,3) = -detinv * (A(1,1)*A(2,3) - A(1,3)*A(2,1))
         B(3,3) = +detinv * (A(1,1)*A(2,2) - A(1,2)*A(2,1))
     end function
+
+
+    subroutine record_projectile_turning_point(zvalue, step)
+
+        real(dp), intent(in) :: zvalue
+        integer,  intent(in) :: step
+
+        if (.not. allocated(projectile_z_recorder)) allocate(projectile_z_recorder(10000))
+
+        if (step > 10000) print *, "warning: projectile z-component is not being monitored anymore"
+
+        if (step == 1) projectile_z_recorder = 0.0_dp
+
+        if (step <= 10000) projectile_z_recorder(step) = zvalue
+
+    end subroutine record_projectile_turning_point
+
+
+    integer function calc_turning_points() result (pnts)
+
+        integer :: i
+
+        pnts = 0
+
+        do i = 3, 9998
+            if (any([projectile_z_recorder(i-2), &
+                     projectile_z_recorder(i-1), &
+                     projectile_z_recorder(i),   &
+                     projectile_z_recorder(i+1), &
+                     projectile_z_recorder(i+2)] == 0.0_dp)) exit
+
+            if (projectile_z_recorder(i-2) > projectile_z_recorder(i-1) .and. &
+                projectile_z_recorder(i-1) > projectile_z_recorder(i)   .and. &
+                projectile_z_recorder(i)   < projectile_z_recorder(i+1) .and. &
+                projectile_z_recorder(i+1) < projectile_z_recorder(i+2)) pnts = pnts + 1
+
+        end do
+
+
+
+    end function calc_turning_points
 
 
 
