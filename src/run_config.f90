@@ -48,6 +48,8 @@ module run_config
         real(dp) :: pile_tau                                        ! PILE thermostat centroid mode thermostat time constant
         integer  :: force_beads                                     ! inititalizes all atoms with this many beads
         real(dp) :: proj_ul                                         ! stop trajectory if projectile's z-coordinate is higher that this value
+        integer  :: fit_training_data                               ! number of configuration/energy pair files in fit/train/
+        integer  :: fit_validation_data                             ! number of configuration/energy pair files in fit/valid/
 
     end type
 
@@ -87,6 +89,8 @@ contains
         new_simulation_parameters%pile_tau = 200.0_dp
         new_simulation_parameters%force_beads = default_int
         new_simulation_parameters%proj_ul = default_real
+        new_simulation_parameters%fit_training_data = default_int
+        new_simulation_parameters%fit_validation_data = default_int
 
     end function
 
@@ -411,6 +415,7 @@ contains
                                     write(simparams%confname_file, '(2a, i8.8, a)') &
                                         trim(simparams%confname_file), "/mxt_", int(rnd*simparams%nconfs)+1, ".dat"
 
+
                                 case default
                                     stop 'Error in the input file: conf key - unknown conf name'
 
@@ -487,9 +492,19 @@ contains
                     case ('pul')
                         if (simparams%proj_ul /= default_real) stop err // "projectile upper limit set mulptiple times"
                         read(words(2), *, iostat=ios) simparams%proj_ul
-                        if (ios /= 0) stop err // "Error reading proj_upper_limit"
+                        if (ios /= 0) stop err // "proj_upper_limit"
 
-                    !TODO: add keywords for fit
+
+                    case ('fit_training_data')
+                        if (simparams%fit_training_data /= default_int) stop err // "fit training dataset multiple times"
+                        read(words(2), *, iostat=ios) simparams%fit_training_data
+                        if (ios /= 0) stop err // "Error reading fit_training_data"
+
+
+                    case ('fit_validation_data')
+                        if (simparams%fit_validation_data /= default_int) stop err // "fit validation dataset multiple times"
+                        read(words(2), *, iostat=ios) simparams%fit_validation_data
+                        if (ios /= 0) stop err // "Error reading fit_validation_data"
 
 
                     case default

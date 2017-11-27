@@ -1511,6 +1511,10 @@ contains
         real(dp), dimension(3, atoms%nbeads) :: f1, f2, f3, f4
         real(dp), dimension(3, atoms%nbeads) :: f12, f23, f24, f31, f34
 
+        ! new
+        real(dp), dimension(3, atoms%nbeads) :: eij, eji, eik, ejl, eijl, ejik, rijl, rjik
+        real(dp), dimension(atoms%nbeads) :: rijlmag, rjikmag
+
 
         logical :: DEBUG = .false.
 
@@ -2150,6 +2154,39 @@ contains
                                     atoms%f(:,:,i) = atoms%f(:,:,i) + f2
                                     atoms%f(:,:,j) = atoms%f(:,:,j) + f3
                                     atoms%f(:,:,l) = atoms%f(:,:,l) + f4
+
+
+
+!                                    ! alternative forces (TODO when time available)
+!                                    rij = vectors(:,:,i,j)
+!                                    rji = vectors(:,:,j,i)
+!                                    rik = vectors(:,:,i,k)
+!                                    rjl = vectors(:,:,j,l)
+!
+!                                    rijmag = distances(:,i,j)
+!                                    rjimag = distances(:,j,i)
+!                                    rikmag = distances(:,i,k)
+!                                    rjlmag = distances(:,j,l)
+!
+!                                    do b = 1, atoms%nbeads
+!                                        eij(:,b) = rij(:,b)/rijmag(b)
+!                                        eji(:,b) = rji(:,b)/rjimag(b)
+!                                        eik(:,b) = rik(:,b)/rikmag(b)
+!                                        ejl(:,b) = rjl(:,b)/rjlmag(b)
+!                                    end do
+!
+!                                    rijl = cro_pro(rji, rik)
+!                                    rjik = cro_pro(rij, rjl)
+!
+!                                    rijlmag = sqrt(sum(rijl*rijl, dim=1))
+!                                    rjikmag = sqrt(sum(rjik*rjik, dim=1))
+!
+!                                    do b = 1, atoms%nbeads
+!                                        eijl(:,b) = rijl(:,b)/rijlmag(b)
+!                                        ejik(:,b) = rjik(:,b)/rjikmag(b)
+!                                    end do
+
+
 
                                     !print *, "kforce", -f12 -f31
 

@@ -308,9 +308,29 @@ contains
 
         end do
 
-
-
     end function calc_turning_points
+
+
+    function cro_pro(r1, r2)
+
+        real(dp), intent(in) :: r1(:,:), r2(:,:)
+        real(dp) :: cro_pro(3, size(r1, dim=2))
+
+        if (size(r1, dim=1) /= 3 .or. size(r2, dim=1) /= 3) then
+            print *, "First dimension in cross product function must be 3"
+            stop
+
+        else if (size(r1, dim=2) /= size(r2, dim=2)) then
+            print *, "Arrays in cross product function differ in their 2nd dimension"
+            stop
+
+        end if
+
+        cro_pro(1,:) = r1(2,:)*r2(3,:) - r1(3,:)*r2(2,:)
+        cro_pro(2,:) = r1(3,:)*r2(1,:) - r1(1,:)*r2(3,:)
+        cro_pro(3,:) = r1(1,:)*r2(2,:) - r1(2,:)*r2(1,:)
+
+    end function cro_pro
 
 
 

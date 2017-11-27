@@ -54,7 +54,6 @@ contains
         call read_input_file(input_file)
         call ensure_input_sanity()
 
-
         call read_geometry(atoms, simparams%confname_file)
         call ensure_geometry_sanity(atoms)
 
@@ -424,6 +423,13 @@ contains
 
         !!! Perform fit
         else if (simparams%run == "fit") then
+            if (simparams%nlattices == default_int .and. &
+                simparams%nprojectiles == default_int) stop err // &
+                "either lattice and/or projectile key must be present."
+            if (simparams%nprojectiles == default_int) simparams%nprojectiles = 0
+            if (simparams%nlattices == default_int) simparams%nlattices = 0
+            if (simparams%fit_training_data == default_int) stop err // "training data input missing"
+            if (simparams%fit_validation_data == default_int) stop err // "validation data input missing"
 
         else
             print *, err // "unknown run command", simparams%run

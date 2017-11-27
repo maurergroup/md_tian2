@@ -19,6 +19,7 @@ program md_tian
     use constants
     use rpmd
     use universe_mod
+    use fit
     use output_mod, only : output, record_projectile_turning_point
     use geometry_opt
 
@@ -31,6 +32,7 @@ program md_tian
     real(dp), allocatable :: cents(:,:)
     real(dp) :: vec(3)
 
+
     call simbox_init(atoms)
 
     select case (simparams%run)
@@ -39,6 +41,10 @@ program md_tian
 
             call optimize_geometry(atoms, geometry_opt_fire)
             call output(atoms, 1, 1)
+
+        case ('fit')
+
+            call perform_fit(atoms)
 
         case ('md')
             open(unit=78, file="dists.dat")
