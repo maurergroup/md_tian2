@@ -334,4 +334,19 @@ contains
 
 
 
+    subroutine check_and_set_fit(vary, idx1, idx2, arr)
+
+        character(len=3), intent(in) :: vary
+        integer, intent(in) :: idx1, idx2
+        logical, intent(out) :: arr(:,:)
+
+        if (vary == "fit") then
+            arr(idx1, idx2) = .True.
+            arr(idx2, idx1) = .True.
+        end if
+
+    end subroutine check_and_set_fit
+
+
+
 end module useful_things

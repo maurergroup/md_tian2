@@ -50,6 +50,7 @@ module run_config
         real(dp) :: proj_ul                                         ! stop trajectory if projectile's z-coordinate is higher that this value
         integer  :: fit_training_data                               ! number of configuration/energy pair files in fit/train/
         integer  :: fit_validation_data                             ! number of configuration/energy pair files in fit/valid/
+        real(dp) :: evasp                                           ! reference energy for fit
 
     end type
 
@@ -91,6 +92,7 @@ contains
         new_simulation_parameters%proj_ul = default_real
         new_simulation_parameters%fit_training_data = default_int
         new_simulation_parameters%fit_validation_data = default_int
+        new_simulation_parameters%evasp = default_real
 
     end function
 
@@ -490,21 +492,26 @@ contains
 
 
                     case ('pul')
-                        if (simparams%proj_ul /= default_real) stop err // "projectile upper limit set mulptiple times"
+                        if (simparams%proj_ul /= default_real) stop err // "projectile upper limit set multiple times"
                         read(words(2), *, iostat=ios) simparams%proj_ul
                         if (ios /= 0) stop err // "proj_upper_limit"
 
 
                     case ('fit_training_data')
-                        if (simparams%fit_training_data /= default_int) stop err // "fit training dataset multiple times"
+                        if (simparams%fit_training_data /= default_int) stop err // "fit training data set multiple times"
                         read(words(2), *, iostat=ios) simparams%fit_training_data
                         if (ios /= 0) stop err // "Error reading fit_training_data"
 
 
                     case ('fit_validation_data')
-                        if (simparams%fit_validation_data /= default_int) stop err // "fit validation dataset multiple times"
+                        if (simparams%fit_validation_data /= default_int) stop err // "fit validation data set multiple times"
                         read(words(2), *, iostat=ios) simparams%fit_validation_data
                         if (ios /= 0) stop err // "Error reading fit_validation_data"
+
+                    case ('evasp')
+                        if (simparams%evasp /= default_real) stop err // "reference energy for fit set multiple times"
+                        read(words(2), *, iostat=ios) simparams%evasp
+                        if (ios /= 0) stop err // "Error reading evasp"
 
 
                     case default

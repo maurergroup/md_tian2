@@ -18,6 +18,11 @@ module pes_rebo_mod
 
     type(rebo_pes) :: pes_rebo
 
+    ! Fitting
+    logical, dimension(:,:),   allocatable, private :: fit_Dmin, fit_Dmax, fit_Dmaxp
+    logical, dimension(:,:),   allocatable, private :: fit_Q, fit_A, fit_alpha, fit_rho
+    logical, dimension(:,:,:), allocatable, private :: fit_B, fit_beta
+
 
     ! Declarations
     real(dp), parameter :: TETRAHEDRON_ANGLE = -1.0_dp/3
@@ -157,7 +162,17 @@ contains
                 pes_rebo%alpha(ntypes, ntypes), &
                 pes_rebo%rho(ntypes, ntypes),   &
                 pes_rebo%B(3, ntypes, ntypes),  &
-                pes_rebo%beta(3, ntypes, ntypes))
+                pes_rebo%beta(3, ntypes, ntypes), &
+
+                fit_Dmin(ntypes, ntypes),  &
+                fit_Dmax(ntypes, ntypes),  &
+                fit_Dmaxp(ntypes, ntypes), &
+                fit_Q(ntypes, ntypes),     &
+                fit_A(ntypes, ntypes),     &
+                fit_alpha(ntypes, ntypes), &
+                fit_rho(ntypes, ntypes),   &
+                fit_B(3, ntypes, ntypes),  &
+                fit_beta(3, ntypes, ntypes))
 
             pes_rebo%Dmin  = default_real
             pes_rebo%Dmax  = default_real
@@ -168,6 +183,16 @@ contains
             pes_rebo%rho   = default_real
             pes_rebo%B     = default_real
             pes_rebo%beta  = default_real
+
+            fit_Dmin  = .False.
+            fit_Dmax  = .False.
+            fit_Dmaxp = .False.
+            fit_Q     = .False.
+            fit_A     = .False.
+            fit_alpha = .False.
+            fit_rho   = .False.
+            fit_B     = .False.
+            fit_beta  = .False.
 
         end if
 
@@ -219,54 +244,67 @@ contains
                 case ('dmin')
                     read(words(2), *) pes_rebo%Dmin(idx1, idx2)
                     read(words(2), *) pes_rebo%Dmin(idx2, idx1)
+                    call check_and_set_fit(words(3), idx1, idx2, fit_Dmin)
 
                 case ('dmax')
                     read(words(2), *) pes_rebo%Dmax(idx1, idx2)
                     read(words(2), *) pes_rebo%Dmax(idx2, idx1)
+                    call check_and_set_fit(words(3), idx1, idx2, fit_Dmax)
 
                 case ('dmaxp')
                     read(words(2), *) pes_rebo%Dmaxp(idx1, idx2)
                     read(words(2), *) pes_rebo%Dmaxp(idx2, idx1)
+                    call check_and_set_fit(words(3), idx1, idx2, fit_Dmaxp)
 
                 case ('q')
                     read(words(2), *) pes_rebo%Q(idx1, idx2)
                     read(words(2), *) pes_rebo%Q(idx2, idx1)
+                    call check_and_set_fit(words(3), idx1, idx2, fit_Q)
 
                 case ('a')
                     read(words(2), *) pes_rebo%A(idx1, idx2)
                     read(words(2), *) pes_rebo%A(idx2, idx1)
+                    call check_and_set_fit(words(3), idx1, idx2, fit_A)
 
                 case ('alpha')
                     read(words(2), *) pes_rebo%alpha(idx1, idx2)
                     read(words(2), *) pes_rebo%alpha(idx2, idx1)
+                    call check_and_set_fit(words(3), idx1, idx2, fit_alpha)
 
                 case ('rho')
                     read(words(2), *) pes_rebo%rho(idx1, idx2)
                     read(words(2), *) pes_rebo%rho(idx2, idx1)
+                    call check_and_set_fit(words(3), idx1, idx2, fit_rho)
 
                 case ('b1')
                     read(words(2), *) pes_rebo%B(1, idx1, idx2)
                     read(words(2), *) pes_rebo%B(1, idx2, idx1)
+                    call check_and_set_fit(words(3), idx1, idx2, fit_B(1,:,:))
 
                 case ('b2')
                     read(words(2), *) pes_rebo%B(2, idx1, idx2)
                     read(words(2), *) pes_rebo%B(2, idx2, idx1)
+                    call check_and_set_fit(words(3), idx1, idx2, fit_B(2,:,:))
 
                 case ('b3')
                     read(words(2), *) pes_rebo%B(3, idx1, idx2)
                     read(words(2), *) pes_rebo%B(3, idx2, idx1)
+                    call check_and_set_fit(words(3), idx1, idx2, fit_B(3,:,:))
 
                 case ('beta1')
                     read(words(2), *) pes_rebo%beta(1, idx1, idx2)
                     read(words(2), *) pes_rebo%beta(1, idx2, idx1)
+                    call check_and_set_fit(words(3), idx1, idx2, fit_beta(1,:,:))
 
                 case ('beta2')
                     read(words(2), *) pes_rebo%beta(2, idx1, idx2)
                     read(words(2), *) pes_rebo%beta(2, idx2, idx1)
+                    call check_and_set_fit(words(3), idx1, idx2, fit_beta(2,:,:))
 
                 case ('beta3')
                     read(words(2), *) pes_rebo%beta(3, idx1, idx2)
                     read(words(2), *) pes_rebo%beta(3, idx2, idx1)
+                    call check_and_set_fit(words(3), idx1, idx2, fit_beta(3,:,:))
 
                 case default
                     print *, "Error in the PES file: unknown REBO parameter", words(1)
@@ -277,6 +315,24 @@ contains
 
     end subroutine read_rebo
 
+
+
+    integer function inquire_nfit_params_rebo() result(nfit)
+
+        integer :: i, j, k
+
+        nfit = 0
+        do i = 1, size(fit_Q)
+            do j = i, size(fit_Q)
+                nfit = nfit + count([fit_Dmin(j,i), fit_Dmax(j,i), fit_rho(j,i), &
+                    fit_Dmaxp(j,i), fit_Q(j,i), fit_A(j,i), fit_alpha(j,i)])
+                do k = 1, 3
+                    nfit = nfit + count([fit_B(k,j,i), fit_beta(k,j,i)])
+                end do
+            end do
+        end do
+
+    end function inquire_nfit_params_rebo
 
 
 
@@ -1562,7 +1618,6 @@ contains
         NjiC = nC(:,j) - wij*is_carbon(atoms, itype)
         NjiH = nH(:,j) - wij*is_hydrogen(atoms, itype)
 
-
         ! initialize accumulators to zero
         bij = 0.0_dp
         tmp = 0.0_dp
@@ -1576,10 +1631,10 @@ contains
         Etmp = 0.0_dp
 
         do k = 1, atoms%natoms
-            if (k /= i .and. k /= j) then
+            ktype = atoms%idx(k)
+            if (k /= i .and. k /= j .and. atoms%pes(ktype, itype) == pes_id_rebo) then
 
                 rikmag = distances(:,i,k)
-                ktype = atoms%idx(k)
                 call cufu(rikmag, pes_rebo%Dmin(itype,ktype), pes_rebo%Dmax(itype,ktype), wik, dwik)
                 if (all(wik < TOLERANCE)) cycle
 
@@ -1628,10 +1683,10 @@ contains
         ! pij forces
         if (flag == ENERGY_AND_FORCE) then
             do k = 1, atoms%natoms
-                if (k /= i .and. k /= j) then
+                ktype = atoms%idx(k)
+                if (k /= i .and. k /= j .and. atoms%pes(ktype, itype) == pes_id_rebo) then
 
                     rikmag = distances(:,i,k)
-                    ktype = atoms%idx(k)
                     call cufu(rikmag, pes_rebo%Dmin(itype,ktype), pes_rebo%Dmax(itype,ktype), wik, dwik)
                     if (all(wik < TOLERANCE)) cycle
 
@@ -1718,10 +1773,11 @@ contains
 
 
         do l = 1, atoms%natoms
-            if (l /= j .and. l /= i) then
+            ltype = atoms%idx(l)
+            if (l /= j .and. l /= i .and. atoms%pes(ltype, jtype) == pes_id_rebo) then
 
                 rjlmag = distances(:,j,l)
-                ltype = atoms%idx(l)
+
                 call cufu(rjlmag, pes_rebo%Dmin(jtype,ltype), pes_rebo%Dmax(jtype,ltype), wjl, dwjl)
                 if (all(wjl < TOLERANCE)) cycle
 
@@ -1770,10 +1826,10 @@ contains
         ! pji forces
         if (flag == ENERGY_AND_FORCE) then
             do l = 1, atoms%natoms
-                if (l /= j .and. l /= i) then
+                ltype = atoms%idx(l)
+                if (l /= j .and. l /= i .and. atoms%pes(ltype, jtype) == pes_id_rebo) then
 
                     rjlmag = distances(:,j,l)
-                    ltype = atoms%idx(l)
                     call cufu(rjlmag, pes_rebo%Dmin(jtype,ltype), pes_rebo%Dmax(jtype,ltype), wjl, dwjl)
                     if (all(wjl < TOLERANCE)) cycle
 
@@ -1896,9 +1952,9 @@ contains
         ! piRC forces
         if (flag == ENERGY_AND_FORCE) then
             do k = 1, atoms%natoms
-                if (k /= i .and. k /= j) then
+                ktype = atoms%idx(k)
+                if (k /= i .and. k /= j .and. atoms%pes(ktype, itype) == pes_id_rebo ) then
                     rikmag = distances(:,i,k)
-                    ktype = atoms%idx(k)
                     call cufu(rikmag, pes_rebo%Dmin(itype,ktype), pes_rebo%Dmax(itype,ktype), wik, dwik)
                     rik = vectors(:,:,i,k)
                     Nki = nC(:,k) + nH(:,k) - wik
@@ -1920,8 +1976,9 @@ contains
 
                     if (any(abs(dNki) > TOLERANCE)) then
                         do n = 1, atoms%natoms
-                            if (n /= i .and. n /= k) then
-                                ntype = atoms%idx(n)
+                            ntype = atoms%idx(n)
+                            if (n /= i .and. n /= k .and. atoms%pes(ktype, ntype) == pes_id_rebo) then
+
                                 rkn = vectors(:,:,k,n)
                                 rknmag = distances(:,k,n)
                                 call cufu(rknmag, pes_rebo%Dmin(ktype,ntype), &
@@ -1940,8 +1997,8 @@ contains
 
             ! piRC forces
             do l = 1, atoms%natoms
-                if (l /= i .and. l /= j) then
-                    ltype = atoms%idx(l)
+                ltype = atoms%idx(l)
+                if (l /= i .and. l /= j .and. atoms%pes(ltype, jtype) == pes_id_rebo) then
                     rjlmag = distances(:,j,l)
                     call cufu(rjlmag, pes_rebo%Dmin(jtype,ltype), pes_rebo%Dmax(jtype,ltype), wjl, dwjl)
 
@@ -1965,8 +2022,8 @@ contains
 
                     if (any(abs(dNlj) > TOLERANCE)) then
                         do n = 1, atoms%natoms
-                            if (n /= j .and. n /= l) then
-                                ntype = atoms%idx(n)
+                            ntype = atoms%idx(n)
+                            if (n /= j .and. n /= l .and. atoms%pes(ltype, ntype) == pes_id_rebo) then
                                 rln = vectors(:,:,l,n)
                                 rlnmag = distances(:,l,n)
                                 call cufu(rlnmag, pes_rebo%Dmin(ltype,ntype), &
@@ -2012,7 +2069,7 @@ contains
             r23mag = r32mag
 
             do k = 1, atoms%natoms    ! atom1 = k
-                if (k /= i .and. k /= j) then
+                if (k /= i .and. k /= j .and. atoms%pes(ktype, itype) == pes_id_rebo) then
 
                     ktype = atoms%idx(k)
                     r21mag = distances(:,i,k)
@@ -2046,7 +2103,8 @@ contains
                         !            dtsjik = 0.0_dp
 
                         do l = 1, atoms%natoms    ! atom4 = l
-                            if (l /= i .and. l /= j .and. l /= k) then
+                            if (l /= i .and. l /= j .and. l /= k &
+                                .and. atoms%pes(ltype, jtype) == pes_id_rebo) then
 
                                 ltype = atoms%idx(l)
                                 r34mag = distances(:,j,l)
@@ -2203,7 +2261,7 @@ contains
             ! Tij forces now that we have Etmp
             if (flag == ENERGY_AND_FORCE) then
                 do k = 1, atoms%natoms
-                    if (k /= i .and. k /= j) then
+                    if (k /= i .and. k /= j .and. atoms%pes(ktype, itype) == pes_id_rebo) then
 
                         ktype = atoms%idx(k)
                         rikmag = distances(:,i,k)
@@ -2232,7 +2290,7 @@ contains
 
                         if (any(abs(dNki) > TOLERANCE)) then
                             do n = 1, atoms%natoms
-                                if (n /= i .and. n /= k) then
+                                if (n /= i .and. n /= k .and. atoms%pes(ktype, ntype) == pes_id_rebo) then
                                     ntype = atoms%idx(n)
                                     rkn = vectors(:,:,k,n)
                                     rknmag = distances(:,k,n)
@@ -2254,7 +2312,7 @@ contains
 
                 ! Tij forces
                 do l = 1, atoms%natoms
-                    if (l /= i .and. l /= j) then
+                    if (l /= i .and. l /= j .and. atoms%pes(ltype, jtype) == pes_id_rebo) then
 
                         ltype = atoms%idx(l)
                         rjlmag = distances(:,j,l)
@@ -2283,7 +2341,7 @@ contains
 
                         if (any(abs(dNlj) > TOLERANCE)) then
                             do n = 1, atoms%natoms
-                                if (n /= l .and. n /= j) then
+                                if (n /= l .and. n /= j .and. atoms%pes(ltype, ntype) == pes_id_rebo) then
 
                                     ntype = atoms%idx(n)
                                     rln = vectors(:,:,l,n)
@@ -2390,18 +2448,18 @@ contains
             do l = k+1, atoms%natoms
                 ltype = atoms%idx(l)
 
-                call cufu(distances(:,k,l), pes_rebo%Dmin(ktype,ltype), &
-                    pes_rebo%Dmax(ktype,ltype), wkl, dummy)
+                if (atoms%pes(ktype, ltype) == pes_id_rebo) then
 
-                if (is_carbon(  atoms, ktype)) nC(:,l) = nC(:,l) + wkl
-                if (is_hydrogen(atoms, ktype)) nH(:,l) = nH(:,l) + wkl
-                if (is_carbon(  atoms, ltype)) nC(:,k) = nC(:,k) + wkl
-                if (is_hydrogen(atoms, ltype)) nH(:,k) = nH(:,k) + wkl
+                    call cufu(distances(:,k,l), pes_rebo%Dmin(ktype,ltype), &
+                        pes_rebo%Dmax(ktype,ltype), wkl, dummy)
 
+                    if (is_carbon(  atoms, ktype)) nC(:,l) = nC(:,l) + wkl
+                    if (is_hydrogen(atoms, ktype)) nH(:,l) = nH(:,l) + wkl
+                    if (is_carbon(  atoms, ltype)) nC(:,k) = nC(:,k) + wkl
+                    if (is_hydrogen(atoms, ltype)) nH(:,k) = nH(:,k) + wkl
+                end if
             end do
         end do
-
-
 
         ! two-body interactions
         do i = 1, atoms%natoms-1

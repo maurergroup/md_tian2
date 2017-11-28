@@ -246,6 +246,7 @@ contains
 
         if (nwords == 3) then
 
+            !read(geo_unit, *, iostat=ios) ((atoms%r(:,j,i), j=1,atoms%nbeads), i=1,atoms%natoms)
             read(geo_unit, *, iostat=ios) atoms%r
             if (ios /= 0) stop err // "reading coordinates"
 
@@ -430,6 +431,7 @@ contains
             if (simparams%nlattices == default_int) simparams%nlattices = 0
             if (simparams%fit_training_data == default_int) stop err // "training data input missing"
             if (simparams%fit_validation_data == default_int) stop err // "validation data input missing"
+            if (simparams%evasp == default_real) stop err // "reference energy evasp missing"
 
         else
             print *, err // "unknown run command", simparams%run
