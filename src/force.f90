@@ -28,7 +28,7 @@ contains
         if (any(atoms%pes == pes_id_ho))        call compute_ho       (atoms, flag)
         if (any(atoms%pes == pes_id_rebo))      call compute_rebo     (atoms, flag)
 
-        call set_acceleration(atoms)
+        if (flag == energy_and_force) call set_acceleration(atoms)
 
     end subroutine calc_force
 

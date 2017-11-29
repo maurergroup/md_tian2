@@ -234,7 +234,9 @@ contains
 
             ! something went wrong
             else if (nwords /= 2) then
-                stop "Error in the PES file: PES parameters must consist of key value pairs. A parameter block must be terminated by a blank line."
+                if (nwords /= 3 .or. words(3) /= "fit") then
+                    stop err // "Error in the PES file: PES parameters must consist of key value pairs. A parameter block must be terminated by a blank line."
+                end if
             end if
 
             call lower_case(words(1))
@@ -316,14 +318,18 @@ contains
     end subroutine read_rebo
 
 
+    ! returns parameters set to fit
+    function get_fit_params_rebo() result(fit_params)
 
-    integer function inquire_nfit_params_rebo() result(nfit)
+        real(dp), allocatable :: fit_params(:)
+        integer :: i, j, k, n, nfit, ntypes
 
-        integer :: i, j, k
+        ntypes = size(fit_Q, dim=1)
 
+        ! count the number of fit parameters
         nfit = 0
-        do i = 1, size(fit_Q)
-            do j = i, size(fit_Q)
+        do i = 1, ntypes
+            do j = i, ntypes
                 nfit = nfit + count([fit_Dmin(j,i), fit_Dmax(j,i), fit_rho(j,i), &
                     fit_Dmaxp(j,i), fit_Q(j,i), fit_A(j,i), fit_alpha(j,i)])
                 do k = 1, 3
@@ -332,7 +338,122 @@ contains
             end do
         end do
 
-    end function inquire_nfit_params_rebo
+        allocate(fit_params(nfit))
+
+        n = 1
+        do i = 1, ntypes
+            do j = i, ntypes
+                if (fit_A(j,i)) then
+                    fit_params(n) = pes_rebo%A(j,i)
+                    n = n + 1
+                end if
+                if (fit_alpha(j,i)) then
+                    fit_params(n) = pes_rebo%alpha(j,i)
+                    n = n + 1
+                end if
+                do k = 1, 3
+                    if (fit_B(k,j,i)) then
+                        fit_params(n) = pes_rebo%B(k,j,i)
+                        n = n + 1
+                    end if
+                    if (fit_beta(k,j,i)) then
+                        fit_params(n) = pes_rebo%beta(k,j,i)
+                        n = n + 1
+                    end if
+                end do
+                if (fit_Dmax(j,i)) then
+                    fit_params(n) = pes_rebo%Dmax(j,i)
+                    n = n + 1
+                end if
+                if (fit_Dmaxp(j,i)) then
+                    fit_params(n) = pes_rebo%Dmaxp(j,i)
+                    n = n + 1
+                end if
+                if (fit_Dmin(j,i)) then
+                    fit_params(n) = pes_rebo%Dmin(j,i)
+                    n = n + 1
+                end if
+                if (fit_Q(j,i)) then
+                    fit_params(n) = pes_rebo%Q(j,i)
+                    n = n + 1
+                end if
+                if (fit_rho(j,i)) then
+                    fit_params(n) = pes_rebo%rho(j,i)
+                    n = n + 1
+                end if
+            end do
+        end do
+
+    end function get_fit_params_rebo
+
+
+
+
+    subroutine set_fit_params_rebo(x, pos)
+
+        real(dp), intent(in)   :: x(:)
+        integer, intent(inout) :: pos
+
+        integer :: i, j, k, ntypes
+
+        ntypes = size(fit_Q, dim=1)
+
+        do i = 1, ntypes
+            do j = i, ntypes
+                if (fit_A(j,i)) then
+                    pes_rebo%A(j,i) = x(pos)
+                    pes_rebo%A(i,j) = x(pos)
+                    pos = pos + 1
+                end if
+                if (fit_alpha(j,i)) then
+                    pes_rebo%alpha(j,i) = x(pos)
+                    pes_rebo%alpha(i,j) = x(pos)
+                    pos = pos + 1
+                end if
+                do k = 1, 3
+                    if (fit_B(k,j,i)) then
+                        pes_rebo%B(k,j,i) = x(pos)
+                        pes_rebo%B(k,i,j) = x(pos)
+                        pos = pos + 1
+                    end if
+                    if (fit_beta(k,j,i)) then
+                        pes_rebo%beta(k,j,i) = x(pos)
+                        pes_rebo%beta(k,i,j) = x(pos)
+                        pos = pos + 1
+                    end if
+                end do
+                if (fit_Dmax(j,i)) then
+                    pes_rebo%Dmax(j,i) = x(pos)
+                    pes_rebo%Dmax(i,j) = x(pos)
+                    pos = pos + 1
+                end if
+                if (fit_Dmaxp(j,i)) then
+                    pes_rebo%Dmaxp(j,i) = x(pos)
+                    pes_rebo%Dmaxp(i,j) = x(pos)
+                    pos = pos + 1
+                end if
+                if (fit_Dmin(j,i)) then
+                    pes_rebo%Dmin(j,i) = x(pos)
+                    pes_rebo%Dmin(i,j) = x(pos)
+                    pos = pos + 1
+                end if
+                if (fit_Q(j,i)) then
+                    pes_rebo%Q(j,i) = x(pos)
+                    pes_rebo%Q(i,j) = x(pos)
+                    pos = pos + 1
+                end if
+                if (fit_rho(j,i)) then
+                    pes_rebo%rho(j,i) = x(pos)
+                    pes_rebo%rho(i,j) = x(pos)
+                    pos = pos + 1
+                end if
+            end do
+        end do
+
+
+
+
+    end subroutine set_fit_params_rebo
 
 
 
@@ -1568,13 +1689,13 @@ contains
         real(dp), dimension(3, atoms%nbeads) :: f12, f23, f24, f31, f34
 
         ! new
-        real(dp), dimension(3, atoms%nbeads) :: eij, eji, eik, ejl, eijl, ejik, rijl, rjik
-        real(dp), dimension(atoms%nbeads) :: rijlmag, rjikmag
+        ! real(dp), dimension(3, atoms%nbeads) :: eij, eji, eik, ejl, eijl, ejik, rijl, rjik
+        ! real(dp), dimension(atoms%nbeads) :: rijlmag, rjikmag
 
 
         logical :: DEBUG = .false.
 
-        real(dp) :: temp1, temp2, temp3, temp4, temp5, temp6, temp7
+        ! real(dp) :: temp1, temp2, temp3, temp4, temp5, temp6, temp7
 
 
 
