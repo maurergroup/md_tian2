@@ -321,4 +321,37 @@ contains
 
     end subroutine output_scatter
 
+
+
+    subroutine output_pes(atoms)
+
+        type(universe), intent(in) :: atoms
+
+        integer :: i, j
+        character(len=28) :: fname
+        character(len=5) :: pes
+        character(len=4) :: role_i, role_j
+
+        write(fname, '(a19, i5.5, a4)') "fit/out_params/fit_", simparams%start, ".pes"
+
+        ! XXX: change system() to execute_command_line() when new compiler is available
+        if (.not. dir_exists('fit/out_params/')) call system('mkdir fit/out_params/')
+
+        call open_for_write(out_unit, fname)
+
+        do i = 1, atoms%ntypes
+            do j = 1, atoms%ntypes
+                pes = pes_id_to_name(atoms%pes(i,j))
+                role_i = universe_id_to_role(atoms, i)
+                role_j = universe_id_to_role(atoms, j)
+
+                write(out_unit, '(2a5)'), "pes", pes
+                write(out_unit, '(4a8)'), atoms%name(i), atoms%name(j), role_i, role_j
+
+            end do
+        end do
+
+
+    end subroutine output_pes
+
 end module output_mod

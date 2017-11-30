@@ -31,8 +31,16 @@ module constants
     integer, parameter :: pes_id_simple_lj      = 2006
     integer, parameter :: pes_id_no_interaction = 2007
 
+    ! PES names
+    character(len=*), parameter :: pes_name_lj             = "lj"
+    character(len=*), parameter :: pes_name_simple_lj      = "slj"
+    character(len=*), parameter :: pes_name_emt            = "emt"
+    character(len=*), parameter :: pes_name_rebo           = "rebo"
+    character(len=*), parameter :: pes_name_no_interaction = "non"
+    character(len=*), parameter :: pes_name_ho             = "ho"
+    character(len=*), parameter :: pes_name_morse          = "morse"
 
-    ! Internal program constants
+     ! Internal program constants
     integer, parameter :: randseed(13) = [7,5,3,11,9,1,17,2,9,6,4,5,8]
     integer, parameter :: max_string_length = 1000
     real(dp), parameter :: tolerance = 1.0e-9_dp

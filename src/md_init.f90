@@ -96,25 +96,25 @@ contains
 
                     select case (words(2))
 
-                        case ('lj')
+                        case (pes_name_lj)
                             call read_lj(atoms, pes_unit)
 
-                        case ('slj')
+                        case (pes_name_simple_lj)
                             call read_simple_lj(atoms, pes_unit)
 
                         !                        case ('morse')
                         !                            call read_morse(pes_unit)
 
-                        case ('emt')
+                        case (pes_name_emt)
                             call read_emt(atoms, pes_unit)
                         !
-                        case ('rebo')
+                        case (pes_name_rebo)
                             call read_rebo(atoms, pes_unit)
 
-                        case ('non')
+                        case (pes_name_no_interaction)
                             call read_non_interacting(atoms, pes_unit)
 
-                        case ('ho')
+                        case (pes_name_ho)
                             call read_ho(atoms, pes_unit)
 
                         case default
@@ -432,6 +432,7 @@ contains
             if (simparams%fit_training_data == default_int) stop err // "training data input missing"
             if (simparams%fit_validation_data == default_int) stop err // "validation data input missing"
             if (simparams%evasp == default_real) stop err // "reference energy evasp missing"
+            if (simparams%start == default_int) stop err // "fit number not set"
 
         else
             print *, err // "unknown run command", simparams%run

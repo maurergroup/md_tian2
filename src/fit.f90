@@ -26,7 +26,7 @@ contains
 
 
         real(dp) :: train_rmse, valid_rmse
-        integer :: alloc_stat, i
+        integer :: alloc_stat, i, values(8)
         real(dp), allocatable :: x(:)
         real(dp), allocatable :: train_dev(:), valid_dev(:)
         character(len=*), parameter :: err = "Error in perform_fit(): "
@@ -85,10 +85,25 @@ contains
 
         x = from_pes_params_to_x(reference)
 
+
+
         ! do the fit
-        call nllsqwbc(train_data, valid_data, x, train_dev)
+        call nllsqwbc(train_data, valid_data, x, train_dev, train_rmse)
 
+        valid_dev = default_real
+        do i = 1, validation_data_points
+            print *, i
+            call calc_force(valid_data(i), energy_only)
+            print *, valid_nrg(i), valid_data(i)%epot(1)-train_data(1)%epot(1)
+            valid_dev(i) = valid_nrg(i) - (valid_data(i)%epot(1)-train_data(1)%epot(1))
+        end do
 
+        ! evaluate validation data set
+        valid_rmse = sqrt(sum(valid_dev*valid_dev)/validation_data_points)
+        call date_and_time(VALUES=values)
+        print '(i4, a, i2.2, a, i2.2, a, i2.2, a, i2.2, a5, f10.5, a12, f10.5)', &
+            values(1), "-", values(2), "-",values(3), " - ",values(5), &
+            ".",values(6), "max:", maxval(abs(valid_dev)), "valid rmse:", valid_rmse
 
     end subroutine perform_fit
 
@@ -313,7 +328,7 @@ contains
     end subroutine from_x_to_pes_params
 
 
-    subroutine nllsqwbc(td, vd, x, fvec)
+    subroutine nllsqwbc(td, vd, x, fvec, train_rmse)
         use mkl_rci
         use mkl_rci_type
         implicit none
@@ -324,10 +339,8 @@ contains
         !** solution vector. contains flattened potential parameters
         real(dp), intent(inout) :: x(:)
 
-        !**
-        real(dp), intent(out) :: fvec(:)
-
-
+        !** vector containing deviations from target energies
+        real(dp), intent(out) :: fvec(:), train_rmse
 
         !** user's objective function
         !external            :: obj_func
@@ -341,8 +354,6 @@ contains
         real(dp)            :: jac_eps
         !** reverse communication interface parameter
         integer             :: rci_request
-!        !** function (f(x)) value vector
-!        real(dp), allocatable :: fvec(:)
         !** jacobi matrix
         real(dp), allocatable :: fjac (:,:)
         !** number of iterations
@@ -366,18 +377,17 @@ contains
         !** results of input parameter checking
         integer :: info(6)
         integer :: values(8)
+        real(dp) :: max_val
         !** set precisions for stop-criteria
         eps  = 1.0e-5_dp
         !** set maximum number of iterations
-        iter1 = 1000
+        iter1 = simparams%maxit
         !** set maximum number of iterations of calculation of trial-step
         iter2 = 100
         !** set initial step bound
         rs = 100.0_dp
         !** precisions for jacobi calculation
         jac_eps = 1.0e-8_dp
-
-
 
         m = training_data_points+1
         n = size(x)
@@ -407,7 +417,7 @@ contains
             !** and stop
             stop 1
         end if
-        print *, "dtrnlsp_init success"
+        !print *, "dtrnlsp_init success"
         !** checks the correctness of handle and arrays containing jacobian matrix,
         !** objective function, lower and upper bounds, and stopping criteria.
         if (dtrnlsp_check (handle, n, m, fjac, fvec, eps, info) /= tr_success) then
@@ -420,7 +430,7 @@ contains
             !** and stop
             stop 1
         else
-            print *, "dtrnlsp_check success"
+        !print *, "dtrnlsp_check success"
             !** the handle is not valid.
             if ( info(1) /= 0 .or. info(2) /= 0 .or. info(3) /= 0 .or. info(4) /= 0 ) then
                 !** the fjac array is not valid.
@@ -448,7 +458,7 @@ contains
             !**   fvec          in:     vector
             !**   fjac          in:     jacobi matrix
             !**   rci_request   in/out: return number which denote next step for performing
-            print *, "starting dtrnlsp_solve"
+            !print *, "starting dtrnlsp_solve"
             if (dtrnlsp_solve (handle, fvec, fjac, rci_request) /= tr_success) then
                 !** if function does not complete successfully then print error message
                 print *, '| error in dtrnlsp_solve'
@@ -459,6 +469,7 @@ contains
                 !** and stop
                 stop 1
             end if
+
             !** according with rci_request value we do next step
             select case (rci_request)
                 case (-1, -2, -3, -4, -5, -6)
@@ -470,7 +481,7 @@ contains
                     !**     n               in:     number of function variables
                     !**     x               in:     solution vector
                     !**     fvec            out:    function value f(x)
-                    print *, "RCI request = 1: calculate obj_func"
+                    !print *, "RCI request = 1: calculate obj_func"
                     call obj_func (m, n, x, fvec)
                 case (2)
                     !**   compute jacobi matrix
@@ -480,7 +491,7 @@ contains
                     !**     fjac            out:    jacobi matrix
                     !**     x               in:     solution vector
                     !**     jac_eps         in:     jacobi calculation precision
-                    print *, "RCI request = 2: calculate djacobi"
+                    !print *, "RCI request = 2: calculate djacobi"
                     if (djacobi (obj_func, n, m, fjac, x, jac_eps) /= tr_success) then
                         !** if function does not complete successfully then print error message
                         print *, '| error in djacobi'
@@ -493,13 +504,19 @@ contains
                     end if
 
                     do i=2,M
-                        if ((mod(i,1) == 0) .or. (i == M)) then
+                        if (mod(i, M/10) == 0) then
                             write(*,"(2i6, 2f12.4)") iter, i-1, train_nrg(i), train_nrg(i)-fvec(i)
                         end if
                     end do
-                    print *, "stddev", sqrt(sum(fvec(2:)*fvec(2:))/size(fvec(2:)))
+
+                    train_rmse = sqrt(sum(fvec(2:)*fvec(2:))/training_data_points)
+                    max_val = maxval(abs(fvec)) ! max deviation
+
                     call date_and_time(VALUES=values)
-                    print '(8i5)', values
+
+                    print '(i4, a, i2.2, a, i2.2, a, i2.2, a, i2.2, a6, i6, a5, f10.5, a12, f10.5)', &
+                        values(1), "-", values(2), "-",values(3), " - ",values(5), &
+                        ".",values(6), "iter:", iter, "max:", max_val, "train rmse:", train_rmse
 
                     iter = iter + 1
             end select
@@ -535,10 +552,13 @@ contains
         !** release internal intel(r) mkl memory that might be used for computations.
         !** note: it is important to call the routine below to avoid memory leaks
         !** unless you disable intel(r) mkl memory manager
+
+        call from_x_to_pes_params(x)
+
         call mkl_free_buffers
 
-        print *, 'initial residual', r1
-        print *, 'final residual', r2
+        !print *, 'initial residual', r1
+        !print *, 'final residual', r2
 
     end subroutine nllsqwbc
 
@@ -558,7 +578,7 @@ contains
 
         call from_x_to_pes_params(x)
 
-        ! Eref is train_data(1)%epot(1
+        ! Eref is train_data(1)%epot(1)
         do i = 1, m
             call calc_force(train_data(i), energy_only)
             f(i) = train_nrg(i) - (train_data(i)%epot(1)-train_data(1)%epot(1))

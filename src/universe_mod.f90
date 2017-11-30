@@ -442,6 +442,49 @@ contains
     end subroutine atom_ekin
 
 
+    function pes_id_to_name(id) result(name)
+
+        integer, intent(in) :: id
+        character(len=5) :: name
+        character(len=*), parameter :: err = "Error in pes_id_to_name(): "
+
+        select case(id)
+        case(pes_id_lj)
+            name = pes_name_lj
+        case(pes_id_morse)
+            name = pes_name_morse
+        case(pes_id_emt)
+            name = pes_name_emt
+        case(pes_id_rebo)
+            name = pes_name_rebo
+        case(pes_id_ho)
+            name = pes_name_ho
+        case(pes_id_simple_lj)
+            name = pes_name_simple_lj
+        case(pes_id_no_interaction)
+            name = pes_name_no_interaction
+        case default
+            print *, err // "unknown id", id
+            stop
+        end select
+
+    end function pes_id_to_name
+
+
+
+    function universe_id_to_role(this, id) result(role)
+
+        type(universe), intent(in) :: this
+        integer, intent(in) :: id
+        character(len=4) :: role
+
+        if (this%is_proj(this%idx(id))) then
+            role = "proj"
+        else
+            role = "latt"
+        end if
+
+    end function universe_id_to_role
 
 
 end module universe_mod

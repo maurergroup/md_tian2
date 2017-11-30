@@ -450,10 +450,33 @@ contains
             end do
         end do
 
-
-
-
     end subroutine set_fit_params_rebo
+
+
+
+    function to_string_rebo(idx_i, idx_j) result(res)
+
+        integer, intent(in) :: idx_i, idx_j
+        character(len=31) :: res(13)
+
+        res = ""
+
+        write(res(1), '(a11, e15.8)') "Dmin ", pes_rebo%Dmin(idx_i, idx_j)
+        write(res(2), '(a11, e15.8)') "Dmax ", pes_rebo%Dmax(idx_i, idx_j)
+        write(res(3), '(a11, e15.8)') "Dmaxp", pes_rebo%Dmaxp(idx_i, idx_j)
+        write(res(4), '(a11, e15.8)') "B1   ", pes_rebo%B(1, idx_i, idx_j)
+        write(res(5), '(a11, e15.8)') "B2   ", pes_rebo%B(2, idx_i, idx_j)
+        write(res(6), '(a11, e15.8)') "B3   ", pes_rebo%B(3, idx_i, idx_j)
+        write(res(7), '(a11, e15.8)') "beta1", pes_rebo%beta(1, idx_i, idx_j)
+        write(res(8), '(a11, e15.8)') "beta2", pes_rebo%beta(2, idx_i, idx_j)
+        write(res(9), '(a11, e15.8)') "beta3", pes_rebo%beta(3, idx_i, idx_j)
+        write(res(10), '(a11, e15.8)') "Q    ", pes_rebo%Q(idx_i, idx_j)
+        write(res(11), '(a11, e15.8)') "A    ", pes_rebo%A(idx_i, idx_j)
+        write(res(12), '(a11, e15.8)') "alpha", pes_rebo%alpha(idx_i, idx_j)
+        write(res(13), '(a11, e15.8)') "rho  ", pes_rebo%rho(idx_i, idx_j)
+
+
+    end function to_string_rebo
 
 
 
