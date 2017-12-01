@@ -325,32 +325,57 @@ contains
 
     subroutine output_pes(atoms)
 
+        use pes_rebo_mod, only : to_string_rebo
+
         type(universe), intent(in) :: atoms
 
         integer :: i, j
-        character(len=28) :: fname
+        character(len=35) :: fname
         character(len=5) :: pes
         character(len=4) :: role_i, role_j
+        character(len=*), parameter :: err = "Error in output_pes(): "
 
-        write(fname, '(a19, i5.5, a4)') "fit/out_params/fit_", simparams%start, ".pes"
-
-        ! XXX: change system() to execute_command_line() when new compiler is available
-        if (.not. dir_exists('fit/out_params/')) call system('mkdir fit/out_params/')
-
+        write(fname, '(a9,i5.5,a12,i5.5,a4)') "fit/fits/", simparams%start, "/out_params/", simparams%start, ".pes"
         call open_for_write(out_unit, fname)
 
         do i = 1, atoms%ntypes
-            do j = 1, atoms%ntypes
+            do j = i, atoms%ntypes
                 pes = pes_id_to_name(atoms%pes(i,j))
                 role_i = universe_id_to_role(atoms, i)
                 role_j = universe_id_to_role(atoms, j)
 
-                write(out_unit, '(2a5)'), "pes", pes
+                write(out_unit, '(2a5)'), "pes ", pes
                 write(out_unit, '(4a8)'), atoms%name(i), atoms%name(j), role_i, role_j
+
+                select case (atoms%pes(i,j))
+                    case(pes_id_rebo)
+                        call to_string_rebo(out_unit, i, j)
+                    case(pes_id_no_interaction)
+                        ! no interaction, no parameters
+
+                    ! TODO: implement outputs
+                    !        case(pes_id_lj)
+                    !            name = pes_name_lj
+                    !        case(pes_id_morse)
+                    !            name = pes_name_morse
+                    !        case(pes_id_emt)
+                    !            name = pes_name_emt
+                    !        case(pes_id_ho)
+                    !            name = pes_name_ho
+                    !        case(pes_id_simple_lj)
+                    !            name = pes_name_simple_lj
+                    case default
+                        print *, err, "pes output not implemented for ", pes
+                        stop
+                end select
+
+                ! if this is not the last pes
+                if ( i /= atoms%ntypes .or. j /= atoms%ntypes) write(out_unit, '(a)') ""
 
             end do
         end do
 
+        close(out_unit)
 
     end subroutine output_pes
 

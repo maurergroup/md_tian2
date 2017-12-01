@@ -32,7 +32,6 @@ program md_tian
     real(dp), allocatable :: cents(:,:)
     real(dp) :: vec(3)
 
-
     call simbox_init(atoms)
 
     select case (simparams%run)

@@ -8,11 +8,13 @@ module fit
     use open_file
     use useful_things
     use pes_rebo_mod
+    use output_mod
 
     implicit none
 
     character(len=*), parameter :: train_folder = "fit/train/"
     character(len=*), parameter :: valid_folder = "fit/valid/"
+    integer, parameter :: fit_out = 89
     integer :: training_data_points, validation_data_points
     real(dp), allocatable :: train_nrg(:), valid_nrg(:)
     type(universe), allocatable :: train_data(:), valid_data(:)
@@ -24,13 +26,14 @@ contains
 
         type(universe), intent(inout) :: reference     ! holds the reference configuration
 
-
         real(dp) :: train_rmse, valid_rmse
         integer :: alloc_stat, i, values(8)
         real(dp), allocatable :: x(:)
         real(dp), allocatable :: train_dev(:), valid_dev(:)
         character(len=*), parameter :: err = "Error in perform_fit(): "
 
+        ! set up folder structure and open file handles
+        call fit_setup()
 
         training_data_points   = 0
         validation_data_points = 0
@@ -38,7 +41,12 @@ contains
         ! check the data for consistency, count training and validation data sets to
         ! allocate storage of array of universe objects
         call check_fitting_data(train_folder)
+        call timestamp(fit_out)
+        write(fit_out, '(a, i)') "training data points found:  ", training_data_points
+
         call check_fitting_data(valid_folder)
+        call timestamp(fit_out)
+        write(fit_out, '(a, i)') "validation data points found:", validation_data_points
 
         ! 1st entry is the reference minimum energy structure
         allocate(train_data(training_data_points+1), &
@@ -71,9 +79,15 @@ contains
             valid_data(i)%isimbox = reference%isimbox
         end do
 
-        call read_fitting_data(train_folder, train_data)
-        call read_fitting_data(valid_folder, valid_data)
+        call timestamp(fit_out); write(fit_out, '(a)') "allocation complete"
 
+        call read_fitting_data(train_folder, train_data)
+        call timestamp(fit_out)
+        write(fit_out, '(a)') "training data points read"
+
+        call read_fitting_data(valid_folder, valid_data)
+        call timestamp(fit_out)
+        write(fit_out, '(a)') "validation data points read"
 
         ! subtract DFT reference energy
         do i = 1, training_data_points + 1
@@ -85,25 +99,31 @@ contains
 
         x = from_pes_params_to_x(reference)
 
-
-
         ! do the fit
+        call timestamp(fit_out)
+        write(fit_out,'(a, i, a)') "starting fit with max ", simparams%maxit, " iterations"
         call nllsqwbc(train_data, valid_data, x, train_dev, train_rmse)
 
+        ! compare to validation data set
+        call timestamp(fit_out)
+        write(fit_out, '(a)') "comparison to validation data set"
         valid_dev = default_real
         do i = 1, validation_data_points
-            print *, i
             call calc_force(valid_data(i), energy_only)
-            print *, valid_nrg(i), valid_data(i)%epot(1)-train_data(1)%epot(1)
             valid_dev(i) = valid_nrg(i) - (valid_data(i)%epot(1)-train_data(1)%epot(1))
         end do
 
         ! evaluate validation data set
         valid_rmse = sqrt(sum(valid_dev*valid_dev)/validation_data_points)
-        call date_and_time(VALUES=values)
-        print '(i4, a, i2.2, a, i2.2, a, i2.2, a, i2.2, a5, f10.5, a12, f10.5)', &
-            values(1), "-", values(2), "-",values(3), " - ",values(5), &
-            ".",values(6), "max:", maxval(abs(valid_dev)), "valid rmse:", valid_rmse
+
+        write(fit_out, '(a, f7.1, a)') "training rmse:  ", 1000*train_rmse, " meV"
+        write(fit_out, '(a, f7.1, a)') "validation rmse:", 1000*valid_rmse, " meV"
+
+        close(fit_out)
+
+        ! output results of the fit
+        call write_deviations_of_fit()
+        call output_pes(reference)
 
     end subroutine perform_fit
 
@@ -292,6 +312,66 @@ contains
 
 
 
+    subroutine fit_setup()
+
+        character(len=14) :: folder
+        character(len=25) :: param_folder
+        character(len=26) :: dev_folder
+        character(len=35) :: train_dev_folder
+        character(len=37) :: valid_dev_folder
+        character(len=30) :: fname
+
+        ! XXX: change system() to execute_command_line() when new compiler is available
+        ! create the fits directory
+        if (.not. dir_exists("fit/fits/")) call system("mkdir fit/fits/")
+
+        ! create folder for output of this fit
+        write(folder, '(a9, i5.5)') "fit/fits/", simparams%start
+        if (.not. dir_exists(folder)) call system("mkdir " // folder)
+
+        ! create folder for fitted parameters
+        write(param_folder, '(a14, a11)') folder, "/out_params"
+        if (.not. dir_exists(param_folder)) call system("mkdir " // param_folder)
+
+        ! create folder for deviations
+        write(dev_folder, '(a14, a12)') folder, "/deviations/"
+        if (.not. dir_exists(dev_folder)) call system("mkdir " // dev_folder)
+
+        ! file that contains details to the fit
+        write(fname, '(a14, a16)') folder, "/fit_details.txt"
+        call open_for_write(fit_out, fname)
+
+        call timestamp(fit_out); write(fit_out, '(a)') "fit started"
+
+    end subroutine fit_setup
+
+
+    subroutine write_deviations_of_fit()
+
+        character(len=38) :: t_dev_file
+        character(len=40) :: v_dev_file
+        integer :: i
+
+        write(t_dev_file, '(a9, i5.5, a24)') "fit/fits/", simparams%start, "/deviations/training.dat"
+        call open_for_write(fit_out, t_dev_file)
+        write(fit_out, '(a24, a18)') "target epot/meV", "this epot/meV"
+        do i = 2, training_data_points+1
+            write(fit_out, '(i6, 2f18.5)') i-1, train_nrg(i), train_data(i)%epot(1)-train_data(1)%epot(1)
+        end do
+        close(fit_out)
+
+        write(v_dev_file, '(a9, i5.5, a26)') "fit/fits/", simparams%start, "/deviations/validation.dat"
+        call open_for_write(fit_out, v_dev_file)
+        write(fit_out, '(a24, a18)') "target epot/meV", "this epot/meV"
+        do i = 1, validation_data_points
+            write(fit_out, '(i6, 2f18.5)') i, valid_nrg(i), valid_data(i)%epot(1)-train_data(1)%epot(1)
+        end do
+        close(fit_out)
+
+    end subroutine write_deviations_of_fit
+
+
+
     function from_pes_params_to_x(ref) result(x)
 
         type(universe), intent(in) :: ref
@@ -372,12 +452,10 @@ contains
         real(dp)            :: r1, r2
         !** tr solver handle
         type(handle_tr) :: handle
-        !** cycles counters
-        integer             :: i, j
+
         !** results of input parameter checking
         integer :: info(6)
-        integer :: values(8)
-        real(dp) :: max_val
+        real(dp) :: max_val, train_rmse_old, mean_dev
         !** set precisions for stop-criteria
         eps  = 1.0e-5_dp
         !** set maximum number of iterations
@@ -397,6 +475,11 @@ contains
         !** set initial values
         fvec = 0.0_dp
         fjac = 0.0_dp
+        train_rmse_old = 0.0_dp
+
+        !** write to fit details file
+        write(fit_out, '(a)') ""
+        write(fit_out, '(a30, 3a13, a14)') "iter", "max err/meV", "avg err/meV", "rmse/meV", "Δrmse/meV"
 
         !** initialize solver (allocate memory, set initial values)
         !**     handle    in/out: tr solver handle
@@ -503,21 +586,21 @@ contains
                         stop 1
                     end if
 
-                    do i=2,M
-                        if (mod(i, M/10) == 0) then
-                            write(*,"(2i6, 2f12.4)") iter, i-1, train_nrg(i), train_nrg(i)-fvec(i)
-                        end if
-                    end do
+!                    do i=2,M
+!                        if (mod(i, M/10) == 0) then
+!                            write(*,"(2i6, 2f12.4)") iter, i-1, train_nrg(i), train_nrg(i)-fvec(i)
+!                        end if
+!                    end do
 
-                    train_rmse = sqrt(sum(fvec(2:)*fvec(2:))/training_data_points)
                     max_val = maxval(abs(fvec)) ! max deviation
+                    mean_dev = sum(fvec(2:))/training_data_points
+                    train_rmse = sqrt(sum(fvec(2:)*fvec(2:))/training_data_points)
 
-                    call date_and_time(VALUES=values)
+                    call timestamp(fit_out)
+                    write(fit_out, '(i6, 4f13.1)') iter+1, 1000*max_val, 1000*mean_dev, &
+                        1000*train_rmse, 1000*(train_rmse-train_rmse_old)
 
-                    print '(i4, a, i2.2, a, i2.2, a, i2.2, a, i2.2, a6, i6, a5, f10.5, a12, f10.5)', &
-                        values(1), "-", values(2), "-",values(3), " - ",values(5), &
-                        ".",values(6), "iter:", iter, "max:", max_val, "train rmse:", train_rmse
-
+                    train_rmse_old = train_rmse
                     iter = iter + 1
             end select
         end do
@@ -556,6 +639,9 @@ contains
         call from_x_to_pes_params(x)
 
         call mkl_free_buffers
+
+        write(fit_out, "(a)") ""
+        call timestamp(fit_out); write(fit_out, "(a)") "fit complete"
 
         !print *, 'initial residual', r1
         !print *, 'final residual', r2

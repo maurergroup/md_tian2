@@ -349,8 +349,16 @@ contains
 
 
 
+    subroutine timestamp(out_unit)
 
+        integer, intent(in) :: out_unit
+        integer :: val(8)
+        character(len=*), parameter :: fstring = "(a, i4, a, i2.2, a, i2.2, a, i2.2, a, i2.2, a, i2.2, a2$)"
 
+        call date_and_time(values=val)
 
+        write(out_unit, fstring) "[", val(1), "-", val(2), "-",val(3), " - ",val(5), ".",val(6), ":", val(7), "] "
+
+    end subroutine timestamp
 
 end module useful_things
