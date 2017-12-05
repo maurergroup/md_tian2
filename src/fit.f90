@@ -1,5 +1,7 @@
 !** NONLINEAR LEAST SQUARE PROBLEM WITHOUT BOUNDARY CONSTRAINTS
+    include 'omp_lib.f90'
     include 'mkl_rci.f90'
+    include 'mkl_service.f90'
 module fit
 
     use force
@@ -9,6 +11,8 @@ module fit
     use useful_things
     use pes_rebo_mod
     use output_mod
+    use mkl_service
+    use omp_lib
 
     implicit none
 
@@ -19,6 +23,7 @@ module fit
     real(dp), allocatable :: train_nrg(:), valid_nrg(:)
     type(universe), allocatable :: train_data(:), valid_data(:)
     integer :: nfit_params
+    real(dp) :: Eref = 0.0_dp
 
 contains
 
@@ -27,10 +32,15 @@ contains
         type(universe), intent(inout) :: reference     ! holds the reference configuration
 
         real(dp) :: train_rmse, valid_rmse
-        integer :: alloc_stat, i, values(8)
+        integer :: alloc_stat, i
         real(dp), allocatable :: x(:)
         real(dp), allocatable :: train_dev(:), valid_dev(:)
         character(len=*), parameter :: err = "Error in perform_fit(): "
+
+ !       call omp_set_num_threads(4)
+ !       call mkl_set_num_threads(1)
+
+        print *, OMP_GET_NUM_THREADS()
 
         ! set up folder structure and open file handles
         call fit_setup()
@@ -317,8 +327,6 @@ contains
         character(len=14) :: folder
         character(len=25) :: param_folder
         character(len=26) :: dev_folder
-        character(len=35) :: train_dev_folder
-        character(len=37) :: valid_dev_folder
         character(len=30) :: fname
 
         ! XXX: change system() to execute_command_line() when new compiler is available
@@ -565,6 +573,8 @@ contains
                     !**     x               in:     solution vector
                     !**     fvec            out:    function value f(x)
                     !print *, "RCI request = 1: calculate obj_func"
+                    call calc_force(train_data(1), energy_only)
+                    Eref = train_data(1)%epot(1)
                     call obj_func (m, n, x, fvec)
                 case (2)
                     !**   compute jacobi matrix
@@ -664,11 +674,17 @@ contains
 
         call from_x_to_pes_params(x)
 
-        ! Eref is train_data(1)%epot(1)
-        do i = 1, m
+        f(1) = 0.0_dp
+        call omp_set_num_threads(2)
+        !$omp parallel private( i )
+        !$omp do
+        do i = 2, m
+        write( *, * ) 'Thread', omp_get_thread_num(), ':',  i, "/", omp_get_num_threads()
             call calc_force(train_data(i), energy_only)
-            f(i) = train_nrg(i) - (train_data(i)%epot(1)-train_data(1)%epot(1))
+            f(i) = train_nrg(i) - (train_data(i)%epot(1)-Eref)
         end do
+        !$omp end do
+        !$omp end parallel
 
     end subroutine obj_func
 

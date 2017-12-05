@@ -32,6 +32,7 @@ program md_tian
     real(dp), allocatable :: cents(:,:)
     real(dp) :: vec(3)
 
+
     call simbox_init(atoms)
 
     select case (simparams%run)
@@ -46,7 +47,6 @@ program md_tian
             call perform_fit(atoms)
 
         case ('md')
-            open(unit=78, file="dists.dat")
 
             do itraj = simparams%start, simparams%start+simparams%ntrajs-1
 

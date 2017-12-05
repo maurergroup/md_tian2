@@ -33,7 +33,7 @@ contains
     end subroutine calc_force
 
 
-    subroutine set_acceleration(atoms)
+    pure subroutine set_acceleration(atoms)
 
         type(universe), intent(inout) :: atoms
         integer :: i

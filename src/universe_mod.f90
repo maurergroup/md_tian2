@@ -392,7 +392,7 @@ contains
 
 
 
-    subroutine minimg_beads(this, i, j, r, vec)
+    pure subroutine minimg_beads(this, i, j, r, vec)
 
         ! Calculates the minimum image vector and distance
         ! between all beads of atoms i and j

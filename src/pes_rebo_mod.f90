@@ -2560,6 +2560,7 @@ contains
         real(dp), dimension(atoms%nbeads, atoms%natoms, atoms%natoms) :: distances
         real(dp), dimension(3, atoms%nbeads, atoms%natoms, atoms%natoms) :: vectors
 
+
         ! gather distance and vector information
         ! calculate only one half and then add to other half (with changed sign)
         distances = 0.0_dp
