@@ -1,7 +1,7 @@
 !** NONLINEAR LEAST SQUARE PROBLEM WITHOUT BOUNDARY CONSTRAINTS
-    include 'omp_lib.f90'
     include 'mkl_rci.f90'
     include 'mkl_service.f90'
+    include 'omp_lib.f90'
 module fit
 
     use force
@@ -11,8 +11,6 @@ module fit
     use useful_things
     use pes_rebo_mod
     use output_mod
-    use mkl_service
-    use omp_lib
 
     implicit none
 
@@ -23,7 +21,6 @@ module fit
     real(dp), allocatable :: train_nrg(:), valid_nrg(:)
     type(universe), allocatable :: train_data(:), valid_data(:)
     integer :: nfit_params
-    real(dp) :: Eref = 0.0_dp
 
 contains
 
@@ -36,11 +33,6 @@ contains
         real(dp), allocatable :: x(:)
         real(dp), allocatable :: train_dev(:), valid_dev(:)
         character(len=*), parameter :: err = "Error in perform_fit(): "
-
- !       call omp_set_num_threads(4)
- !       call mkl_set_num_threads(1)
-
-        print *, OMP_GET_NUM_THREADS()
 
         ! set up folder structure and open file handles
         call fit_setup()
@@ -107,21 +99,22 @@ contains
             valid_nrg(i) = valid_data(i)%epot(1) - simparams%evasp
         end do
 
-        x = from_pes_params_to_x(reference)
+        call from_pes_params_to_x(reference, x)
 
         ! do the fit
         call timestamp(fit_out)
         write(fit_out,'(a, i, a)') "starting fit with max ", simparams%maxit, " iterations"
-        call nllsqwbc(train_data, valid_data, x, train_dev, train_rmse)
+        call nllsqwbc(x, train_dev, train_rmse)
 
         ! compare to validation data set
         call timestamp(fit_out)
         write(fit_out, '(a)') "comparison to validation data set"
-        valid_dev = default_real
+        !$omp parallel do private(i)
         do i = 1, validation_data_points
             call calc_force(valid_data(i), energy_only)
             valid_dev(i) = valid_nrg(i) - (valid_data(i)%epot(1)-train_data(1)%epot(1))
         end do
+        !$omp end parallel do
 
         ! evaluate validation data set
         valid_rmse = sqrt(sum(valid_dev*valid_dev)/validation_data_points)
@@ -351,6 +344,8 @@ contains
 
         call timestamp(fit_out); write(fit_out, '(a)') "fit started"
 
+        !call omp_set_num_threads(simparams%nthreads)
+
     end subroutine fit_setup
 
 
@@ -380,16 +375,16 @@ contains
 
 
 
-    function from_pes_params_to_x(ref) result(x)
+    subroutine from_pes_params_to_x(ref, x)
 
         type(universe), intent(in) :: ref
-        real(dp), allocatable :: x(:)
+        real(dp), allocatable, intent(out) :: x(:)
 
         real(dp), allocatable :: params_rebo(:)
 
 
         ! TODO: add other PESs
-        if (any(ref%pes == pes_id_rebo)) params_rebo = get_fit_params_rebo()
+        if (any(ref%pes == pes_id_rebo)) call get_fit_params_rebo(params_rebo)
 
         ! add other sizes when implementing other PESs
         nfit_params = size([params_rebo])
@@ -399,7 +394,7 @@ contains
         ! add other PES param array when implementing other PESs
         x = [params_rebo]
 
-    end function from_pes_params_to_x
+    end subroutine from_pes_params_to_x
 
 
 
@@ -416,13 +411,11 @@ contains
     end subroutine from_x_to_pes_params
 
 
-    subroutine nllsqwbc(td, vd, x, fvec, train_rmse)
+    subroutine nllsqwbc(x, fvec, train_rmse)
         use mkl_rci
         use mkl_rci_type
         implicit none
 
-        !** traning and validation data
-        type(universe), intent(inout) :: td(:), vd(:)
 
         !** solution vector. contains flattened potential parameters
         real(dp), intent(inout) :: x(:)
@@ -573,8 +566,6 @@ contains
                     !**     x               in:     solution vector
                     !**     fvec            out:    function value f(x)
                     !print *, "RCI request = 1: calculate obj_func"
-                    call calc_force(train_data(1), energy_only)
-                    Eref = train_data(1)%epot(1)
                     call obj_func (m, n, x, fvec)
                 case (2)
                     !**   compute jacobi matrix
@@ -674,20 +665,17 @@ contains
 
         call from_x_to_pes_params(x)
 
+        call calc_force(train_data(1), energy_only)
         f(1) = 0.0_dp
-        call omp_set_num_threads(2)
-        !$omp parallel private( i )
-        !$omp do
+
+        !$omp parallel do private(i)
         do i = 2, m
-        write( *, * ) 'Thread', omp_get_thread_num(), ':',  i, "/", omp_get_num_threads()
+            !print *, "point", i, "on thread", omp_get_thread_num(), "of", omp_get_num_threads()
             call calc_force(train_data(i), energy_only)
-            f(i) = train_nrg(i) - (train_data(i)%epot(1)-Eref)
+            f(i) = train_nrg(i) - (train_data(i)%epot(1)-train_data(1)%epot(1))
         end do
-        !$omp end do
-        !$omp end parallel
+        !$omp end parallel do
 
     end subroutine obj_func
 
 end module fit
-
-

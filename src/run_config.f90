@@ -52,6 +52,7 @@ module run_config
         integer  :: fit_validation_data                             ! number of configuration/energy pair files in fit/valid/
         real(dp) :: evasp                                           ! reference energy for fit
         integer  :: maxit                                           ! maximum number of iteration during fit
+        integer  :: nthreads                                        ! number of threads used for fitting
 
     end type
 
@@ -95,6 +96,7 @@ contains
         new_simulation_parameters%fit_validation_data = default_int
         new_simulation_parameters%evasp = default_real
         new_simulation_parameters%maxit = 30
+        new_simulation_parameters%nthreads = 1
 
     end function
 
@@ -525,6 +527,12 @@ contains
 
                         read(words(2), *, iostat=ios) simparams%maxit
                         if (ios /= 0) stop err // "Error reading maxit"
+
+
+                    case ('nthreads')
+
+                        read(words(2), *, iostat=ios) simparams%nthreads
+                        if (ios /= 0) stop err // "Error reading number of threads"
 
 
                     case default

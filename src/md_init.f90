@@ -408,7 +408,7 @@ contains
 
             if (simparams%confname == "merge" .and. .not. (allocated(simparams%mass_l) .and. allocated(simparams%mass_p))) &
                 stop err // "both projectile and slab have to be present in the input file to use <conf merge>"
-
+            if (simparams%nthreads /= 1) print *, warn, "only one threads supported for md"
 
 
                 ! TODO: to be completed
@@ -419,6 +419,7 @@ contains
                 "either lattice and/or projectile key must be present."
             if (simparams%nprojectiles == default_int) simparams%nprojectiles = 0
             if (simparams%nlattices == default_int) simparams%nlattices = 0
+            if (simparams%nthreads /= 1) print *, warn, "only one threads supported for minimization"
 
 
 

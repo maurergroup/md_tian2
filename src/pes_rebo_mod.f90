@@ -321,9 +321,9 @@ contains
 
 
     ! returns parameters set to fit
-    function get_fit_params_rebo() result(fit_params)
+    subroutine get_fit_params_rebo(fit_params)
 
-        real(dp), allocatable :: fit_params(:)
+        real(dp), allocatable, intent(out) :: fit_params(:)
         integer :: i, j, k, n, nfit, ntypes
 
         ntypes = size(fit_Q, dim=1)
@@ -386,7 +386,7 @@ contains
             end do
         end do
 
-    end function get_fit_params_rebo
+    end subroutine get_fit_params_rebo
 
 
 
@@ -1588,9 +1588,7 @@ contains
         real(dp), intent(in)  :: xmin, xmax
         real(dp), intent(out) :: cutoff(:), dx(:)
 
-        real(dp), allocatable :: ratio(:)
-
-        allocate (ratio(size(xij)))
+        real(dp) :: ratio(size(xij))
 
         ratio = (xij-xmin) / (xmax-xmin)
 
@@ -1607,7 +1605,6 @@ contains
             end if
         end do
 
-        deallocate (ratio)
 
     end subroutine cufu
 
