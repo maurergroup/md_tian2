@@ -8,8 +8,8 @@ module output_mod
 
     implicit none
 
-    logical :: overwrite_nrg = .true.
     logical :: overwrite_xyz = .true.
+    logical :: overwrite_nrg = .true.
     integer, parameter :: out_unit = 86
     integer :: out_id_poscar = 0
     integer :: out_id_mxt    = 0
@@ -252,15 +252,15 @@ contains
 
     subroutine output_scatter(atoms, itraj, istep, flag)
 
+        use rpmd
+
         type(universe), intent(in) :: atoms
         integer, intent(in) :: itraj, istep
         character(len=*), intent(in) :: flag
 
-
-        real(dp) :: ekin_p, ekin_l, atom_epot, proj_r(3), proj_v(3), proj_polar, proj_azi, time
+        real(dp) :: ekin_p, ekin_l, b_ekin_p, b_ekin_l, proj_v(3), bead_epot
         integer  :: turning_points
         character(len=max_string_length) :: fname
-        character(len=8)                 :: fid
         character(len=*), parameter :: err = "Error in output_scatter: "
 
         if (count(atoms%is_proj) > 1) stop err // "output_scatter does not work for more that one projectile, please implement"
@@ -268,56 +268,47 @@ contains
         ! XXX: change system() to execute_command_line() when new compiler is available
         if (.not. dir_exists('traj')) call system('mkdir traj')
 
-        write(fid,'(i8.8)') simparams%start
-        fname = 'traj/mxt_fin'//fid//'.dat'
+        write(fname, '(a12, i8.8, a4)') 'traj/mxt_fin', itraj, '.dat'
+
+        call atom_ekin(atoms, ekin_p, ekin_l)
+        proj_v = sum(atoms%v(:,:,1), dim=2)/atoms%nbeads
+        bead_epot = calc_bead_epot(atoms)
+        call bead_ekin(atoms, b_ekin_p, b_ekin_l)
 
         if (flag == "scatter_initial") then
 
-            call atom_ekin(atoms, ekin_p, ekin_l)
-            atom_epot = sum(atoms%epot)/atoms%nbeads
-            proj_r = sum(atoms%r(:,:,1), dim=2)/atoms%nbeads
-            proj_v = sum(atoms%v(:,:,1), dim=2)/atoms%nbeads
+            call open_for_write(out_unit, fname)
 
-            proj_polar = 180-acos(proj_v(3)/sqrt(sum(proj_v*proj_v)))*rad2deg
-            proj_azi = atan2(proj_v(2), proj_v(1))*rad2deg
-
-            if (file_exists(fname)) then
-                open(out_unit, file=fname, status="old", position="append", action="write")
-            else
-                open(out_unit, file=fname, status="new", action="write")
-                write(out_unit, '(19a14)') "# traj_index", "ekin_p_i/eV", "ekin_l_i/eV", "epot/eV", &
-                    "p_x_i/A", "p_y_i/A", "p_z_i/A", "polar_i/deg", "azi_i/deg", "ekin_p_f/eV", &
-                    "ekin_l_f/eV", "epot/eV", "p_x_f/A", "p_y_f/A", "p_z_f/A", "polar_f/deg", &
-                    "azi_f/deg", "time/fs", "turn_pnts"
-            end if
-
-            write(out_unit, '(i14, 8f14.7$)', advance="no") itraj, ekin_p, ekin_l, atom_epot, proj_r, proj_polar, proj_azi
-
-            close (out_unit)
+            write(out_unit, '(a11, f14.7)') "ekin_p_i = ", ekin_p
+            write(out_unit, '(a11, f14.7)') "ekin_l_i = ", ekin_l
+            write(out_unit, '(a11, f14.7)') "epot_i   = ", sum(atoms%epot)/atoms%nbeads
+            write(out_unit, '(a11, f14.7)') "etotal_i = ", b_ekin_p + b_ekin_l + sum(atoms%epot)/atoms%nbeads + bead_epot
+            write(out_unit, '(a11, 3f14.7)')"r_i      = ", sum(atoms%r(:,:,1), dim=2)/atoms%nbeads
+            write(out_unit, '(a11, f14.7)') "polar_i  = ", 180-acos(proj_v(3)/sqrt(sum(proj_v*proj_v)))*rad2deg
+            write(out_unit, '(a11, f14.7)') "azi_i    = ", atan2(proj_v(2), proj_v(1))*rad2deg
+            write(out_unit, '(a)') ""
 
         else if (flag == "scatter_final") then
 
-            call atom_ekin(atoms, ekin_p, ekin_l)
-            atom_epot = sum(atoms%epot)/atoms%nbeads
-            proj_r = sum(atoms%r(:,:,1), dim=2)/atoms%nbeads
-            proj_v = sum(atoms%v(:,:,1), dim=2)/atoms%nbeads
-
-            proj_polar = acos(proj_v(3)/sqrt(sum(proj_v*proj_v)))*rad2deg
-            proj_azi = atan2(proj_v(2), proj_v(1))*rad2deg
-
-            time = (istep-1) * simparams%step
-
+            call open_for_append(out_unit, fname)
             turning_points = calc_turning_points()
 
-            call open_for_append(out_unit, fname)
-            write(out_unit, '(9f14.7, i14)') ekin_p, ekin_l, atom_epot, proj_r, proj_polar, proj_azi, time, turning_points
-
-            close (out_unit)
+            write(out_unit, '(a11, f14.7)') "ekin_p_f = ", ekin_p
+            write(out_unit, '(a11, f14.7)') "ekin_l_f = ", ekin_l
+            write(out_unit, '(a11, f14.7)') "epot_f   = ", sum(atoms%epot)/atoms%nbeads
+            write(out_unit, '(a11, f14.7)') "etotal_f = ", b_ekin_p + b_ekin_l + sum(atoms%epot)/atoms%nbeads + bead_epot
+            write(out_unit, '(a11, 3f14.7)')"r_f      = ", sum(atoms%r(:,:,1), dim=2)/atoms%nbeads
+            write(out_unit, '(a11, f14.7)') "polar_f  = ", acos(proj_v(3)/sqrt(sum(proj_v*proj_v)))*rad2deg
+            write(out_unit, '(a11, f14.7)') "azi_f    = ", atan2(proj_v(2), proj_v(1))*rad2deg
+            write(out_unit, '(a11, f14.7)') "time     = ", (istep-1) * simparams%step
+            write(out_unit, '(a11, i)')     "turn_pnts = ", turning_points
 
         else
             print *, err, "unknown flag", flag
             stop
         end if
+
+        close (out_unit)
 
     end subroutine output_scatter
 

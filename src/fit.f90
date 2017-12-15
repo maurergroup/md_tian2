@@ -101,6 +101,8 @@ contains
 
         call from_pes_params_to_x(reference, x)
 
+        if (size(x) > size(train_nrg)) stop err // "number of parameters to fit is larger than training data set"
+
         ! do the fit
         call timestamp(fit_out)
         write(fit_out,'(a, i, a)') "starting fit with max ", simparams%maxit, " iterations"
