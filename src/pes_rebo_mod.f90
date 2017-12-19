@@ -1646,15 +1646,13 @@ contains
 
 
 
-    subroutine rebo_bondorder(atoms, i, j, nC, nH, distances, vectors, VA, bij, flag)
+    subroutine rebo_bondorder(atoms, i, j, nC, nH, VA, bij, flag)
 
         ! arguments
         type(universe), intent(inout) :: atoms
         integer, intent(in) :: i, j
         integer, intent(in) :: flag
         real(dp), dimension(atoms%nbeads, atoms%natoms), intent(in) :: nH, nC
-        real(dp), dimension(atoms%nbeads, atoms%natoms, atoms%natoms), intent(in) :: distances
-        real(dp), dimension(3, atoms%nbeads, atoms%natoms, atoms%natoms), intent(in) :: vectors
         real(dp), dimension(atoms%nbeads), intent(in) :: VA
         real(dp), dimension(atoms%nbeads), intent(out) :: bij
 
@@ -1741,12 +1739,12 @@ contains
         jtype = atoms%idx(j)
 
         ! find the distance between them
-        rijmag = distances(:,i,j)
-        rjimag = distances(:,j,i)
+        rijmag = atoms%distances(:,i,j)
+        rjimag = atoms%distances(:,j,i)
 
         ! determine vector between them
-        rij = vectors(:,:,i,j)
-        rji = vectors(:,:,j,i)
+        rij = atoms%vectors(:,:,i,j)
+        rji = atoms%vectors(:,:,j,i)
 
         ! evaluate interaction
         call cufu(rijmag, pes_rebo%Dmin(itype,jtype), pes_rebo%Dmax(itype,jtype), wij, dwij)
@@ -1773,11 +1771,11 @@ contains
             ktype = atoms%idx(k)
             if (k /= i .and. k /= j .and. atoms%pes(ktype, itype) == pes_id_rebo) then
 
-                rikmag = distances(:,i,k)
+                rikmag = atoms%distances(:,i,k)
                 call cufu(rikmag, pes_rebo%Dmin(itype,ktype), pes_rebo%Dmax(itype,ktype), wik, dwik)
                 if (all(wik < TOLERANCE)) cycle
 
-                rik = vectors(:,:,i,k)
+                rik = atoms%vectors(:,:,i,k)
 
                 lamdajik = 4.0_dp*is_hydrogen(atoms,itype) * &
                     ((pes_rebo%rho(itype,ktype)-rikmag) - (pes_rebo%rho(itype,jtype)-rijmag))
@@ -1825,11 +1823,11 @@ contains
                 ktype = atoms%idx(k)
                 if (k /= i .and. k /= j .and. atoms%pes(ktype, itype) == pes_id_rebo) then
 
-                    rikmag = distances(:,i,k)
+                    rikmag = atoms%distances(:,i,k)
                     call cufu(rikmag, pes_rebo%Dmin(itype,ktype), pes_rebo%Dmax(itype,ktype), wik, dwik)
                     if (all(wik < TOLERANCE)) cycle
 
-                    rik = vectors(:,:,i,k)
+                    rik = atoms%vectors(:,:,i,k)
 
                     lamdajik = 4.0_dp*is_hydrogen(atoms,itype) * &
                         ((pes_rebo%rho(itype,ktype)-rikmag) - (pes_rebo%rho(itype,jtype)-rijmag))
@@ -1915,12 +1913,12 @@ contains
             ltype = atoms%idx(l)
             if (l /= j .and. l /= i .and. atoms%pes(ltype, jtype) == pes_id_rebo) then
 
-                rjlmag = distances(:,j,l)
+                rjlmag = atoms%distances(:,j,l)
 
                 call cufu(rjlmag, pes_rebo%Dmin(jtype,ltype), pes_rebo%Dmax(jtype,ltype), wjl, dwjl)
                 if (all(wjl < TOLERANCE)) cycle
 
-                rjl = vectors(:,:,j,l)
+                rjl = atoms%vectors(:,:,j,l)
 
                 lamdaijl = 4.0_dp*is_hydrogen(atoms,jtype) * &
                     ((pes_rebo%rho(jtype,ltype)-rjlmag) - (pes_rebo%rho(jtype,itype)-rjimag))
@@ -1968,11 +1966,11 @@ contains
                 ltype = atoms%idx(l)
                 if (l /= j .and. l /= i .and. atoms%pes(ltype, jtype) == pes_id_rebo) then
 
-                    rjlmag = distances(:,j,l)
+                    rjlmag = atoms%distances(:,j,l)
                     call cufu(rjlmag, pes_rebo%Dmin(jtype,ltype), pes_rebo%Dmax(jtype,ltype), wjl, dwjl)
                     if (all(wjl < TOLERANCE)) cycle
 
-                    rjl = vectors(:,:,j,l)
+                    rjl = atoms%vectors(:,:,j,l)
 
                     lamdaijl = 4.0_dp*is_hydrogen(atoms,jtype) * &
                         ((pes_rebo%rho(jtype,ltype)-rjlmag) - (pes_rebo%rho(jtype,itype)-rjimag))
@@ -2093,9 +2091,9 @@ contains
             do k = 1, atoms%natoms
                 ktype = atoms%idx(k)
                 if (k /= i .and. k /= j .and. atoms%pes(ktype, itype) == pes_id_rebo ) then
-                    rikmag = distances(:,i,k)
+                    rikmag = atoms%distances(:,i,k)
                     call cufu(rikmag, pes_rebo%Dmin(itype,ktype), pes_rebo%Dmax(itype,ktype), wik, dwik)
-                    rik = vectors(:,:,i,k)
+                    rik = atoms%vectors(:,:,i,k)
                     Nki = nC(:,k) + nH(:,k) - wik
                     call cufu(Nki, CSF_LOW, CSF_HIGH, SpN, dNki)
 
@@ -2118,8 +2116,8 @@ contains
                             ntype = atoms%idx(n)
                             if (n /= i .and. n /= k .and. atoms%pes(ktype, ntype) == pes_id_rebo) then
 
-                                rkn = vectors(:,:,k,n)
-                                rknmag = distances(:,k,n)
+                                rkn = atoms%vectors(:,:,k,n)
+                                rknmag = atoms%distances(:,k,n)
                                 call cufu(rknmag, pes_rebo%Dmin(ktype,ntype), &
                                     pes_rebo%Dmax(ktype,ntype), dummy, dwkn)
 
@@ -2138,10 +2136,10 @@ contains
             do l = 1, atoms%natoms
                 ltype = atoms%idx(l)
                 if (l /= i .and. l /= j .and. atoms%pes(ltype, jtype) == pes_id_rebo) then
-                    rjlmag = distances(:,j,l)
+                    rjlmag = atoms%distances(:,j,l)
                     call cufu(rjlmag, pes_rebo%Dmin(jtype,ltype), pes_rebo%Dmax(jtype,ltype), wjl, dwjl)
 
-                    rjl = vectors(:,:,j,l)
+                    rjl = atoms%vectors(:,:,j,l)
                     Nlj = nC(:,l) + nH(:,l) - wjl
                     call cufu(Nlj, CSF_LOW, CSF_HIGH, SpN, dNlj)
 
@@ -2163,8 +2161,8 @@ contains
                         do n = 1, atoms%natoms
                             ntype = atoms%idx(n)
                             if (n /= j .and. n /= l .and. atoms%pes(ltype, ntype) == pes_id_rebo) then
-                                rln = vectors(:,:,l,n)
-                                rlnmag = distances(:,l,n)
+                                rln = atoms%vectors(:,:,l,n)
+                                rlnmag = atoms%distances(:,l,n)
                                 call cufu(rlnmag, pes_rebo%Dmin(ltype,ntype), &
                                     pes_rebo%Dmax(ltype,ntype), dummy, dwln)
 
@@ -2202,8 +2200,8 @@ contains
         if (any(abs(Tij) > TOLERANCE)) then
             ! atom2 = i
             ! atom3 = j
-            r32 = vectors(:,:,j,i)
-            r32mag = distances(:,j,i)
+            r32 = atoms%vectors(:,:,j,i)
+            r32mag = atoms%distances(:,j,i)
             r23 = -r32
             r23mag = r32mag
 
@@ -2211,10 +2209,10 @@ contains
                 if (k /= i .and. k /= j .and. atoms%pes(ktype, itype) == pes_id_rebo) then
 
                     ktype = atoms%idx(k)
-                    r21mag = distances(:,i,k)
+                    r21mag = atoms%distances(:,i,k)
                     call cufu(r21mag, pes_rebo%Dmin(itype,ktype), pes_rebo%Dmaxp(itype,ktype), w21, dw21)
 
-                    r21 = vectors(:,:,i,k)
+                    r21 = atoms%vectors(:,:,i,k)
                     cos321 = -1.0_dp * sum(r21*r32, dim=1) / (r21mag*r32mag)
                     cos321 = min(cos321,  1.0_dp)
                     cos321 = max(cos321, -1.0_dp)
@@ -2225,7 +2223,7 @@ contains
                         rik2i  = 1.0_dp / (r21mag*r21mag)
                         rr = r23mag*r23mag - r21mag*r21mag
                         !                    rjk = r21 - r23
-                        rjk = vectors(:,:,j,k)
+                        rjk = atoms%vectors(:,:,j,k)
                         rjk2 = sum(rjk*rjk, dim=1)
                         rijrik = 2.0_dp * r23mag*r21mag
                         rik2 = r21mag*r21mag
@@ -2246,11 +2244,11 @@ contains
                                 .and. atoms%pes(ltype, jtype) == pes_id_rebo) then
 
                                 ltype = atoms%idx(l)
-                                r34mag = distances(:,j,l)
+                                r34mag = atoms%distances(:,j,l)
                                 call cufu(r34mag, pes_rebo%Dmin(jtype,ltype), &
                                     pes_rebo%Dmaxp(jtype,ltype), w34, dw34)
 
-                                r34 = vectors(:,:,j,l)
+                                r34 = atoms%vectors(:,:,j,l)
                                 cos234 = sum(r32*r34, dim=1) / (r32mag*r34mag)
                                 cos234 = min(cos234,  1.0_dp)
                                 cos234 = max(cos234, -1.0_dp)
@@ -2261,7 +2259,7 @@ contains
                                     rjl2i  = 1.0_dp / (r34mag*r34mag)
                                     rr = r23mag*r23mag - r34mag*r34mag
                                     !                            ril = r23 + r34
-                                    ril = vectors(:,:,i,l)
+                                    ril = atoms%vectors(:,:,i,l)
                                     ril2 = sum(ril*ril, dim=1)
                                     rijrjl = 2.0_dp * r23mag * r34mag
                                     rjl2 = r34mag * r34mag
@@ -2355,15 +2353,15 @@ contains
 
 
 !                                    ! alternative forces (TODO when time available)
-!                                    rij = vectors(:,:,i,j)
-!                                    rji = vectors(:,:,j,i)
-!                                    rik = vectors(:,:,i,k)
-!                                    rjl = vectors(:,:,j,l)
+!                                    rij = atoms%vectors(:,:,i,j)
+!                                    rji = atoms%vectors(:,:,j,i)
+!                                    rik = atoms%vectors(:,:,i,k)
+!                                    rjl = atoms%vectors(:,:,j,l)
 !
-!                                    rijmag = distances(:,i,j)
-!                                    rjimag = distances(:,j,i)
-!                                    rikmag = distances(:,i,k)
-!                                    rjlmag = distances(:,j,l)
+!                                    rijmag = atoms%distances(:,i,j)
+!                                    rjimag = atoms%distances(:,j,i)
+!                                    rikmag = atoms%distances(:,i,k)
+!                                    rjlmag = atoms%distances(:,j,l)
 !
 !                                    do b = 1, atoms%nbeads
 !                                        eij(:,b) = rij(:,b)/rijmag(b)
@@ -2403,11 +2401,11 @@ contains
                     if (k /= i .and. k /= j .and. atoms%pes(ktype, itype) == pes_id_rebo) then
 
                         ktype = atoms%idx(k)
-                        rikmag = distances(:,i,k)
+                        rikmag = atoms%distances(:,i,k)
                         call cufu(rikmag, pes_rebo%Dmin(itype,ktype), &
                             pes_rebo%Dmax(itype,ktype), wik, dwik)
 
-                        rik = vectors(:,:,i,k)
+                        rik = atoms%vectors(:,:,i,k)
                         Nki = nC(:,k)  + nH(:,k) - wik
                         call cufu(Nki, CSF_LOW, CSF_HIGH, SpN, dNki)
 
@@ -2431,8 +2429,8 @@ contains
                             do n = 1, atoms%natoms
                                 if (n /= i .and. n /= k .and. atoms%pes(ktype, ntype) == pes_id_rebo) then
                                     ntype = atoms%idx(n)
-                                    rkn = vectors(:,:,k,n)
-                                    rknmag = distances(:,k,n)
+                                    rkn = atoms%vectors(:,:,k,n)
+                                    rknmag = atoms%distances(:,k,n)
                                     call cufu(rknmag, pes_rebo%Dmin(ktype,ntype), &
                                         pes_rebo%Dmax(ktype,ntype), dummy, dwkn)
 
@@ -2454,11 +2452,11 @@ contains
                     if (l /= i .and. l /= j .and. atoms%pes(ltype, jtype) == pes_id_rebo) then
 
                         ltype = atoms%idx(l)
-                        rjlmag = distances(:,j,l)
+                        rjlmag = atoms%distances(:,j,l)
                         call cufu(rjlmag, pes_rebo%Dmin(jtype,ltype), &
                             pes_rebo%Dmax(jtype,ltype), wjl, dwjl)
 
-                        rjl = vectors(:,:,j,l)
+                        rjl = atoms%vectors(:,:,j,l)
                         Nlj = nC(:,l) + nH(:,l) - wjl
                         call cufu(Nlj, CSF_LOW, CSF_HIGH, SpN, dNlj)
 
@@ -2483,8 +2481,8 @@ contains
                                 if (n /= l .and. n /= j .and. atoms%pes(ltype, ntype) == pes_id_rebo) then
 
                                     ntype = atoms%idx(n)
-                                    rln = vectors(:,:,l,n)
-                                    rlnmag = distances(:,l,n)
+                                    rln = atoms%vectors(:,:,l,n)
+                                    rlnmag = atoms%distances(:,l,n)
                                     call cufu(rlnmag, pes_rebo%Dmin(ltype,ntype), &
                                         pes_rebo%Dmax(ltype,ntype), dummy, dwln)
 
@@ -2519,7 +2517,7 @@ contains
             print *, "atom i has", NijH, "hydrogen neighbors"
             print *, "atom j has", NjiC, "carbon neighbors"
             print *, "atom j has", NjiH, "hydrogen neighbors"
-            print *, "dist_ij", distances(:,i,j)
+            print *, "dist_ij", atoms%distances(:,i,j)
             print *, "num_conj", Nijconj
             print *, "first_bracket", NconjtmpI
             print *, "second_bracket", NconjtmpJ
@@ -2554,28 +2552,6 @@ contains
 
         real(dp), dimension(3, atoms%nbeads) :: temp_vector
         real(dp), dimension(atoms%nbeads, atoms%natoms) :: nH, nC
-        real(dp), dimension(atoms%nbeads, atoms%natoms, atoms%natoms) :: distances
-        real(dp), dimension(3, atoms%nbeads, atoms%natoms, atoms%natoms) :: vectors
-
-
-        ! gather distance and vector information
-        ! calculate only one half and then add to other half (with changed sign)
-        distances = 0.0_dp
-        vectors = 0.0_dp
-        do j = 1, atoms%natoms-1
-            do i = j+1, atoms%natoms
-                call minimg_beads(atoms, i, j, temp_distance, temp_vector)
-                distances(:,i,j) = temp_distance
-                vectors(:,:,i,j) = -temp_vector
-            end do
-        end do
-
-        do b = 1, atoms%nbeads
-            distances(b,:,:) = distances(b,:,:) + transpose(distances(b,:,:))
-            vectors(1,b,:,:) = vectors(1,b,:,:) - transpose(vectors(1,b,:,:))
-            vectors(2,b,:,:) = vectors(2,b,:,:) - transpose(vectors(2,b,:,:))
-            vectors(3,b,:,:) = vectors(3,b,:,:) - transpose(vectors(3,b,:,:))
-        end do
 
         ! determine neighbors
         nC = 0.0_dp
@@ -2589,7 +2565,7 @@ contains
 
                 if (atoms%pes(ktype, ltype) == pes_id_rebo) then
 
-                    call cufu(distances(:,k,l), pes_rebo%Dmin(ktype,ltype), &
+                    call cufu(atoms%distances(:,k,l), pes_rebo%Dmin(ktype,ltype), &
                         pes_rebo%Dmax(ktype,ltype), wkl, dummy)
 
                     if (is_carbon(  atoms, ktype)) nC(:,l) = nC(:,l) + wkl
@@ -2609,7 +2585,7 @@ contains
 
                 if (atoms%pes(itype, jtype) /= pes_id_rebo) cycle
 
-                rij = distances(:,i,j)
+                rij = atoms%distances(:,i,j)
                 call cufu(rij, pes_rebo%Dmin(itype,jtype), pes_rebo%Dmax(itype,jtype), wij, dwij)
 
                 if (all(wij < tolerance)) cycle
@@ -2634,14 +2610,14 @@ contains
 
                 where (wij > tolerance) dVA = dVA + VA/wij * dwij
 
-                call rebo_bondorder(atoms, i, j, nC, nH, distances, vectors, VA, bij, flag)
+                call rebo_bondorder(atoms, i, j, nC, nH, VA, bij, flag)
                 dVAdi = bij*dVA
 
                 fpair = -(dVRdi+dVAdi) / rij
 
                 do b = 1, atoms%nbeads
-                    atoms%f(:,b,i) = atoms%f(:,b,i) + vectors(:,b,i,j)*fpair(b)
-                    atoms%f(:,b,j) = atoms%f(:,b,j) + vectors(:,b,j,i)*fpair(b)
+                    atoms%f(:,b,i) = atoms%f(:,b,i) + atoms%vectors(:,b,i,j)*fpair(b)
+                    atoms%f(:,b,j) = atoms%f(:,b,j) + atoms%vectors(:,b,j,i)*fpair(b)
                 end do
 
                 !            if (i==19) print '(a, 6f23.15)', "mother", all_force(:,19), del*fpair

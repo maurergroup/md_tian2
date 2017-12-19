@@ -20,7 +20,8 @@ program md_tian
     use rpmd
     use universe_mod
     use fit
-    use output_mod, only : output, record_projectile_turning_point
+    use output_mod, only : output
+    use trajectory_info
     use geometry_opt
 
     implicit none
@@ -76,8 +77,8 @@ program md_tian
                         .and. any(simparams%output_type == output_id_scatter)) exit
 
 
-                    ! recond bounces
-                    call record_projectile_turning_point(sum(atoms%r(3,:,1))/atoms%nbeads, istep)
+                    ! record bounces, lowest position, etc.
+                    call collect_trajectory_characteristics(atoms, istep)
 
                     !if (mod(istep, 10)) print *, sum(sum(atoms%r(:,:,:), dim=2), dim=2)/atoms%natoms/atoms%nbeads
 

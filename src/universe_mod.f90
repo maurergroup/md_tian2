@@ -48,6 +48,9 @@ module universe_mod
         real(dp)                      :: isimbox(3,3)    ! inverse simulation cell
         logical                       :: is_cart         ! if geometry is cartesian or direct
 
+        real(dp), allocatable         :: distances(:,:,:)
+        real(dp), allocatable         :: vectors(:,:,:,:)
+
     end type universe
 
 
@@ -209,7 +212,7 @@ contains
         real(dp) :: v_cm(3)
         integer :: i, b, dummy
 
-        !!! FIXME: Somehow this needs to be applied very ofter to work
+        !!! FIXME: Somehow this needs to be applied very often to work
 
         do dummy = 1, 1000
 

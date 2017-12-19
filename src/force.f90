@@ -1,7 +1,7 @@
 module force
 
     use constants
-    use universe_mod, only : universe
+    use universe_mod, only : universe, minimg_beads
 
     use pes_lj_mod,   only : compute_lj, compute_simple_lj
     use pes_emt_mod,  only : compute_emt
@@ -18,10 +18,37 @@ contains
         integer, intent(in)           :: flag
         character(len=*), parameter   :: err = "Error in calc_force(): "
 
+        real(dp) :: temp_distance(atoms%nbeads), temp_vector(3, atoms%nbeads)
+        integer :: b, i, j
+
         atoms%f    = 0.0_dp
         atoms%a    = 0.0_dp
         atoms%epot = 0.0_dp
 
+        ! gather distance and vector information before calling energy subroutines
+        ! calculate only one half and then add to other half (with changed sign)
+        if (.not. allocated(atoms%distances)) then
+            allocate(atoms%distances(atoms%nbeads, atoms%natoms, atoms%natoms))
+            allocate(atoms%vectors(3, atoms%nbeads, atoms%natoms, atoms%natoms))
+        end if
+        atoms%distances = 0.0_dp
+        atoms%vectors   = 0.0_dp
+        do j = 1, atoms%natoms-1
+            do i = j+1, atoms%natoms
+                call minimg_beads(atoms, i, j, temp_distance, temp_vector)
+                atoms%distances(:,i,j) = temp_distance
+                atoms%vectors(:,:,i,j) = -temp_vector
+            end do
+        end do
+
+        do b = 1, atoms%nbeads
+            atoms%distances(b,:,:) = atoms%distances(b,:,:) + transpose(atoms%distances(b,:,:))
+            atoms%vectors(1,b,:,:) = atoms%vectors(1,b,:,:) - transpose(atoms%vectors(1,b,:,:))
+            atoms%vectors(2,b,:,:) = atoms%vectors(2,b,:,:) - transpose(atoms%vectors(2,b,:,:))
+            atoms%vectors(3,b,:,:) = atoms%vectors(3,b,:,:) - transpose(atoms%vectors(3,b,:,:))
+        end do
+
+        ! calculate energy (and forces if flag is set)
         if (any(atoms%pes == pes_id_lj))        call compute_lj       (atoms, flag)
         if (any(atoms%pes == pes_id_simple_lj)) call compute_simple_lj(atoms, flag)
         if (any(atoms%pes == pes_id_emt))       call compute_emt      (atoms, flag)
