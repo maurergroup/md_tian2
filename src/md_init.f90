@@ -335,7 +335,12 @@ contains
         integer :: natoms, nbeads, ntypes, ios, i
         integer, allocatable :: atom_list(:)
 
-        open(geo_unit, file=infile, form="unformatted")
+        if (.not. file_exists(infile)) then
+            print *, err, "file ", infile, " does not exist"
+            stop
+        end if
+
+        open(geo_unit, file=infile, form="unformatted", iostat=ios)
 
         read(geo_unit, iostat=ios) natoms, nbeads, ntypes
         if (ios /= 0) stop err // "cannot read universe type constructor arguments"
@@ -391,8 +396,8 @@ contains
             if (simparams%nlattices > 0 .and. .not. allocated(simparams%mass_l)) stop err // "lattice masses not set."
             if (simparams%nlattices > 0 .and. .not. allocated(simparams%md_algo_l)) stop err // "lattice propagation algorithm not set."
 
-            if (.not. allocated(simparams%output_type) .or. .not. allocated(simparams%output_interval)) &
-                stop err // "output options not set."
+!            if (.not. allocated(simparams%output_type) .or. .not. allocated(simparams%output_interval)) &
+!                stop err // "output options not set."
             if (any(simparams%output_interval > simparams%nsteps)) print *, warn // "one or more outputs will not show, &
                 since the output interval is larger than the total number of simulation steps."            
         

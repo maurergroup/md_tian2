@@ -65,6 +65,8 @@ contains
         steps_since_power_was_negative = 0
         opt_steps = 0
         ring_polymer_forces = 0.0_dp
+        power = 100.0_dp
+
 
         print '(a2, a17, 2a18)', "# ", "optimization step", "power/eV*fs", "Epot/eV"
 
@@ -74,11 +76,19 @@ contains
             call propagate_1(atoms)
             call calc_force(atoms, energy_and_force)
             if (atoms%nbeads > 1) call do_ring_polymer_step_with_forces(atoms, ring_polymer_forces)
-            !if (atoms%nbeads > 1) call do_ring_polymer_step(atoms)
 
             call propagate_2(atoms)
 
-            if (opt_steps >= max_opt_steps .or. maxval(atoms%f) <= force_limit) exit
+            ! exit normally
+            if (opt_steps >= max_opt_steps     .or. &
+                maxval(atoms%f) <= force_limit .or. &
+                abs(power) < 1e-7) exit
+
+            ! exit due to error
+            if (abs(power) > 1e4) then
+                atoms%epot = default_real
+                exit
+            end if
 
             ! F1
             atoms%f = atoms%f + ring_polymer_forces
@@ -91,7 +101,13 @@ contains
                     f_norm = sum(sqrt(atoms%f(:,b,i)*atoms%f(:,b,i)))
                     v_norm = sum(sqrt(atoms%v(:,b,i)*atoms%v(:,b,i)))
                     f_unit = atoms%f(:,b,i)/f_norm
-                    atoms%v(:,b,i) = (1-alpha)*atoms%v(:,b,i) + alpha*f_unit*v_norm
+
+                    where (.not. atoms%is_fixed(:,b,i))
+                        atoms%v(:,b,i) = (1-alpha)*atoms%v(:,b,i) + alpha*f_unit*v_norm
+                    elsewhere
+                        atoms%v(:,b,i) = 0
+                    end where
+
                 end do
             end do
 
@@ -104,7 +120,7 @@ contains
             ! F4
             if (power <= 0) then
                 simparams%step = simparams%step*f_dec
-                atoms%v = 0.0_dp
+                atoms%v = 0
                 alpha = alpha_start
             end if
 

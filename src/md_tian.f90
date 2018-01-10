@@ -76,7 +76,6 @@ program md_tian
                     if ( all(atoms%r(3,:,1) > simparams%proj_ul) .and. atoms%is_proj(atoms%idx(1)) &
                         .and. any(simparams%output_type == output_id_scatter)) exit
 
-
                     ! record bounces, lowest position, etc.
                     call collect_trajectory_characteristics(atoms, istep)
 

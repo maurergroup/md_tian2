@@ -85,6 +85,8 @@ contains
 
         where(.not. atoms%is_fixed(:,:,i))
             atoms%v(:,:,i) = atoms%v(:,:,i) + 0.5 * simparams%step * atoms%a(:,:,i)
+        elsewhere
+            atoms%v(:,:,i) = 0.0_dp
         end where
 
         ! if rpmd, the positions are being updated in the do_ring_polymer_step subroutine
@@ -104,6 +106,8 @@ contains
 
         where(.not. atoms%is_fixed(:,:,i))
             atoms%v(:,:,i) = atoms%v(:,:,i) + 0.5 * simparams%step * atoms%a(:,:,i)
+        elsewhere
+            atoms%v(:,:,i) = 0.0_dp
         end where
 
     end subroutine verlet_2
@@ -177,6 +181,8 @@ contains
             where (.not. atoms%is_fixed(:,b,i))
                 atoms%v(:,b,i) = c0(b)*atoms%v(:,b,i) + &
                     (c1(b)-c2(b))*atoms%a(:,b,i) + sigma_v(b)*c_rv(b)*randy(:,b)
+            elsewhere
+                atoms%v(:,b,i) = 0.0_dp
             end where
         end do
 
@@ -239,6 +245,8 @@ contains
             where (.not. atoms%is_fixed(:,b,i))
                 atoms%v(:,b,i) = atoms%v(:,b,i) + c2(b)*atoms%a(:,b,i) + &
                     sigma_v(b)*sqrt(1-c_rv(b)*c_rv(b))*randy(:,b)
+            elsewhere
+                atoms%v(:,b,i) = 0.0_dp
             end where
         end do
 
