@@ -40,14 +40,14 @@ contains
 
         ! Parameters as listed in E. Blitzek, PRL, 97, 170201 (2006)
         integer,  parameter :: n_min         = 5
-        integer,  parameter :: max_opt_steps = 10000
+        integer,  parameter :: max_opt_steps = 30000
         real(dp), parameter :: f_inc         = 1.1_dp
         real(dp), parameter :: f_dec         = 0.5_dp
         real(dp), parameter :: alpha_start   = 0.1_dp
         real(dp), parameter :: f_alpha       = 0.99_dp
         real(dp), parameter :: force_limit   = 1e-5_dp
 
-        real(dp) :: t_max, alpha, power
+        real(dp) :: t_max, alpha, power, prev_nrg
         real(dp) :: f_norm, v_norm, f_unit(3)
         real(dp) :: ring_polymer_forces(3, atoms%nbeads, atoms%natoms)
         integer  :: i, b, steps_since_power_was_negative, opt_steps
@@ -66,6 +66,7 @@ contains
         opt_steps = 0
         ring_polymer_forces = 0.0_dp
         power = 100.0_dp
+        prev_nrg = default_real
 
 
         print '(a2, a17, 2a18)', "# ", "optimization step", "power/eV*fs", "Epot/eV"
@@ -82,7 +83,8 @@ contains
             ! exit normally
             if (opt_steps >= max_opt_steps     .or. &
                 maxval(atoms%f) <= force_limit .or. &
-                abs(power) < 1e-7) exit
+                abs(power) < 1e-7              .or. &
+                abs(atoms%epot(1)-prev_nrg) < 1e-6) exit
 
             ! exit due to error
             if (abs(power) > 1e4) then
@@ -131,6 +133,8 @@ contains
                 steps_since_power_was_negative = 0
             end if
             opt_steps = opt_steps + 1
+
+            prev_nrg = atoms%epot(1)
 
         end do
 

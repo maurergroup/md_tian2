@@ -105,8 +105,15 @@ contains
 
         ! do the fit
         call timestamp(fit_out)
-        write(fit_out,'(a, i, a)') "starting fit with max ", simparams%maxit, " iterations"
-        call nllsqwbc(x, train_dev, train_rmse)
+
+        if (simparams%maxit > 0) then
+            write(fit_out,'(a, i, a)') "starting fit with max ", simparams%maxit, " iterations"
+            call nllsqwbc(x, train_dev, train_rmse)
+        else
+            write(fit_out,'(a)') "comparison to training data set"
+            call obj_func(training_data_points+1, nfit_params, x, train_dev)
+            train_rmse = sqrt(sum(train_dev(2:)*train_dev(2:))/training_data_points)
+        end if
 
         ! compare to validation data set
         call timestamp(fit_out)
@@ -121,8 +128,8 @@ contains
         ! evaluate validation data set
         valid_rmse = sqrt(sum(valid_dev*valid_dev)/validation_data_points)
 
-        write(fit_out, '(a, f7.1, a)') "training rmse:  ", 1000*train_rmse, " meV"
-        write(fit_out, '(a, f7.1, a)') "validation rmse:", 1000*valid_rmse, " meV"
+        write(fit_out, '(a, f13.1, a)') "training rmse:  ", 1000*train_rmse, " meV"
+        write(fit_out, '(a, f13.1, a)') "validation rmse:", 1000*valid_rmse, " meV"
 
         close(fit_out)
 
@@ -346,7 +353,7 @@ contains
 
         call timestamp(fit_out); write(fit_out, '(a)') "fit started"
 
-        !call omp_set_num_threads(simparams%nthreads)
+        call omp_set_num_threads(simparams%nthreads)
 
     end subroutine fit_setup
 
@@ -605,6 +612,9 @@ contains
 
                     train_rmse_old = train_rmse
                     iter = iter + 1
+
+                    call from_x_to_pes_params(x)
+                    call output_pes(train_data(1))
             end select
         end do
         !** get solution statuses

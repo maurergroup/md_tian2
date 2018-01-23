@@ -36,9 +36,9 @@ contains
             end select
         end do
 
-!        if (any(atoms%algo == prop_id_andersen) .or. any(atoms%algo == prop_id_pile)) then
-!            call remove_com_velocity(atoms)
-!        end if
+        if (any(atoms%algo == prop_id_andersen) .or. any(atoms%algo == prop_id_pile)) then
+            call remove_com_velocity(atoms)
+        end if
 
     end subroutine propagate_1
 
