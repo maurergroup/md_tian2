@@ -133,14 +133,18 @@ contains
         real(dp), dimension(3, atoms%nbeads) :: randy
         integer :: b
 
+        if (atoms%is_proj(atoms%idx(i))) then
+            temp = kB * atoms%nbeads * simparams%Tproj / atoms%m(i)
+        else
+            temp = kB * atoms%nbeads * simparams%Tsurf / atoms%m(i)
+        end if
 
-        temp = kB * atoms%nbeads * simparams%Tsurf / atoms%m(i)
         xidt = dens(:,i) * simparams%step
         xidt2 = xidt * xidt
         ixidt = simparams%step/xidt   ! 1/dens
 
         ! Preventing problems due to precision issues
-        if (all(xidt > 1e-2) .and. simparams%Tsurf > tolerance) then
+        if (all(xidt > 1e-2) .and. temp > tolerance) then
 
             c0 = exp(-xidt)
             c1 = (1 - c0) * ixidt
@@ -209,13 +213,18 @@ contains
         real(dp), dimension(3, atoms%nbeads) :: randy
         integer :: b
 
-        temp = kB * atoms%nbeads * simparams%Tsurf / atoms%m(i)
+        if (atoms%is_proj(atoms%idx(i))) then
+            temp = kB * atoms%nbeads * simparams%Tproj / atoms%m(i)
+        else
+            temp = kB * atoms%nbeads * simparams%Tsurf / atoms%m(i)
+        end if
+
         xidt = dens(:,i) * simparams%step
         xidt2 = xidt * xidt
         ixidt = simparams%step / xidt   ! 1/dens
 
         ! Preventing problems due to precision issues
-        if (all(xidt > 1e-2) .and. simparams%Tsurf > tolerance) then
+        if (all(xidt > 1e-2) .and. temp > tolerance) then
 
             c0 = exp(-xidt)
             c1 = (1 - c0) * ixidt
@@ -265,7 +274,13 @@ contains
         real(dp) :: ibetaN, mass, andersen_threshold
         integer  :: b
 
-        ibetaN = atoms%nbeads * kB * simparams%Tsurf
+
+        if (atoms%is_proj(atoms%idx(i))) then
+            ibetaN = atoms%nbeads * kB * simparams%Tproj
+        else
+            ibetaN = atoms%nbeads * kB * simparams%Tsurf
+        end if
+
         mass = atoms%m(i)
 
         call normal_deviate(0.0_dp, sqrt(ibetaN/mass), new_v)
@@ -297,7 +312,11 @@ contains
 
         if (.not. allocated(cjk)) call build_cjk(atoms%nbeads)
 
-        betaN = 1.0_dp / (kB * simparams%Tsurf * atoms%nbeads)
+        if (atoms%is_proj(atoms%idx(i))) then
+            betaN = 1.0_dp / (kB * simparams%Tproj * atoms%nbeads)
+        else
+            betaN = 1.0_dp / (kB * simparams%Tsurf * atoms%nbeads)
+        end if
 
         ! Transform to normal mode space
         newP = 0.0_dp

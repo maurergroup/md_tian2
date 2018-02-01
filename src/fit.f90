@@ -14,8 +14,6 @@ module fit
 
     implicit none
 
-    character(len=*), parameter :: train_folder = "fit/train/"
-    character(len=*), parameter :: valid_folder = "fit/valid/"
     integer, parameter :: fit_out = 89
     integer :: training_data_points, validation_data_points
     real(dp), allocatable :: train_nrg(:), valid_nrg(:)
@@ -42,11 +40,11 @@ contains
 
         ! check the data for consistency, count training and validation data sets to
         ! allocate storage of array of universe objects
-        call check_fitting_data(train_folder)
+        call check_fitting_data(simparams%fit_training_folder)
         call timestamp(fit_out)
         write(fit_out, '(a, i)') "training data points found:  ", training_data_points
 
-        call check_fitting_data(valid_folder)
+        call check_fitting_data(simparams%fit_validation_folder)
         call timestamp(fit_out)
         write(fit_out, '(a, i)') "validation data points found:", validation_data_points
 
@@ -83,11 +81,11 @@ contains
 
         call timestamp(fit_out); write(fit_out, '(a)') "allocation complete"
 
-        call read_fitting_data(train_folder, train_data)
+        call read_fitting_data(simparams%fit_training_folder, train_data)
         call timestamp(fit_out)
         write(fit_out, '(a)') "training data points read"
 
-        call read_fitting_data(valid_folder, valid_data)
+        call read_fitting_data(simparams%fit_validation_folder, valid_data)
         call timestamp(fit_out)
         write(fit_out, '(a)') "validation data points read"
 
@@ -144,22 +142,22 @@ contains
 
     subroutine read_fitting_data(folder, data)
 
-        character(len=*), intent(in)  :: folder
+        character(len=max_string_length), intent(in)  :: folder
         type(universe), intent(inout) :: data(:)
 
         character(len=*), parameter :: err = "Error in read_fitting_data(): "
         character(len=max_string_length) :: words(100), buffer
-        character(len=23) :: inp_file
+        character(len=max_string_length) :: inp_file
         integer, parameter :: inp_unit = 67
         integer :: i, ios, nwords, nfiles, nrg_pos, pos_pos, atom_pos
         logical :: config_section
 
 
         ! select folder
-        if (folder == train_folder) then
+        if (folder == simparams%fit_training_folder) then
             nfiles = simparams%fit_training_data
             nrg_pos = 1; pos_pos = 1
-        else if (folder == valid_folder) then
+        else if (folder == simparams%fit_validation_folder) then
             nfiles = simparams%fit_validation_data
             nrg_pos = 0; pos_pos = 0
         else
@@ -168,10 +166,9 @@ contains
 
         do i = 1, nfiles
 
-            !print *, "reading", folder, i
-
-            ! select folder
-            write(inp_file, '(a10, a4, i5.5, a4)') folder, "nrg_", i, ".dat"     ! ex: fit/train/nrg_00581.dat
+            ! build input file string
+            write(inp_file, '(a4, i5.5, a4)') "nrg_", i, ".dat"     ! ex: fit/train/nrg_00581.dat
+            inp_file =  trim(folder) // "/" // inp_file
 
             ! read energy file, and write into universe array
             call open_for_read(inp_unit, inp_file)
@@ -196,9 +193,9 @@ contains
             end do
             close(inp_unit)
 
-
-            ! select folder
-            write(inp_file, '(a10, a4, i5.5, a4)') folder, "pos_", i, ".dat"     ! ex: fit/train/pos_00581.dat
+            ! build input file string
+            write(inp_file, '(a4, i5.5, a4)') "pos_", i, ".dat"     ! ex: fit/train/nrg_00581.dat
+            inp_file =  trim(folder) // "/" // inp_file
 
             ! read position file, and write into universe array
             call open_for_read(inp_unit, inp_file)
@@ -255,9 +252,9 @@ contains
 
     subroutine check_fitting_data(folder)
 
-        character(len=*), intent(in) :: folder
+        character(len=max_string_length), intent(in) :: folder
 
-        character(len=23) :: inp_file
+        character(len=max_string_length) :: inp_file
         character(len=max_string_length) :: buffer, words(100)
         character(len=*), parameter :: err = "Error in check_fitting_data(): "
         integer, parameter :: inp_unit = 67
@@ -265,20 +262,20 @@ contains
         integer :: i, ios, nwords, nfiles
 
         ! select folder
-        if (folder == train_folder) then
+        if (folder == simparams%fit_training_folder) then
             nfiles = simparams%fit_training_data
-        else if (folder == valid_folder) then
+        else if (folder == simparams%fit_validation_folder) then
             nfiles = simparams%fit_validation_data
         else
-            print *, err // "internal error"; stop
+            print *, err // "internal error in check_fitting_data"; stop
         end if
+
 
         do i = 1, nfiles
 
-            !print *, "checking", folder, i
-
-            ! select folder
-            write(inp_file, '(a10, a4, i5.5, a4)') folder, "nrg_", i, ".dat"     ! ex: fit/train/nrg_00581.dat
+            ! build input file string
+            write(inp_file, '(a4, i5.5, a4)') "nrg_", i, ".dat"     ! ex: fit/train/nrg_00581.dat
+            inp_file =  trim(folder) // "/" // inp_file
 
             ! scan energy file, count lines in file and add to module variable
             call open_for_read(inp_unit, inp_file)
@@ -291,14 +288,15 @@ contains
             close(inp_unit)
 
             ! select folder
-            if (folder == train_folder) then
+            if (folder == simparams%fit_training_folder) then
                 training_data_points = training_data_points + this_data_points
-            else if (folder == valid_folder) then
+            else if (folder == simparams%fit_validation_folder) then
                 validation_data_points = validation_data_points + this_data_points
             end if
 
-            write(inp_file, '(a10, a4, i5.5, a4)') folder, "pos_", i, ".dat"     ! ex: fit/valid/pos_00581.dat
-
+            ! build input file string
+            write(inp_file, '(a4, i5.5, a4)') "pos_", i, ".dat"     ! ex: fit/valid/pos_00581.dat
+            inp_file =  trim(folder) // "/" // inp_file
 
             ! scan configuration file
             call open_for_read(inp_unit, inp_file)
@@ -354,6 +352,7 @@ contains
         call timestamp(fit_out); write(fit_out, '(a)') "fit started"
 
         call omp_set_num_threads(simparams%nthreads)
+        call mkl_set_num_threads(1)
 
     end subroutine fit_setup
 

@@ -115,14 +115,21 @@ contains
         real(dp) :: dx(atoms%nbeads, atoms%natoms), wn2
         integer  :: i
 
-        wn2 = (kb * simparams%Tsurf * atoms%nbeads / hbar)**2
         dx  = calc_inter_bead_distances(atoms)
 
         epot = 0.0_dp
         do i = 1, atoms%natoms
-            epot = epot + atoms%m(i) * sum(dx(:,i) * dx(:,i))
+
+            if (atoms%is_proj(atoms%idx(i))) then
+                wn2 = (kb * simparams%Tproj * atoms%nbeads / hbar)**2
+            else
+                wn2 = (kb * simparams%Tsurf * atoms%nbeads / hbar)**2
+            end if
+
+            epot = epot + atoms%m(i) * sum(dx(:,i) * dx(:,i)) * wn2
         end do
-        epot = 0.5_dp * wn2 * epot / atoms%nbeads
+
+        epot = 0.5_dp * epot / atoms%nbeads
 
     end function calc_bead_epot
 
@@ -178,8 +185,6 @@ contains
 
         if (.not. allocated(cjk)) call build_cjk(atoms%nbeads)
 
-        betaN = 1.0_dp / (kB * simparams%Tsurf * atoms%nbeads)
-
         ! Transform to normal mode space
         call calc_momentum_all(atoms, p)
         q = atoms%r
@@ -212,6 +217,12 @@ contains
             poly(2, 1) = 0.0_dp
             poly(3, 1) = simparams%step / mass
             poly(4, 1) = 1.0_dp
+
+            if (atoms%is_proj(atoms%idx(i))) then
+                betaN = 1.0_dp / (kB * simparams%Tproj * atoms%nbeads)
+            else
+                betaN = 1.0_dp / (kB * simparams%Tsurf * atoms%nbeads)
+            end if
 
             if (atoms%nbeads > 1) then
                 twown = 2.0_dp / betaN / hbar

@@ -413,7 +413,11 @@ contains
 
             if (simparams%confname == "merge" .and. .not. (allocated(simparams%mass_l) .and. allocated(simparams%mass_p))) &
                 stop err // "both projectile and slab have to be present in the input file to use <conf merge>"
-            if (simparams%nthreads /= 1) print *, warn, "only one threads supported for md"
+            if (simparams%nthreads /= 1) print *, warn, "only one thread supported for md"
+
+            if (simparams%force_beads /= default_int .and. &
+                simparams%Tsurf == default_real .and. simparams%Tproj == default_real) &
+                stop err // "projectile and/or slab temperature required for rpmd"
 
 
                 ! TODO: to be completed
@@ -457,10 +461,10 @@ contains
         type(universe), intent(in) :: atoms
         character(len=*), parameter :: err = "geometry sanity check error: "
 
-
-        !if (atoms%nbeads > 1 .and. simparams%Tsurf == default_real) stop err // "RPMD needs system temperature."
         if (simparams%force_beads < 1) stop err // "Cannot force zero or less beads."
         if (simparams%force_beads /= default_int .and. atoms%nbeads /= 1) stop err // "Cannot force any beads when system already contains multiple beads."
+        if (atoms%nbeads > 1 .and. any(atoms%is_proj) .and. simparams%Tproj == default_real) stop err // "RPMD requires projectile temperature"
+        if (atoms%nbeads > 1 .and. any(.not. atoms%is_proj) .and. simparams%Tsurf == default_real) stop err // "RPMD requires surface temperature"
 
     end subroutine ensure_geometry_sanity
 

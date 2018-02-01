@@ -30,6 +30,7 @@ module run_config
         real(dp) :: polar                                     ! incidence polar angle (degree)
         real(dp) :: azimuth                                         ! incidence azimuthal angle (degree)
         real(dp) :: Tsurf                                            ! surface temperature in K
+        real(dp) :: Tproj                                            ! projectile temperature in K
         real(dp) :: sa_Tmax                                          ! max. Tsurf for simulated annealing in K
         integer  :: sa_nsteps                                        ! number of steps per simulated annealing cycle
         integer  :: sa_interval                                      ! number of steps per temperature interval
@@ -48,8 +49,10 @@ module run_config
         real(dp) :: pile_tau                                        ! PILE thermostat centroid mode thermostat time constant
         integer  :: force_beads                                     ! inititalizes all atoms with this many beads
         real(dp) :: proj_ul                                         ! stop trajectory if projectile's z-coordinate is higher that this value
-        integer  :: fit_training_data                               ! number of configuration/energy pair files in fit/train/
-        integer  :: fit_validation_data                             ! number of configuration/energy pair files in fit/valid/
+        character(len=max_string_length) :: fit_training_folder     ! path to training data
+        character(len=max_string_length) :: fit_validation_folder   ! path to validation data
+        integer  :: fit_training_data                               ! number of configuration/energy pair files in fit_training_folder
+        integer  :: fit_validation_data                             ! number of configuration/energy pair files in fit_validation_folder
         real(dp) :: evasp                                           ! reference energy for fit
         integer  :: maxit                                           ! maximum number of iteration during fit
         integer  :: nthreads                                        ! number of threads used for fitting
@@ -72,6 +75,7 @@ contains
         new_simulation_parameters%nlattices = default_int
         new_simulation_parameters%nprojectiles = default_int
         new_simulation_parameters%Tsurf   = default_real
+        new_simulation_parameters%Tproj   = default_real
         new_simulation_parameters%einc  = default_real
         new_simulation_parameters%sigma_einc = default_real
         new_simulation_parameters%polar = default_real
@@ -94,6 +98,8 @@ contains
         new_simulation_parameters%proj_ul = default_real
         new_simulation_parameters%fit_training_data = default_int
         new_simulation_parameters%fit_validation_data = default_int
+        new_simulation_parameters%fit_training_folder = default_string
+        new_simulation_parameters%fit_validation_folder = default_string
         new_simulation_parameters%evasp = default_real
         new_simulation_parameters%maxit = 30
         new_simulation_parameters%nthreads = 1
@@ -349,6 +355,17 @@ contains
                         end if
 
 
+                    case ('Tproj')
+
+                        if (simparams%Tproj /= default_real) stop err // 'Multiple use of the Tproj key'
+                        if (nwords == 2) then
+                            read(words(2),*, iostat=ios) simparams%Tproj
+                            if (ios /= 0) stop err // 'Tproj value must be a number'
+                        else
+                            print *, err, 'Tproj key needs a single argument'; stop
+                        end if
+
+
                     case('annealing')
 
                         if (simparams%sa_Tmax /= default_real) stop err // 'Multiple use of the annealing key'
@@ -505,15 +522,21 @@ contains
                     case ('fit_training_data')
 
                         if (simparams%fit_training_data /= default_int) stop err // "fit training data set multiple times"
-                        read(words(2), *, iostat=ios) simparams%fit_training_data
-                        if (ios /= 0) stop err // "Error reading fit_training_data"
+                        if (nwords /= 3) stop err // "fit_training_data key needs 2 arguments"
+                        read(words(2), '(i)', iostat=ios) simparams%fit_training_data
+                        if (ios /= 0) stop err // "Error reading number of training data points"
+                        read(words(3), '(a)', iostat=ios) simparams%fit_training_folder
+                        if (ios /= 0) stop err // "Error reading path to training data points"
 
 
                     case ('fit_validation_data')
 
                         if (simparams%fit_validation_data /= default_int) stop err // "fit validation data set multiple times"
-                        read(words(2), *, iostat=ios) simparams%fit_validation_data
-                        if (ios /= 0) stop err // "Error reading fit_validation_data"
+                        if (nwords /= 3) stop err // "fit_validation_data key needs 2 arguments"
+                        read(words(2), '(i)', iostat=ios) simparams%fit_validation_data
+                        if (ios /= 0) stop err // "Error reading number of validation data points"
+                        read(words(3), '(a)', iostat=ios) simparams%fit_validation_folder
+                        if (ios /= 0) stop err // "Error reading path to validation data points"
 
 
                     case ('evasp')

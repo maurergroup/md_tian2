@@ -460,19 +460,19 @@ contains
 
         integer, intent(in) :: out_unit, idx_i, idx_j
 
-        write(out_unit, '(a7, e18.11)') "Dmin ", pes_rebo%Dmin(idx_i, idx_j)
-        write(out_unit, '(a7, e18.11)') "Dmax ", pes_rebo%Dmax(idx_i, idx_j)
-        write(out_unit, '(a7, e18.11)') "Dmaxp", pes_rebo%Dmaxp(idx_i, idx_j)
-        write(out_unit, '(a7, e18.11)') "B1   ", pes_rebo%B(1, idx_i, idx_j)
-        write(out_unit, '(a7, e18.11)') "B2   ", pes_rebo%B(2, idx_i, idx_j)
-        write(out_unit, '(a7, e18.11)') "B3   ", pes_rebo%B(3, idx_i, idx_j)
-        write(out_unit, '(a7, e18.11)') "beta1", pes_rebo%beta(1, idx_i, idx_j)
-        write(out_unit, '(a7, e18.11)') "beta2", pes_rebo%beta(2, idx_i, idx_j)
-        write(out_unit, '(a7, e18.11)') "beta3", pes_rebo%beta(3, idx_i, idx_j)
-        write(out_unit, '(a7, e18.11)') "Q    ", pes_rebo%Q(idx_i, idx_j)
-        write(out_unit, '(a7, e18.11)') "A    ", pes_rebo%A(idx_i, idx_j)
-        write(out_unit, '(a7, e18.11)') "alpha", pes_rebo%alpha(idx_i, idx_j)
-        write(out_unit, '(a7, e18.11)') "rho  ", pes_rebo%rho(idx_i, idx_j)
+        write(out_unit, '(a6, e20.11)') "Dmin ", pes_rebo%Dmin(idx_i, idx_j)
+        write(out_unit, '(a6, e20.11)') "Dmax ", pes_rebo%Dmax(idx_i, idx_j)
+        write(out_unit, '(a6, e20.11)') "Dmaxp", pes_rebo%Dmaxp(idx_i, idx_j)
+        write(out_unit, '(a6, e20.11)') "B1   ", pes_rebo%B(1, idx_i, idx_j)
+        write(out_unit, '(a6, e20.11)') "B2   ", pes_rebo%B(2, idx_i, idx_j)
+        write(out_unit, '(a6, e20.11)') "B3   ", pes_rebo%B(3, idx_i, idx_j)
+        write(out_unit, '(a6, e20.11)') "beta1", pes_rebo%beta(1, idx_i, idx_j)
+        write(out_unit, '(a6, e20.11)') "beta2", pes_rebo%beta(2, idx_i, idx_j)
+        write(out_unit, '(a6, e20.11)') "beta3", pes_rebo%beta(3, idx_i, idx_j)
+        write(out_unit, '(a6, e20.11)') "Q    ", pes_rebo%Q(idx_i, idx_j)
+        write(out_unit, '(a6, e20.11)') "A    ", pes_rebo%A(idx_i, idx_j)
+        write(out_unit, '(a6, e20.11)') "alpha", pes_rebo%alpha(idx_i, idx_j)
+        write(out_unit, '(a6, e20.11)') "rho  ", pes_rebo%rho(idx_i, idx_j)
 
     end subroutine to_string_rebo
 
