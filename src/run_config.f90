@@ -538,7 +538,6 @@ contains
                         read(words(3), '(a)', iostat=ios) simparams%fit_validation_folder
                         if (ios /= 0) stop err // "Error reading path to validation data points"
 
-
                     case ('evasp')
 
                         if (simparams%evasp /= default_real) stop err // "reference energy for fit set multiple times"

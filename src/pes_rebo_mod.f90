@@ -1589,9 +1589,10 @@ contains
         real(dp), intent(out) :: cutoff(:), dx(:)
 
         real(dp) :: ratio(size(xij))
+        integer  :: i
 
         ratio = (xij-xmin) / (xmax-xmin)
-
+        !print *, size(xij), ratio
         do i = 1, size(xij)
             if (ratio(i) <= 0.0_dp) then
                 cutoff(i) = 1.0_dp
@@ -2603,6 +2604,7 @@ contains
                 VA = 0.0_dp
                 dVA = 0.0_dp
                 do k = 1, 3
+                    !print *, wij, pes_rebo%B(k,itype,jtype), pes_rebo%beta(k,itype,jtype), rij
                     term = -wij * pes_rebo%B(k,itype,jtype) * exp(-pes_rebo%beta(k,itype,jtype)*rij)
                     VA   = VA + term
                     dVA  = dVA - pes_rebo%beta(k,itype,jtype) * term

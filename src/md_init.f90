@@ -443,6 +443,7 @@ contains
             if (simparams%fit_validation_data == default_int) stop err // "validation data input missing"
             if (simparams%evasp == default_real) stop err // "reference energy evasp missing"
             if (simparams%start == default_int) stop err // "fit number not set"
+            if (simparams%fit_training_folder == simparams%fit_validation_folder) stop err // "cannot use the same folder for training and validation"
 
         else
             print *, err // "unknown run command", simparams%run

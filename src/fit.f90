@@ -18,19 +18,23 @@ module fit
     integer :: training_data_points, validation_data_points
     real(dp), allocatable :: train_nrg(:), valid_nrg(:)
     type(universe), allocatable :: train_data(:), valid_data(:)
+    type(universe)              :: reference
     integer :: nfit_params
 
 contains
 
-    subroutine perform_fit(reference)
+    subroutine perform_fit(dummy)
 
-        type(universe), intent(inout) :: reference     ! holds the reference configuration
+        type(universe), intent(in) :: dummy     ! holds the reference configuration
 
         real(dp) :: train_rmse, valid_rmse
         integer :: alloc_stat, i
         real(dp), allocatable :: x(:)
         real(dp), allocatable :: train_dev(:), valid_dev(:)
         character(len=*), parameter :: err = "Error in perform_fit(): "
+
+        ! make dummmy available to module
+        reference = dummy
 
         ! set up folder structure and open file handles
         call fit_setup()
@@ -49,26 +53,24 @@ contains
         write(fit_out, '(a, i)') "validation data points found:", validation_data_points
 
         ! 1st entry is the reference minimum energy structure
-        allocate(train_data(training_data_points+1), &
+        allocate(train_data(training_data_points), &
                  valid_data(validation_data_points), &
-                 train_nrg(training_data_points+1), &
+                 train_nrg(training_data_points), &
                  valid_nrg(validation_data_points), &
-                 train_dev(training_data_points+1), &
+                 train_dev(training_data_points), &
                  valid_dev(validation_data_points), stat=alloc_stat)
         if (alloc_stat /= 0) then
             print *, err // "allocation error"; stop
         end if
 
         ! build training and validation data sets
-        train_data(1) = reference
-        train_data(1)%epot(1) = simparams%evasp
         do i = 1, training_data_points
-            train_data(i+1)     = new_atoms(1, reference%natoms, reference%ntypes)
-            train_data(i+1)%pes = reference%pes
-            train_data(i+1)%idx = reference%idx
-            train_data(i+1)%name = reference%name
-            train_data(i+1)%simbox = reference%simbox
-            train_data(i+1)%isimbox = reference%isimbox
+            train_data(i)     = new_atoms(1, reference%natoms, reference%ntypes)
+            train_data(i)%pes = reference%pes
+            train_data(i)%idx = reference%idx
+            train_data(i)%name = reference%name
+            train_data(i)%simbox = reference%simbox
+            train_data(i)%isimbox = reference%isimbox
         end do
         do i = 1, validation_data_points
             valid_data(i) = new_atoms(1, reference%natoms, reference%ntypes)
@@ -90,7 +92,7 @@ contains
         write(fit_out, '(a)') "validation data points read"
 
         ! subtract DFT reference energy
-        do i = 1, training_data_points + 1
+        do i = 1, training_data_points
             train_nrg(i) = train_data(i)%epot(1) - simparams%evasp
         end do
         do i = 1, validation_data_points
@@ -104,13 +106,22 @@ contains
         ! do the fit
         call timestamp(fit_out)
 
+!        do i = 1, training_data_points
+!            print *, train_data(i)%nbeads
+!        end do
+
         if (simparams%maxit > 0) then
             write(fit_out,'(a, i, a)') "starting fit with max ", simparams%maxit, " iterations"
             call nllsqwbc(x, train_dev, train_rmse)
         else
             write(fit_out,'(a)') "comparison to training data set"
-            call obj_func(training_data_points+1, nfit_params, x, train_dev)
-            train_rmse = sqrt(sum(train_dev(2:)*train_dev(2:))/training_data_points)
+            call calc_force(reference, energy_only)
+            call obj_func(training_data_points, nfit_params, x, train_dev)
+            if (training_data_points > 0) then
+                train_rmse = sqrt(sum(train_dev*train_dev)/training_data_points)
+            else
+                train_rmse = 0.0_dp
+            end if
         end if
 
         ! compare to validation data set
@@ -119,12 +130,16 @@ contains
         !$omp parallel do private(i)
         do i = 1, validation_data_points
             call calc_force(valid_data(i), energy_only)
-            valid_dev(i) = valid_nrg(i) - (valid_data(i)%epot(1)-train_data(1)%epot(1))
+            valid_dev(i) = valid_nrg(i) - (valid_data(i)%epot(1)-reference%epot(1))
         end do
         !$omp end parallel do
 
         ! evaluate validation data set
-        valid_rmse = sqrt(sum(valid_dev*valid_dev)/validation_data_points)
+        if (validation_data_points > 0) then
+            valid_rmse = sqrt(sum(valid_dev*valid_dev)/validation_data_points)
+        else
+            valid_rmse = 0.0_dp
+        end if
 
         write(fit_out, '(a, f13.1, a)') "training rmse:  ", 1000*train_rmse, " meV"
         write(fit_out, '(a, f13.1, a)') "validation rmse:", 1000*valid_rmse, " meV"
@@ -156,13 +171,13 @@ contains
         ! select folder
         if (folder == simparams%fit_training_folder) then
             nfiles = simparams%fit_training_data
-            nrg_pos = 1; pos_pos = 1
         else if (folder == simparams%fit_validation_folder) then
             nfiles = simparams%fit_validation_data
-            nrg_pos = 0; pos_pos = 0
         else
             print *, err // "internal error"; stop
         end if
+
+        nrg_pos = 0; pos_pos = 0
 
         do i = 1, nfiles
 
@@ -270,7 +285,6 @@ contains
             print *, err // "internal error in check_fitting_data"; stop
         end if
 
-
         do i = 1, nfiles
 
             ! build input file string
@@ -331,6 +345,7 @@ contains
 
         ! XXX: change system() to execute_command_line() when new compiler is available
         ! create the fits directory
+        if (.not. dir_exists("fit/"))      call system("mkdir fit/")
         if (.not. dir_exists("fit/fits/")) call system("mkdir fit/fits/")
 
         ! create folder for output of this fit
@@ -365,17 +380,17 @@ contains
 
         write(t_dev_file, '(a9, i5.5, a24)') "fit/fits/", simparams%start, "/deviations/training.dat"
         call open_for_write(fit_out, t_dev_file)
-        write(fit_out, '(a24, a18)') "target epot/meV", "this epot/meV"
-        do i = 2, training_data_points+1
-            write(fit_out, '(i6, 2f18.5)') i-1, train_nrg(i), train_data(i)%epot(1)-train_data(1)%epot(1)
+        write(fit_out, '(a26, a18)') "# target epot/eV", "this epot/eV"
+        do i = 1, training_data_points
+            write(fit_out, '(i6, 2f18.5)') i, train_nrg(i), train_data(i)%epot(1)-reference%epot(1)
         end do
         close(fit_out)
 
         write(v_dev_file, '(a9, i5.5, a26)') "fit/fits/", simparams%start, "/deviations/validation.dat"
         call open_for_write(fit_out, v_dev_file)
-        write(fit_out, '(a24, a18)') "target epot/meV", "this epot/meV"
+        write(fit_out, '(a26, a18)') "# target epot/eV", "this epot/eV"
         do i = 1, validation_data_points
-            write(fit_out, '(i6, 2f18.5)') i, valid_nrg(i), valid_data(i)%epot(1)-train_data(1)%epot(1)
+            write(fit_out, '(i6, 2f18.5)') i, valid_nrg(i), valid_data(i)%epot(1)-reference%epot(1)
         end do
         close(fit_out)
 
@@ -476,7 +491,7 @@ contains
         !** precisions for jacobi calculation
         jac_eps = 1.0e-8_dp
 
-        m = training_data_points+1
+        m = training_data_points
         n = size(x)
 
         allocate(fjac(m,n))
@@ -550,7 +565,7 @@ contains
             !**   fvec          in:     vector
             !**   fjac          in:     jacobi matrix
             !**   rci_request   in/out: return number which denote next step for performing
-            !print *, "starting dtrnlsp_solve"
+            print *, "starting dtrnlsp_solve"
             if (dtrnlsp_solve (handle, fvec, fjac, rci_request) /= tr_success) then
                 !** if function does not complete successfully then print error message
                 print *, '| error in dtrnlsp_solve'
@@ -561,6 +576,9 @@ contains
                 !** and stop
                 stop 1
             end if
+
+            call from_x_to_pes_params(x)
+            call calc_force(reference, energy_only)
 
             !** according with rci_request value we do next step
             select case (rci_request)
@@ -573,8 +591,16 @@ contains
                     !**     n               in:     number of function variables
                     !**     x               in:     solution vector
                     !**     fvec            out:    function value f(x)
-                    !print *, "RCI request = 1: calculate obj_func"
+                    print *, "RCI request = 1: calculate obj_func"
+
+                    call output_pes(reference)
+
+                    ! calculate reference energy
                     call obj_func (m, n, x, fvec)
+                    print *, fvec, x(1)
+
+
+
                 case (2)
                     !**   compute jacobi matrix
                     !**     extended_powell in:     external objective function
@@ -583,7 +609,7 @@ contains
                     !**     fjac            out:    jacobi matrix
                     !**     x               in:     solution vector
                     !**     jac_eps         in:     jacobi calculation precision
-                    !print *, "RCI request = 2: calculate djacobi"
+                    print *, "RCI request = 2: calculate djacobi"
                     if (djacobi (obj_func, n, m, fjac, x, jac_eps) /= tr_success) then
                         !** if function does not complete successfully then print error message
                         print *, '| error in djacobi'
@@ -595,25 +621,24 @@ contains
                         stop 1
                     end if
 
+                    max_val = maxval(abs(fvec)) ! max deviation
+                    mean_dev = sum(fvec)/training_data_points
+                    train_rmse = sqrt(sum(fvec*fvec)/training_data_points)
+
+                    call timestamp(fit_out)
+                    write(fit_out, '(i6, 4f13.1)') iter, 1000*max_val, 1000*mean_dev, &
+                        1000*train_rmse, 1000*(train_rmse-train_rmse_old)
+
+                    train_rmse_old = train_rmse
+                    iter = iter + 1
+
 !                    do i=2,M
 !                        if (mod(i, M/10) == 0) then
 !                            write(*,"(2i6, 2f12.4)") iter, i-1, train_nrg(i), train_nrg(i)-fvec(i)
 !                        end if
 !                    end do
 
-                    max_val = maxval(abs(fvec)) ! max deviation
-                    mean_dev = sum(fvec(2:))/training_data_points
-                    train_rmse = sqrt(sum(fvec(2:)*fvec(2:))/training_data_points)
 
-                    call timestamp(fit_out)
-                    write(fit_out, '(i6, 4f13.1)') iter+1, 1000*max_val, 1000*mean_dev, &
-                        1000*train_rmse, 1000*(train_rmse-train_rmse_old)
-
-                    train_rmse_old = train_rmse
-                    iter = iter + 1
-
-                    call from_x_to_pes_params(x)
-                    call output_pes(train_data(1))
             end select
         end do
         !** get solution statuses
@@ -648,7 +673,12 @@ contains
         !** note: it is important to call the routine below to avoid memory leaks
         !** unless you disable intel(r) mkl memory manager
 
-        call from_x_to_pes_params(x)
+        max_val = maxval(abs(fvec)) ! max deviation
+        mean_dev = sum(fvec)/training_data_points
+        train_rmse = sqrt(sum(fvec*fvec)/training_data_points)
+        call timestamp(fit_out)
+        write(fit_out, '(i6, 4f13.1)') iter, 1000*max_val, 1000*mean_dev, &
+                        1000*train_rmse, 1000*(train_rmse-train_rmse_old)
 
         call mkl_free_buffers
 
@@ -676,14 +706,13 @@ contains
 
         call from_x_to_pes_params(x)
 
-        call calc_force(train_data(1), energy_only)
-        f(1) = 0.0_dp
+        call calc_force(reference, energy_only)
 
         !$omp parallel do private(i)
-        do i = 2, m
+        do i = 1, m
             !print *, "point", i, "on thread", omp_get_thread_num(), "of", omp_get_num_threads()
             call calc_force(train_data(i), energy_only)
-            f(i) = train_nrg(i) - (train_data(i)%epot(1)-train_data(1)%epot(1))
+            f(i) = train_nrg(i) - (train_data(i)%epot(1)-reference%epot(1))
         end do
         !$omp end parallel do
 
