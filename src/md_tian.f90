@@ -51,14 +51,13 @@ program md_tian
 
             do itraj = simparams%start, simparams%start+simparams%ntrajs-1
 
+
                 call calc_force(atoms, energy_and_force)
                 if (.not. allocated(cents)) allocate(cents(3, atoms%natoms))
 
                 if (any(simparams%output_type == output_id_scatter)) then
                     call output(atoms, itraj, -1, "scatter_initial")
                 end if
-
-
 
                 print *, "Eref", atoms%epot
 

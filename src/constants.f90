@@ -22,6 +22,7 @@ module constants
     integer, parameter :: nparams_morse = 3
     integer, parameter :: nparams_emt   = 7
     integer, parameter :: nparams_rebo  = 13
+    integer, parameter :: nparams_nene  = 1
 
     integer, parameter :: pes_id_lj             = 2001
     integer, parameter :: pes_id_morse          = 2002
@@ -30,6 +31,7 @@ module constants
     integer, parameter :: pes_id_ho             = 2005
     integer, parameter :: pes_id_simple_lj      = 2006
     integer, parameter :: pes_id_no_interaction = 2007
+    integer, parameter :: pes_id_nene           = 2008
 
     ! PES names
     character(len=*), parameter :: pes_name_lj             = "lj"
@@ -39,6 +41,7 @@ module constants
     character(len=*), parameter :: pes_name_no_interaction = "non"
     character(len=*), parameter :: pes_name_ho             = "ho"
     character(len=*), parameter :: pes_name_morse          = "morse"
+    character(len=*), parameter :: pes_name_nene           = "nene"
 
      ! Internal program constants
     integer, parameter :: randseed(13) = [7,5,3,11,9,1,17,2,9,6,4,5,8]
@@ -95,8 +98,17 @@ module constants
     real(dp), parameter :: deg2rad   = pi/180.0_dp
     real(dp), parameter :: rad2deg   = 180.0_dp/pi
     real(dp), parameter :: bohr2ang  = 0.529177211_dp
+    real(dp), parameter :: ang2bohr  = 1/bohr2ang
     real(dp), parameter :: p2GPa     = 160.2176565_dp
     real(dp), parameter :: joule2ev  = 6.2415093433e+18_dp
     real(dp), parameter :: kelvin2ev = kB
+    real(dp), parameter :: ha2ev     = 27.21138602_dp
+    real(dp), parameter :: forceconv = ha2ev/bohr2ang !51.4220670398_dp; convert Ha/bohr to eV/ang
+
+    !arrays used in nene
+    character(len=93)   :: atom_format = '(A4, X, F12.9, X, F12.9, X, F12.9, X, A3, X, F11.8, X, F11.8, X, F11.8, X, F11.8, X, F11.8)'
+    character(len=20)   :: ce_format = '(A6 ,X , F11.8)'
+    character(len=36)   :: lattice_format = '(A7, X, F11.8, X, F11.8, X, F11.8)'
+    character(len=29)   :: forces_string = '(F11.8, X, F11.8, X, F11.8)'
 
 end module constants

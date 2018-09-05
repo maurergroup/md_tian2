@@ -28,7 +28,8 @@ module run_config
         integer,          allocatable :: md_algo_l(:), md_algo_p(:) ! and respective key
         real(dp) :: einc, sigma_einc                                ! incidence energy (eV)
         real(dp) :: polar                                     ! incidence polar angle (degree)
-        real(dp) :: azimuth                                         ! incidence azimuthal angle (degree)
+        character(len=15) :: azimuth                                ! incidence azimuthal angle (degree) or 'r' for random
+        real(dp) :: sigma_azimuth                                   ! standard dev of incidence azimuthal angle (degree)
         real(dp) :: Tsurf                                            ! surface temperature in K
         real(dp) :: Tproj                                            ! projectile temperature in K
         real(dp) :: sa_Tmax                                          ! max. Tsurf for simulated annealing in K
@@ -79,7 +80,8 @@ contains
         new_simulation_parameters%einc  = default_real
         new_simulation_parameters%sigma_einc = default_real
         new_simulation_parameters%polar = default_real
-        new_simulation_parameters%azimuth = default_real
+        new_simulation_parameters%azimuth = default_string
+        new_simulation_parameters%sigma_azimuth = default_real
         new_simulation_parameters%sa_Tmax   = default_real
         new_simulation_parameters%sa_nsteps = default_int
         new_simulation_parameters%sa_interval = default_int
@@ -334,13 +336,16 @@ contains
 
                     case ('azimuth')
 
-                        if (simparams%azimuth /= default_real) stop err // 'Multiple use of the azimuth key'
+                        if (simparams%azimuth /= default_string) stop err // 'Multiple use of the azimuth key'
                         if (nwords == 2) then
-                            read(words(2),*, iostat=ios) simparams%azimuth
-                            if (ios /= 0) stop err // 'azimuth value must be a number'
-                            simparams%azimuth = simparams%azimuth * deg2rad
+                            read(words(2),'(A)') simparams%azimuth
+                            simparams%sigma_azimuth = 0.0_dp
+                        else if (nwords == 3) then
+                            read(words(2),'(A)') simparams%azimuth
+                            read(words(3), *, iostat=ios) simparams%sigma_azimuth
+                            if (ios /= 0) stop err // 'standard dev of azimuth angle must be a number'
                         else
-                            print *, err // 'azimuth key needs a single argument'; stop
+                            print *, err // 'azimuth key needs one or two arguments'; stop
                         end if
 
 

@@ -170,25 +170,36 @@ contains
 
         call normal_deviate(0.0_dp, 1.0_dp, randy)
 
-        ! propagate positions
+        ! no rpmd: propagate positions and partially propagate velocities
         if (atoms%nbeads == 1) then
+
+            where (.not. atoms%is_fixed(:,1,i))
+                atoms%r(:,1,i) = atoms%r(:,1,i) + c1(1)*atoms%v(:,1,i) + &
+                    c2(1)*simparams%step*atoms%a(:,1,i) + sigma_r(1)*randy(:,1)
+                atoms%v(:,1,i) = c0(1)*atoms%v(:,1,i) + &
+                    (c1(1)-c2(1))*atoms%a(:,1,i) + sigma_v(1)*c_rv(1)*randy(:,1)
+            elsewhere
+                atoms%v(:,1,i) = 0.0_dp
+            end where
+
+
+        ! rpmd: partially propagate velocities
+        else
+
             do b = 1, atoms%nbeads
+
                 where (.not. atoms%is_fixed(:,b,i))
-                    atoms%r(:,b,i) = atoms%r(:,b,i) + c1(b)*atoms%v(:,b,i) + &
-                        c2(b)*simparams%step*atoms%a(:,b,i) + sigma_r(b)*randy(:,b)
+                    atoms%v(:,b,i) = c0(b)*atoms%v(:,b,i) + &
+                    (c1(b)-c2(b))*atoms%a(:,b,i) + sigma_v(b)*c_rv(b)*randy(:,b)
+                elsewhere
+                    atoms%v(:,b,i) = 0.0_dp
                 end where
+
             end do
+
         end if
 
-        ! partially propagate velocities
-        do b = 1, atoms%nbeads
-            where (.not. atoms%is_fixed(:,b,i))
-                atoms%v(:,b,i) = c0(b)*atoms%v(:,b,i) + &
-                    (c1(b)-c2(b))*atoms%a(:,b,i) + sigma_v(b)*c_rv(b)*randy(:,b)
-            elsewhere
-                atoms%v(:,b,i) = 0.0_dp
-            end where
-        end do
+
 
 
     end subroutine langevin_1
@@ -250,13 +261,16 @@ contains
         call normal_deviate(0.0_dp, 1.0_dp, randy)
 
         ! partially propagate velocities
+
         do b = 1, atoms%nbeads
+
             where (.not. atoms%is_fixed(:,b,i))
                 atoms%v(:,b,i) = atoms%v(:,b,i) + c2(b)*atoms%a(:,b,i) + &
                     sigma_v(b)*sqrt(1-c_rv(b)*c_rv(b))*randy(:,b)
             elsewhere
                 atoms%v(:,b,i) = 0.0_dp
             end where
+
         end do
 
     end subroutine langevin_2
@@ -416,7 +430,7 @@ contains
             end if
             dens(b,i) = fric(b)
         end do
-        dens(:,i) = dens(:,i) * convert / hbar / atoms%m(i)
+        dens(:,i) = dens(:,i) * convert / hbar / atoms%m(i) / atoms%nbeads
         !print *, "post", dens(:,i)
         ! xi in 1/fs
 

@@ -25,6 +25,7 @@ module md_init
     use pes_emt_mod,  only : read_emt
     use pes_non_mod,  only : read_non_interacting
     use pes_rebo_mod, only : read_rebo
+    use pes_nene_mod, only : read_nene
 
     implicit none
 
@@ -116,6 +117,9 @@ contains
 
                         case (pes_name_ho)
                             call read_ho(atoms, pes_unit)
+
+                        case (pes_name_nene)
+                            call read_nene(atoms, pes_unit)
 
                         case default
                             print *, err // "unknown potential in PES file:", words(2)
@@ -401,11 +405,12 @@ contains
             if (any(simparams%output_interval > simparams%nsteps)) print *, warn // "one or more outputs will not show, &
                 since the output interval is larger than the total number of simulation steps."            
         
-
             ! If one of them is set, the others must be set as well.
-            if (any([simparams%einc, simparams%polar, simparams%azimuth] == default_real) .and.  &
-                .not. all([simparams%einc, simparams%polar, simparams%azimuth] == default_real)) &
+            if (any([simparams%einc, simparams%polar] == default_real) .and.  &
+                .not. all([simparams%einc, simparams%polar] == default_real)) &
                 stop err // "incidence conditions ambiguous."
+
+            if (simparams%azimuth == default_string .and. simparams%nprojectiles > 0) stop err // "incidence azimuth angle not set"
 
             if (any(simparams%pip == default_string) /= all(simparams%pip == default_string)) stop err // "you have set all pip arguments"
 
@@ -517,10 +522,16 @@ contains
         ! add other universe to this universe
         ! projectile must be other
 
+        use rpmd, only : calc_centroid_positions
+
         type(universe), intent(inout) :: this
         type(universe), intent(inout) :: other
 
         type(universe) :: new
+
+        integer :: b
+        real(dp), dimension(3, this%nbeads, this%natoms+other%natoms) :: dir_coords
+        real(dp), dimension(3, this%natoms+other%natoms) :: centroids
         character(len=*), parameter :: err = "Error in merge_universes: "
 
         if (this%nbeads /= other%nbeads) stop err // "mxt and merge files differ in number of beads"
@@ -545,7 +556,6 @@ contains
         new%m(:other%natoms)            = other%m
         new%idx(:other%natoms)          = other%idx
         new%name(:other%ntypes)         = other%name
-        new%algo(:other%ntypes)         = other%algo
         new%is_proj(:other%ntypes)      = other%is_proj
         new%is_fixed(:,:,:other%natoms) = other%is_fixed
 
@@ -556,16 +566,23 @@ contains
         new%m(other%natoms+1:)            = this%m
         new%idx(other%natoms+1:)          = this%idx+maxval(other%idx)
         new%name(other%ntypes+1:)         = this%name
-        new%algo(other%ntypes+1:)         = this%algo
         new%is_proj(other%ntypes+1:)      = this%is_proj
         new%is_fixed(:,:,other%natoms+1:) = this%is_fixed
 
+        new%algo = [simparams%md_algo_p, simparams%md_algo_l]
         new%dof     = 3*new%natoms*new%nbeads - count(new%is_fixed)
         new%simbox  = this%simbox
         new%isimbox = this%isimbox
         new%is_cart = .true.
 
         this = new
+
+        ! fold all centroids into simulation box
+        centroids = calc_centroid_positions(this)
+        centroids = matmul(this%isimbox, centroids)
+        call to_direct(this)
+        forall (b = 1 : this%nbeads) this%r(:,b,:) = this%r(:,b,:) - int(centroids)
+        call to_cartesian(this)
 
     end subroutine merge_universes
 
@@ -775,12 +792,13 @@ contains
 
         type(universe), intent(inout) :: atoms
 
-        real(dp) :: vinc, drawn_einc, proj_mass, vx, vy, vz
-        integer  :: i
+        real(dp) :: vinc, drawn_einc, proj_mass, vx, vy, vz, chosen_azimuth
+        integer  :: i, ios
         character(len=*), parameter :: err = "Error in set_proj_incidence: "
+        character(len=*), parameter :: random_position = "r"
 
         ! return if no information is provided
-        if (all([simparams%einc, simparams%polar, simparams%azimuth] == default_real)) return
+        if (all([simparams%einc, simparams%polar] == default_real)) return
 
         ! draw incidence energy from normal distribution
         call normal_deviate(simparams%einc, simparams%sigma_einc, drawn_einc)
@@ -791,9 +809,20 @@ contains
             if (atoms%is_proj(atoms%idx(i))) proj_mass = proj_mass + atoms%m(i)
         end do
 
+        ! set the azimuth angle
+        if (simparams%azimuth == random_position) then
+            call random_number(chosen_azimuth)
+            chosen_azimuth = 2 * pi * chosen_azimuth
+        else
+            read(simparams%azimuth, *, iostat=ios) chosen_azimuth
+            if (ios /= 0) stop err // "first azimuth argument must be a number or r"
+            call normal_deviate_0d(chosen_azimuth, simparams%sigma_azimuth, chosen_azimuth)
+            chosen_azimuth = chosen_azimuth * deg2rad
+        end if
+
         vinc =  sqrt(2*drawn_einc/proj_mass)
-        vx   =  vinc * sin(simparams%polar) * cos(simparams%azimuth)
-        vy   =  vinc * sin(simparams%polar) * sin(simparams%azimuth)
+        vx   =  vinc * sin(simparams%polar) * cos(chosen_azimuth)
+        vy   =  vinc * sin(simparams%polar) * sin(chosen_azimuth)
         vz   = -vinc * cos(simparams%polar)
 
         do i = 1, atoms%natoms

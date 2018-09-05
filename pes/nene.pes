@@ -1,0 +1,10 @@
+pes nene
+H	C	proj	latt
+
+pes nene
+C	C	latt	latt
+
+pes nene
+H	H	proj	proj
+ inp_dir 'RuNNer_input/Martin/'
+ prog_dir '~/RuNNer/source-rev873/RuNNer.serial.x'

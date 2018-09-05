@@ -82,6 +82,50 @@ contains
 
 
 
+
+    function calc_centroid_velocities(atoms) result(cents)
+
+        type(universe), intent(in) :: atoms
+        real(dp)                   :: cents(3, atoms%natoms)
+
+        integer  :: i
+
+        if (.not. atoms%is_cart) print *, "Warning: centroid velocities are being calculated from direct coordinates!"
+
+        ! active rpmd
+        if (atoms%nbeads > 1) then
+
+            do i = 1, atoms%natoms
+                cents(:,i) = sum(atoms%v(:,:,i), dim=2)/atoms%nbeads
+            end do
+
+        ! no rpmd
+        else
+            cents = atoms%v(:,1,:)
+        end if
+
+    end function calc_centroid_velocities
+
+
+
+    function calc_centroid_velocity_one(atoms, the_atom) result(cent_v)
+
+        type(universe), intent(in) :: atoms
+        integer       , intent(in) :: the_atom
+
+        real(dp)                   :: cent_v(3)
+        integer  :: i
+
+        if (.not. atoms%is_cart) print *, "Warning: centroid velocities are being calculated from direct coordinates!"
+
+
+        cent_v = sum(atoms%v(:,:,the_atom), dim=2)/atoms%nbeads
+
+    end function calc_centroid_velocity_one
+
+
+
+
     function calc_inter_bead_distances(atoms) result (dists)
 
         type(universe), intent(in) :: atoms

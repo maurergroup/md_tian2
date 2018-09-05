@@ -565,7 +565,7 @@ contains
             !**   fvec          in:     vector
             !**   fjac          in:     jacobi matrix
             !**   rci_request   in/out: return number which denote next step for performing
-            print *, "starting dtrnlsp_solve"
+            !print *, "starting dtrnlsp_solve"
             if (dtrnlsp_solve (handle, fvec, fjac, rci_request) /= tr_success) then
                 !** if function does not complete successfully then print error message
                 print *, '| error in dtrnlsp_solve'
@@ -577,6 +577,7 @@ contains
                 stop 1
             end if
 
+            ! calculate reference energy
             call from_x_to_pes_params(x)
             call calc_force(reference, energy_only)
 
@@ -591,15 +592,11 @@ contains
                     !**     n               in:     number of function variables
                     !**     x               in:     solution vector
                     !**     fvec            out:    function value f(x)
-                    print *, "RCI request = 1: calculate obj_func"
+                    !print *, "RCI request = 1: calculate obj_func"
 
                     call output_pes(reference)
 
-                    ! calculate reference energy
                     call obj_func (m, n, x, fvec)
-                    print *, fvec, x(1)
-
-
 
                 case (2)
                     !**   compute jacobi matrix
@@ -609,7 +606,7 @@ contains
                     !**     fjac            out:    jacobi matrix
                     !**     x               in:     solution vector
                     !**     jac_eps         in:     jacobi calculation precision
-                    print *, "RCI request = 2: calculate djacobi"
+                    !print *, "RCI request = 2: calculate djacobi"
                     if (djacobi (obj_func, n, m, fjac, x, jac_eps) /= tr_success) then
                         !** if function does not complete successfully then print error message
                         print *, '| error in djacobi'

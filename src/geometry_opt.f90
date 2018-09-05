@@ -69,7 +69,7 @@ contains
         prev_nrg = default_real
 
 
-        print '(a2, a17, 2a18)', "# ", "optimization step", "power/eV*fs", "Epot/eV"
+        !print '(a2, a17, 2a18)', "# ", "optimization step", "power/eV*fs", "Epot/eV"
 
         do while (.true.)
 
@@ -95,14 +95,14 @@ contains
             ! F1
             atoms%f = atoms%f + ring_polymer_forces
             power = sum(atoms%f * atoms%v)
-            print '(i19, 2f18.11)', opt_steps, power, atoms%epot
+            !print '(i19, 2f18.11)', opt_steps, power, atoms%epot
 
             ! F2
             do i = 1, atoms%natoms
                 do b = 1, atoms%nbeads
                     f_norm = sum(sqrt(atoms%f(:,b,i)*atoms%f(:,b,i)))
                     v_norm = sum(sqrt(atoms%v(:,b,i)*atoms%v(:,b,i)))
-                    f_unit = atoms%f(:,b,i)/f_norm
+                    f_unit = atoms%f(:,b,i)/max(f_norm, tolerance)
 
                     where (.not. atoms%is_fixed(:,b,i))
                         atoms%v(:,b,i) = (1-alpha)*atoms%v(:,b,i) + alpha*f_unit*v_norm
@@ -137,6 +137,8 @@ contains
             prev_nrg = atoms%epot(1)
 
         end do
+
+        print '(f18.11)', atoms%epot
 
     end subroutine fire_geometry_optimization
 

@@ -1,0 +1,8 @@
+Files needed for RuNNer Implementation:
+
+
+1) input.nn with architecture and symmetry functions
+
+2) scaling.data with bias values
+
+3) all weights.XXX.data (XXX is the element number in the periodic table)

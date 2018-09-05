@@ -7,6 +7,7 @@ module force
     use pes_emt_mod,  only : compute_emt
     use pes_ho_mod,   only : compute_ho
     use pes_rebo_mod, only : compute_rebo
+    use pes_nene_mod, only : compute_nene
 
     implicit none
 
@@ -19,7 +20,7 @@ contains
         character(len=*), parameter   :: err = "Error in calc_force(): "
 
         real(dp) :: temp_distance(atoms%nbeads), temp_vector(3, atoms%nbeads)
-        integer :: b, i, j
+        integer :: i, j
 
         atoms%f    = 0.0_dp
         atoms%a    = 0.0_dp
@@ -31,21 +32,18 @@ contains
             allocate(atoms%distances(atoms%nbeads, atoms%natoms, atoms%natoms))
             allocate(atoms%vectors(3, atoms%nbeads, atoms%natoms, atoms%natoms))
         end if
+
         atoms%distances = 0.0_dp
         atoms%vectors   = 0.0_dp
+
         do j = 1, atoms%natoms-1
             do i = j+1, atoms%natoms
                 call minimg_beads(atoms, i, j, temp_distance, temp_vector)
                 atoms%distances(:,i,j) = temp_distance
+                atoms%distances(:,j,i) = temp_distance
                 atoms%vectors(:,:,i,j) = -temp_vector
+                atoms%vectors(:,:,j,i) = +temp_vector
             end do
-        end do
-
-        do b = 1, atoms%nbeads
-            atoms%distances(b,:,:) = atoms%distances(b,:,:) + transpose(atoms%distances(b,:,:))
-            atoms%vectors(1,b,:,:) = atoms%vectors(1,b,:,:) - transpose(atoms%vectors(1,b,:,:))
-            atoms%vectors(2,b,:,:) = atoms%vectors(2,b,:,:) - transpose(atoms%vectors(2,b,:,:))
-            atoms%vectors(3,b,:,:) = atoms%vectors(3,b,:,:) - transpose(atoms%vectors(3,b,:,:))
         end do
 
         ! calculate energy (and forces if flag is set)
@@ -54,6 +52,7 @@ contains
         if (any(atoms%pes == pes_id_emt))       call compute_emt      (atoms, flag)
         if (any(atoms%pes == pes_id_ho))        call compute_ho       (atoms, flag)
         if (any(atoms%pes == pes_id_rebo))      call compute_rebo     (atoms, flag)
+        if (any(atoms%pes == pes_id_nene))      call compute_nene (atoms, flag)
 
         if (flag == energy_and_force) call set_acceleration(atoms)
 

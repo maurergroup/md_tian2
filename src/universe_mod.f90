@@ -363,9 +363,9 @@ contains
             end if
         end do
 
-        if (idx == default_int) stop "Error in get_idx_from_name(): make sure you & 
+        if (idx == default_int) stop "Error in get_idx_from_name(): make sure you &
                         correctly assign element names to projectile and slab in both &
-                        *.inp and *.pes files."        
+                        *.inp and *.pes files."
 
     end function get_idx_from_name
 
@@ -379,8 +379,8 @@ contains
 
         type(universe), intent(in)         :: this
         integer, intent(in)                :: i, j, bi, bj
-        real(8),               intent(out) :: r
-        real(8), dimension(3), intent(out) :: vec
+        real(dp),               intent(out) :: r
+        real(dp), dimension(3), intent(out) :: vec
 
         vec = this%r(:,bj,j)-this%r(:,bi,i)   ! distance vector from a to b
 
@@ -402,8 +402,8 @@ contains
 
         type(universe), intent(in) :: this
         integer, intent(in)        :: i, j
-        real(8), intent(out)       :: r(this%nbeads)
-        real(8), intent(out)       :: vec(3, this%nbeads)
+        real(dp), intent(out)       :: r(this%nbeads)
+        real(dp), intent(out)       :: vec(3, this%nbeads)
 
         vec = this%r(:,:,j)-this%r(:,:,i)   ! distance vector from a to b
 
@@ -466,6 +466,8 @@ contains
                 name = pes_name_simple_lj
             case(pes_id_no_interaction)
                 name = pes_name_no_interaction
+            case(pes_id_nene)
+                name = pes_name_nene
             case default
                 print *, err // "unknown id", id
                 stop

@@ -10,7 +10,7 @@ Source code is in Fortran.
 List of modules:
 
 atom_class.f90		:defines of user types and all constants
-*force.f90		:calculattes energy and forces
+*force.f90		:calculates energy and forces
 *mdalgo.f90		:contains propagation algorithms
 md_init.f90		:sets up everything
 md_tian.f90		:the main file governing simulations
@@ -39,10 +39,11 @@ Daniel J. Auerbach
 Svenja Maria Janke
 Marvin Kammler
 Sascha Kandratsenka
+Sebastian Wille
 
 
 Dynamics at Surfaces Dep.
-MPI for biophysical Chemistry
+MPI for Biophysical Chemistry
 Am Fassberg 11
 37077 Goettingen
 Germany
@@ -55,3 +56,16 @@ Germany
 
 Md xia4 tian1 is a very important program. It helps to better the world.
 jqrw sxrw=n! wr wj nA r sxrw nTrw!
+
+
+
+Annotations from Sebastian Wille:
+
+input file:
+
+  pip: projectile initial position
+  pul: projectile upper limit
+  T in POSCAR file stands for "True", means atom is NOT fixed and can move (F means atom is fixed and cannot move)
+  Repetition of the slab in init file via: conf merge 'Path/File' <x_rep> <y_rep>
+
+

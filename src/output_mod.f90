@@ -358,6 +358,8 @@ contains
                     !            name = pes_name_ho
                     !        case(pes_id_simple_lj)
                     !            name = pes_name_simple_lj
+                    !	     case(pes_id_nene)
+                    !		 name = pes_name_nene
                     case default
                         print *, err, "pes output not implemented for ", pes
                         stop
