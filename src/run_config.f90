@@ -467,8 +467,8 @@ contains
                                     simparams%output_type(i) = output_id_energy
                                 case (output_key_poscar)
                                     simparams%output_type(i) = output_id_poscar
-                                case (output_key_poscar_vasp)
-                                    simparams%output_type(i) = output_id_poscar_vasp
+                                case (output_key_vasp)
+                                    simparams%output_type(i) = output_id_vasp
                                 case (output_key_mxt)
                                     simparams%output_type(i) = output_id_mxt
                                 case (output_key_scatter)

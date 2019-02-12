@@ -6,6 +6,7 @@ module output_mod
     use constants
     use trajectory_info
     use run_config, only : simparams
+    use rpmd, only : calc_centroid_positions
 
     implicit none
 
@@ -13,7 +14,7 @@ module output_mod
     logical :: overwrite_nrg       = .true.
     integer, parameter :: out_unit = 86
     integer :: out_id_poscar       = 0
-    integer :: out_id_poscar_vasp  = 0
+    integer :: out_id_vasp         = 0
     integer :: out_id_mxt          = 0
 
 
@@ -48,9 +49,9 @@ contains
                         call output_poscar(atoms)
                         out_id_poscar = out_id_poscar + 1
 
-                    case (output_id_poscar_vasp)
-                        call output_poscar_vasp(atoms)
-                        out_id_poscar_vasp = out_id_poscar_vasp + 1
+                    case (output_id_vasp)
+                        call output_vasp(atoms)
+                        out_id_vasp = out_id_vasp + 1
 
                     case (output_id_mxt)
                         call output_mxt(atoms)
@@ -229,13 +230,14 @@ contains
 
 
     !New output format to generate readable POSCAR file, which can be also feeded to VASP
-    subroutine output_poscar_vasp(atoms)
+    subroutine output_vasp(atoms)
 
         type(universe), intent(in) :: atoms
 
         character(len=max_string_length) :: fname
         character(len=8)                 :: fid
         integer :: time_vals(8), noccurrences(atoms%ntypes), i, j
+        real(dp)                   :: cents(3, atoms%natoms) ! for the beads to get center of mass
 
         ! XXX: change system() to execute_command_line() when new compiler is available
         if (.not. dir_exists('conf')) call system('mkdir conf')
@@ -247,7 +249,7 @@ contains
         end do
 
         ! open file conf/poscar_%08d.dat
-        write(fid,'(i8.8)') out_id_poscar_vasp+simparams%start
+        write(fid,'(i8.8)') out_id_vasp+simparams%start
         fname = 'conf/poscar_'//fid//'.POSCAR'
         call open_for_write(out_unit, fname)
 
@@ -267,15 +269,18 @@ contains
             write(out_unit, '(a)') "Direct"
         end if
 
+
+        cents = calc_centroid_positions(atoms)
+
         ! positions and velocities
-        write(out_unit, '(3f23.15, 3l)') ((atoms%r(:,j,i), &
-            .not.atoms%is_fixed(:,1,i)), i=1,atoms%natoms)
+        write(out_unit, '(3f23.15, 3l)') ((cents(:,i), &
+            .not.atoms%is_fixed(:,j,i), j=1,atoms%nbeads), i=1,atoms%natoms)
         write(out_unit, '(a)') ""
         write(out_unit, '(3f23.15)') atoms%v
 
         close(out_unit)
 
-    end subroutine output_poscar_vasp
+    end subroutine output_vasp
 
 
 
