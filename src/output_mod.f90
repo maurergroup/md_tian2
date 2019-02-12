@@ -9,12 +9,12 @@ module output_mod
 
     implicit none
 
-    logical :: overwrite_xyz = .true.
-    logical :: overwrite_nrg = .true.
+    logical :: overwrite_xyz       = .true.
+    logical :: overwrite_nrg       = .true.
     integer, parameter :: out_unit = 86
-    integer :: out_id_poscar_bead = 0
-    integer :: out_id_poscar_true = 0
-    integer :: out_id_mxt    = 0
+    integer :: out_id_poscar       = 0
+    integer :: out_id_poscar_vasp  = 0
+    integer :: out_id_mxt          = 0
 
 
 contains
@@ -44,13 +44,13 @@ contains
                     case (output_id_energy)
                         call output_nrg(atoms, itraj, istep)
 
-                    case (output_id_poscar_bead)
-                        call output_poscar_bead(atoms)
-                        out_id_poscar_bead = out_id_poscar_bead + 1
+                    case (output_id_poscar)
+                        call output_poscar(atoms)
+                        out_id_poscar = out_id_poscar + 1
 
-                    case (output_id_poscar_true)
-                        call output_poscar_true(atoms)
-                        out_id_poscar_true = out_id_poscar_true + 1
+                    case (output_id_poscar_vasp)
+                        call output_poscar_vasp(atoms)
+                        out_id_poscar_vasp = out_id_poscar_vasp + 1
 
                     case (output_id_mxt)
                         call output_mxt(atoms)
@@ -178,8 +178,8 @@ contains
 
 
 
-
-    subroutine output_poscar_bead(atoms)
+    !2DO: call calc_centroid_positions (rpmd.f90) to write center of masses for higher beads to create a proper file
+    subroutine output_poscar(atoms)
 
         type(universe), intent(in) :: atoms
 
@@ -197,7 +197,7 @@ contains
         end do
 
         ! open file conf/poscar_%08d.dat
-        write(fid,'(i8.8)') out_id_poscar_bead+simparams%start
+        write(fid,'(i8.8)') out_id_poscar+simparams%start
         fname = 'conf/poscar_'//fid//'.dat'
         call open_for_write(out_unit, fname)
 
@@ -225,10 +225,11 @@ contains
 
         close(out_unit)
 
-    end subroutine output_poscar_bead
+    end subroutine output_poscar
 
 
-subroutine output_poscar_true(atoms)
+    !New output format to generate readable POSCAR file, which can be also feeded to VASP
+    subroutine output_poscar_vasp(atoms)
 
         type(universe), intent(in) :: atoms
 
@@ -246,7 +247,7 @@ subroutine output_poscar_true(atoms)
         end do
 
         ! open file conf/poscar_%08d.dat
-        write(fid,'(i8.8)') out_id_poscar_true+simparams%start
+        write(fid,'(i8.8)') out_id_poscar_vasp+simparams%start
         fname = 'conf/poscar_'//fid//'.POSCAR'
         call open_for_write(out_unit, fname)
 
@@ -274,7 +275,7 @@ subroutine output_poscar_true(atoms)
 
         close(out_unit)
 
-    end subroutine output_poscar_true
+    end subroutine output_poscar_vasp
 
 
 
