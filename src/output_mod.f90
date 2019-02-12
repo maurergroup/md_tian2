@@ -12,7 +12,8 @@ module output_mod
     logical :: overwrite_xyz = .true.
     logical :: overwrite_nrg = .true.
     integer, parameter :: out_unit = 86
-    integer :: out_id_poscar = 0
+    integer :: out_id_poscar_bead = 0
+    integer :: out_id_poscar_true = 0
     integer :: out_id_mxt    = 0
 
 
@@ -43,9 +44,13 @@ contains
                     case (output_id_energy)
                         call output_nrg(atoms, itraj, istep)
 
-                    case (output_id_poscar)
-                        call output_poscar(atoms)
-                        out_id_poscar = out_id_poscar + 1
+                    case (output_id_poscar_bead)
+                        call output_poscar_bead(atoms)
+                        out_id_poscar_bead = out_id_poscar_bead + 1
+
+                    case (output_id_poscar_true)
+                        call output_poscar_true(atoms)
+                        out_id_poscar_true = out_id_poscar_true + 1
 
                     case (output_id_mxt)
                         call output_mxt(atoms)
@@ -174,7 +179,7 @@ contains
 
 
 
-    subroutine output_poscar(atoms)
+    subroutine output_poscar_bead(atoms)
 
         type(universe), intent(in) :: atoms
 
@@ -220,8 +225,56 @@ contains
 
         close(out_unit)
 
-    end subroutine output_poscar
+    end subroutine output_poscar_bead
 
+
+subroutine output_poscar_true(atoms)
+
+        type(universe), intent(in) :: atoms
+
+        character(len=max_string_length) :: fname
+        character(len=8)                 :: fid
+        integer :: time_vals(8), noccurrences(atoms%ntypes), i, j
+
+        ! XXX: change system() to execute_command_line() when new compiler is available
+        if (.not. dir_exists('conf')) call system('mkdir conf')
+
+        ! prepare arrays
+        noccurrences = 0
+        do i = 1, atoms%natoms
+            noccurrences(atoms%idx(i)) = noccurrences(atoms%idx(i)) + 1
+        end do
+
+        ! open file conf/poscar_%08d.dat
+        write(fid,'(i8.8)') out_id_poscar+simparams%start
+        fname = 'conf/poscar_'//fid//'.POSCAR'
+        call open_for_write(out_unit, fname)
+
+        ! write date and time as comment line
+        call date_and_time(values=time_vals)
+        write(out_unit, '(i4, a, i2.2, a, i2.2, a, i2.2, a, i2.2)') &
+            time_vals(1), "-", time_vals(2), "-",time_vals(3), " - ",time_vals(5), ".",time_vals(6)
+
+        write(out_unit, '(a)')       '1.0'                    ! scaling constant
+        write(out_unit, '(3f23.15)') atoms%simbox
+        write(out_unit, *)           atoms%name
+        write(out_unit, '(100i6)') (noccurrences(i), i=1,atoms%ntypes)
+
+        if (atoms%is_cart) then
+            write(out_unit, '(a)') "Cartesian"
+        else
+            write(out_unit, '(a)') "Direct"
+        end if
+
+        ! positions and velocities
+        write(out_unit, '(3f23.15, 3l)') ((atoms%r(:,j,i), &
+            .not.atoms%is_fixed(:,1,i)), i=1,atoms%natoms)
+        write(out_unit, '(a)') ""
+        write(out_unit, '(3f23.15)') atoms%v
+
+        close(out_unit)
+
+    end subroutine output_poscar_true
 
 
 

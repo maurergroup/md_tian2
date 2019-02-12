@@ -72,17 +72,19 @@ module constants
 
 
     ! Output
-    character(len=*), parameter :: output_key_xyz     = "xyz"
-    character(len=*), parameter :: output_key_energy  = "energy"
-    character(len=*), parameter :: output_key_poscar  = "poscar"
-    character(len=*), parameter :: output_key_mxt     = "mxt"
-    character(len=*), parameter :: output_key_scatter = "scatter"
+    character(len=*), parameter :: output_key_xyz          = "xyz"
+    character(len=*), parameter :: output_key_energy       = "energy"
+    character(len=*), parameter :: output_key_poscar_bead  = "poscar_bead"
+    character(len=*), parameter :: output_key_poscar_true  = "poscar_true"
+    character(len=*), parameter :: output_key_mxt          = "mxt"
+    character(len=*), parameter :: output_key_scatter      = "scatter"
 
-    integer, parameter :: output_id_xyz     = 1
-    integer, parameter :: output_id_energy  = 2
-    integer, parameter :: output_id_poscar  = 3
-    integer, parameter :: output_id_mxt     = 4
-    integer, parameter :: output_id_scatter = 5
+    integer, parameter :: output_id_xyz          = 1
+    integer, parameter :: output_id_energy       = 2
+    integer, parameter :: output_id_poscar_bead  = 3
+    integer, parameter :: output_id_poscar_true  = 4
+    integer, parameter :: output_id_mxt          = 5
+    integer, parameter :: output_id_scatter      = 6
 
     ! Conversion constants to program units
     !

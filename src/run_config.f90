@@ -426,7 +426,7 @@ contains
                                 case ('merge')
                                     ! conf mergewith <mxt_folder> <n>: randomly select mxt files 1<=x<=n from folder
                                     if (nwords /= 6) stop err // "conf merge needs projectile mxt folder, # of projectile configurations therein &
-                                        lattice mxt folder and # of lattice configurations therein"                                    
+                                        lattice mxt folder and # of lattice configurations therein"
                                     ! projectile
                                     read(words(3),'(A)') simparams%merge_proj_file
                                     read(words(4),'(i1000)',iostat=ios) simparams%merge_proj_nconfs
@@ -465,8 +465,10 @@ contains
                                     simparams%output_type(i) = output_id_xyz
                                 case (output_key_energy)
                                     simparams%output_type(i) = output_id_energy
-                                case (output_key_poscar)
-                                    simparams%output_type(i) = output_id_poscar
+                                case (output_key_poscar_bead)
+                                    simparams%output_type(i) = output_id_poscar_bead
+                                case (output_key_poscar_true)
+                                    simparams%output_type(i) = output_id_poscar_true
                                 case (output_key_mxt)
                                     simparams%output_type(i) = output_id_mxt
                                 case (output_key_scatter)

@@ -29,7 +29,7 @@ Compilation and linking (Intel Fortran):
 ifort -O3 -ipo -o md_tian atom_class.f90 open_file.f90 useful_things.f90 run_config.f90 md_init.f90 md_tian.f90
 
 
-The 1st working and tested version is put together February 18, 2014 
+The first working and tested version is put together February 18, 2014 
 on a Fassberg Hill in Dynamics at Surfaces Dep. of MPIbpc
 to the flaming storm of applause muffled by thick institute building walls.
 
@@ -61,11 +61,22 @@ jqrw sxrw=n! wr wj nA r sxrw nTrw!
 
 Annotations from Sebastian Wille:
 
-input file:
+md_tian.inp file:
 
   pip: projectile initial position
-  pul: projectile upper limit
+  pul: projectile upper limit (in /AA)
   T in POSCAR file stands for "True", means atom is NOT fixed and can move (F means atom is fixed and cannot move)
-  Repetition of the slab in init file via: conf merge 'Path/File' <x_rep> <y_rep>
+  Repetition of the slab in init file via: conf merge <path/file> <x_rep> <y_rep> (or conf poscar <path/file> <x_rep> <y_rep>)
 
+Neural network potentials:
+
+In case you want to use the neural network potential implementation as used in the RuNNer program, please contact us for the corresponding .f90 file with all modules, subroutines etc.
+
+Files needed for using the neural network potentials for molecular dynamic simulations:
+
+1) input.nn containing the keywords, architecture and symmetry functions
+
+2) scaling.data containing the bias values
+
+3) All weights.XXX.data containing the weights for this element (XXX is the element number in the periodic table; e.g. 001 for H)
 
