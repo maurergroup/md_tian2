@@ -197,7 +197,7 @@ contains
         end do
 
         ! open file conf/poscar_%08d.dat
-        write(fid,'(i8.8)') out_id_poscar+simparams%start
+        write(fid,'(i8.8)') out_id_poscar_bead+simparams%start
         fname = 'conf/poscar_'//fid//'.dat'
         call open_for_write(out_unit, fname)
 
@@ -246,7 +246,7 @@ subroutine output_poscar_true(atoms)
         end do
 
         ! open file conf/poscar_%08d.dat
-        write(fid,'(i8.8)') out_id_poscar+simparams%start
+        write(fid,'(i8.8)') out_id_poscar_true+simparams%start
         fname = 'conf/poscar_'//fid//'.POSCAR'
         call open_for_write(out_unit, fname)
 
