@@ -6,5 +6,5 @@ C	C	latt	latt
 
 pes nene
 H	H	proj	proj
- inp_dir 'RuNNer_input/Martin/'
+ inp_dir 'RuNNer_input/'
  prog_dir '~/RuNNer/source-rev873/RuNNer.serial.x'

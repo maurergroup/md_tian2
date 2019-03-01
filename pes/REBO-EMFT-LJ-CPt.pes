@@ -1,0 +1,25 @@
+ pes rebo 
+     C       C      latt    latt
+ Dmin    0.17247099654E+01
+ Dmax    0.21466365137E+01
+ Dmaxp   0.19201251426E+01
+ B1      0.10312154058E+05
+ B2      0.19886442880E+02
+ B3      0.24656369978E+02
+ beta1   0.48517247419E+01
+ beta2   0.19627672344E+01
+ beta3   0.58144517758E+00
+ Q       0.20000000000E-02
+ A       0.86773065383E+04
+ alpha   0.46296117296E+01
+ rho     0.30000000000E-01
+
+ pes slj
+    C        Pt     latt    latt
+ sigma   3.3
+ epsilon 250
+
+ pes slj 
+     Pt      Pt     latt    latt
+ sigma   2.55
+ epsilon 12000
