@@ -85,7 +85,7 @@ module pes_nene_mod
 
 
                 case default
-                    print *, "Error in the PES file: unknown nene_ext parameter", words(1)
+                    print *, "Error in the PES file: unknown nene parameter", words(1)
                     stop
 
             end select
