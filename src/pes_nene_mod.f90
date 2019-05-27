@@ -25,7 +25,7 @@ module pes_nene_mod
         character(len=max_string_length) :: buffer
         character(len=max_string_length) :: words(100)
         integer  :: idx1, idx2, ntypes
-        character(len=*), parameter :: err = "Error in read_nene_ext: "
+        character(len=*), parameter :: err = "Error in read_nene: "
 
         ntypes = simparams%nprojectiles+simparams%nlattices
 
@@ -151,7 +151,7 @@ module pes_nene_mod
 
         close(unit=21)
 
-        !execute RuNNer 
+        !execute RuNNer
         call execute_command_line(prog_string, exitstat=eios, cmdstat=cios)
         call execute_command_line(grep_string)
 

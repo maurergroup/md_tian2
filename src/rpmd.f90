@@ -1,4 +1,4 @@
-module rpmd
+module rpmd !ring polymer MD
 
     use universe_mod
     use run_config
