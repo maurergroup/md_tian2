@@ -30,6 +30,6 @@ conf merge 'conf/proj/' 1 'conf/latt/' 100
 
 
 !pes definition
-pes 'pes/nene.pes'
+pes 'pes/NENE-HC.pes'
 
-output scatter 1 energy 1
+output scatter 1 energy 1 vasp 1 poscar 1
