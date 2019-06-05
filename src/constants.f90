@@ -53,6 +53,7 @@ module constants
     integer, parameter   :: default_int    = huge(0_4)
     real(dp), parameter  :: default_real   = huge(0_dp)
     character, parameter :: default_string = ""
+    logical, parameter   :: default_bool   = .false.
 
 
     ! Propagation
@@ -107,10 +108,9 @@ module constants
     real(dp), parameter :: ha2ev     = 27.21138602_dp
     real(dp), parameter :: forceconv = ha2ev/bohr2ang !51.4220670398_dp; convert Ha/bohr to eV/ang
 
-    !arrays used in nene
-    character(len=93)   :: atom_format = '(A4, X, F12.9, X, F12.9, X, F12.9, X, A3, X, F11.8, X, F11.8, X, F11.8, X, F11.8, X, F11.8)'
-    character(len=20)   :: ce_format = '(A6 ,X , F11.8)'
-    character(len=36)   :: lattice_format = '(A7, X, F11.8, X, F11.8, X, F11.8)'
-    character(len=29)   :: forces_string = '(F11.8, X, F11.8, X, F11.8)'
+    ! constants used in pes_nene
+    integer, parameter :: input_nn_unit   =
+    !integer, parameter :: scaling_unit    = 52
+    !integer, parameter :: weight_unit     = 53
 
 end module constants
