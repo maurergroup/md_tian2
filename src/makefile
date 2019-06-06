@@ -14,6 +14,7 @@
 
 FC     = ifort 
 FFLAGS = -O3 -mkl -xHost -fp-model precise -132
+LIB    =
 
 ###############################################
 # Changes below this line developers only
@@ -136,8 +137,9 @@ md_tian.o: md_tian.f90
 #./md_tian2.x: $(MODULES) $(SUBROUTINES) 
 
 serial: ./md_tian2.x
-./md_tian2.x: $(MODULES) $(SUBROUTINES)	$(FC) $(FFLAGS) -o $@ \
-               $(SUBROUTINES) $(MODULES)
+./md_tian2.x: $(MODULES) $(SUBROUTINES)	
+	$(FC) $(FFLAGS) -o $@ \
+               $(SUBROUTINES) $(MODULES) $(LIB)
 
 clean:
 	rm -f *.o *.mod *.x
