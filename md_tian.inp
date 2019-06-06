@@ -1,8 +1,8 @@
 run md
 
 start 1
-ntrajs 10
-nsteps 2000
+ntrajs 2
+nsteps 10
 step 0.1
 
 projectile 1  H 1.0 ver
@@ -23,13 +23,14 @@ pip r r 3.5
 pul 3.6
 
 Tsurf 300
+Tproj 300
 !annealing 1000 25 5
 
-!conf poscar 'conf/CH_ang.POSCAR'
-conf merge 'conf/proj/' 1 'conf/latt/' 100
+!conf poscar 'conf/CH.POSCAR'
+conf merge 'conf/proj/' 1 'conf/latt/' 1000
 
 
 !pes definition
 pes 'pes/NENE-HC.pes'
 
-output scatter 1 energy 1 vasp 1 poscar 1
+output scatter 1 energy 1 vasp 1 poscar 1 xyz 1

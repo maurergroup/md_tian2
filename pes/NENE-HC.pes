@@ -7,4 +7,4 @@ C	C	latt	latt
 pes nene
 H	H	proj	proj
  inp_dir 'RuNNer_input/'
- prog_dir '~/RuNNer/source-rev873/RuNNer.serial.x'
+ weights 'weights.001.data' 'weights.006.data'
