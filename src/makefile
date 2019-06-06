@@ -141,3 +141,9 @@ serial: ./md_tian2.x
 
 clean:
 	rm -f *.o *.mod *.x
+
+help:
+	@echo ''
+	@echo 'make serial		serial version, default'
+	@echo 'make clean		delete all object, module and binary files'
+	@echo ''
