@@ -133,8 +133,6 @@ geometry_opt.o: geometry_opt.f90
 md_tian.o: md_tian.f90
 	$(FC) $(FFLAGS) -c md_tian.f90
 
-#serial: ./md_tian2.x
-#./md_tian2.x: $(MODULES) $(SUBROUTINES) 
 
 serial: ./md_tian2.x
 ./md_tian2.x: $(MODULES) $(SUBROUTINES)	
