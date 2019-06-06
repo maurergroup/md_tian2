@@ -113,7 +113,7 @@ module pes_nene_mod
                 stop
 
             else if (words(2) == "weights" .and. nwords .neqv. atoms%ntypes+1) then ! check for valid number of weight file names given
-                print *,  err // "Number of weight files and number of element types does not match!"
+                print *,  err // "Number of weight files given and number of elements in the structure does not match!"
                 stop
             end if
 

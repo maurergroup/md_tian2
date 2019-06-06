@@ -1,28 +1,26 @@
 # Makefile for md_tian2
 
-########################################################################
-# Adjust the following Machine specific settings according to your needs
-# (compiler, libraries, options...)
+##############################################
+# Compiler:
+# Intel ifort compiler
 #
-# Libraries:
+# Library:
 # Intel mkl library
-########################################################################
+##############################################
 
-### ifort/Linux PC settings:
-###-------------------------
+#############
+### Settings:
+#############
+
 FC     = ifort 
-USE_MPI = no # no (serial), yes (parallel)
-#MPIFC  = mpiifort # switch on for parallel
 FFLAGS = -O3 -mkl -xHost -fp-model precise -132
-#LIB = # mkl library will be used with the -mkl flag
 
-#############################################
+###############################################
 # Changes below this line developers only
-#############################################
+###############################################
 
 SUBROUTINES = md_tian.o \
 
-#MPI_DUMMY_SUBROUTINES = mpi_dummy_routines.o
 
 MODULES      = constants.o \
         open_file.o \
@@ -138,13 +136,8 @@ md_tian.o: md_tian.f90
 #./md_tian2.x: $(MODULES) $(SUBROUTINES) 
 
 serial: ./md_tian2.x
-./md_tian2.x: $(MODULES_MPI_DUMMY) $(MODULES) $(SUBROUTINES) $(MPI_DUMMY_SUBROUTINES)
-	$(FC) $(FFLAGS) -o $@ \
-               $(SUBROUTINES) $(MODULES_MPI_DUMMY) $(MODULES) $(MPI_DUMMY_SUBROUTINES) $(LIB) 
+./md_tian2.x: $(MODULES) $(SUBROUTINES)	$(FC) $(FFLAGS) -o $@ \
+               $(SUBROUTINES) $(MODULES)
 
-mpi: ./md_tian2_mpi.x
-./md_tian2_mpi.x: $(MODULES_MPI) $(MODULES) $(SUBROUTINES)
-	$(MPIFC) $(FFLAGS_MPI) -o $@ \
-               $(SUBROUTINES) $(MODULES_MPI) $(MODULES) $(LIB) 
 clean:
 	rm -f *.o *.mod *.x

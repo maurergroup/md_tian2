@@ -1,16 +1,12 @@
-*~
-*.o
-*.mod
-*.exe
-*.layout
+# Codeblocks
+obj/
+bin/
 *.cbp
 *.depend
-bin/
-obj/
-data/
-conf/
-traj/
-.cproject
-.project
-.settings/
-.metadata
+*.layout
+# Makefile
+*.o
+*.mod
+*.x
+# General
+*.swp
