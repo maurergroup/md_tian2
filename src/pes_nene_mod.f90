@@ -1,7 +1,7 @@
 module pes_nene_mod
 
     use constants
-    use useful_things, only : split_string, lower_case
+    use useful_things, only : split_string, lower_case, file_exists
     use universe_mod
     use open_file, only : open_for_read
 
@@ -11,8 +11,9 @@ module pes_nene_mod
 
     contains
 
-    type input_nn_parameters
+    type runner_input_parameters
 
+        ! input.nn
         integer :: nn_type_short
         integer :: mode
         logical :: lshort
@@ -22,26 +23,51 @@ module pes_nene_mod
         integer :: global_hidden_layers_short
         character(len=3), dimension(atoms%ntypes) :: element
 
+        
+
+        ! shared
+        integer :: ndim ! in
+        
+        ! weights.XXX.data
+        ! readweights.f90
+        integer :: maxnum_weights_local ! in
+        integer :: num_weights_local(ndim) ! in
+        real(dp)  :: weights_local, dimension(maxnum_weights_local, ndim) ! out
+
+        ! scaling.data
+        ! readscale.f90
+        integer :: maxnum_funcvalues_local                        ! in
+        integer :: num_funcvalues_local(ndim)                     ! in
+        real(dp)  :: avvalue_local(ndim,maxnum_funcvalues_local)  ! out
+        real(dp)  :: maxvalue_local(ndim,maxnum_funcvalues_local) ! out
+        real(dp)  :: minvalue_local(ndim,maxnum_funcvalues_local) ! out
+        real(dp)  :: eshortmin                                    ! out
+        real(dp)  :: eshortmax                                    ! out
+
+
+
 
 
 
 
     end type
 
-    type(input_nn_parameters) :: inpnnparam
+    type(runner_input_parameters) :: inpnnparam
 
-    function new_input_nn_parameters
+    function new_runner_input_parameters
 
-        type(input_nn_parameters) new_input_nn_parameters
+        type(runner_input_parameters) new_runner_input_parameters
 
-        new_input_nn_parameters%nn_type_short               = default_int
-        new_input_nn_parameters%mode                        = default_int
-        new_input_nn_parameters%lshort                      = default_bool
-        new_input_nn_parameters%maxnum_layers_short_atomic  = 0
-        new_input_nn_parameters%nelem                       = default_int
-        new_input_nn_parameters%npairs                      = 0
-        new_input_nn_parameters%global_hidden_layers_short  = default_int
-        new_input_nn_parameters%element                     = default_string
+        new_runner_input_parameters%nn_type_short               = 1 ! default, no pair available
+        new_runner_input_parameters%mode                        = 3 ! default, only RuNNer mode 3 implemented
+        new_runner_input_parameters%lshort                      = .true. ! default, only short
+        new_runner_input_parameters%maxnum_layers_short_atomic  = 0
+        new_runner_input_parameters%nelem                       = default_int
+        new_runner_input_parameters%npairs                      = 0
+        new_runner_input_parameters%global_hidden_layers_short  = default_int
+        new_runner_input_parameters%element                     = default_string
+        new_runner_input_parameters%weights_local               = default_real
+
 
 
     end function
@@ -135,6 +161,7 @@ module pes_nene_mod
                     end do
 
                 case default
+
                     print *, "Error in the PES file: unknown nene parameter", words(1)
                     stop
 
@@ -151,23 +178,24 @@ module pes_nene_mod
             weight_names_list(weight_counter)  = trim(inp_path) // trim(weight_names(weight_counter))
         end do
 
+
+        ! check existance of input.nn
+        if (.not. file_exists(filename_input_nn)) stop err // "input.nn file does not exist"
+
         ! read all input keywords from input.nn
-        ! open(unit=input_nn_unit,file=input_nn_string,status='old',action='read',form='formatted',iostat=ios)
         call open_for_read(input_nn_unit, filename_input_nn); ios = 0
 
-        do while (ios == 0)
+        do while (ios == 0) ! analog to read_input_file subroutine in run_config.f90
             read(input_nn_unit, '(A)', iostat=ios) buffer
             if (ios == 0) then
                 line = line + 1
-
-                read(input_nn_unit,*) buffer
                 call split_string(buffer, words, nwords)
 
                 ! read in all necessary keywords
-                ! only read in necessary one, only look for multiple setting for relevant keywords to avoid weird variable settings
+                ! only read in necessary one, only look for multiple setting for relevant keywords to avoid multiple variable settings
                 select case (words(1))
 
-                    case ('nn_type_short') ! 1 default, skip?
+                case ('nn_type_short') ! no pair type available, skip keyword
                         if (inpnnparam%nn_type_short /= default_int) stop err // 'Multiple use of the nn_type_short key'
                         if (nwords == 2) then
                             read(words(2),'(A)') inpnnparam%nn_type_short
@@ -185,7 +213,7 @@ module pes_nene_mod
                             print *, err, "runner_mode key needs a single argument"; stop
                         end if
 
-                    case ('parallel_mode') ! no parallelization, skip keyword
+                    case ('parallel_mode') ! other than default -> skip with message?
                         if (inpnnparam%paramode /= default_) stop err // 'Multiple use of the parallel_mode key'
                         if (nwords == 2) then
                             read(words(2),'(A)') inpnnparam%paramode
@@ -195,7 +223,7 @@ module pes_nene_mod
                             print *, err, "parallel_mode key needs a single argument"; stop
                         end if
 
-                    case ('number_of_elements') ! given by md_tian.inp, maybe cross check to avoid wrong input.nn?
+                    case ('number_of_elements') ! check with md_tian.inp
                         if (inpnnparam%nelem /= default_int) stop err // 'Multiple use of the number_of_elements key'
                         if (nwords == 2) then
                             read(words(2),'(A)') inpnnparam%nelem
@@ -208,7 +236,7 @@ module pes_nene_mod
                             print *, err, "number_of_elements key needs a single argument"; stop
                         end if
 
-                    case ('elements') ! also given in md_tian.inp
+                    case ('elements') ! check with md_tian.inp
                         if (inpnnparam%element /= default_string) stop err // 'Multiple use of the elements key'
                         if (nwords == atoms%ntypes+1) then
                             do element_counter = 1,atoms%ntypes
@@ -333,60 +361,92 @@ module pes_nene_mod
 
             else
 
-                write(*,*) 'Error reading out from input.nn: iostat = ', ios
+                write(*,*) err // 'Error reading out from input.nn: iostat = ', ios
                 stop
 
             end if
-        end do ! ios
         close(input_nn_unit)
-!
-!        ! read all input from scaling.data
- !       open(unit=scaling_unit,file=scaling_string,status='old',action='read',form='formatted',iostat=ios)
-!
- !           if (ios == 0) then
 
- !               read(scaling_unit,*)
 
-!            else
+        ! check existance of scaling.data
+        if (.not. file_exists(filename_scaling)) stop err // 'scaling.data file does not exist'
 
- !               write(*,*) 'Error reading out from scaling.data: iostat = ', ios
- !               stop
+        ! read in all data from scaling.data
+        call open_for_read(scaling_unit, filename_scaling); ios = 0
 
- !           end if
+        do while (ios == 0) 
+            read(scaling_unit, '(A)', iostat=ios) buffer
+            if (ios == 0) then
 
- !       close(unit=scaling_unit)
+                ! readscale.f90
+                ! do i1=1,ndim
+                !     do i2=1,num_funcvalues_local(i1)
+                !         read(scaleunit,*)i3,i3,minvalue_local(i1,i2),maxvalue_local(i1,i2),avvalue_local(i1,i2)
+                !     enddo ! i2
+                ! enddo ! i1
 
-        ! loop over all weight.xxx.data files to read all input
-       ! do weight_counter = 1,atoms%ntypes
+                ! read(scaleunit,*)eshortmin,eshortmax
 
-           ! open(unit=weight_unit,file=weight_string(weight_counter),status='old',action='read',form='formatted',iostat=ios)
 
-                !if (ios == 0) then
 
-                    !read(weight_unit,*)
+             
+               
 
-               ! else
+            else
 
-                    !write(*,*) 'Error reading out from weight.00', weight_counter, '.data: iostat = ', ios
-                    !stop
+                    write(*,*) err // 'Error reading out from scaling.data: iostat = ', ios
+                    stop
 
-               ! end if
+            end if
+        end do ! ios
+        close(scaling_unit)
 
-            !close(unit=weight_unit)
 
-       ! end do
+        ! loop over weight.XXX.data files and read in all data
+        do weight_counter = 1,atoms%ntypes ! weights
 
-        ! from RuNNer main.f90
-        ! start mpi routines
+            ! check existance of each weight file before reading
+            if (.not. file_exists(weight_names_list(weight_counter))) stop err // weight_names_list(weight_counter), ' file does not exist'
+
+            call open_for_read(weight_unit, weight_names_list(weight_counter)); ios = 0
+
+            do while (ios == 0) ! ios
+                read(scaling_unit, '(A)', iostat=ios) buffer
+                if (ios == 0) then
+
+                        ! readweights.f90
+                        ! do i1=1,ndim
+                        !     do i2=1,num_weights_local(i1)
+                        !         read(wunit,*)weights_local(i2,i1)
+                        !     end do
+                        ! end do
+
+                    
+
+                else
+
+                        write(*,*) err // 'Error reading out from',weight_names_list(weight_counter),': iostat = ', ios
+                        stop
+
+                end if
+
+            end do ! ios
+            close(weight_unit)
+
+        end do ! weights
+
+!       ! from RuNNer main.f90
+!       ! start mpi routines
 !        call mpi_init(mpierror)
 !            if(mpierror.ne.0)then
 !                print *, 'Error in mpi_init ',mpierror
 !                stop
 !            endif
-        ! get number of processes mpisize
+!       ! get number of processes mpisize
 !        call mpi_comm_size(mpi_comm_world,mpisize,mpierror)
-        !get process id mpirank
+        ! get process id mpirank
 !        call mpi_comm_rank(mpi_comm_world,mpirank,mpierror)
+
 
     end subroutine read_nene
 

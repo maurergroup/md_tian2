@@ -109,8 +109,8 @@ module constants
     real(dp), parameter :: forceconv = ha2ev/bohr2ang !51.4220670398_dp; convert Ha/bohr to eV/ang
 
     ! constants used in pes_nene
-    integer, parameter :: input_nn_unit   = 51
-    !integer, parameter :: scaling_unit    = 52
-    !integer, parameter :: weight_unit     = 53
+    integer, parameter :: input_nn_unit   = 61
+    integer, parameter :: scaling_unit    = 62
+    integer, parameter :: weight_unit     = 63
 
 end module constants
