@@ -449,8 +449,6 @@ module pes_nene_mod
 
     end subroutine compute_nene
 
-
-
 !    subroutine cleanup_nene
 
         ! from RuNNer cleanup.f90
