@@ -45,11 +45,6 @@ module pes_nene_mod
         real(dp)  :: eshortmax                                    ! out
 
 
-
-
-
-
-
     end type
 
     type(runner_input_parameters) :: inpnnparam
