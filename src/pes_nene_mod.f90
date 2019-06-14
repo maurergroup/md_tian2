@@ -8,7 +8,6 @@ module pes_nene_mod
     implicit none
 
 
-
     contains
 
     type runner_input_parameters
@@ -381,12 +380,7 @@ module pes_nene_mod
                 ! enddo ! i1
 
                 ! read(scaleunit,*)eshortmin,eshortmax
-
-
-
-             
-               
-
+           
             else
 
                     write(*,*) err // 'Error reading out from scaling.data: iostat = ', ios
@@ -415,8 +409,6 @@ module pes_nene_mod
                         !         read(wunit,*)weights_local(i2,i1)
                         !     end do
                         ! end do
-
-                    
 
                 else
 
