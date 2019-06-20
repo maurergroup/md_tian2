@@ -1,9 +1,8 @@
 #!/usr/bin/env python
 
-# WARNING: Run in the main folder -> give path of md_tian source folder?
 # intention: update RuNNer related files in the src folder of md_tian2
 
-# use: python update_RuNNer_files.py <path/to/RuNNer/src/dir> #<path/to/md_tian/src/dir>
+# use: python update_RuNNer_files.py <path/to/RuNNer/src/dir> <path/to/md_tian2/src/dir>
 
 import sys
 import os
@@ -18,13 +17,8 @@ getdnodes_values.f90 getneighboridxatomic_para.f90 getneighborsatomic_para.f90 g
 mpi_dummy.f90 mpi_dummy_routines.f90 mpifitdistribution.f90 neighbor_para_short.f90 nnconstants.f90 nnflags.f90 nnshort_atomic.f90 \
 predictionoptions.f90 predictionshortatomic.f90 saturation.f90 symfunctions.f90' # RuNNer source files in alphabetical order, add additional files if needed
 
-source_dir=os.chdir("src")
-md_tian_src_dir=os.getcwd()
-#print(md_tian_src_dir)
-runner_dir=os.chdir(runner_path)
-#print(os.getcwd())
-#copy_files_command = "cp "+str(file_list)+" "+md_tian_src_dir
-copy_files_command = "cp "+str(file_list)+" "+md_tian_path
-#print(copy_files_command)
+runner_dir=os.chdir(runner_path) # change to RuNNer directory
 
-os.system(copy_files_command)
+copy_files_command = "cp "+str(file_list)+" "+md_tian_path # set up copy command
+
+os.system(copy_files_command) # copy files

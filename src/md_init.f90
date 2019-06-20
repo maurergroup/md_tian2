@@ -103,12 +103,12 @@ contains
                         case (pes_name_simple_lj)
                             call read_simple_lj(atoms, pes_unit)
 
-                        !                        case ('morse')
-                        !                            call read_morse(pes_unit)
+                        !case ('morse')
+                        !    call read_morse(pes_unit)
 
                         case (pes_name_emt)
                             call read_emt(atoms, pes_unit)
-                        !
+                        
                         case (pes_name_rebo)
                             call read_rebo(atoms, pes_unit)
 
