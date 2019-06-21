@@ -196,7 +196,6 @@ module pes_nene_mod
                 call split_string(buffer, words, nwords)
 
                 ! read in all necessary keywords from input.nn
-                ! only read in necessary ones, look for multiple setting for keywords to avoid multiple variable settings
                 select case (words(1))
 
 			! following the keywords in alphabetical order
@@ -281,8 +280,8 @@ module pes_nene_mod
                     case ('dynamic_force_grouping')
                         if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the dynamic_force_grouping key'
 
-                    case ('electrostatic_type')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the electrostatic_type key'
+                    case ('electrostatic_type' .or. 'nn_type_elec')
+                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the electrostatic_type/nn_type_elec key'
 
                     case ('element_activation_electrostatic')
                         if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the element_activation_electrostatic key'
@@ -319,15 +318,21 @@ module pes_nene_mod
 
                     case ('element_pairsymfunction_short')
                         if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the element_pairsymfunction_short key'
+			! you shall pass
 
                     case ('element_symfunction_electrostatic')
                         if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the element_symfunction_electrostatic key'
+			! you shall pass
 
                     case ('element_symfunction_short')
                         if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the element_symfunction_short key'
+			! you shall pass
 
                     case ('elements')
                         if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the elements key'
+			if (nwords /= ) then
+(element(i),i=1,nelem)
+			    if (any(rinpparam%nelem /= [atoms%name])) stop err // err_inpnn // "element names in input.nn and *.inp/poscar files differ"
 
                     case ('enable_on_the_fly_input')
                         if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the enable_on_the_fly_input key'
@@ -491,834 +496,40 @@ module pes_nene_mod
                     case ('nn_type')
                         if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the nn_type key'
 
-                    case ('nn_type_elec')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the nn_type_elec key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-                    case ('nn_type_short') ! no pair type available, skip keyword
+                    case ('nn_type_short') ! only short available
                         if (rinpparam%nn_type_short /= default_int) stop err // err_inpnn // 'Multiple use of the nn_type_short key'
                         if (nwords == 2) then
-                            read(words(2),'(A)') rinpparam%nn_type_short
+                            read(words(2),'(i1000)') rinpparam%nn_type_short
+			    if (ios /= 0) stop err // err_inpnn // "nn_type_short value must be integer"
+			    if (words(2) /= 1) then
+                                print *, err, err_inpnn, "Only nn_type_short 1 (Behler-Parrinello) available!"; stop
                         else
                             print *, err, err_inpnn, "nn_type_short key needs a single argument"; stop
                         end if
 
-                    case ('runner_mode') ! mode 3 default, skip keyword
-                        if (rinpparam%mode /= default_int) stop err // err_inpnn // 'Multiple use of the runner_mode key'
-                        if (nwords == 2) then
-                            read(words(2),'(A)') rinpparam%mode
-                            if (words(2) .neqv. 3) then
-                                print *, err, err_inpnn, "mode ", words(2), " not supported"; stop
-                        else
-                            print *, err, err_inpnn, "runner_mode key needs a single argument"; stop
-                        end if
+                    case ('noise_charge')
+                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the noise_charge key'
 
-                    case ('parallel_mode') ! other than default -> skip with message?
-                        iif (rinpparam%paramode /= default_int) stop err // err_inpnn // 'Multiple use of the parallel_mode key'
-                        if (nwords == 2) then
-                            read(words(2),'(A)') rinpparam%paramode
-                            if (words(2) .neqv. 1) then
-                                print *, err, err_inpnn, "parallel_mode ", words(2), " not supported"; stop
-                        else
-                            print *, err, "parallel_mode key needs a single argument"; stop
-                        end if
+                    case ('noise_energy')
+                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the noise_energy key'
 
-                    case ('number_of_elements') ! check with md_tian.inp
+                    case ('noise_force')
+                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the noise_force key'
+
+                    case ('normalize_nodes')
+                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the normalize_nodes key'
+
+                    case ('number_of_elements')
+                        if (rinpparam%nelem /= default_int) stop err // err_inpnn // 'Multiple use of the number_of_elements key'
+                        if (nwords == 2) then
+			    read(words(2),'(i1000)') rinpparam%nelem
+			    if (ios /= 0) stop err // err_inpnn // "number_of_elements value must be integer"
+			    if (rinpparam%nelem /= atoms%ntypes) stop err // err_inpnn // "element number in input.nn and *.inp/poscar files differ"
+
+
+
+
+		    case ('number_of_elements') ! check with md_tian input
                         if (rinpparam%nelem /= default_int) stop err // err_inpnn // 'Multiple use of the number_of_elements key'
                         if (nwords == 2) then
                             read(words(2),'(A)') rinpparam%nelem
@@ -1331,6 +542,333 @@ module pes_nene_mod
                             print *, err, "number_of_elements key needs a single argument"; stop
                         end if
 
+
+
+                    case ('optmode_charge')
+                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the optmode_charge key'
+
+                    case ('optmode_short_energy')
+                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the optmode_short_energy key'
+
+                    case ('optmode_short_force')
+                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the optmode_short_force key'
+
+                    case ('pairsymfunction_short')
+                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the pairsymfunction_short key'
+
+                    case ('parallel_mode')
+                        if (rinpparam%paramode /= default_) stop err // err_inpnn // 'Multiple use of the parallel_mode key'
+                        if (nwords == 2) then
+                            read(words(2),'(A)') rinpparam%paramode
+                            if (words(2) .neqv. 1) then
+                                print *, err, err_inpnn, "Only parallel_mode 1 (serial) available"; stop
+                        else
+                            print *, err, err_inpnn, "parallel_mode key needs a single argument"; stop
+                        end if
+
+                    case ('points_in_memory' .or. 'nblock')
+                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the points_in_memory/nblock key'
+
+                    case ('precondition_weights')
+                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the precondition_weights key'
+
+                    case ('prepare_md')
+                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the prepare_md key'
+
+                    case ('print_all_deshortdw')
+                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the print_all_deshortdw key'
+
+                    case ('print_all_dfshortdw')
+                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the print_all_dfshortdw key'
+
+                    case ('print_all_electrostatic_weights')
+                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the print_all_electrostatic_weights key'
+
+                    case ('print_all_short_weights')
+                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the print_all_short_weights key'
+
+                    case ('print_convergence_vector')
+                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the print_convergence_vector key'
+
+                    case ('print_date_and_time')
+                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the print_date_and_time key'
+
+                    case ('print_force_components')
+                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the print_force_components key'
+
+                    case ('print_mad')
+                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the print_mad key'
+
+                    case ('print_sensitivity')
+                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the print_sensitivity key'
+
+                    case ('random_number_type')
+                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the random_number_type key'
+
+                    case ('random_order_training')
+                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the random_order_training key'
+
+                    case ('random_seed')
+                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the random_seed key'
+
+                    case ('read_kalman_matrices')
+                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the read_kalman_matrices key'
+
+                    case ('read_unformatted')
+                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the read_unformatted key'
+
+                    case ('remove_atom_energies')
+                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the remove_atom_energies key'
+
+                    case ('repeated_energy_update')
+                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the repeated_energy_update key'
+
+                    case ('reset_kalman')
+                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the reset_kalman key'
+
+                    case ('restrict_weights')
+                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the restrict_weights key'
+
+                    case ('runner_mode') ! only mode 3 available
+                        if (rinpparam%mode /= default_int) stop err // err_inpnn // 'Multiple use of the runner_mode key'
+
+                        if (nwords == 2) then
+                            read(words(2),'(A)') rinpparam%mode
+			    if (words(2) /= 3)
+				print *, err, err_inpnn, "Only mode 3 available"; stop
+  		        else
+			    print *, err, err_inpnn, "runner_mode key needs a single argument"; stop
+			end if
+
+                    case ('save_kalman_matrices')
+                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the save_kalman_matrices key'
+
+                    case ('scale_max_elec')
+                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the scale_max_elec key'
+
+                    case ('scale_max_short')
+                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the scale_max_short key'
+
+                    case ('scale_max_short_atomic')
+                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the scale_max_short_atomic key'
+
+                    case ('scale_max_short_pair')
+                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the scale_max_short_pair key'
+
+                    case ('scale_min_elec')
+                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the scale_min_elec key'
+
+                    case ('scale_min_short')
+                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the scale_min_short key'
+
+                    case ('scale_min_short_atomic')
+                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the scale_min_short_atomic key'
+
+                    case ('scale_min_short_pair')
+                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the scale_min_short_pair key'
+
+                    case ('scale_symmetry_functions')
+                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the scale_symmetry_functions key'
+
+                    case ('screen_electrostatics')
+                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the screen_electrostatics key'
+
+                    case ('separate_bias_ini_short')
+                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the separate_bias_ini_short key'
+
+                    case ('separate_kalman_short')
+                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the separate_kalman_short key'
+
+                    case ('short_energy_error_threshold')
+                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the short_energy_error_threshold key'
+
+                    case ('short_energy_fraction')
+                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the short_energy_fraction key'
+
+                    case ('short_energy_group')
+                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the short_energy_group key'
+
+                    case ('short_force_error_threshold')
+                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the short_force_error_threshold key'
+
+                    case ('short_force_fraction')
+                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the short_force_fraction key'
+
+                    case ('short_force_group')
+                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the short_force_group key'
+
+                    case ('shuffle_weights_short_atomic')
+                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the shuffle_weights_short_atomic key'
+
+                    case ('silent_mode')
+                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the silent_mode key'
+
+                    case ('steepest_descent_step_charge')
+                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the steepest_descent_step_charge key'
+
+                    case ('steepest_descent_step_energy_short')
+                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the steepest_descent_step_energy_short key'
+
+                    case ('steepest_descent_step_force_short')
+                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the steepest_descent_step_force_short key'
+
+                    case ('symfunction_correlation')
+                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the symfunction_correlation key'
+
+                    case ('symfunction_electrostatic')
+                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the symfunction_electrostatic key'
+
+                    case ('symfunction_short')
+                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the symfunction_short key'
+
+                    case ('test_fraction')
+                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the test_fraction key'
+
+                    case ('total_charge_error_threshold')
+                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the total_charge_error_threshold key'
+
+                    case ('update_single_element')
+                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the update_single_element key'
+
+                    case ('update_worst_charges')
+                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the update_worst_charges key'
+
+                    case ('update_worst_short_energies')
+                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the update_worst_short_energies key'
+
+                    case ('update_worst_short_forces')
+                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the update_worst_short_forces key'
+
+                    case ('use_atom_charges')
+                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the use_atom_charges key'
+
+                    case ('use_atom_energies')
+                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the use_atom_energies key'
+
+                    case ('use_charge_constraint')
+                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the use_charge_constraint key'
+
+                    case ('use_damping')
+                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the use_damping key'
+
+                    case ('use_electrostatic_nn')
+                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the use_electrostatic_nn key'
+
+                    case ('use_electrostatics')
+                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the use_electrostatics key'
+
+                    case ('use_fixed_charges')
+                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the use_fixed_charges key'
+
+                    case ('use_ipi')
+                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the use_ipi key'
+
+                    case ('use_old_scaling')
+                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the use_old_scaling key'
+
+                    case ('use_old_weights_charge')
+                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the use_old_weights_charge key'
+
+                    case ('use_old_weights_short')
+                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the use_old_weights_short key'
+
+                    case ('use_omp_mkl')
+                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the use_omp_mkl key'
+
+                    case ('use_short_forces')
+                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the use_short_forces key'
+
+                    case ('use_short_nn')
+                        if (rinpparam%lshort_local /= default_bool) stop err // err_inpnn // 'Multiple use of the use_short_nn key'
+			if (nwords == 1) then
+			    rinpparam%lshort_local = .true.
+			else
+                            print *, err, "use_short_nn key has additional arguments"; stop
+                        end if
+
+                    case ('use_systematic_weights_electrostatic')
+                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the use_systematic_weights_electrostatic key'
+
+                    case ('use_systematic_weights_short')
+                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the use_systematic_weights_short key'
+
+                    case ('weight_analysis')
+                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the weight_analysis key'
+
+                    case ('weight_constraint')
+                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the weight_constraint key'
+
+                    case ('weighte_constraint')
+                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the weighte_constraint key'
+
+                    case ('weights_max')
+                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the weights_max key'
+
+                    case ('weights_min')
+                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the weights_min key'
+
+                    case ('weightse_max')
+                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the weightse_max key'
+
+                    case ('weightse_min')
+                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the weightse_min key'
+
+                    case ('write_fit_statistics')
+                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the write_fit_statistics key'
+
+                    case ('write_pdb')
+                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the write_pdb key'
+			print *, "Error: write_pdb keyword is no longer supported"; stop
+
+                    case ('write_pov')
+                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the write_pov key'
+			print *, "Error: write_pov keyword is no longer supported"; stop
+
+                    case ('write_pwscf')
+                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the write_pwscf key'			
+			print *, "Error: write_pwscf keyword is no longer supported"; stop
+
+                    case ('write_temporary_weights')
+                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the write_temporary_weights key'
+
+                    case ('write_traincharges')
+                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the write_traincharges key'
+
+                    case ('write_trainforces')
+                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the write_trainforces key'
+
+                    case ('write_trainpoints')
+                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the write_trainpoints key'
+
+                    case ('write_unformatted')
+                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the write_unformatted key'
+
+                    case ('write_weights_epoch')
+                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the write_weights_epoch key'
+
+                    case ('write_xyz')
+                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the write_xyz key'
+			print *, "Error: write_xyz keyword is no longer supported"; stop
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                    
+
+                    
+
                     case ('elements') ! check with md_tian.inp
                         if (rinpparam%element /= default_string) stop err // err_inpnn // 'Multiple use of the elements key'
                         if (nwords == atoms%ntypes+1) then
@@ -1341,31 +879,9 @@ module pes_nene_mod
                             print *, err, "elements key does not match with number of element types"; stop
                         end if
 
-                    case ('random_seed')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the random_seed key'
+                    
 
-                    case ('random_number_type')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the random_number_type key'
 
-                    case ('remove_atom_energies')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the remove_atom_energies key'
-
-                    case ('atom_energy')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the atom_energy key'
-
-                    case ('energy_threshold')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the energy_threshold key'
-
-                    case ('bond_threshold')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the bond_threshold key'
-
-                    case ('use_short_nn')
-                        if (rinpparam% /= default_bool) stop err // err_inpnn // 'Multiple use of the use_short_nn key'
-                        if (nwords == 1) then
-                            rinpparam% = .true.
-                        else
-                            print *, err, "use_short_nn key has additional arguments"; stop
-                        end if
 
                     case ('global_hidden_layers_short')
                         if (rinpparam%global_hidden_layers_short /= default_int) stop err // err_inpnn // 'Multiple use of the global_hidden_layers_short key'
@@ -1375,121 +891,7 @@ module pes_nene_mod
                             print *, err, err_inpnn, "global_hidden_layers_short key needs a single argument"; stop
                         end if
 
-                    case ('global_nodes_short' .or. 'global_nodes_short_atomic')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the global_nodes_short key'
-
-                    case ('global_activation_short')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the global_activation_short key'
-
-                    case ('element_hidden_layers_short')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the element_hidden_layers_short key'
-
-                    case ('element_nodes_short')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the element_nodes_short key'
-
-                    case ('element_activation_short')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the element_activation_short key'
-
-                    case ('cutoff_type')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the cutoff_type key'
-
-                    case ('symfunction_short')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the symfunction_short key'
-
-                    case ('points_in_memory' .or. 'nblock')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the points_in_memory key'
-
-                    case ('scale_symmetry_functions')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the scale_symmetry_functions key'
-
-                    case ('center_symmetry_functions')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the center_symmetry_functions key'
-
-                    case ('fitting_unit')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the fitting_unit key'
-
-                    case ('use_old_scaling')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the use_old_scaling key'
-
-                    case ('scale_min_short')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the scale_min_short key'
-
-                    case ('scale_max_short')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the scale_max_short key'
-
-                    case ('calculate_forces')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the calculate_forces key'
-
-                    case ('check_forces')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the check_forces key'
-
-                    case ('calculate_stress')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the calculate_stress key'
-
-                    case ('use_atom_energies')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('electrostatic_type')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('nn_type_elec')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('check_input_forces')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('print_force_components')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('use_ipi')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('ion_forces_only')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('use_electrostatics')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('debug_mode')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('dynamic_force_grouping')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('detect_saturation')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('data_clustering')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-
-
-                    case ('symfunction_correlation')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('weight_analysis')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('environment_analysis')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('find_contradictions')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('md_mode')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('global_hidden_layers_electrostatic')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('global_hidden_layers_pair')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('global_nodes_electrostatic')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('global_nodes_pair'.or. 'global_nodes_short_pair')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
+                    
 
                     case ('global_output_nodes_short')
                         if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
@@ -1506,447 +908,45 @@ module pes_nene_mod
                         print *, "Error: global_output_nodes_pair keyword is obsolete, please remove it"
                         stop
 
-                    case ('ewald_alpha')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('ewald_cutoff')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('ewald_kmax')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('precondition_weights')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('initialization_only')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('force_grouping_by_structure')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('charge_grouping_by_structure')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('mix_all_points')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('print_convergence_vector')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('print_mad')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('noise_energy')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('noise_force')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('noise_charge')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('short_energy_group')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('short_force_group')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('charge_group')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('use_short_forces')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('short_energy_fraction')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('short_force_fraction')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('charge_fraction')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('use_atom_charges')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-
-
-                    case ('use_charge_constraint')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('fitmode')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('force_threshold')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('bond_threshold')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('optmode_short_energy')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('optmode_short_force')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('optmode_charge')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('epochs')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('write_weights_epoch')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('write_temporary_weights')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('test_fraction')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('scale_min_short_atomic')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('scale_max_short_atomic')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('scale_min_short_pair')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('scale_max_short_pair')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('scale_min_elec')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('scale_max_elec')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('short_energy_error_threshold')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('short_force_error_threshold')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('charge_error_threshold')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('total_charge_error_threshold')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('kalman_damp_short')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('kalman_damp_force')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('kalman_damp_charge')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('kalman_lambda_short')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('kalman_lambda_charge')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('kalman_lambda_charge_constraint')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('kalman_nue_short')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('kalman_nue_charge')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('kalman_nue_charge_constraint')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('steepest_descent_step_energy_short')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('steepest_descent_step_force_short')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('steepest_descent_step_charge')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('force_update_scaling')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('charge_update_scaling')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
+                    
 
                     case ('random_order_training')
                         if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
                         print *, "Error: random_order_training keyword is obsolete, please use mix_all_points instead"
                         stop
 
-                    case ('use_old_weights_short')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
+                    
 
-                    case ('use_old_weights_charge')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
+                    
 
-                    case ('save_kalman_matrices')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('read_kalman_matrices')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('update_single_element')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('update_worst_short_energies')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('update_worst_short_forces')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('update_worst_charges')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('growth_mode')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('use_damping')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('fix_weights')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('enforce_max_num_neighbors_atomic')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('detailed_timing')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('detailed_timing_epoch')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('write_pdb')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-                        print *, "Error: write_pdb keyword is no longer supported"
-                        stop
-
-                    case ('write_xyz')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-                        print *, "Error: write_xyz keyword is no longer supported"
-                        stop
-
-                    case ('write_pov')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-                        print *, "Error: write_pov keyword is no longer supported"
-                        stop
-
-                    case ('write_pwscf')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-                        print *, "Error: write_pwscf keyword is no longer supported"
-                        stop
-
-                    case ('write_trainpoints')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('write_trainforces')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('write_traincharges')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('max_force')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('max_energy')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
+                    
 
                     case ('nn_type')
                         if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-                        print *, "Error: nn_type keyword is outdated, use nn_type_short instead"
+                        print *, "Error: nn_type keyword is obsolete, use nn_type_short instead"
+                        stop
 
-                    case ('calculate_final_force')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
+                    
 
-                    case ('normalize_nodes')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('weight_constraint')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('weighte_constraint')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('global_symfunction_short' .or. 'global_symfunction_short_atomic')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('global_symfunction_electrostatic' .or. 'global_symfunction_elec')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('element_symfunction_short')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('element_symfunction_electrostatic')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('symfunction_electrostatic')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('global_pairsymfunction_short' .or. 'global_symfunction_short_pair')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('element_pairsymfunction_short')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('pairsymfunction_short')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('weights_min')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('weights_max')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('separate_bias_ini_short')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('biasweights_min')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('biasweights_max')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('weightse_min')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('weightse_max')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('use_systematic_weights_short')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('use_systematic_weights_electrostatic')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('print_sensitivity')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('read_unformatted')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('write_unformatted')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('reset_kalman')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('separate_kalman_short')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('repeated_energy_update')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('enforce_totcharge')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('shuffle_weights_short_atomic')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('write_fit_statistics')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('fixed_short_energy_error_threshold')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('fixed_short_force_error_threshold')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('restrict_weights')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('screen_electrostatics')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('silent_mode')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('prepare_md')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('global_activation_electrostatic')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('global_activation_pair')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('element_hidden_layers_electrostatic')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('element_hidden_layers_pair')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('element_nodes_electrostatic')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('element_nodes_pair')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('element_activation_electrostatic')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('element_activation_pair')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('joint_energy_force_update')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
+                    
+                    
 
                     case ('use_fixed_charges')
                         if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('use_omp_mkl')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('nguyen_widrow_weights_short')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('nguyen_widrow_weights_ewald')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('print_date_and_time')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('enable_on_the_fly_input')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
- 
-                    case ('element_decoupled_kalman')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('element_decoupled_forces_v2')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
+                        print *, "use_fixed_charges keyword is obsolete, use electrostatic_type 3 instead"
+                        stop
 
                     
-                    case ('fixed_charge')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('print_all_short_weights')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('print_all_electrostatic_weights')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('print_all_deshortdw')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case ('print_all_dfshortdw')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
 
                     case ('use_electrostatic_nn')
                         if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-                        print *, "Error: use_electrostatic_nn keyword is obsolete, please use electrostatic_type and use_electrostatics
-                        instead"
+                        print *, "Error: use_electrostatic_nn keyword is obsolete, please use electrostatic_type and use_electrostatics instead"
                         stop
 
 !                    case ('')
 !                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
 
-                    case default ! for all unnecessary keywords make a dummy case?
+                    case default
                         if (trim(words(1)) /= '' .and. words(1)(1:1) /= '#') & !check for empty and comment lines
                             print *, 'Skipping invalid label ',trim(words(1)),' in line', line
 
