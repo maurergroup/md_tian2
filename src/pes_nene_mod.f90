@@ -86,10 +86,10 @@ module pes_nene_mod
         character(len=max_string_length) :: words(100)
         character(len=max_string_length) :: inp_path
 
-        character(len=max_string_length)   :: filename_inpnn, filename_scaling
-        character(len=max_string_length), dimension(atoms%ntypes)   :: weight_names, weight_names_list
+        character(len=max_string_length) :: filename_inpnn, filename_scaling
+        character(len=max_string_length), dimension(atoms%ntypes) :: weights_path, filename_weights
 
-        logical, dimension(2) :: lshort
+        !logical, dimension(2) :: lshort
 
         integer  :: idx1, idx2, ntypes, weight_counter, nelem_counter_1, nelem_counter_2, element_counter
         character(len=*), parameter :: err = "Error in read_nene: "
@@ -136,14 +136,14 @@ module pes_nene_mod
                 exit
 
             ! something went wrong
-            else if (nwords /= 2 .and. words(2) /= "weights") then
+            else if (nwords /= 2 .and. words(1) /= "weights") then
                 print *,  err // "Error in the PES file: PES parameters must &
                         consist of key value pairs. A parameter block must be terminated by a blank line."
                 stop
 
             ! maybe add comparison of element type and number in weight filename?
-            else if (words(2) == "weights" .and. nwords .neqv. atoms%ntypes+1) then ! check for valid number of weight file names given
-                print *,  err // "Number of weight files given and number of elements in the structure file does not match!"
+            else if (words(1) == "weights" .and. nwords /= atoms%ntypes+1) then ! check for valid number of weight file names given
+                print *,  err // "Number of weight files given and number of elements in the structure file do not match!"
                 stop
             end if
 
@@ -160,7 +160,7 @@ module pes_nene_mod
 
                     do weight_counter = 1,atoms%ntypes
 
-                        read(words(weight_counter+1), '(A)') weight_names(weight_counter)
+                        read(words(weight_counter+1), '(A)') weights_path(weight_counter)
 
                     end do
 
@@ -179,7 +179,7 @@ module pes_nene_mod
 
         ! loop over weight file names
         do weight_counter = 1,atoms%ntypes
-            weight_names_list(weight_counter)  = trim(inp_path) // trim(weight_names(weight_counter))
+            filename_weights(weight_counter)  = trim(inp_path) // trim(weights_path(weight_counter))
         end do
 
 
@@ -980,6 +980,11 @@ module pes_nene_mod
 
                 ! read(scaleunit,*)eshortmin,eshortmax
 
+                        ! initmode3.f90
+                        ! call readscale(nelem,1,&  --> ndim = nelem!
+!                           maxnum_funcvalues_short_atomic,num_funcvalues_short_atomic,&
+!                           minvalue_short_atomic,maxvalue_short_atomic,avvalue_short_atomic,&
+!                           eshortmin,eshortmax,rdummy,rdummy)
 
 
              
@@ -1008,14 +1013,33 @@ module pes_nene_mod
                 read(weight_unit, '(A)', iostat=ios) buffer
                 if (ios == 0) then
 
-                        ! readweights.f90
+                        ! readweights.f90 
                         ! do i1=1,ndim
                         !     do i2=1,num_weights_local(i1)
                         !         read(wunit,*)weights_local(i2,i1)
                         !     end do
                         ! end do
 
-                    
+      initmode3.f90
+      if(mpirank.eq.0)then
+         if(lshort.and.(nn_type_short.eq.1))then
+           call readweights(0,nelem,&
+             maxnum_weights_short_atomic,num_weights_short_atomic,&
+             weights_short_atomic)
+         endif ! lshort
+      endif ! mpirank.eq.0
+
+      if(lshort.and.(nn_type_short.eq.1))then
+        call mpi_bcast(weights_short_atomic,nelem*maxnum_weights_short_atomic,&
+          mpi_real8,0,mpi_comm_world,mpierror)
+      endif ! lshort
+
+
+
+
+
+
+
 
                 else
 
@@ -1040,6 +1064,56 @@ module pes_nene_mod
 !        call mpi_comm_size(mpi_comm_world,mpisize,mpierror)
         ! get process id mpirank
 !        call mpi_comm_rank(mpi_comm_world,mpirank,mpierror)
+
+
+!       from initmode3.f90
+!      maxcutoff_short_atomic       =0.0d0
+!! get maxcutoff_short_atomic
+!     if(lshort.and.(nn_type_short.eq.1))then
+!       do i2=1,nelem
+!        do i1=1,num_funcvalues_short_atomic(i2)
+!          maxcutoff_short_atomic=max(maxcutoff_short_atomic,funccutoff_short_atomic(i1,i2))
+!        enddo ! i1
+!      enddo
+!     endif ! lshort
+
+!     minvalue_short_atomic(:,:)   =0.0d0
+!     maxvalue_short_atomic(:,:)   =0.0d0
+!     avvalue_short_atomic(:,:)    =0.0d0
+!     minvalue_short_pair(:,:)     =0.0d0
+!     maxvalue_short_pair(:,:)     =0.0d0
+!     avvalue_short_pair(:,:)      =0.0d0
+!     minvalue_elec(:,:) =0.0d0
+!     maxvalue_elec(:,:) =0.0d0
+!     avvalue_elec(:,:)  =0.0d0
+!     chargemin(:)       =0.0d0
+!     chargemax(:)       =0.0d0
+!     if(mpirank.eq.0)then
+!       if(lshort.and.(nn_type_short.eq.1))then
+!         call readscale(nelem,1,&
+!           maxnum_funcvalues_short_atomic,num_funcvalues_short_atomic,&
+!           minvalue_short_atomic,maxvalue_short_atomic,avvalue_short_atomic,&
+!           eshortmin,eshortmax,rdummy,rdummy)
+!       endif ! lshort
+!     endif ! mpirank.eq.0
+
+!     if(lshort.and.(nn_type_short.eq.1))then
+!       call
+!     mpi_bcast(minvalue_short_atomic,nelem*maxnum_funcvalues_short_atomic,mpi_real8,0,mpi_comm_world,mpierror)
+!       call
+!     mpi_bcast(maxvalue_short_atomic,nelem*maxnum_funcvalues_short_atomic,mpi_real8,0,mpi_comm_world,mpierror)
+!       call
+!     mpi_bcast(avvalue_short_atomic,nelem*maxnum_funcvalues_short_atomic,mpi_real8,0,mpi_comm_world,mpierror)
+!       call mpi_bcast(eshortmin,1,mpi_real8,0,mpi_comm_world,mpierror)
+!       call mpi_bcast(eshortmax,1,mpi_real8,0,mpi_comm_world,mpierror)
+!     endif
+
+
+
+
+
+
+
 
 
     end subroutine read_nene
