@@ -1,40 +1,70 @@
-md_tian
-=======
+md_tian2
+========
 
 md_tian 2 (Molecular Dynamics Xia Tian 2) is a program for simulating 
 the scattering of atoms (and molecules) from a surface. 
 
+Purpose: -> maybe also here, but put in manual!
+Do molecular dynamics, Langevin dynamics, Ring Polymer dynamics
+
+Source code is in Fortran. 
+
+List of modules: -> maybe also here, but put in manual!
+
+constants.f90           :contains the global constants
+fit.f90                 :fitting routine for EMT
+force.f90               :get the energies/forces in molecular dynamics simulation
+geometry_opt.f90        :relax structure
+md_algo.f90             :contains propagation algorithms for molecular dynamics simulation
+md_init.f90             :initialize molecular dynamics simulation
+md_tian.f90             :main program
+open_file.f90           :input/output routines
+output_mod.f90          :output format routines
+pes_emt_mod.f90         :contains the EMT potential
+pes_ho_mod.f90          :contains the
+pes_lj_mod.f90          :contains the Lennard-Jones potential
+pes_nene_mod.f90        :contains the high-dimensional neural network potential
+pes_non_mod.f90         :contains the non-interaction potential
+pes_rebo_mod.f90        :contains the empirical reactive bond order potential
+rpmd.f90                :contains the ring-polymer molecular dynamics simulation routine
+run_config.f90          :initialize simulation parameters, read in input files
+trajectory_info.f90     :collect information from the calculated trajectories
+universe_mod.f90        :contains definitions of user types and all constants
+useful_things.f90       :useful math routines
 
 
-Source code is in Fortran.
-List of modules:
 
-2do: update source file list, add Manual to the main folder, add data to LICENSE.txt 
 
-atom_class.f90		:defines of user types and all constants
-*force.f90		:calculates energy and forces
-*mdalgo.f90		:contains propagation algorithms
-md_init.f90		:sets up everything
-md_tian.f90		:the main file governing simulations
-open_file.f90		:routines to open files smoothly
-*output.f90		:output routines
-run_config.f90	        :read in the input files
-useful_things.f90	:useful math routines
+Input files: -> maybe also here, but put in manual!
 
-Input files:
+md_tian.inp	    :control parameters defining the simulation conditions
+<potential>.pes     :control parameters for the specific potential used
+structure file      :starting structure, poscar or mxt format possible
+input.nn	    :control parameters for the high-dimensional neural network potential
+scaling.data	    :contains the bias weights for the high-dimensional neural network potential
+weights.XXX.data    :contains the weights for this element (XXX is the element number in the periodic table; e.g. 001 for H)
 
-md_tian.inp	:control parameters defining the simulation conditions
-*.nml		:contain emt-parameters for a species
 
-Compilation and linking (Intel Fortran):
+Compilation and linking (Intel fortran compiler and mkl library): -> maybe also here, but put in manual!
 
-ifort -O3 -ipo -o md_tian atom_class.f90 open_file.f90 useful_things.f90 run_config.f90 md_init.f90 md_tian.f90
+Change the settings in the makefile to your need. Options:
 
-Update:
+        make help 		print possible arguments for make
+	make serial		serial version of md_tian2
+	make clean		remove compilation related files
 
-Change the settings in the Makefile to your need and type for the serial version
 
-	make serial
+Program basic units -> maybe also here, but put in manual!
+
+          Length   : Ang
+          Time     : fs
+          Energy   : eV
+
+Program derived units
+
+          Mass     : eV fs^2 / A^2 = 1/103.6382 amu
+          Angle    : radian = 180 deg
+          Distance : bohr = 0.5291772 Angstroem
 
 
 The first working and tested version is put together February 18, 2014 
@@ -67,7 +97,7 @@ jqrw sxrw=n! wr wj nA r sxrw nTrw!
 
 
 
-Annotations from Sebastian Wille:
+Annotations from Sebastian Wille: -> put in manual!
 
 md_tian.inp file:
 
@@ -75,15 +105,3 @@ md_tian.inp file:
   pul: projectile upper limit (in /AA)
   T in POSCAR file stands for "True", means atom is NOT fixed and can move (F means atom is fixed and cannot move)
   Repetition of the slab in init file via: conf merge <path/file> <x_rep> <y_rep> (or conf poscar <path/file> <x_rep> <y_rep>)
-
-Neural network potentials:
-
-In case you want to use the neural network potential implementation as used in the RuNNer program, please contact us for the corresponding .f90 file with all modules, subroutines etc.
-
-Files needed for using the neural network potentials for molecular dynamics simulations:
-
-1) input.nn containing the keywords, architecture and symmetry functions
-
-2) scaling.data containing the bias values
-
-3) All weights.XXX.data containing the weights for this element (XXX is the element number in the periodic table; e.g. 001 for H)

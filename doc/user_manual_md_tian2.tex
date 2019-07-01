@@ -1,0 +1,108 @@
+\documentclass[paper=a4, pagesize, 12pt, twoside=semi, headsepline]{scrbook}
+
+\usepackage{fontspec}
+\usepackage{xunicode}
+\usepackage{xltxtra}
+\usepackage{polyglossia}
+\usepackage{scrpage2}
+\usepackage[onehalfspacing]{setspace}
+\usepackage{float}
+\usepackage{amsmath}
+\usepackage[backend=biber,style=chem-rsc,hyperref=auto,autocite=superscript]{biblatex}
+\usepackage[colorlinks=true,pdfstartview=FitV,linkcolor=blue,citecolor=blue,urlcolor=blue]{hyperref}
+\usepackage{booktabs}
+\usepackage{color}
+\usepackage{anysize}
+\usepackage{extarrows}
+\usepackage{multirow}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{colortbl}
+\usepackage{calc}
+\usepackage{subfigure}
+\usepackage{chemfig}
+\usepackage{chngcntr}
+\usepackage{newfloat}
+
+\input{packages/rgb}
+
+\DeclareFloatingEnvironment[
+    fileext=los,
+    listname=List of Schemes,
+    name=Scheme,
+    placement=tbhp,
+    within=section,
+]{scheme}
+
+\floatplacement{figure}{H}
+\floatplacement{scheme}{H}
+
+\usetikzlibrary{calc,positioning,arrows,plotmarks}
+
+\author{\\Guideline\\Sebastian Wille\\ \\ \\ \\ \\ Institute for Physical Chemistry\\ Georg-August-University Goettingen \\Max Planck Institute for Biophysical Chemistry, G\"ottingen\\ \\ }
+\title{Manual md\_tian2}
+
+\pagestyle{scrheadings}
+\automark[section]{chapter}
+
+\ohead[]{\thepage}
+\ihead[]{\headmark}
+\ofoot[]{}
+\pagenumbering{Roman}
+\renewcommand*{\chaptermarkformat}{}
+\renewcommand*{\sectionmarkformat}{}
+\renewcommand{\thefootnote}{\alph{footnote}}
+\renewcommand{\theequation}{\arabic{equation}}
+
+\setmainlanguage{english}
+
+\addbibresource{literature.bib}
+
+\newcommand*{\gu}[1]{\ensuremath{_\mathrm{#1}}}
+\newcommand*{\go}[1]{\ensuremath{^\mathrm{#1}}}
+
+\newcommand{\thc}[1]{\multicolumn{1}{c}{#1}}
+
+\AtBeginEnvironment{tabular}{\onehalfspacing}
+
+\AtBeginDocument{%
+  \renewcommand\thescheme{\arabic{scheme}}%
+  \counterwithout{scheme}{chapter}%
+}
+
+\AtBeginDocument{%
+  \renewcommand\thefigure{\arabic{figure}}%
+  \counterwithout{figure}{chapter}%
+}
+
+\AtBeginDocument{%
+  \renewcommand\thetable{\arabic{table}}%
+  \counterwithout{table}{chapter}%
+}
+
+\begin{document}
+
+\raggedbottom
+\maketitle
+\cleardoublepage
+
+\input{abstract}
+
+\setcounter{page}{1}
+\cleardoublepage
+\tableofcontents
+\cleardoublepage
+
+\setcounter{page}{0}
+\pagenumbering{arabic}
+\input{introduction}
+
+
+\cleardoublepage
+\input{keywords}
+
+\cleardoublepage
+\input{appendix}
+\printbibliography
+\addcontentsline{toc}{chapter}{Bibliography}
+\end{document}

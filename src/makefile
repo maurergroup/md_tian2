@@ -12,6 +12,7 @@
 ### Settings:
 #############
 
+# ifort and mkl library
 FC     = ifort 
 FFLAGS = -O3 -mkl -xHost -fp-model precise -132
 LIB    =

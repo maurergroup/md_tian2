@@ -8,5 +8,15 @@ bin/
 *.o
 *.mod
 *.x
+# Manual
+*.aux
+*.bbl
+*.bcf
+*.blg
+*.log
+*.out
+*.pdf
+*.run.xml
+*.toc
 # General
 *.swp

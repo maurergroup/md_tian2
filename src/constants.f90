@@ -1,3 +1,25 @@
+!############################################################################
+! This routine is part of
+! md_tian2 (Molecular Dynamics Xia Tian 2)
+! (c) 2014-2019 Dan J. Auerbach, Sascha Kandratsenka, Svenja M. Janke, Marvin
+! Kammler, Sebastian Wille
+! MPI for Biophysical Chemistry Goettingen, Germany
+! Georg-August-Universitaet Goettingen, Germany
+!
+! This program is free software: you can redistribute it and/or modify it 
+! under the terms of the GNU General Public License as published by the 
+! Free Software Foundation, either version 3 of the License, or 
+! (at your option) any later version.
+!
+! This program is distributed in the hope that it will be useful, but 
+! WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY 
+! or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License 
+! for more details.
+!
+! You should have received a copy of the GNU General Public License along 
+! with this program. If not, see http://www.gnu.org/licenses. 
+!############################################################################
+
 module constants
 
     use, intrinsic :: iso_fortran_env
@@ -7,22 +29,22 @@ module constants
     integer, parameter :: dp = REAL64
 
     ! Physical and mathematical constants
-    real(dp), parameter :: sqrt2    = sqrt(2.0_dp)
-    real(dp), parameter :: isqrt2   = 1.0_dp/sqrt2
-    real(dp), parameter :: sqrt3    = sqrt(3.0_dp)
-    real(dp), parameter :: pi       = acos(-1.0_dp)
-    real(dp), parameter :: kB       = 8.61733238496e-5_dp       ! eV / K
-    real(dp), parameter :: hbar     = 0.6582119514467406_dp     ! eV * fs
-    real(dp), parameter :: twelfth  = 1.0_dp/12.0_dp
+    real(dp), parameter :: sqrt2          = sqrt(2.0_dp)
+    real(dp), parameter :: isqrt2         = 1.0_dp/sqrt2
+    real(dp), parameter :: sqrt3          = sqrt(3.0_dp)
+    real(dp), parameter :: pi             = acos(-1.0_dp)
+    real(dp), parameter :: kB             = 8.61733238496e-5_dp       ! eV / K
+    real(dp), parameter :: hbar           = 0.6582119514467406_dp     ! eV * fs
+    real(dp), parameter :: twelfth        = 1.0_dp/12.0_dp
     integer,  parameter :: dimensionality = 3
 
 
     ! PES-related constants
-    integer, parameter :: nparams_lj    = 2
-    integer, parameter :: nparams_morse = 3
-    integer, parameter :: nparams_emt   = 7
-    integer, parameter :: nparams_rebo  = 13
-    integer, parameter :: nparams_nene  = 1
+    integer, parameter :: nparams_lj            = 2
+    integer, parameter :: nparams_morse         = 3
+    integer, parameter :: nparams_emt           = 7
+    integer, parameter :: nparams_rebo          = 13
+    integer, parameter :: nparams_nene          = 1
 
     integer, parameter :: pes_id_lj             = 2001
     integer, parameter :: pes_id_morse          = 2002
@@ -44,16 +66,16 @@ module constants
     character(len=*), parameter :: pes_name_nene           = "nene"
 
      ! Internal program constants
-    integer, parameter :: randseed(13) = [7,5,3,11,9,1,17,2,9,6,4,5,8]
+    integer, parameter :: randseed(13)      = [7,5,3,11,9,1,17,2,9,6,4,5,8]
     integer, parameter :: max_string_length = 1000
-    real(dp), parameter :: tolerance = 1.0e-9_dp
+    real(dp), parameter :: tolerance        = 1.0e-9_dp
 
 
     ! Defaults
-    integer, parameter   :: default_int    = huge(0_4)
-    real(dp), parameter  :: default_real   = huge(0_dp)
-    character, parameter :: default_string = ""
-    logical, parameter   :: default_bool   = .false.
+    integer, parameter   :: default_int           = huge(0_4)
+    real(dp), parameter  :: default_real          = huge(0_dp)
+    character, parameter :: default_string        = ""
+    logical, parameter   :: default_bool          = .false.
 
 
     ! Propagation
@@ -64,12 +86,12 @@ module constants
     integer, parameter :: prop_id_andersen        = 1005
     integer, parameter :: prop_id_pile            = 1006
 
-    integer, parameter :: energy_and_force = 3001
-    integer, parameter :: energy_only      = 3002
+    integer, parameter :: energy_and_force        = 3001
+    integer, parameter :: energy_only             = 3002
 
 
     ! Geometry optimization
-    integer, parameter :: geometry_opt_fire = 4001
+    integer, parameter :: geometry_opt_fire       = 4001
 
 
     ! Output
