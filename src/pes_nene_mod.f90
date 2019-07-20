@@ -1042,22 +1042,14 @@ module pes_nene_mod
                         !     end do
                         ! end do
 
-      initmode3.f90
-      if(mpirank.eq.0)then
-         if(lshort.and.(nn_type_short.eq.1))then
-           call readweights(0,nelem,&
-             maxnum_weights_short_atomic,num_weights_short_atomic,&
-             weights_short_atomic)
-         endif ! lshort
-      endif ! mpirank.eq.0
-
-      if(lshort.and.(nn_type_short.eq.1))then
-        call mpi_bcast(weights_short_atomic,nelem*maxnum_weights_short_atomic,&
-          mpi_real8,0,mpi_comm_world,mpierror)
-      endif ! lshort
-
-
-
+      !initmode3.f90
+      !if(mpirank.eq.0)then
+      !   if(lshort.and.(nn_type_short.eq.1))then
+      !     call readweights(0,nelem,&
+      !       maxnum_weights_short_atomic,num_weights_short_atomic,&
+      !       weights_short_atomic)
+      !   endif ! lshort
+      !endif ! mpirank.eq.0
 
 
 
