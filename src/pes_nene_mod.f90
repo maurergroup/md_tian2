@@ -37,6 +37,7 @@ module pes_nene_mod
     type runner_input_parameters
 
         ! input.nn
+        ! getdimensions.f90, readinput.f90, readkeywords.f90, checkinputnn.f90
         integer :: nn_type_short
         integer :: mode
         logical :: lshort
@@ -83,7 +84,7 @@ module pes_nene_mod
 
         new_runner_input_parameters%nn_type_short               = default_int ! 1 default, no pair available
         new_runner_input_parameters%mode                        = default_int ! 3 default, only RuNNer mode 3 implemented
-        new_runner_input_parameters%lshort                      = default_logic ! .true. default, only short implemented
+        new_runner_input_parameters%lshort                      = default_bool ! .true. default, only short implemented
         new_runner_input_parameters%maxnum_layers_short_atomic  = default_int
         new_runner_input_parameters%nelem                       = default_int
         new_runner_input_parameters%npairs                      = default_int
@@ -218,10 +219,9 @@ module pes_nene_mod
                 line = line + 1
                 call split_string(buffer, words, nwords)
 
-                ! read in all necessary keywords from input.nn
+                ! following the keywords in alphabetical order
                 select case (words(1))
 
-                    ! following the keywords in alphabetical order
                     case ('analyze_composition')
                         if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the analyze_composition key'
 
@@ -304,7 +304,7 @@ module pes_nene_mod
                         if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the dynamic_force_grouping key'
 
                     case ('electrostatic_type' .or. 'nn_type_elec')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the electrostatic_type/nn_type_elec key'
+                        if (rinpparam%nn_type_elec_local /= default_) stop err // err_inpnn // 'Multiple use of the electrostatic_type/nn_type_elec key'
 
                     case ('element_activation_electrostatic')
                         if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the element_activation_electrostatic key'
@@ -352,10 +352,16 @@ module pes_nene_mod
                         ! you shall pass
 
                     case ('elements')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the elements key'
-                        if (nwords /= ) then
-(element(i),i=1,nelem)
-                            if (any(rinpparam%nelem /= [atoms%name])) stop err // err_inpnn // "element names in input.nn and *.inp/poscar files differ"
+                        if (any(rinpparam%element /= default_string)) stop err // err_inpnn // 'Multiple use of the elements key'
+                        if (nwords == atoms%nelem+1)
+                            do i=1,atoms%nelem
+                                read(words(i+1),'(A)', iostat=ios) element(i)
+                                if (ios /= 0) stop err // err_inpnn // "elements keyword values must be string"
+                                if (any(rinpparam%element /= atoms%name)) stop err // err_inpnn // "element names in input.nn and *.inp/poscar files differ"
+                        else
+                            print *, err, err_inpnn, "Error: number of element symbols given does not match with number of elements"; stop
+                        end if
+
 
                     case ('enable_on_the_fly_input')
                         if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the enable_on_the_fly_input key'
@@ -443,12 +449,15 @@ module pes_nene_mod
 
                     case ('global_output_nodes_electrostatic')
                         if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the global_output_nodes_electrostatic key'
+                        print *, err, err_inpnn, "Error: global_output_nodes_electrostatic keyword is obsolete, please remove it"; stop
 
                     case ('global_output_nodes_pair')
                         if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the global_output_nodes_pair key'
+                        print *, err, err_inpnn, "Error: global_output_nodes_pair keyword is obsolete, please remove it"; stop
 
                     case ('global_output_nodes_short')
                         if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the global_output_nodes_short key'
+                        print *, err, err_inpnn, "Error: global_output_nodes_short keyword is obsolete, please remove it"; stop
 
                     case ('global_pairsymfunction_short' .or. 'global_symfunction_short_pair')
                         if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the global_pairsymfunction_short/global_symfunction_short_pair key'
@@ -480,6 +489,9 @@ module pes_nene_mod
                     case ('kalman_damp_short')
                         if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the kalman_damp_short key'
 
+                    case ('kalman_epsilon')
+                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the kalman_epsilon key'
+
                     case ('kalman_lambda_charge')
                         if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the kalman_lambda_charge key'
 
@@ -497,6 +509,15 @@ module pes_nene_mod
 
                     case ('kalman_nue_short')
                         if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the kalman_nue_short key'
+
+                    case ('kalman_q0')
+                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the kalman_q0 key'
+
+                    case ('kalman_qtau')
+                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the kalman_qtau key'
+
+                    case ('kalman_qmin')
+                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the kalman_qmin key'
 
                     case ('max_energy')
                         if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the max_energy key'
@@ -517,12 +538,13 @@ module pes_nene_mod
                         if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the nguyen_widrow_weights_short key'
 
                     case ('nn_type')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the nn_type key'
+                        !if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the nn_type key'
+                        print *, err, err_inpnn, "Error: nn_type keyword is obsolete, use nn_type_short instead"; stop
 
                     case ('nn_type_short') ! only short available
                         if (rinpparam%nn_type_short /= default_int) stop err // err_inpnn // 'Multiple use of the nn_type_short key'
                         if (nwords == 2) then
-                            read(words(2),'(i1000)') rinpparam%nn_type_short
+                            read(words(2),'(i1000)', iostat=ios) rinpparam%nn_type_short
                             if (ios /= 0) stop err // err_inpnn // "nn_type_short value must be integer"
                             if (words(2) /= 1) then
                                 print *, err, err_inpnn, "Only nn_type_short 1 (Behler-Parrinello) available!"; stop
@@ -545,9 +567,12 @@ module pes_nene_mod
                     case ('number_of_elements')
                         if (rinpparam%nelem /= default_int) stop err // err_inpnn // 'Multiple use of the number_of_elements key'
                         if (nwords == 2) then
-                            read(words(2),'(i1000)') rinpparam%nelem
+                            read(words(2),'(i1000)',iostat=ios) rinpparam%nelem
                             if (ios /= 0) stop err // err_inpnn // "number_of_elements value must be integer"
                             if (rinpparam%nelem /= atoms%ntypes) stop err // err_inpnn // "element number in input.nn and *.inp/poscar files differ"
+                        else
+                            print *, err, err_inpnn, "number_of_elements key needs a single argument"
+                        end if
 
 
 
@@ -555,14 +580,15 @@ module pes_nene_mod
                     case ('number_of_elements') ! check with md_tian input
                         if (rinpparam%nelem /= default_int) stop err // err_inpnn // 'Multiple use of the number_of_elements key'
                         if (nwords == 2) then
-                            read(words(2),'(A)') rinpparam%nelem
+                            read(words(2),'(A)',iostat=ios) rinpparam%nelem
+
                             do nelem_counter_1=1,rinpparam%nelem
                                 do nelem_counter_2=1,rinpparam%nelem
                                     rinpparam%npairs = rinpparam%npairs + 1
                                 end do
                             end do
                         else
-                            print *, err, "number_of_elements key needs a single argument"; stop
+                            print *, err, err_inpnn, "number_of_elements key needs a single argument"; stop
                         end if
 
 
@@ -630,6 +656,8 @@ module pes_nene_mod
 
                     case ('random_order_training')
                         if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the random_order_training key'
+                        print *, err, err_inpnn, "Error: random_order_training keyword is obsolete, please use mix_all_points
+                        instead"; stop
 
                     case ('random_seed')
                         if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the random_seed key'
@@ -656,7 +684,7 @@ module pes_nene_mod
                         if (rinpparam%mode /= default_int) stop err // err_inpnn // 'Multiple use of the runner_mode key'
 
                         if (nwords == 2) then
-                            read(words(2),'(A)') rinpparam%mode
+                            read(words(2),'') rinpparam%mode
                             if (words(2) /= 3)
                                 print *, err, err_inpnn, "Only mode 3 available"; stop
                         else
@@ -786,6 +814,9 @@ module pes_nene_mod
                     case ('use_ipi')
                         if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the use_ipi key'
 
+                    case ('use_noisematrix')
+                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the use_noisematrix key'
+
                     case ('use_old_scaling')
                         if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the use_old_scaling key'
 
@@ -806,7 +837,7 @@ module pes_nene_mod
                         if (nwords == 1) then
                             rinpparam%lshort_local = .true.
                         else
-                            print *, err, "use_short_nn key has additional arguments"; stop
+                            print *, err, err_inpnn, "use_short_nn key has additional arguments"; stop
                         end if
 
                     case ('use_systematic_weights_electrostatic')
@@ -841,15 +872,15 @@ module pes_nene_mod
 
                     case ('write_pdb')
                         if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the write_pdb key'
-                        print *, "Error: write_pdb keyword is no longer supported"; stop
+                        print *, err, err_inpnn, "Error: write_pdb keyword is no longer supported"; stop
 
                     case ('write_pov')
                         if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the write_pov key'
-                        print *, "Error: write_pov keyword is no longer supported"; stop
+                        print *, err, err_inpnn, "Error: write_pov keyword is no longer supported"; stop
 
                     case ('write_pwscf')
                         if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the write_pwscf key'
-                        print *, "Error: write_pwscf keyword is no longer supported"; stop
+                        print *, err, err_inpnn, "Error: write_pwscf keyword is no longer supported"; stop
 
                     case ('write_temporary_weights')
                         if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the write_temporary_weights key'
@@ -871,7 +902,7 @@ module pes_nene_mod
 
                     case ('write_xyz')
                         if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the write_xyz key'
-                        print *, "Error: write_xyz keyword is no longer supported"; stop
+                        print *, err, err_inpnn, "Error: write_xyz keyword is no longer supported"; stop
 
 
 
@@ -1028,7 +1059,7 @@ module pes_nene_mod
 
             ! check existance of each weight file before reading
             if (.not. file_exists(weight_names_list(weight_counter))) stop err // err_weights // weight_names_list(weight_counter),
-            ' does not exist!'
+            ' file does not exist!'
 
             call open_for_read(weight_unit, weight_names_list(weight_counter)); ios = 0
 
