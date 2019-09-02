@@ -210,8 +210,76 @@ module pes_nene_mod
         ! check existance of input.nn
         if (.not. file_exists(filename_inpnn)) stop err // err_inpnn // "file does not exist"
 
-        ! read all input keywords from input.nn
+        ! read all input keywords from input.nn several times to respect dependencies
         call open_for_read(inpnn_unit, filename_inpnn); ios = 0
+
+!       read in keywords related to input.nn according to the following files from RuNNer (chronologically)
+!       1) getdimensions.f90
+!       2) paircount.f90; not all, but have a further look
+!       3) readkeywords.f90
+!       4) readinput.f90
+
+        do while (ios == 0)
+            read(inpnn_unit, '(A)', iostat=ios) buffer
+            if (ios == 0) then
+                line = line + 1
+                call split_string(buffer, words, nwords)
+                
+                select case (words(1))
+
+                    case ('global_hidden_layers_short')
+                        if (rinpparam%found_num_layersshort /= default_bool) stop err // err_inpnn // 'Multiple use of the global_hidden_layers_short key'
+                        inpparam%found_num_layersshort = .true.
+                        if (nwords == 2) then
+                            read(words(2),'(i1000)', iostat=ios) rinpparam%maxnum_layers_short_atomic
+                            if (ios /= 0) stop err // err_inpnn // "global_hidden_layers_short value must be integer"
+                        else
+                            print *, err, err_inpnn, "global_hidden_layers_short key needs a single argument"; stop
+                        end if
+                    case ('')
+
+                        
+
+                    case default
+                        if (trim(words(1)) /= '' .and. words(1)(1:1) /= '#') & !check for empty and comment lines
+                            print *, 'Skipping invalid label ',trim(words(1)),'in line', line
+
+                end select
+                
+            else
+
+                write(*,*) err // err_inpnn // 'iostat = ', ios
+                stop
+
+            end if
+        close(inpnn_unit)
+
+        call open_for_read(inpnn_unit, filename_inpnn); ios = 0
+
+        do while (ios == 0)
+            read(inpnn_unit, '(A)', iostat=ios) buffer
+            if (ios == 0) then
+                line = line + 1
+                call split_string(buffer, words, nwords)
+
+                select case (words(1))
+
+                    case ('')
+
+                    case ('')
+
+                end select
+
+            else 
+
+                write(*,*) err // err_inpnn // 'iostat = ', ios
+                stop
+
+            end if
+        close(inpnn_unit)
+
+
+        call open_for_read(inpnn_unit, filename_inpnn); ios = 0        
 
         do while (ios == 0) ! analog to read_input_file subroutine in run_config.f90
             read(inpnn_unit, '(A)', iostat=ios) buffer
@@ -219,7 +287,6 @@ module pes_nene_mod
                 line = line + 1
                 call split_string(buffer, words, nwords)
 
-                ! following the keywords in alphabetical order
                 select case (words(1))
 
                     case ('analyze_composition')
@@ -538,7 +605,7 @@ module pes_nene_mod
                         if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the nguyen_widrow_weights_short key'
 
                     case ('nn_type')
-                        !if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the nn_type key'
+                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the nn_type key'
                         print *, err, err_inpnn, "Error: nn_type keyword is obsolete, use nn_type_short instead"; stop
 
                     case ('nn_type_short') ! only short available
@@ -1012,7 +1079,173 @@ module pes_nene_mod
                 stop
 
             end if
+
         close(inpnn_unit)
+
+
+!       from paircount.f90
+!! get the cutoff for nn_type_short_local = 1
+!     if(nn_type_short_local.eq.1)then
+!       open(nnunit,file='input.nn')
+!       rewind(nnunit)
+
+!110     read(nnunit,*,END=100) keyword
+
+!         if(keyword.eq.'global_symfunction_short')then
+!           backspace(nnunit)
+!           read(nnunit,*)dummy,function_type_temp
+!           if(function_type_temp.eq.1)then
+!             backspace(nnunit)
+!             read(nnunit,*)dummy,function_type_temp,funccutoff_local
+!           elseif(function_type_temp.eq.2)then
+!             backspace(nnunit)
+!             read(nnunit,*)dummy,function_type_temp,dummy,dummy,funccutoff_local
+!           elseif(function_type_temp.eq.3)then
+!             backspace(nnunit)
+!             read(nnunit,*)dummy,function_type_temp,dummy,dummy,dummy,funccutoff_local
+!           elseif(function_type_temp.eq.4)then
+!             backspace(nnunit)
+!             read(nnunit,*)dummy,function_type_temp,dummy,funccutoff_local
+!           elseif(function_type_temp.eq.8)then
+!             backspace(nnunit)
+!             read(nnunit,*)dummy,function_type_temp,dummy,dummy,funccutoff_local
+!           elseif(function_type_temp.eq.9)then
+!             backspace(nnunit)
+!             read(nnunit,*)dummy,function_type_temp,dummy,dummy,dummy,funccutoff_local
+!           else
+!             write(ounit,*)'Error: unknown symfunction in paircount'
+!             stop
+!           endif
+
+!         elseif(keyword.eq.'element_symfunction_short')then
+!           backspace(nnunit)
+!           read(nnunit,*)dummy,elementtemp1,function_type_temp
+!           if(function_type_temp.eq.1)then
+!             backspace(nnunit)
+!             read(nnunit,*)dummy,elementtemp1,function_type_temp,&
+!               funccutoff_local
+!           elseif(function_type_temp.eq.2)then
+!             backspace(nnunit)
+!             read(nnunit,*)dummy,elementtemp1,function_type_temp,&
+!               dummy,dummy,funccutoff_local
+!           elseif(function_type_temp.eq.3)then
+!             backspace(nnunit)
+!             read(nnunit,*)dummy,elementtemp1,function_type_temp,&
+!               dummy,dummy,dummy,funccutoff_local
+!           elseif(function_type_temp.eq.4)then
+!             backspace(nnunit)
+!             read(nnunit,*)dummy,elementtemp1,function_type_temp,&
+!               dummy,funccutoff_local
+!           elseif(function_type_temp.eq.8)then
+!             backspace(nnunit)
+!             read(nnunit,*)dummy,elementtemp1,function_type_temp,&
+!               dummy,dummy,funccutoff_local
+!           elseif(function_type_temp.eq.9)then
+!             backspace(nnunit)
+!             read(nnunit,*)dummy,elementtemp1,function_type_temp,&
+!               dummy,dummy,dummy,funccutoff_local
+!           else
+!             write(ounit,*)'Error: unknown symfunction in paircount'
+!             stop
+!          endif
+!!
+!         elseif(keyword.eq.'symfunction_short')then
+!           backspace(nnunit)
+!           read(nnunit,*)dummy,elementtemp1,function_type_temp
+!           if(function_type_temp.eq.1)then
+!             backspace(nnunit)
+!             read(nnunit,*)dummy,elementtemp1,function_type_temp,&
+!               elementtemp2,funccutoff_local
+!           elseif(function_type_temp.eq.2)then
+!             backspace(nnunit)
+!             read(nnunit,*)dummy,elementtemp1,function_type_temp,&
+!               elementtemp2,dummy,dummy,funccutoff_local
+!           elseif(function_type_temp.eq.3)then
+!             backspace(nnunit)
+!             read(nnunit,*)dummy,elementtemp1,function_type_temp,&
+!               elementtemp2,elementtemp3,dummy,dummy,dummy,funccutoff_local
+!           elseif(function_type_temp.eq.4)then
+!             backspace(nnunit)
+!             read(nnunit,*)dummy,elementtemp1,function_type_temp,&
+!               elementtemp2,dummy,dummy,funccutoff_local
+!           elseif(function_type_temp.eq.8)then
+!             backspace(nnunit)
+!             read(nnunit,*)dummy,elementtemp1,function_type_temp,&
+!               elementtemp2,elementtemp3,dummy,dummy,funccutoff_local
+!           elseif(function_type_temp.eq.9)then
+!             backspace(nnunit)
+!             read(nnunit,*)dummy,elementtemp1,function_type_temp,&
+!               elementtemp2,elementtemp3,dummy,dummy,dummy,funccutoff_local
+!           else
+!             write(ounit,*)'Error: unknown symfunction in paircount'
+!             stop
+!          endif
+!         endif
+!!
+!         maxcutoff_local=max(maxcutoff_local,funccutoff_local)
+!         goto 110
+!100       continue
+!       close(nnunit)
+
+!! check if maxcutoff_local has been found properly
+!       if(maxcutoff_local.eq.0.0d0)then
+!         write(ounit,*)'Error: maxcutoff_local is zero in paircount'
+!         write(ounit,*)'Did you forget to specify symmetry functions???'
+!         stop !'
+!       endif
+!     endif ! --> nn_type_short_local = 1
+
+!??
+!       count_struct=0
+!       open(dataunit,file='input.data',form='formatted')
+!         backspace(dataunit)
+!10       continue
+!         read(dataunit,*,END=30) keyword
+!         if(keyword.eq.'begin') then
+!           count_struct= count_struct+1
+!           nlattice  = 0
+!           num_atoms = 0
+!           lperiodic =.false.
+!         endif
+!         if(keyword.eq.'lattice') then
+!           nlattice=nlattice+1
+!           backspace(dataunit)
+!           read(dataunit,*)keyword,(lattice(nlattice,i1),i1=1,3)
+!         endif
+!         if(keyword.eq.'atom') then
+!           backspace(dataunit)
+!           num_atoms=num_atoms+1
+!           read(dataunit,*)keyword,(xyzstruct(i1,num_atoms),i1=1,3),elementsymbol(num_atoms)
+!           call nuccharge(elementsymbol(num_atoms),zelem(num_atoms))
+!         endif
+!         if(keyword.eq.'end') then
+!           if(nlattice.eq.3)then
+!             lperiodic=.true.
+!           endif
+!           if(lperiodic)then
+!              call translate(num_atoms,lattice,xyzstruct)
+!           endif
+!! determine num_pairs
+!           call getnumpairs(num_atoms,num_pairs,zelem,&
+!             maxcutoff_local,lattice,xyzstruct,dmin_temp,lperiodic)
+!           max_num_pairs=max(max_num_pairs,num_pairs)
+!           do i1=1,nelem*(nelem+1)/2
+!!              write(ounit,*)i1,dmin_element(i1),dmin_temp(i1)
+!             dmin_element(i1)=min(dmin_element(i1),dmin_temp(i1))
+!           enddo
+!!          
+!         endif
+!         goto 10
+!30       continue
+!       close(dataunit)
+!??
+
+
+
+
+!     if(nn_type_short_local.ne.2)then
+!       max_num_pairs=0
+!     endif
 
 
         ! check existance of scaling.data
@@ -1111,6 +1344,9 @@ module pes_nene_mod
         ! get process id mpirank
 !        call mpi_comm_rank(mpi_comm_world,mpirank,mpierror)
 
+!       from predict.f90
+!       allocate(sens(nelem,maxnum_funcvalues_short_atomic))
+
 
 !       from initmode3.f90
 !      maxcutoff_short_atomic       =0.0d0
@@ -1171,6 +1407,17 @@ module pes_nene_mod
 
         type(universe), intent(inout)   :: atoms
         integer, intent(in)             :: flag
+
+!       from predict.f90
+!       call predictionshortatomic(&
+!             num_atoms,num_atoms_element,zelem,&
+!             lattice,xyzstruct,&
+!             minvalue_short_atomic,maxvalue_short_atomic,avvalue_short_atomic,&
+!             eshortmin,eshortmax,&
+!             nntotalenergy,nnshortforce,&
+!             nnatomenergy,nnshortenergy,nnstress_short,&
+!             atomenergysum,sens,lperiodic)
+
 
 
 

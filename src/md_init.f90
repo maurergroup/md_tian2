@@ -54,6 +54,7 @@ contains
 
         ! Read in name of input file
         if (command_argument_count() == 0) stop " I need an input file"
+        if (command_argument_count() .gt. 1) stop "Only one input file is allowed"
 
         call get_command(length=input_file_length)
         allocate(character(input_file_length) :: input_file)
