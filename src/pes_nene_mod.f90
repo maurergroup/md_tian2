@@ -426,7 +426,7 @@ module pes_nene_mod
                                 if (ios /= 0) stop err // err_inpnn // "elements keyword values must be string"
                                 if (any(rinpparam%element /= atoms%name)) stop err // err_inpnn // "element names in input.nn and *.inp/poscar files differ"
                         else
-                            print *, err, err_inpnn, "Error: number of element symbols given does not match with number of elements"; stop
+                            print *, err, err_inpnn, "Error: number of element symbols given does not match with number of elements from structure file"; stop
                         end if
 
 
