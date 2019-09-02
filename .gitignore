@@ -8,6 +8,8 @@ bin/
 *.o
 *.mod
 *.x
+# RuNNer input files
+RuNNer_input/*
 # Manual
 *.aux
 *.bbl
