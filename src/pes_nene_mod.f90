@@ -219,6 +219,93 @@ module pes_nene_mod
 !       3) readkeywords.f90
 !       4) readinput.f90
 
+!       dummy readout
+!
+!       call open_for_read(inpnn_unit, filename_inpnn); ios = 0
+!
+!       do while (ios == 0)
+!           read(inpnn_unit, '(A)', iostat=ios) buffer
+!           if (ios == 0) then
+!               line = line + 1
+!               call split_string(buffer, words, nwords)
+!
+!               select case (words(1))
+!
+!                   case ('')
+!                       if (rinpparam% /= default_int) stop err // err_inpnn // 'Multiple use of the  key'
+!                       if (nwords == 2) then
+!                           read(words(2),'(i1000)', iostat=ios) rinpparam%
+!                           if (ios /= 0) stop err // err_inpnn // " value must be integer"
+!                       else
+!                           print *, err, err_inpnn, " key needs a single argument"; stop
+!                       end if
+!
+!                   case default
+!                       if (trim(words(1)) /= '' .and. words(1)(1:1) /= '#') & ! check for empty and comment lines
+!                           print *, 'Skipping invalid label', trim(words(1)),'in line', line
+!
+!               end select
+!           else
+
+
+        do while (ios == 0)
+            read(inpnn_unit, '(A)', iostat=ios) buffer
+            if (ios == 0) then
+                line = line + 1
+                call split_string(buffer, words, nwords)
+
+                select case (words(1))
+
+                    case ('nn_type_short')
+                        if (rinpparam%nn_type_short /= default_int) stop err // err_inpnn // 'Multiple use of the nn_type_short key'
+                        if (nwords == 2) then
+                            read(words(2),'(i1000)', iostat=ios) rinpparam%nn_type_short
+                            if (ios /= 0) stop err // err_inpnn // "nn_type_short value must be integer"
+                        else
+                            print *, err, err_inpnn, "nn_type_short key needs a single argument"; stop
+                        end if
+
+                    case ('runner_mode')
+                        if (rinpparam%runner_mode /= default_int) stop err // err_inpnn // 'Multiple use of the runner_mode key'
+                        if (nwords == 2) then
+                            read(words(2),'(i1000)', iostat=ios) rinpparam%runner_mode
+                            if (ios /= 0) stop err // err_inpnn // "runner_mode value must be integer"
+                        else
+                            print *, err, err_inpnn, "nn_type_short key needs a single argument"; stop
+                        end if
+
+                    case ('')
+
+                    case ('') 
+                        if (rinpparam% /= default_int) stop err // err_inpnn // 'Multiple use of the  key'
+                        if (nwords == 2) then
+                            read(words(2),'(i1000)', iostat=ios) rinpparam%
+                            if (ios /= 0) stop err // err_inpnn // " value must be integer"
+                        else
+                            print *, err, err_inpnn, " key needs a single argument"; stop
+                        end if
+
+
+                    case ('')
+
+                    case ('')
+
+                    case default
+                        if (trim(words(1)) /= '' .and. words(1)(1:1) /= '#') & ! check for empty and comment lines
+                            print *, 'Skipping invalid label', trim(words(1)),'in line', line
+
+                end select
+
+            else 
+                write(*,*) err // err_inpnn // 'iostat = ', ios
+                stop
+            end if
+
+        close(inpnn_unit)
+
+
+        call open_for_read(inpnn_unit, filename_inpnn); ios = 0
+
         do while (ios == 0)
             read(inpnn_unit, '(A)', iostat=ios) buffer
             if (ios == 0) then
@@ -253,6 +340,82 @@ module pes_nene_mod
 
             end if
         close(inpnn_unit)
+
+
+        call open_for_read(inpnn_unit, filename_inpnn); ios = 0
+
+        do while (ios == 0)
+            read(inpnn_unit, '(A)', iostat=ios) buffer
+            if (ios == 0) then
+                line = line + 1
+                call split_string(buffer, words, nwords)
+
+                select case (words(1))
+
+                    case ('')
+
+                    case ('')
+
+                end select
+
+            else 
+
+                write(*,*) err // err_inpnn // 'iostat = ', ios
+                stop
+
+            end if
+        close(inpnn_unit)
+
+
+        call open_for_read(inpnn_unit, filename_inpnn); ios = 0
+
+        do while (ios == 0)
+            read(inpnn_unit, '(A)', iostat=ios) buffer
+            if (ios == 0) then
+                line = line + 1
+                call split_string(buffer, words, nwords)
+
+                select case (words(1))
+
+                    case ('')
+
+                    case ('')
+
+                end select
+
+            else 
+
+                write(*,*) err // err_inpnn // 'iostat = ', ios
+                stop
+
+            end if
+        close(inpnn_unit)
+
+
+        call open_for_read(inpnn_unit, filename_inpnn); ios = 0
+
+        do while (ios == 0)
+            read(inpnn_unit, '(A)', iostat=ios) buffer
+            if (ios == 0) then
+                line = line + 1
+                call split_string(buffer, words, nwords)
+
+                select case (words(1))
+
+                    case ('')
+
+                    case ('')
+
+                end select
+
+            else 
+
+                write(*,*) err // err_inpnn // 'iostat = ', ios
+                stop
+
+            end if
+        close(inpnn_unit)
+
 
         call open_for_read(inpnn_unit, filename_inpnn); ios = 0
 
