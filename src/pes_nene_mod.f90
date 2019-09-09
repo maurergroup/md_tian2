@@ -219,7 +219,7 @@ module pes_nene_mod
 !       3) readkeywords.f90
 !       4) readinput.f90
 
-!       dummy readout
+!       model readout
 !
 !       call open_for_read(inpnn_unit, filename_inpnn); ios = 0
 !
@@ -274,7 +274,14 @@ module pes_nene_mod
                             print *, err, err_inpnn, "nn_type_short key needs a single argument"; stop
                         end if
 
-                    case ('')
+                    case ('use_short_nn')
+                        if (rinpparam% /= default_int) stop err // err_inpnn // 'Multiple use of the  key'
+                        if (nwords == 2) then
+                            read(words(2),'(i1000)', iostat=ios) rinpparam%
+                            if (ios /= 0) stop err // err_inpnn // " value must be integer"
+                        else
+                            print *, err, err_inpnn, " key needs a single argument"; stop
+                        end if
 
                     case ('') 
                         if (rinpparam% /= default_int) stop err // err_inpnn // 'Multiple use of the  key'
