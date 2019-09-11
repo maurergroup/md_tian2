@@ -7,18 +7,18 @@
 ! MPI for Biophysical Chemistry Goettingen, Germany
 ! Georg-August-Universitaet Goettingen, Germany
 !
-! This program is free software: you can redistribute it and/or modify it 
-! under the terms of the GNU General Public License as published by the 
-! Free Software Foundation, either version 3 of the License, or 
+! This program is free software: you can redistribute it and/or modify it
+! under the terms of the GNU General Public License as published by the
+! Free Software Foundation, either version 3 of the License, or
 ! (at your option) any later version.
 !
-! This program is distributed in the hope that it will be useful, but 
-! WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY 
-! or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License 
+! This program is distributed in the hope that it will be useful, but
+! WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
 ! for more details.
 !
-! You should have received a copy of the GNU General Public License along 
-! with this program. If not, see http://www.gnu.org/licenses. 
+! You should have received a copy of the GNU General Public License along
+! with this program. If not, see http://www.gnu.org/licenses.
 !############################################################################
 
 module pes_nene_mod
@@ -27,6 +27,8 @@ module pes_nene_mod
     use useful_things, only : split_string, lower_case, file_exists
     use universe_mod
     use open_file, only : open_for_read
+!2do:
+!   use RuNNer subroutines
 
     implicit none
 
@@ -47,11 +49,11 @@ module pes_nene_mod
         integer :: global_hidden_layers_short
         character(len=3), dimension(atoms%ntypes) :: element
 
-        
+
 
         ! shared
         integer :: ndim ! in
-        
+
         ! weights.XXX.data
         ! readweights.f90
         integer :: maxnum_weights_local ! in
@@ -219,7 +221,7 @@ module pes_nene_mod
 !       3) readkeywords.f90
 !       4) readinput.f90
 
-!       model readout
+!       dummy readout
 !
 !       call open_for_read(inpnn_unit, filename_inpnn); ios = 0
 !
@@ -246,6 +248,11 @@ module pes_nene_mod
 !
 !               end select
 !           else
+!               write(*,*) err // err_inpnn // 'iostat = ', ios
+!               stop
+!           end if
+!
+!       close(inpnn_unit)
 
 
         do while (ios == 0)
@@ -275,27 +282,20 @@ module pes_nene_mod
                         end if
 
                     case ('use_short_nn')
-                        if (rinpparam% /= default_int) stop err // err_inpnn // 'Multiple use of the  key'
-                        if (nwords == 2) then
-                            read(words(2),'(i1000)', iostat=ios) rinpparam%
-                            if (ios /= 0) stop err // err_inpnn // " value must be integer"
+                        if (rinpparam%lshort /= default_bool) stop err // err_inpnn // 'Multiple use of the use_short_nn key'
+                        if (nwords == 1) then
+                            rinpparam%lshort = .true.
                         else
-                            print *, err, err_inpnn, " key needs a single argument"; stop
+                            print *, err, err_inpnn, "use_short_nn key needs no argument(s)"; stop
                         end if
 
-                    case ('') 
-                        if (rinpparam% /= default_int) stop err // err_inpnn // 'Multiple use of the  key'
-                        if (nwords == 2) then
-                            read(words(2),'(i1000)', iostat=ios) rinpparam%
-                            if (ios /= 0) stop err // err_inpnn // " value must be integer"
+                    case ('use_electrostatics')
+                        if (rinpparam%lelec /= default_bool) stop err // err_inpnn // 'Multiple use of the use_electrostatics key'
+                        if (nwords == 1) then
+                            rinpparam%lelec = .true.
                         else
-                            print *, err, err_inpnn, " key needs a single argument"; stop
+                            print *, err, err_inpnn, "use_electrostatics key needs no argument(s)"; stop
                         end if
-
-
-                    case ('')
-
-                    case ('')
 
                     case default
                         if (trim(words(1)) /= '' .and. words(1)(1:1) /= '#') & ! check for empty and comment lines
@@ -303,12 +303,44 @@ module pes_nene_mod
 
                 end select
 
-            else 
+            else
                 write(*,*) err // err_inpnn // 'iostat = ', ios
                 stop
             end if
 
         close(inpnn_unit)
+
+
+!       call open_for_read(inpnn_unit, filename_inpnn); ios = 0
+!
+!       do while (ios == 0)
+!           read(inpnn_unit, '(A)', iostat=ios) buffer
+!           if (ios == 0) then
+!               line = line + 1
+!               call split_string(buffer, words, nwords)
+!
+!               select case (words(1))
+!
+!                   case ('')
+!                       if (rinpparam% /= default_int) stop err // err_inpnn // 'Multiple use of the  key'
+!                       if (nwords == 2) then
+!                           read(words(2),'(i1000)', iostat=ios) rinpparam%
+!                           if (ios /= 0) stop err // err_inpnn // " value must be integer"
+!                       else
+!                           print *, err, err_inpnn, " key needs a single argument"; stop
+!                       end if
+!
+!                   case default
+!                       if (trim(words(1)) /= '' .and. words(1)(1:1) /= '#') & ! check for empty and comment lines
+!                           print *, 'Skipping invalid label', trim(words(1)),'in line', line
+!
+!               end select
+!           else
+!               write(*,*) err // err_inpnn // 'iostat = ', ios
+!               stop
+!           end if
+!
+!       close(inpnn_unit)
 
 
         call open_for_read(inpnn_unit, filename_inpnn); ios = 0
@@ -318,7 +350,7 @@ module pes_nene_mod
             if (ios == 0) then
                 line = line + 1
                 call split_string(buffer, words, nwords)
-                
+
                 select case (words(1))
 
                     case ('global_hidden_layers_short')
@@ -332,14 +364,14 @@ module pes_nene_mod
                         end if
                     case ('')
 
-                        
+
 
                     case default
                         if (trim(words(1)) /= '' .and. words(1)(1:1) /= '#') & !check for empty and comment lines
                             print *, 'Skipping invalid label ',trim(words(1)),'in line', line
 
                 end select
-                
+
             else
 
                 write(*,*) err // err_inpnn // 'iostat = ', ios
@@ -365,7 +397,7 @@ module pes_nene_mod
 
                 end select
 
-            else 
+            else
 
                 write(*,*) err // err_inpnn // 'iostat = ', ios
                 stop
@@ -390,7 +422,7 @@ module pes_nene_mod
 
                 end select
 
-            else 
+            else
 
                 write(*,*) err // err_inpnn // 'iostat = ', ios
                 stop
@@ -415,7 +447,7 @@ module pes_nene_mod
 
                 end select
 
-            else 
+            else
 
                 write(*,*) err // err_inpnn // 'iostat = ', ios
                 stop
@@ -440,7 +472,7 @@ module pes_nene_mod
 
                 end select
 
-            else 
+            else
 
                 write(*,*) err // err_inpnn // 'iostat = ', ios
                 stop
@@ -449,7 +481,7 @@ module pes_nene_mod
         close(inpnn_unit)
 
 
-        call open_for_read(inpnn_unit, filename_inpnn); ios = 0        
+        call open_for_read(inpnn_unit, filename_inpnn); ios = 0
 
         do while (ios == 0) ! analog to read_input_file subroutine in run_config.f90
             read(inpnn_unit, '(A)', iostat=ios) buffer
@@ -1156,9 +1188,9 @@ module pes_nene_mod
 
 
 
-                    
 
-                    
+
+
 
                     case ('elements') ! check with md_tian.inp
                         if (rinpparam%element /= default_string) stop err // err_inpnn // 'Multiple use of the elements key'
@@ -1170,7 +1202,7 @@ module pes_nene_mod
                             print *, err, "elements key does not match with number of element types"; stop
                         end if
 
-                    
+
 
 
 
@@ -1182,7 +1214,7 @@ module pes_nene_mod
                             print *, err, err_inpnn, "global_hidden_layers_short key needs a single argument"; stop
                         end if
 
-                    
+
 
                     case ('global_output_nodes_short')
                         if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
@@ -1199,35 +1231,35 @@ module pes_nene_mod
                         print *, "Error: global_output_nodes_pair keyword is obsolete, please remove it"
                         stop
 
-                    
+
 
                     case ('random_order_training')
                         if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
                         print *, "Error: random_order_training keyword is obsolete, please use mix_all_points instead"
                         stop
 
-                    
 
-                    
 
-                    
+
+
+
 
                     case ('nn_type')
                         if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
                         print *, "Error: nn_type keyword is obsolete, use nn_type_short instead"
                         stop
 
-                    
 
-                    
-                    
+
+
+
 
                     case ('use_fixed_charges')
                         if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
                         print *, "use_fixed_charges keyword is obsolete, use electrostatic_type 3 instead"
                         stop
 
-                    
+
 
                     case ('use_electrostatic_nn')
                         if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
@@ -1403,7 +1435,7 @@ module pes_nene_mod
 !!              write(ounit,*)i1,dmin_element(i1),dmin_temp(i1)
 !             dmin_element(i1)=min(dmin_element(i1),dmin_temp(i1))
 !           enddo
-!!          
+!!
 !         endif
 !         goto 10
 !30       continue
@@ -1424,7 +1456,7 @@ module pes_nene_mod
         ! read in all data from scaling.data
         call open_for_read(scaling_unit, filename_scaling); ios = 0
 
-        do while (ios == 0) 
+        do while (ios == 0)
             read(scaling_unit, '(A)', iostat=ios) buffer
             if (ios == 0) then
 
@@ -1444,8 +1476,8 @@ module pes_nene_mod
 !                           eshortmin,eshortmax,rdummy,rdummy)
 
 
-             
-               
+
+
 
             else
 
@@ -1470,7 +1502,7 @@ module pes_nene_mod
                 read(weight_unit, '(A)', iostat=ios) buffer
                 if (ios == 0) then
 
-                        ! readweights.f90 
+                        ! readweights.f90
                         ! do i1=1,ndim
                         !     do i2=1,num_weights_local(i1)
                         !         read(wunit,*)weights_local(i2,i1)
