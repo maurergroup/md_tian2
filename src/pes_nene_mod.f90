@@ -39,15 +39,32 @@ module pes_nene_mod
     type runner_input_parameters
 
         ! input.nn
-        ! getdimensions.f90, readinput.f90, readkeywords.f90, checkinputnn.f90
+        ! 1) getdimensions.f90, 2) readinput.f90, 3) readkeywords.f90, 4) checkinputnn.f90
+        ! getdimensions.f90
         integer :: nn_type_short
         integer :: mode
         logical :: lshort
+        logical :: lelec
+        integer :: nn_type_elec
+        logical :: lfounddebug
+        logical :: ldebug
+        logical :: lfound_num_layersshort
         integer :: maxnum_layers_short_atomic
+        logical :: lfound_num_layersewald
+        integer :: maxnum_layers_elec
+        logical :: lfound_num_layerspair
+        integer :: maxnum_layers_short_pair
+        logical :: lfound_luseatomenergies
+        logical :: luseatomenergies
+        logical :: lfound_luseatomcharges
+        logical :: luseatomcharges
+        logical :: lfound_nelem
         integer :: nelem
         integer :: npairs
-        integer :: global_hidden_layers_short
-        character(len=3), dimension(atoms%ntypes) :: element
+
+        character(len=3), dimension(atoms%ntypes)                  :: element
+        integer, dimension(atoms%ntypes)                           :: nucelem
+        real(dp), dimension(atoms%ntypes * (atoms%ntypes + 1) / 2) :: dmin_element
 
 
 
@@ -87,11 +104,31 @@ module pes_nene_mod
         new_runner_input_parameters%nn_type_short               = default_int ! 1 default, no pair available
         new_runner_input_parameters%mode                        = default_int ! 3 default, only RuNNer mode 3 implemented
         new_runner_input_parameters%lshort                      = default_bool ! .true. default, only short implemented
+        new_runner_input_parameters%lelec                       = default_bool
+        new_runner_input_parameters%nn_type_elec                = default_int
+        new_runner_input_parameters%lfounddebug                 = default_bool
+        new_runner_input_parameters%ldebug                      = default_bool
+        new_runner_input_parameters%lfound_num_layersshort      = default_bool
         new_runner_input_parameters%maxnum_layers_short_atomic  = default_int
+        new_runner_input_parameters%lfound_num_layersewald      = default_bool
+        new_runner_input_parameters%maxnum_layers_elec          = default_int
+        new_runner_input_parameters%lfound_num_layerspair       = default_bool
+        new_runner_input_parameters%maxnum_layers_short_pair    = default_int
+        new_runner_input_parameters%lfound_luseatomenergies     = default_bool
+        new_runner_input_parameters%luseatomenergies            = default_bool
+        new_runner_input_parameters%lfound_luseatomcharges      = default_bool
+        new_runner_input_parameters%luseatomcharges             = default_bool
+        new_runner_input_parameters%lfound_nelem                = default_bool
         new_runner_input_parameters%nelem                       = default_int
         new_runner_input_parameters%npairs                      = default_int
-        new_runner_input_parameters%global_hidden_layers_short  = default_int
         new_runner_input_parameters%element                     = default_string
+        new_runner_input_parameters%nucelem                     = default_int
+        new_runner_input_parameters%dmin_element                = default_real
+
+        new_runner_input_parameters%  = default_
+
+
+
         new_runner_input_parameters%weights_local               = default_real
 
 
@@ -117,7 +154,8 @@ module pes_nene_mod
 
         !logical, dimension(2) :: lshort
 
-        integer  :: idx1, idx2, ntypes, weight_counter, nelem_counter_1, nelem_counter_2, element_counter
+        integer  :: idx1, idx2, ntypes, weight_counter
+        integer  :: npairs_counter_1, npairs_counter_2, element_counter
         character(len=*), parameter :: err = "Error in read_nene: "
         character(len=*), parameter :: err_inpnn = "Error when reading input.nn: "
         character(len=*), parameter :: err_scaling = "Error when reading scaling.data: "
@@ -273,12 +311,12 @@ module pes_nene_mod
                         end if
 
                     case ('runner_mode')
-                        if (rinpparam%runner_mode /= default_int) stop err // err_inpnn // 'Multiple use of the runner_mode key'
+                        if (rinpparam%mode /= default_int) stop err // err_inpnn // 'Multiple use of the runner_mode key'
                         if (nwords == 2) then
-                            read(words(2),'(i1000)', iostat=ios) rinpparam%runner_mode
+                            read(words(2),'(i1000)', iostat=ios) rinpparam%mode
                             if (ios /= 0) stop err // err_inpnn // "runner_mode value must be integer"
                         else
-                            print *, err, err_inpnn, "nn_type_short key needs a single argument"; stop
+                            print *, err, err_inpnn, "runner_mode key needs a single argument"; stop
                         end if
 
                     case ('use_short_nn')
@@ -297,6 +335,15 @@ module pes_nene_mod
                             print *, err, err_inpnn, "use_electrostatics key needs no argument(s)"; stop
                         end if
 
+                    case ('electrostatic_type', 'nn_type_elec')
+                        if (rinpparam%nn_type_elec /= default_int) stop err // err_inpnn // 'Multiple use of the electrostatic_type/nn_type_elec key'
+                        if (nwords == 2) then
+                            read(words(2),'(i1000)', iostat=ios) rinpparam%nn_type_elec
+                            if (ios /= 0) stop err // err_inpnn // "electrostatic_type/nn_type_elec value must be integer"
+                        else
+                            print *, err, err_inpnn, "electrostatic_type/nn_type_elec key needs a single argument"; stop
+                        end if
+
                     case default
                         if (trim(words(1)) /= '' .and. words(1)(1:1) /= '#') & ! check for empty and comment lines
                             print *, 'Skipping invalid label', trim(words(1)),'in line', line
@@ -311,36 +358,181 @@ module pes_nene_mod
         close(inpnn_unit)
 
 
-!       call open_for_read(inpnn_unit, filename_inpnn); ios = 0
-!
-!       do while (ios == 0)
-!           read(inpnn_unit, '(A)', iostat=ios) buffer
-!           if (ios == 0) then
-!               line = line + 1
-!               call split_string(buffer, words, nwords)
-!
-!               select case (words(1))
-!
-!                   case ('')
-!                       if (rinpparam% /= default_int) stop err // err_inpnn // 'Multiple use of the  key'
-!                       if (nwords == 2) then
-!                           read(words(2),'(i1000)', iostat=ios) rinpparam%
-!                           if (ios /= 0) stop err // err_inpnn // " value must be integer"
-!                       else
-!                           print *, err, err_inpnn, " key needs a single argument"; stop
-!                       end if
-!
-!                   case default
-!                       if (trim(words(1)) /= '' .and. words(1)(1:1) /= '#') & ! check for empty and comment lines
-!                           print *, 'Skipping invalid label', trim(words(1)),'in line', line
-!
-!               end select
-!           else
-!               write(*,*) err // err_inpnn // 'iostat = ', ios
-!               stop
-!           end if
-!
-!       close(inpnn_unit)
+        call open_for_read(inpnn_unit, filename_inpnn); ios = 0
+
+        do while (ios == 0)
+            read(inpnn_unit, '(A)', iostat=ios) buffer
+            if (ios == 0) then
+                line = line + 1
+                call split_string(buffer, words, nwords)
+
+                select case (words(1))
+
+                    case ('debug_mode') ! not needed
+                        if (rinpparam%lfounddebug /= default_bool) stop err // err_inpnn // 'Multiple use of the debug_mode key'
+                        if (nwords == 1) then
+                            rinpparam%lfounddebug = .true.
+                            rinpparam%ldebug = .true.
+                        else
+                            print *, err, err_inpnn, "debug_mode key needs no argument(s)"; stop
+                        end if
+
+                    case ('global_hidden_layers_short')
+                        if (rinpparam%lfound_num_layersshort /= default_bool) stop err // err_inpnn // 'Multiple use of the global_hidden_layers_short key'
+                        if (nwords == 2) then
+                            rinpparam%lfound_num_layersshort = .true.
+                            read(words(2),'(i1000)', iostat=ios) rinpparam%maxnum_layers_short_atomic
+                            if (ios /= 0) stop err // err_inpnn // "global_hidden_layers_short value must be integer"
+                            rinpparam%maxnum_layers_short_atomic = rinpparam%maxnum_layers_short_atomic + 1
+                        else
+                            print *, err, err_inpnn, "global_hidden_layers_short key needs a single argument"; stop
+                        end if
+
+                    case ('global_hidden_layers_electrostatic')
+                        if (rinpparam%lfound_num_layersewald /= default_bool) stop err // err_inpnn // 'Multiple use of the global_hidden_layers_electrostatic key'
+                        if (nwords == 2) then
+                            rinpparam%lfound_num_layersewald = .true.
+                            read(words(2),'(i1000)', iostat=ios) rinpparam%maxnum_layers_elec
+                            if (ios /= 0) stop err // err_inpnn // "global_hidden_layers_electrostatic value must be integer"
+                            rinpparam%maxnum_layers_elec = rinpparam%maxnum_layers_elec + 1
+                        else
+                            print *, err, err_inpnn, "global_hidden_layers_electrostatic key needs a single argument"; stop
+                        end if
+
+                    case ('global_hidden_layers_pair') ! not needed
+                        if (rinpparam%lfound_num_layerspair  /= default_bool) stop err // err_inpnn // 'Multiple use of the global_hidden_layers_pair key'
+                        if (nwords == 2) then
+                            rinpparam%lfound_num_layerspair = .true.
+                            read(words(2),'(i1000)', iostat=ios) rinpparam%maxnum_layers_short_pair
+                            if (ios /= 0) stop err // err_inpnn // "global_hidden_layers_pair value must be integer"
+                            rinpparam%maxnum_layers_short_pair = rinpparam%maxnum_layers_short_pair + 1
+                        else
+                            print *, err, err_inpnn, "global_hidden_layers_pair key needs a single argument"; stop
+                        end if
+
+                    case ('use_atom_energies')
+                        if (rinpparam%lfound_luseatomenergies /= default_bool) stop err // err_inpnn // 'Multiple use of the use_atom_energies key'
+                        if (nwords == 1) then
+                            rinpparam%lfound_luseatomenergies = .true.
+                            rinpparam%luseatomenergies = .true.
+                        else
+                            print *, err, err_inpnn, "use_atom_energies key needs no argument(s)"; stop
+                        end if
+
+                    case ('use_atom_charges')
+                        if (rinpparam%lfound_luseatomcharges /= default_int) stop err // err_inpnn // 'Multiple use of the use_atom_charges key'
+                        if (nwords == 1) then
+                            rinpparam%lfound_luseatomcharges = .true.
+                            rinpparam%luseatomcharges = .true.
+                        else
+                            print *, err, err_inpnn, "use_atom_charges key needs no argument(s)"; stop
+                        end if
+
+                    case ('number_of_elements')
+                        if (rinpparam%lfound_nelem /= default_bool) stop err // err_inpnn // 'Multiple use of the number_of_elements key'
+                        if (nwords == 2) then
+                            rinpparam%lfound_nelem = .true.
+                            read(words(2),'(i1000)', iostat=ios) rinpparam%nelem
+                            if (ios /= 0) stop err // err_inpnn // "number_of_elements value must be integer"
+                            if (rinpparam%nelem /= atoms%ntypes) stop err // err_inpnn // "number of elements in input.nn and structure file differ"
+                            rinpparam%npairs = 0
+                            do npairs_counter_1=1,rinpparam%nelem
+                                do npairs_counter_2=i,rinpparam%nelem
+                                    rinpparam%npairs = rinpparam%npairs + 1
+                                end do
+                            end do
+                        else
+                            print *, err, err_inpnn, "number_of_elements key needs a single argument"; stop
+                        end if
+
+                    case default
+                        if (trim(words(1)) /= '' .and. words(1)(1:1) /= '#') & ! check for empty and comment lines
+                            print *, 'Skipping invalid label', trim(words(1)),'in line', line
+
+                end select
+            else
+                write(*,*) err // err_inpnn // 'iostat = ', ios
+                stop
+            end if
+
+        close(inpnn_unit)
+
+        if (rinpparam%lshort .and. (rinpparam%nn_type_short == 1) .and. (rinpparam%maxnum_layers_short_atomic == default_int)) stop err // err_inpnn // 'global_hidden_layers_short key not set'
+        if (rinpparam%lshort .and. (rinpparam%nn_type_short == 2) .and. (rinpparam%maxnum_layers_short_pair == default_int)) stop err // err_inpnn // 'global_hidden_layers_pairs key not set'
+        if (rinpparam%lelec .and. (rinpparam%nn_type_elec == 1) .and. (rinpparam%maxnum_layers_elec == default_int)) stop err // err_inpnn // 'global_hidden_layers_electrostatic key not set'
+
+        !allocate(rinpparam%nucelem(rinpparam%nelem))
+        !allocate(rinpparam%element(rinpparam%nelem))
+        !allocate(rinpparam%dmin_element(rinpparam%nelem*(rinpparam%nelem+1)/2))
+
+
+        call open_for_read(inpnn_unit, filename_inpnn); ios = 0 ! maybe move to readout before since nelem is given by atoms%ntypes
+
+        do while (ios == 0)
+            read(inpnn_unit, '(A)', iostat=ios) buffer
+            if (ios == 0) then
+                line = line + 1
+                call split_string(buffer, words, nwords)
+
+                select case (words(1))
+
+                    case ('elements')
+                        if (rinpparam%element /= default_string) stop err // err_inpnn // 'Multiple use of the elements key'
+                        if (nwords == atoms%ntypes+1) then
+                            do element_counter = 1,atoms%ntypes
+                                read(words(2),'(A)', iostat=ios) rinpparam%element(element_counter)
+                                if (ios /= 0) stop err // err_inpnn // "element symbol ", element_counter, " must be string not a number"
+                            end do
+                        else
+                            print *, err, err_inpnn, "elements key does not match with number of element types"; stop
+                        end if
+
+                    case default
+                        if (trim(words(1)) /= '' .and. words(1)(1:1) /= '#') & ! check for empty and comment lines
+                            print *, 'Skipping invalid label', trim(words(1)),'in line', line
+
+                end select
+            else
+                write(*,*) err // err_inpnn // 'iostat = ', ios
+                stop
+            end if
+
+        close(inpnn_unit)
+
+        do nuc_counter=1,atoms%ntypes
+            call nuccharge(rinpparam%element(i),nucelem(i))
+
+
+        call open_for_read(inpnn_unit, filename_inpnn); ios = 0
+
+        do while (ios == 0)
+            read(inpnn_unit, '(A)', iostat=ios) buffer
+            if (ios == 0) then
+                line = line + 1
+                call split_string(buffer, words, nwords)
+
+                select case (words(1))
+
+                    case ('')
+                        if (rinpparam% /= default_int) stop err // err_inpnn // 'Multiple use of the  key'
+                        if (nwords == 2) then
+                            read(words(2),'(i1000)', iostat=ios) rinpparam%
+                            if (ios /= 0) stop err // err_inpnn // " value must be integer"
+                        else
+                            print *, err, err_inpnn, " key needs a single argument"; stop
+                        end if
+
+                    case default
+                        if (trim(words(1)) /= '' .and. words(1)(1:1) /= '#') & ! check for empty and comment lines
+                            print *, 'Skipping invalid label', trim(words(1)),'in line', line
+
+                end select
+            else
+                write(*,*) err // err_inpnn // 'iostat = ', ios
+                stop
+            end if
+
+        close(inpnn_unit)
 
 
         call open_for_read(inpnn_unit, filename_inpnn); ios = 0
