@@ -73,6 +73,9 @@ module pes_nene_mod
         integer, dimension(:),   allocatable :: num_funcvaluese_local
         integer, dimension(:,:), allocatable :: num_funcvaluesp_local
 
+        character(len=3) :: elementtemp
+        integer :: ztemp
+
 
 
 
@@ -133,9 +136,16 @@ module pes_nene_mod
         new_runner_input_parameters%element                     = default_string
         new_runner_input_parameters%nucelem                     = default_int
         new_runner_input_parameters%dmin_element                = default_real
+        new_runner_input_parameters%nodes_short_local           = default_int
+        new_runner_input_parameters%nodes_ewald_local           = default_int
+        new_runner_input_parameters%nodes_pair_local            = default_int
+        new_runner_input_parameters%num_funcvalues_local        = default_int
+        new_runner_input_parameters%num_funcvaluese_local       = default_int
+        new_runner_input_parameters%num_funcvaluesp_local       = default_int
+        new_runner_input_parameters%elementtemp                 = default_string
+        new_runner_input_parameters%ztemp                       = default_int
 
-        new_runner_input_parameters%  = default_
-
+        new_runner_input_parameters%           = default_
 
 
         new_runner_input_parameters%weights_local               = default_real
@@ -164,7 +174,7 @@ module pes_nene_mod
         !logical, dimension(2) :: lshort
 
         integer  :: idx1, idx2, ntypes, weight_counter
-        integer  :: npairs_counter_1, npairs_counter_2, element_counter, nodes_counter
+        integer  :: npairs_counter_1, npairs_counter_2, element_counter, nodes_counter, general_counter
         character(len=*), parameter :: err = "Error in read_nene: "
         character(len=*), parameter :: err_inpnn = "Error when reading input.nn: "
         character(len=*), parameter :: err_scaling = "Error when reading scaling.data: "
@@ -595,30 +605,62 @@ module pes_nene_mod
                         !if (nwords == 2) then
                         read(words(2),'(A)', iostat=ios) rinpparam%elementtemp
                         read(words(3),'(i1000)', iostat=ios) rinpparam%function_type_local
-                        if (ios /= 0) stop err // err_inpnn // "element_symfunction_short second value must be integer"
+                        if (ios /= 0) stop err // err_inpnn // "element_symfunction_short second argument value must be integer"
+                        call nuccharge(rinpparam%elementtemp, rinpparam%ztemp)
+                        if (rinpparam%num_funcvalues_local(rinpparam%ztemp) /= default_int) then
+                            print *, err // err_inpnn // 'Error in element_symfunction_short: Element with atomic number', rinpparam%num_funcvalues_local(rinpparam%ztemp), 'already set, check for multiple use of key'
+                            stop
+                        end if
+                        rinpparam%num_funcvalues_local(rinpparam%ztemp) = 0
                         call lower_case(words(3))
                         select case (words(3))
                             case (1,2,4)
+                                rinpparam%num_funcvalues_local(rinpparam%ztemp) = rinpparam%num_funcvalues_local(rinpparam%ztemp) + rinpparam%nelem
 
                             case (3,8,9)
+                                rinpparam%num_funcvalues_local(rinpparam%ztemp) = rinpparam%num_funcvalues_local(rinpparam%ztemp) + rinpparam%nelem
+                                if (rinpparam%nelem .gt. 1) then
+                                    do general_counter = 1,rinpparam$nelem-1
+                                        rinpparam%num_funcvalues_local(rinpparam%ztemp) = rinpparam%num_funcvalues_local(rinpparam%ztemp) + general_counter
+                                    end do
+                                end if
+
+                            case (5,6)
+                                rinpparam%num_funcvalues_local(rinpparam%ztemp) = rinpparam%num_funcvalues_local(rinpparam%ztemp) + 1
 
                             case default
-                                print *, err, err_inpnn, "Error in element_symfunction_short key,", "symfunction type ", words(3), " not implemented"
+                                print *, err, err_inpnn, "Error in element_symfunction_short key, symfunction type ", words(3), " not implemented"
                                 stop
-                        else
-                            print *, err, err_inpnn, "element_symfunction_short key needs a single argument"; stop
-                        end if
+                        !else
+                            !print *, err, err_inpnn, "element_symfunction_short key needs a single argument"; stop
+                        !end if
 
-                    case ('')
-                        if (rinpparam% /= default_int) stop err // err_inpnn // 'Multiple use of the  key'
-                        if (nwords == 2) then
-                            read(words(2),'(i1000)', iostat=ios) rinpparam%
-                            if (ios /= 0) stop err // err_inpnn // " value must be integer"
-                        else
-                            print *, err, err_inpnn, " key needs a single argument"; stop
-                        end if
+                    case ('element_symfunction_electrostatic')
+                        read(words(2),'(A)', iostat=ios) rinpparam%elementtemp
+                        read(words(3),'(i1000)', iostat=ios) rinpparam%function_type_local
+                        if (ios /= 0) stop err // err_inpnn // "element_symfunction_electrostatic second argument value must be integer"
+                        call nuccharge(rinpparam%elementtemp, rinpparam%ztemp)
+                        call lower_case(words(3))
+                        select case (words(3))
+                            case (1,2,4)
+                                rinpparam%num_funcvaluese_local(rinpparam%ztemp) = rinpparam%num_funcvaluese_local(rinpparam%ztemp) + rinpparam%nelem
 
-                    case ('')
+                            case (3,8,9)
+                                rinpparam%num_funcvaluese_local(rinpparam%ztemp) = rinpparam%num_funcvaluese_local(rinpparam%ztemp) + rinpparam%nelem
+                                if (rinpparam%nelem .gt. 1) then
+                                    do general_counter = 1,rinpparam%nelem-1
+                                        rinpparam%num_funcvaluese_local(rinpparam%ztemp) = rinpparam%num_funcvaluese_local(rinpparam%ztemp) + general_counter
+                                    end do
+                                end if
+
+                            case (5,6)
+                                rinpparam%num_funcvalues_local(rinpparam%ztemp) = rinpparam%num_funcvalues_local(rinpparam%ztemp) + 1
+
+                            case default
+                                print *, err, err_inpnn, "Error in element_symfunction_electrostatic key, symfunction type ", words(3), " not implemented"
+                                stop
+
+                    case ('global_symfunction_short')
                         if (rinpparam% /= default_int) stop err // err_inpnn // 'Multiple use of the  key'
                         if (nwords == 2) then
                             read(words(2),'(i1000)', iostat=ios) rinpparam%
