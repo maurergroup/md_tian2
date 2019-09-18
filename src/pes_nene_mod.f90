@@ -531,17 +531,17 @@ module pes_nene_mod
         if (rinpparam%maxnum_layers_elec == default_int) then
             rinpparam%maxnum_layers_elec = 0
         end if
-        if (rinpparam%maxnum_layers_short_pair == default_int) then
+        if (rinpparam%maxnum_layers_short_pair == default_int) then ! not needed
             rinpparam%maxnum_layers_short_pair = 0
         end if
         if (rinpparam%lfound_nelem == default_bool) stop err // err_inpnn // "number of elements not found"
 
         allocate(rinpparam%num_funcvalues_local(102))
         allocate(rinpparam%num_funcvaluese_local(102))
-        allocate(rinpparam%num_funcvaluesp_local(102,102))
+        allocate(rinpparam%num_funcvaluesp_local(102,102)) ! not needed
         rinpparam%num_funcvalues_local(:) = 0
         rinpparam%num_funcvaluese_local(:) = 0
-        rinpparam%num_funcvaluesp_local(:) = 0
+        rinpparam%num_funcvaluesp_local(:) = 0 ! not needed
 
         if (rinpparam%maxnum_layers_short_atomic .gt. 0) then
             allocate(rinpparam%nodes_short_local(0:rinpparam%maxnum_layers_short_atomic))
@@ -551,7 +551,7 @@ module pes_nene_mod
             allocate(rinpparam%nodes_ewald_local(0:rinpparam%maxnum_layers_elec))
             rinpparam%nodes_ewald_local(:) = default_int ! = 0 in getdimensions.f90
         end if
-        if (rinpparam%maxnum_layers_short_pair .gt. 0) then
+        if (rinpparam%maxnum_layers_short_pair .gt. 0) then ! not needed
             allocate(rinpparam%nodes_pair_local(0:rinpparam%maxnum_layers_short_pair))
             rinpparam%nodes_pair_local(:) = default_int ! = 0 in getdimensions.f90
         end if
@@ -589,7 +589,7 @@ module pes_nene_mod
                             print *, err, err_inpnn, "global_nodes_electrostatic argument number does not match with global_hidden_layers_electrostatic value"; stop
                         end if
 
-                    case ('global_nodes_pair')
+                    case ('global_nodes_pair') ! not needed
                         if (rinpparam%nodes_pair_local /= default_int) stop err // err_inpnn // 'Multiple use of the global_nodes_pair key'
                         if (nwords == rinpparam%maxnum_layers_short_pair+1) then
                             do nodes_counter = 1,rinpparam%maxnum_layers_short_pair-1
