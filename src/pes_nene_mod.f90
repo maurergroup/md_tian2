@@ -174,7 +174,7 @@ module pes_nene_mod
         !logical, dimension(2) :: lshort
 
         integer  :: idx1, idx2, ntypes, weight_counter
-        integer  :: npairs_counter_1, npairs_counter_2, element_counter, nodes_counter, general_counter
+        integer  :: npairs_counter_1, npairs_counter_2, element_counter, nodes_counter, general_counter_1, general_counter_2
         character(len=*), parameter :: err = "Error in read_nene: "
         character(len=*), parameter :: err_inpnn = "Error when reading input.nn: "
         character(len=*), parameter :: err_scaling = "Error when reading scaling.data: "
@@ -620,8 +620,8 @@ module pes_nene_mod
                             case (3,8,9)
                                 rinpparam%num_funcvalues_local(rinpparam%ztemp) = rinpparam%num_funcvalues_local(rinpparam%ztemp) + rinpparam%nelem
                                 if (rinpparam%nelem .gt. 1) then
-                                    do general_counter = 1,rinpparam$nelem-1
-                                        rinpparam%num_funcvalues_local(rinpparam%ztemp) = rinpparam%num_funcvalues_local(rinpparam%ztemp) + general_counter
+                                    do general_counter_1 = 1,rinpparam$nelem-1
+                                        rinpparam%num_funcvalues_local(rinpparam%ztemp) = rinpparam%num_funcvalues_local(rinpparam%ztemp) + general_counter_1
                                     end do
                                 end if
 
@@ -631,6 +631,8 @@ module pes_nene_mod
                             case default
                                 print *, err, err_inpnn, "Error in element_symfunction_short key, symfunction type ", words(3), " not implemented"
                                 stop
+
+                        end select
                         !else
                             !print *, err, err_inpnn, "element_symfunction_short key needs a single argument"; stop
                         !end if
@@ -648,8 +650,8 @@ module pes_nene_mod
                             case (3,8,9)
                                 rinpparam%num_funcvaluese_local(rinpparam%ztemp) = rinpparam%num_funcvaluese_local(rinpparam%ztemp) + rinpparam%nelem
                                 if (rinpparam%nelem .gt. 1) then
-                                    do general_counter = 1,rinpparam%nelem-1
-                                        rinpparam%num_funcvaluese_local(rinpparam%ztemp) = rinpparam%num_funcvaluese_local(rinpparam%ztemp) + general_counter
+                                    do general_counter_1 = 1,rinpparam%nelem-1
+                                        rinpparam%num_funcvaluese_local(rinpparam%ztemp) = rinpparam%num_funcvaluese_local(rinpparam%ztemp) + general_counter_1
                                     end do
                                 end if
 
@@ -660,7 +662,41 @@ module pes_nene_mod
                                 print *, err, err_inpnn, "Error in element_symfunction_electrostatic key, symfunction type ", words(3), " not implemented"
                                 stop
 
+                        end select
+
                     case ('global_symfunction_short')
+                        read(words(2),'(i1000)', iostat=ios) rinpparam%function_type_local !!check if will read only the function type and not the symbol!!
+                        if (ios /= 0) stop err // err_inpnn // "global_symfunction_short (second?) argument value must be integer"
+                        !call nuccharge(rinpparam%elementtemp, rinpparam%ztemp)
+                        call lower_case(words(2))
+                        select case (words(2))
+                            case (1,2,4)
+                                do general_counter_1 = 1,rinpparam%nelem
+                                    rinpparam%num_funcvalues_local(rinpparam%nucelem(general_counter_1)) = rinpparam%num_funcvalues_local(rinpparam%nucelem(general_counter_1)) + rinpparam%nelem
+                                end do
+
+                            case (3,8,9)
+                                do general_counter_1 = 1,rinpparam%nelem
+                                    rinpparam%num_funcvalues_local(rinpparam%nucelem(general_counter_1)) = rinpparam%num_funcvalues_local(rinpparam%nucelem(general_counter_1)) + rinpparam%nelem
+                                end do
+                                do general_counter_1 = 1,rinpparam%nelem
+                                    if (rinpparam%nelem .gt. 1) then
+                                        do general_counter_2 = 1,rinpparam%nelem-1
+                                            rinpparam%num_funcvaluese_local(rinpparam%ztemp) = rinpparam%num_funcvaluese_local(rinpparam%ztemp) + general_counter_1
+                                        end do
+                                    end if
+                                end do
+
+                            case (5,6)
+                                rinpparam%num_funcvalues_local(rinpparam%ztemp) = rinpparam%num_funcvalues_local(rinpparam%ztemp) + 1
+
+                            case default
+                                print *, err, err_inpnn, "Error in element_symfunction_electrostatic key, symfunction type ", words(2), " not implemented"
+                                stop
+
+                        end select
+
+                    case ('')
                         if (rinpparam% /= default_int) stop err // err_inpnn // 'Multiple use of the  key'
                         if (nwords == 2) then
                             read(words(2),'(i1000)', iostat=ios) rinpparam%
