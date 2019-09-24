@@ -75,6 +75,9 @@ module pes_nene_mod
 
         character(len=3) :: elementtemp
         integer :: ztemp
+        integer :: maxnum_funcvalues_short_atomic
+        integer :: maxnum_funcvalues_elec
+        integer :: maxnum_funcvalues_short_pair ! not needed?
 
 
 
@@ -113,37 +116,40 @@ module pes_nene_mod
 
         type(runner_input_parameters) new_runner_input_parameters
 
-        new_runner_input_parameters%nn_type_short               = default_int ! 1 default, no pair available
-        new_runner_input_parameters%mode                        = default_int ! 3 default, only RuNNer mode 3 implemented
-        new_runner_input_parameters%lshort                      = default_bool ! .true. default, only short implemented
-        new_runner_input_parameters%lelec                       = default_bool
-        new_runner_input_parameters%nn_type_elec                = default_int
-        new_runner_input_parameters%lfounddebug                 = default_bool
-        new_runner_input_parameters%ldebug                      = default_bool
-        new_runner_input_parameters%lfound_num_layersshort      = default_bool
-        new_runner_input_parameters%maxnum_layers_short_atomic  = default_int
-        new_runner_input_parameters%lfound_num_layersewald      = default_bool
-        new_runner_input_parameters%maxnum_layers_elec          = default_int
-        new_runner_input_parameters%lfound_num_layerspair       = default_bool
-        new_runner_input_parameters%maxnum_layers_short_pair    = default_int
-        new_runner_input_parameters%lfound_luseatomenergies     = default_bool
-        new_runner_input_parameters%luseatomenergies            = default_bool
-        new_runner_input_parameters%lfound_luseatomcharges      = default_bool
-        new_runner_input_parameters%luseatomcharges             = default_bool
-        new_runner_input_parameters%lfound_nelem                = default_bool
-        new_runner_input_parameters%nelem                       = default_int
-        new_runner_input_parameters%npairs                      = default_int
-        new_runner_input_parameters%element                     = default_string
-        new_runner_input_parameters%nucelem                     = default_int
-        new_runner_input_parameters%dmin_element                = default_real
-        new_runner_input_parameters%nodes_short_local           = default_int
-        new_runner_input_parameters%nodes_ewald_local           = default_int
-        new_runner_input_parameters%nodes_pair_local            = default_int
-        new_runner_input_parameters%num_funcvalues_local        = default_int
-        new_runner_input_parameters%num_funcvaluese_local       = default_int
-        new_runner_input_parameters%num_funcvaluesp_local       = default_int
-        new_runner_input_parameters%elementtemp                 = default_string
-        new_runner_input_parameters%ztemp                       = default_int
+        new_runner_input_parameters%nn_type_short                  = default_int ! 1 default, no pair available
+        new_runner_input_parameters%mode                           = default_int ! 3 default, only RuNNer mode 3 implemented
+        new_runner_input_parameters%lshort                         = default_bool ! .true. default, only short implemented
+        new_runner_input_parameters%lelec                          = default_bool
+        new_runner_input_parameters%nn_type_elec                   = default_int
+        new_runner_input_parameters%lfounddebug                    = default_bool
+        new_runner_input_parameters%ldebug                         = default_bool
+        new_runner_input_parameters%lfound_num_layersshort         = default_bool
+        new_runner_input_parameters%maxnum_layers_short_atomic     = default_int
+        new_runner_input_parameters%lfound_num_layersewald         = default_bool
+        new_runner_input_parameters%maxnum_layers_elec             = default_int
+        new_runner_input_parameters%lfound_num_layerspair          = default_bool
+        new_runner_input_parameters%maxnum_layers_short_pair       = default_int
+        new_runner_input_parameters%lfound_luseatomenergies        = default_bool
+        new_runner_input_parameters%luseatomenergies               = default_bool
+        new_runner_input_parameters%lfound_luseatomcharges         = default_bool
+        new_runner_input_parameters%luseatomcharges                = default_bool
+        new_runner_input_parameters%lfound_nelem                   = default_bool
+        new_runner_input_parameters%nelem                          = default_int
+        new_runner_input_parameters%npairs                         = default_int
+        new_runner_input_parameters%element                        = default_string
+        new_runner_input_parameters%nucelem                        = default_int
+        new_runner_input_parameters%dmin_element                   = default_real
+        new_runner_input_parameters%nodes_short_local              = default_int
+        new_runner_input_parameters%nodes_ewald_local              = default_int
+        new_runner_input_parameters%nodes_pair_local               = default_int
+        new_runner_input_parameters%num_funcvalues_local           = default_int
+        new_runner_input_parameters%num_funcvaluese_local          = default_int
+        new_runner_input_parameters%num_funcvaluesp_local          = default_int
+        new_runner_input_parameters%elementtemp                    = default_string
+        new_runner_input_parameters%ztemp                          = default_int
+        new_runner_input_parameters%maxnum_funcvalues_short_atomic = default_int
+        new_runner_input_parameters%maxnum_funcvalues_elec         = default_int
+        new_runner_input_parameters%maxnum_funcvalues_short_pair   = default_int ! not needed?
 
         new_runner_input_parameters%           = default_
 
@@ -249,7 +255,7 @@ module pes_nene_mod
 
                 case default
 
-                    print *, "Error in the PES file: unknown nene parameter", words(1)
+                    print *, "Error in the PES file: unknown nene parameter ", words(1)
                     stop
 
             end select
@@ -365,7 +371,7 @@ module pes_nene_mod
 
                     case default
                         if (trim(words(1)) /= '' .and. words(1)(1:1) /= '#') & ! check for empty and comment lines
-                            print *, 'Skipping invalid label', trim(words(1)),'in line', line
+                            print *, 'Skipping invalid label ', trim(words(1)),' in line ', line
 
                 end select
 
@@ -418,7 +424,7 @@ module pes_nene_mod
                             print *, err, err_inpnn, "global_hidden_layers_electrostatic key needs a single argument"; stop
                         end if
 
-                    case ('global_hidden_layers_pair') ! not needed
+                    case ('global_hidden_layers_pair') ! not needed - make dummy and include error message that pair type is not implemented
                         if (rinpparam%lfound_num_layerspair  /= default_bool) stop err // err_inpnn // 'Multiple use of the global_hidden_layers_pair key'
                         if (nwords == 2) then
                             rinpparam%lfound_num_layerspair = .true.
@@ -466,7 +472,7 @@ module pes_nene_mod
 
                     case default
                         if (trim(words(1)) /= '' .and. words(1)(1:1) /= '#') & ! check for empty and comment lines
-                            print *, 'Skipping invalid label', trim(words(1)),'in line', line
+                            print *, 'Skipping invalid label ', trim(words(1)),' in line ', line
 
                 end select
 
@@ -509,7 +515,7 @@ module pes_nene_mod
 
                     case default
                         if (trim(words(1)) /= '' .and. words(1)(1:1) /= '#') & ! check for empty and comment lines
-                            print *, 'Skipping invalid label', trim(words(1)),'in line', line
+                            print *, 'Skipping invalid label ', trim(words(1)),' in line ', line
 
                 end select
 
@@ -589,7 +595,7 @@ module pes_nene_mod
                             print *, err, err_inpnn, "global_nodes_electrostatic argument number does not match with global_hidden_layers_electrostatic value"; stop
                         end if
 
-                    case ('global_nodes_pair') ! not needed
+                    case ('global_nodes_pair') ! not needed - make dummy
                         if (rinpparam%nodes_pair_local /= default_int) stop err // err_inpnn // 'Multiple use of the global_nodes_pair key'
                         if (nwords == rinpparam%maxnum_layers_short_pair+1) then
                             do nodes_counter = 1,rinpparam%maxnum_layers_short_pair-1
@@ -597,7 +603,7 @@ module pes_nene_mod
                                 if (ios /= 0) stop err // err_inpnn // "global_nodes_pair value", nodes_counter, " must be integer"
                             end do
                         else
-                            print *, err, err_inpnn, "global_nodes_pair argument number does not match with global_hidden_layers_electrostatic value"; stop
+                            print *, err, err_inpnn, "global_nodes_pair argument number does not match with global_hidden_layers_pair value"; stop
                         end if
 
                     case ('element_symfunction_short')
@@ -614,6 +620,7 @@ module pes_nene_mod
                         rinpparam%num_funcvalues_local(rinpparam%ztemp) = 0
                         call lower_case(words(3))
                         select case (words(3))
+
                             case (1,2,4)
                                 rinpparam%num_funcvalues_local(rinpparam%ztemp) = rinpparam%num_funcvalues_local(rinpparam%ztemp) + rinpparam%nelem
 
@@ -644,6 +651,7 @@ module pes_nene_mod
                         call nuccharge(rinpparam%elementtemp, rinpparam%ztemp)
                         call lower_case(words(3))
                         select case (words(3))
+
                             case (1,2,4)
                                 rinpparam%num_funcvaluese_local(rinpparam%ztemp) = rinpparam%num_funcvaluese_local(rinpparam%ztemp) + rinpparam%nelem
 
@@ -665,11 +673,12 @@ module pes_nene_mod
                         end select
 
                     case ('global_symfunction_short')
-                        read(words(2),'(i1000)', iostat=ios) rinpparam%function_type_local !!check if will read only the function type and not the symbol!!
+                        read(words(2),'(i1000)', iostat=ios) rinpparam%function_type_local !!check if it will read only the function type and not the symbol!!
                         if (ios /= 0) stop err // err_inpnn // "global_symfunction_short (second?) argument value must be integer"
                         !call nuccharge(rinpparam%elementtemp, rinpparam%ztemp)
                         call lower_case(words(2))
                         select case (words(2))
+
                             case (1,2,4)
                                 do general_counter_1 = 1,rinpparam%nelem
                                     rinpparam%num_funcvalues_local(rinpparam%nucelem(general_counter_1)) = rinpparam%num_funcvalues_local(rinpparam%nucelem(general_counter_1)) + rinpparam%nelem
@@ -682,73 +691,126 @@ module pes_nene_mod
                                 do general_counter_1 = 1,rinpparam%nelem
                                     if (rinpparam%nelem .gt. 1) then
                                         do general_counter_2 = 1,rinpparam%nelem-1
-                                            rinpparam%num_funcvaluese_local(rinpparam%ztemp) = rinpparam%num_funcvaluese_local(rinpparam%ztemp) + general_counter_1
+                                            rinpparam%num_funcvalues_local(rinpparam%nucelem(general_counter_1)) = rinpparam%num_funcvalues_local(rinpparam%nucelem(general_counter_1)) + general_counter_2
                                         end do
                                     end if
                                 end do
 
                             case (5,6)
-                                rinpparam%num_funcvalues_local(rinpparam%ztemp) = rinpparam%num_funcvalues_local(rinpparam%ztemp) + 1
+                                do general_counter_1 = 1,rinpparam%nelem
+                                    rinpparam%num_funcvalues_local(rinpparam%nucelem(general_counter_1)) = rinpparam%num_funcvalues_local(rinpparam%nucelem(general_counter_1)) + 1
+                                end do
 
                             case default
-                                print *, err, err_inpnn, "Error in element_symfunction_electrostatic key, symfunction type ", words(2), " not implemented"
+                                print *, err, err_inpnn, "Error in global_symfunction_short key, symfunction type ", words(2), " not implemented"
                                 stop
 
                         end select
 
-                    case ('')
-                        if (rinpparam% /= default_int) stop err // err_inpnn // 'Multiple use of the  key'
-                        if (nwords == 2) then
-                            read(words(2),'(i1000)', iostat=ios) rinpparam%
-                            if (ios /= 0) stop err // err_inpnn // " value must be integer"
-                        else
-                            print *, err, err_inpnn, " key needs a single argument"; stop
-                        end if
+                    case ('global_symfunction_electrostatic')
+                        read(words(2),'(i1000)', iostat=ios) rinpparam%function_type_local !!check if it will read only the function type and not the symbol!!
+                        if (ios /= 0) stop err // err_inpnn // "global_symfunction_electrostatic (second?) argument value must be integer"
+                        !call nuccharge(rinpparam%elementtemp, rinpparam%ztemp)
+                        call lower_case(words(2))
+                        select case (words(2))
 
-                    case ('')
-                        if (rinpparam% /= default_int) stop err // err_inpnn // 'Multiple use of the  key'
-                        if (nwords == 2) then
-                            read(words(2),'(i1000)', iostat=ios) rinpparam%
-                            if (ios /= 0) stop err // err_inpnn // " value must be integer"
-                        else
-                            print *, err, err_inpnn, " key needs a single argument"; stop
-                        end if
+                            case (1,2,4)
+                                do general_counter_1 = 1,rinpparam%nelem
+                                    rinpparam%num_funcvaluese_local(rinpparam%nucelem(general_counter_1)) = rinpparam%num_funcvaluese_local(rinpparam%nucelem(general_counter_1)) + rinpparam%nelem
+                                end do
 
-                    case ('')
-                        if (rinpparam% /= default_int) stop err // err_inpnn // 'Multiple use of the  key'
-                        if (nwords == 2) then
-                            read(words(2),'(i1000)', iostat=ios) rinpparam%
-                            if (ios /= 0) stop err // err_inpnn // " value must be integer"
-                        else
-                            print *, err, err_inpnn, " key needs a single argument"; stop
-                        end if
+                            case (3,8,9)
+                                do general_counter_1 = 1,rinpparam%nelem
+                                    rinpparam%num_funcvaluese_local(rinpparam%nucelem(general_counter_1)) = rinpparam%num_funcvaluese_local(rinpparam%nucelem(general_counter_1)) + rinpparam%nelem
+                                end do
+                                do general_counter_1 = 1,rinpparam%nelem
+                                    if (rinpparam%nelem .gt. 1) then
+                                        do general_counter_2 = 1,rinpparam%nelem-1
+                                            rinpparam%num_funcvaluese_local(rinpparam%nucelem(general_counter_1)) = rinpparam%num_funcvaluese_local(rinpparam%nucelem(general_counter_1)) + general_counter_2
+                                        end do
+                                    end if
+                                end do
 
-                    case ('')
-                        if (rinpparam% /= default_int) stop err // err_inpnn // 'Multiple use of the  key'
-                        if (nwords == 2) then
-                            read(words(2),'(i1000)', iostat=ios) rinpparam%
-                            if (ios /= 0) stop err // err_inpnn // " value must be integer"
-                        else
-                            print *, err, err_inpnn, " key needs a single argument"; stop
-                        end if
+                            case (5,6)
+                                do general_counter_1 = 1,rinpparam%nelem
+                                    rinpparam%num_funcvaluese_local(rinpparam%nucelem(general_counter_1)) = rinpparam%num_funcvaluese_local(rinpparam%nucelem(general_counter_1)) + 1
+                                end do
 
-                    case ('')
-                        if (rinpparam% /= default_int) stop err // err_inpnn // 'Multiple use of the  key'
-                        if (nwords == 2) then
-                            read(words(2),'(i1000)', iostat=ios) rinpparam%
-                            if (ios /= 0) stop err // err_inpnn // " value must be integer"
-                        else
-                            print *, err, err_inpnn, " key needs a single argument"; stop
-                        end if
+                            case default
+                                print *, err, err_inpnn, "Error in global_symfunction_electrostatic key, symfunction type ", words(2), " not implemented"
+                                stop
 
-                    case ('')
-                        if (rinpparam% /= default_int) stop err // err_inpnn // 'Multiple use of the  key'
-                        if (nwords == 2) then
-                            read(words(2),'(i1000)', iostat=ios) rinpparam%
-                            if (ios /= 0) stop err // err_inpnn // " value must be integer"
-                        else
-                            print *, err, err_inpnn, " key needs a single argument"; stop
-                        end if
+                        end select
+
+                    case ('symfunction_short')
+                        read(words(2),'(A)', iostat=ios) rinpparam%elementtemp
+                        call nuccharge(rinpparam%elementtemp, rinpparam%ztemp)
+                        rinpparam%num_funcvalues_local(rinpparam%ztemp) = rinpparam%num_funcvalues_local(rinpparam%ztemp) + 1
+
+                    case ('symfunction_electrostatic')
+                        read(words(2),'(A)', iostat=ios) rinpparam%elementtemp
+                        call nuccharge(rinpparam%elementtemp, rinpparam%ztemp)
+                        rinpparam%num_funcvaluese_local(rinpparam%ztemp) = rinpparam%num_funcvaluese_local(rinpparam%ztemp) + 1
+
+                    case ('pairsymfunction_short') ! not needed
+                        print *, err, err_inpnn, "pairsymfunction_short key is not supported, Pair NN not implemented"
+
+                    case ('element_pairsymfunction_short') ! not needed
+                        print *, err, err_inpnn, "element_pairsymfunction_short key is not supported, Pair NN not implemented"
+
+                    case ('global_pairsymfunction_short') ! not needed
+                        print *, err, err_inpnn, "global_pairsymfunction_short key is not supported, Pair NN not implemented"
+
+                    case default
+                        if (trim(words(1)) /= '' .and. words(1)(1:1) /= '#') & ! check for empty and comment lines
+                            print *, 'Skipping invalid label ', trim(words(1)),' in line ', line
+
+                end select
+
+            else
+                write(*,*) err // err_inpnn // 'iostat = ', ios
+                stop
+            end if
+
+        close(inpnn_unit)
+
+        if (rinpparam%maxnum_layers_short_atomic .gt. 0) then
+            do general_counter_1 = 1,rinpparam%maxnum_layers_short_atomic
+                rinpparam%maxnodes_short_atomic = max(rinpparam%maxnodes_short_atomic, rinpparam%nodes_short_local(general_counter_1))
+            end do
+        end if
+
+        if (rinpparam%maxnum_layers_elec .gt. 0) then
+            do general_counter_1 = 1,rinpparam%maxnum_layers_elec
+                rinpparam%maxnodes_elec = max(rinpparam%maxnodes_elec, rinpparam%nodes_ewald_local(general_counter_1))
+            end do
+        end if
+
+        if (allocated(rinpparam%nodes_ewald_local)) deallocate(rinpparam%nodes_ewald_local)
+        if (allocated(rinpparam%nodes_short_local)) deallocate(rinpparam%nodes_short_local)
+        if (allocated(rinpparam%nodes_pair_local)) deallocate(rinpparam%nodes_pair_local) ! not needed
+
+        do general_counter_1 = 1,102
+            rinpparam%maxnum_funcvalues_short_atomic = max(rinpparam%maxnum_funcvalues_short_atomic, )
+        end do
+
+        deallocate(rinpparam%num_funcvalues_local)
+        deallocate(rinpparam%num_funcvaluese_local)
+        deallocate(rinpparam%num_funcvaluesp_local) ! not needed
+
+        deallocate(rinpparam%nucelem)
+        deallocate(rinpparam%element)
+
+
+        call open_for_read(inpnn_unit, filename_inpnn); ios = 0
+
+        do while (ios == 0)
+            read(inpnn_unit, '(A)', iostat=ios) buffer
+            if (ios == 0) then
+                line = line + 1
+                call split_string(buffer, words, nwords)
+
+                select case (words(1))
 
                     case ('')
                         if (rinpparam% /= default_int) stop err // err_inpnn // 'Multiple use of the  key'
@@ -761,7 +823,7 @@ module pes_nene_mod
 
                     case default
                         if (trim(words(1)) /= '' .and. words(1)(1:1) /= '#') & ! check for empty and comment lines
-                            print *, 'Skipping invalid label', trim(words(1)),'in line', line
+                            print *, 'Skipping invalid label ', trim(words(1)),' in line ', line
 
                 end select
 
@@ -771,7 +833,6 @@ module pes_nene_mod
             end if
 
         close(inpnn_unit)
-
 
 
 
@@ -796,41 +857,7 @@ module pes_nene_mod
 
                     case default
                         if (trim(words(1)) /= '' .and. words(1)(1:1) /= '#') & ! check for empty and comment lines
-                            print *, 'Skipping invalid label', trim(words(1)),'in line', line
-
-                end select
-
-            else
-                write(*,*) err // err_inpnn // 'iostat = ', ios
-                stop
-            end if
-
-        close(inpnn_unit)
-
-
-
-        call open_for_read(inpnn_unit, filename_inpnn); ios = 0
-
-        do while (ios == 0)
-            read(inpnn_unit, '(A)', iostat=ios) buffer
-            if (ios == 0) then
-                line = line + 1
-                call split_string(buffer, words, nwords)
-
-                select case (words(1))
-
-                    case ('')
-                        if (rinpparam% /= default_int) stop err // err_inpnn // 'Multiple use of the  key'
-                        if (nwords == 2) then
-                            read(words(2),'(i1000)', iostat=ios) rinpparam%
-                            if (ios /= 0) stop err // err_inpnn // " value must be integer"
-                        else
-                            print *, err, err_inpnn, " key needs a single argument"; stop
-                        end if
-
-                    case default
-                        if (trim(words(1)) /= '' .and. words(1)(1:1) /= '#') & ! check for empty and comment lines
-                            print *, 'Skipping invalid label', trim(words(1)),'in line', line
+                            print *, 'Skipping invalid label ', trim(words(1)),' in line ', line
 
                 end select
             else
@@ -1635,7 +1662,7 @@ module pes_nene_mod
 
                     case default
                         if (trim(words(1)) /= '' .and. words(1)(1:1) /= '#') & !check for empty and comment lines
-                            print *, 'Skipping invalid label ',trim(words(1)),' in line', line
+                            print *, 'Skipping invalid label ',trim(words(1)),' in line ', line
 
                 end select
 
