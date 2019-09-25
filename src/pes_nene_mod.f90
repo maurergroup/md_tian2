@@ -79,6 +79,9 @@ module pes_nene_mod
         integer :: maxnum_funcvalues_elec
         integer :: maxnum_funcvalues_short_pair ! not needed?
 
+        integer :: function_type_local
+        integer :: function_type_temp
+
 
 
 
@@ -150,11 +153,13 @@ module pes_nene_mod
         new_runner_input_parameters%maxnum_funcvalues_short_atomic = default_int
         new_runner_input_parameters%maxnum_funcvalues_elec         = default_int
         new_runner_input_parameters%maxnum_funcvalues_short_pair   = default_int ! not needed?
+        new_runner_input_parameters%function_type_local            = default_int
+        new_runner_input_parameters%function_type_temp             = default_int
 
         new_runner_input_parameters%           = default_
 
 
-        new_runner_input_parameters%weights_local               = default_real
+        new_runner_input_parameters%weights_local                  = default_real
 
 
 
@@ -331,6 +336,21 @@ module pes_nene_mod
                         if (nwords == 2) then
                             read(words(2),'(i1000)', iostat=ios) rinpparam%nn_type_short
                             if (ios /= 0) stop err // err_inpnn // "nn_type_short value must be integer"
+
+                            select case (words(2))
+
+                                case (1)
+
+                                case (2)
+                                    print *, err // err_inpnn // "nn_type_short 2 not supported, Pair NN not implemented!"
+                                    stop
+
+                                case default
+                                    print *, err // err_inpnn // "Error in nn_type_short key value, ", words(2), " not implemented"
+                                    stop
+
+                            end select
+
                         else
                             print *, err, err_inpnn, "nn_type_short key needs a single argument"; stop
                         end if
@@ -632,7 +652,7 @@ module pes_nene_mod
                                     end do
                                 end if
 
-                            case (5,6)
+                            case (5,6) ! only for Pair NN
                                 rinpparam%num_funcvalues_local(rinpparam%ztemp) = rinpparam%num_funcvalues_local(rinpparam%ztemp) + 1
 
                             case default
@@ -663,7 +683,7 @@ module pes_nene_mod
                                     end do
                                 end if
 
-                            case (5,6)
+                            case (5,6) ! only for Pair NN
                                 rinpparam%num_funcvalues_local(rinpparam%ztemp) = rinpparam%num_funcvalues_local(rinpparam%ztemp) + 1
 
                             case default
@@ -696,7 +716,7 @@ module pes_nene_mod
                                     end if
                                 end do
 
-                            case (5,6)
+                            case (5,6) ! only for Pair NN
                                 do general_counter_1 = 1,rinpparam%nelem
                                     rinpparam%num_funcvalues_local(rinpparam%nucelem(general_counter_1)) = rinpparam%num_funcvalues_local(rinpparam%nucelem(general_counter_1)) + 1
                                 end do
@@ -731,7 +751,7 @@ module pes_nene_mod
                                     end if
                                 end do
 
-                            case (5,6)
+                            case (5,6) ! only for Pair NN
                                 do general_counter_1 = 1,rinpparam%nelem
                                     rinpparam%num_funcvaluese_local(rinpparam%nucelem(general_counter_1)) = rinpparam%num_funcvaluese_local(rinpparam%nucelem(general_counter_1)) + 1
                                 end do
@@ -811,6 +831,41 @@ module pes_nene_mod
                 call split_string(buffer, words, nwords)
 
                 select case (words(1))
+
+                    case ('global_symfunction_short')
+                        read(words(2),'(i1000)', iostat=ios) rinpparam%function_type_temp !!check if it will read only the function type and not the symbol!!
+                        if (ios /= 0) stop err // err_inpnn // "global_symfunction_short (second?) argument value must be integer"
+                        call lower_case(words(2))
+                        select case (words(2))
+
+                            case (1)
+                                if (nwords == 3)
+                                rinpparam%funccutoff_local
+
+                                if (nwords == rinpparam%maxnum_layers_short_atomic+1) then
+                                    do nodes_counter = 1,rinpparam%maxnum_layers_short_atomic-1
+                                    read(words(nodes_counter+1),'(i1000)', iostat=ios) rinpparam%nodes_short_local(nodes_counter)
+                                    if (ios /= 0) stop err // err_inpnn // "global_nodes_short value", nodes_counter, " must be integer"
+                                    end do
+                                else
+                                    print *, err, err_inpnn, "global_nodes_short argument number does not match with global_hidden_layers_short value"; stop
+                                end if
+
+                            case (2)
+
+                            case (3)
+
+                            case (4)
+
+                            case (8)
+
+                            case (9)
+
+                            case default
+                                print *, err, err_inpnn, "Error in global_symfunction_short key, symfunction type ", words(2), " not implemented"
+                                stop
+
+                        end select
 
                     case ('')
                         if (rinpparam% /= default_int) stop err // err_inpnn // 'Multiple use of the  key'
@@ -1208,6 +1263,7 @@ module pes_nene_mod
                             if (ios /= 0) stop err // err_inpnn // "nn_type_short value must be integer"
                             if (words(2) /= 1) then
                                 print *, err, err_inpnn, "Only nn_type_short 1 (Behler-Parrinello) available!"; stop
+                            end if
                         else
                             print *, err, err_inpnn, "nn_type_short key needs a single argument"; stop
                         end if
