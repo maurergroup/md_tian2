@@ -28,7 +28,8 @@ module pes_nene_mod
     use universe_mod
     use open_file, only : open_for_read
 !2do:
-!   use RuNNer subroutines
+!   use RuNNer modules if necessary, otherwise make own ones
+!   include RuNNer subroutine files -> are all subroutines completely independent or are they using global variables, if not ask Jorg to change that!!
 
     implicit none
 
@@ -81,6 +82,9 @@ module pes_nene_mod
 
         integer :: function_type_local
         integer :: function_type_temp
+	real(dp) :: funccutoff_local
+	real(dp) :: maxcutoff_local
+	character(len=3) :: elementtemp1, elementtemp2, elementtemp3
 
 
 
@@ -155,6 +159,11 @@ module pes_nene_mod
         new_runner_input_parameters%maxnum_funcvalues_short_pair   = default_int ! not needed?
         new_runner_input_parameters%function_type_local            = default_int
         new_runner_input_parameters%function_type_temp             = default_int
+        new_runner_input_parameters%funccutoff_local               = default_real
+	new_runner_input_parameters%maxcutoff_local                = default_real
+	new_runner_input_parameters%elementtemp1                   = default_string
+	new_runner_input_parameters%elementtemp2                   = default_string
+	new_runner_input_parameters%elementtemp3                   = default_string
 
         new_runner_input_parameters%           = default_
 
@@ -281,7 +290,6 @@ module pes_nene_mod
         if (.not. file_exists(filename_inpnn)) stop err // err_inpnn // "file does not exist"
 
         ! read all input keywords from input.nn several times to respect dependencies
-        call open_for_read(inpnn_unit, filename_inpnn); ios = 0
 
 !       read in keywords related to input.nn according to the following files from RuNNer (chronologically)
 !       1) getdimensions.f90
@@ -289,7 +297,7 @@ module pes_nene_mod
 !       3) readkeywords.f90
 !       4) readinput.f90
 
-!       dummy readout
+!       following the dummy readout
 !
 !       call open_for_read(inpnn_unit, filename_inpnn); ios = 0
 !
@@ -322,6 +330,7 @@ module pes_nene_mod
 !
 !       close(inpnn_unit)
 
+        call open_for_read(inpnn_unit, filename_inpnn); ios = 0
 
         do while (ios == 0)
             read(inpnn_unit, '(A)', iostat=ios) buffer
@@ -340,6 +349,7 @@ module pes_nene_mod
                             select case (words(2))
 
                                 case (1)
+                                    !pass
 
                                 case (2)
                                     print *, err // err_inpnn // "nn_type_short 2 not supported, Pair NN not implemented!"
@@ -820,8 +830,10 @@ module pes_nene_mod
 
         deallocate(rinpparam%nucelem)
         deallocate(rinpparam%element)
+        !end readout according to getdimensions.f90
 
 
+        !start readout according to paircount.f90
         call open_for_read(inpnn_unit, filename_inpnn); ios = 0
 
         do while (ios == 0)
@@ -833,33 +845,58 @@ module pes_nene_mod
                 select case (words(1))
 
                     case ('global_symfunction_short')
-                        read(words(2),'(i1000)', iostat=ios) rinpparam%function_type_temp !!check if it will read only the function type and not the symbol!!
-                        if (ios /= 0) stop err // err_inpnn // "global_symfunction_short (second?) argument value must be integer"
+                        read(words(2),'(i1000)', iostat=ios) rinpparam%function_type_temp
+                        if (ios /= 0) stop err // err_inpnn // "global_symfunction_short first argument value must be integer"
                         call lower_case(words(2))
                         select case (words(2))
 
                             case (1)
                                 if (nwords == 3)
-                                rinpparam%funccutoff_local
-
-                                if (nwords == rinpparam%maxnum_layers_short_atomic+1) then
-                                    do nodes_counter = 1,rinpparam%maxnum_layers_short_atomic-1
-                                    read(words(nodes_counter+1),'(i1000)', iostat=ios) rinpparam%nodes_short_local(nodes_counter)
-                                    if (ios /= 0) stop err // err_inpnn // "global_nodes_short value", nodes_counter, " must be integer"
-                                    end do
+                                    read(words(3),*, iostat=ios) rinpparam%funccutoff_local
+                                    if (ios /= 0) stop err // err_inpnn // "global_symfunction_short type ", words(2), " argument ", nwords-1, " must be a number"
                                 else
-                                    print *, err, err_inpnn, "global_nodes_short argument number does not match with global_hidden_layers_short value"; stop
+                                    print *, err, err_inpnn, "global_symfunction_short type ", words(2), " needs ", nwords-1, " arguments"; stop
                                 end if
 
                             case (2)
+                                if (nwords == 5)
+                                    read(words(5),*, iostat=ios) rinpparam%funccutoff_local
+                                    if (ios /= 0) stop err // err_inpnn // "global_symfunction_short type ", words(2), " argument ", nwords-1, " must be a number"
+                                else
+                                    print *, err, err_inpnn, "global_symfunction_short type ", words(2), " needs ", nwords-1, " arguments"; stop
+                                end if
 
                             case (3)
+                                if (nwords == 6)
+                                    read(words(6),*, iostat=ios) rinpparam%funccutoff_local
+                                    if (ios /= 0) stop err // err_inpnn // "global_symfunction_short type ", words(2), " argument ", nwords-1, " must be a number"
+                                else
+                                    print *, err, err_inpnn, "global_symfunction_short type ", words(2), " needs ", nwords-1, " arguments"; stop
+                                end if
 
                             case (4)
+                                if (nwords == 4)
+                                    read(words(4),*, iostat=ios) rinpparam%funccutoff_local
+                                    if (ios /= 0) stop err // err_inpnn // "global_symfunction_short type ", words(2), " argument ", nwords-1, " must be a number"
+                                else
+                                    print *, err, err_inpnn, "global_symfunction_short type ", words(2), " needs ", nwords-1, " arguments"; stop
+                                end if
 
                             case (8)
+                                if (nwords == 5)
+                                    read(words(5),*, iostat=ios) rinpparam%funccutoff_local
+                                    if (ios /= 0) stop err // err_inpnn // "global_symfunction_short type ", words(2), " argument ", nwords-1, " must be a number"
+                                else
+                                    print *, err, err_inpnn, "global_symfunction_short type ", words(2), " needs ", nwords-1, " arguments"; stop
+                                end if
 
                             case (9)
+                                if (nwords == 6)
+                                    read(words(6),*, iostat=ios) rinpparam%funccutoff_local
+                                    if (ios /= 0) stop err // err_inpnn // "global_symfunction_short type ", words(2), " argument ", nwords-1, " must be a number"
+                                else
+                                    print *, err, err_inpnn, "global_symfunction_short type ", words(2), " needs ", nwords-1, " arguments"; stop
+                                end if
 
                             case default
                                 print *, err, err_inpnn, "Error in global_symfunction_short key, symfunction type ", words(2), " not implemented"
@@ -867,14 +904,136 @@ module pes_nene_mod
 
                         end select
 
-                    case ('')
-                        if (rinpparam% /= default_int) stop err // err_inpnn // 'Multiple use of the  key'
-                        if (nwords == 2) then
-                            read(words(2),'(i1000)', iostat=ios) rinpparam%
-                            if (ios /= 0) stop err // err_inpnn // " value must be integer"
-                        else
-                            print *, err, err_inpnn, " key needs a single argument"; stop
-                        end if
+                    case ('element_symfunction_short')
+                        read(words(2),'(A)') rinpparam%elementtemp1
+                        read(words(3),'(i1000)', iostat=ios) rinpparam%function_type_temp
+                        if (ios /= 0) stop err // err_inpnn // "element_symfunction_short second argument value must be integer"
+                        call lower_case(words(2))
+                        select case (words(3))
+
+                            case (1)
+                                if (nwords == 4)
+                                    read(words(4),*, iostat=ios) rinpparam%funccutoff_local
+                                    if (ios /= 0) stop err // err_inpnn // "element_symfunction_short type ", words(3), " argument ", nwords-1, " must be a number"
+                                else
+                                    print *, err, err_inpnn, "element_symfunction_short type ", words(3), " needs ", nwords-1, " arguments"; stop
+                                end if
+
+                            case (2)
+                                if (nwords == 6)
+                                    read(words(6),*, iostat=ios) rinpparam%funccutoff_local
+                                    if (ios /= 0) stop err // err_inpnn // "element_symfunction_short type ", words(3), " argument ", nwords-1, " must be a number"
+                                else
+                                    print *, err, err_inpnn, "element_symfunction_short type ", words(3), " needs ", nwords-1, " arguments"; stop
+                                end if
+
+                            case (3)
+                                if (nwords == 7)
+                                    read(words(7),*, iostat=ios) rinpparam%funccutoff_local
+                                    if (ios /= 0) stop err // err_inpnn // "element_symfunction_short type ", words(3), " argument ", nwords-1, " must be a number"
+                                else
+                                    print *, err, err_inpnn, "element_symfunction_short type ", words(3), " needs ", nwords-1, " arguments"; stop
+                                end if
+
+                            case (4)
+                                if (nwords == 5)
+                                    read(words(5),*, iostat=ios) rinpparam%funccutoff_local
+                                    if (ios /= 0) stop err // err_inpnn // "element_symfunction_short type ", words(3), " argument ", nwords-1, " must be a number"
+                                else
+                                    print *, err, err_inpnn, "element_symfunction_short type ", words(3), " needs ", nwords-1, " arguments"; stop
+                                end if
+
+                            case (8)
+                                if (nwords == 6)
+                                    read(words(6),*, iostat=ios) rinpparam%funccutoff_local
+                                    if (ios /= 0) stop err // err_inpnn // "element_symfunction_short type ", words(3), " argument ", nwords-1, " must be a number"
+                                else
+                                    print *, err, err_inpnn, "element_symfunction_short type ", words(3), " needs ", nwords-1, " arguments"; stop
+                                end if
+
+                            case (9)
+                                if (nwords == 7)
+                                    read(words(7),*, iostat=ios) rinpparam%funccutoff_local
+                                    if (ios /= 0) stop err // err_inpnn // "element_symfunction_short type ", words(3), " argument ", nwords-1, " must be a number"
+                                else
+                                    print *, err, err_inpnn, "element_symfunction_short type ", words(3), " needs ", nwords-1, " arguments"; stop
+                                end if
+
+                            case default
+                                print *, err, err_inpnn, "Error in element_symfunction_short key, symfunction type ", words(3), " not implemented"
+                                stop
+
+                        end select
+
+                    case ('symfunction_short')
+                        read((words(2),'(A)') rinpparam%elementtemp1
+                        read(words(3),'(i1000)', iostat=ios) rinpparam%function_type_temp
+                        if (ios /= 0) stop err // err_inpnn // "symfunction_short second argument value must be integer"
+                        call lower_case(words(2))
+                        select case (words(2))
+
+                            case (1)
+                                if (nwords == 5)
+                                    read(words(4),'(A)') rinpparam%elementtemp2
+                                    read(words(5),*, iostat=ios) rinpparam%funccutoff_local
+                                    if (ios /= 0) stop err // err_inpnn // "symfunction_short type ", words(3), " argument ", nwords-1, " must be a number"
+                                else
+                                    print *, err, err_inpnn, "symfunction_short type ", words(3), " needs ", nwords-1, " arguments"; stop
+                                end if
+
+                            case (2)
+                                if (nwords == 7)
+                                    read(words(4),'(A)') rinpparam%elementtemp2
+                                    read(words(7),*, iostat=ios) rinpparam%funccutoff_local
+                                    if (ios /= 0) stop err // err_inpnn // "symfunction_short type ", words(3), " argument ", nwords-1, " must be a number"
+                                else
+                                    print *, err, err_inpnn, "symfunction_short type ", words(3), " needs ", nwords-1, " arguments"; stop
+                                end if
+
+                            case (3)
+                                if (nwords == 9)
+                                    read(words(4),'(A)') rinpparam%elementtemp2
+                                    read(words(5),'(A)') rinpparam%elementtemp3
+                                    read(words(9),*, iostat=ios) rinpparam%funccutoff_local
+                                    if (ios /= 0) stop err // err_inpnn // "symfunction_short type ", words(3), " argument ", nwords-1, " must be a number"
+                                else
+                                    print *, err, err_inpnn, "symfunction_short type ", words(3), " needs ", nwords-1, " arguments"; stop
+                                end if
+
+                            case (4)
+                                if (nwords == 7)
+                                    read(words(4),'(A)') rinpparam%elementtemp2
+                                    read(words(7),*, iostat=ios) rinpparam%funccutoff_local
+                                    if (ios /= 0) stop err // err_inpnn // "symfunction_short type ", words(3), " argument ", nwords-1, " must be a number"
+                                else
+                                    print *, err, err_inpnn, "symfunction_short type ", words(3), " needs ", nwords-1, " arguments"; stop
+                                end if
+
+                            case (8)
+                                if (nwords == 8)
+                                    read(words(4),'(A)') rinpparam%elementtemp2
+                                    read(words(5),'(A)') rinpparam%elementtemp3
+                                    read(words(8),*, iostat=ios) rinpparam%funccutoff_local
+                                    if (ios /= 0) stop err // err_inpnn // "symfunction_short type ", words(3), " argument ", nwords-1, " must be a number"
+                                else
+                                    print *, err, err_inpnn, "symfunction_short type ", words(3), " needs ", nwords-1, " arguments"; stop
+                                end if
+
+                            case (9)
+                                if (nwords == 9)
+                                    read(words(4),'(A)') rinpparam%elementtemp2
+                                    read(words(5),'(A)') rinpparam%elementtemp3
+                                    read(words(9),*, iostat=ios) rinpparam%funccutoff_local
+                                    if (ios /= 0) stop err // err_inpnn // "symfunction_short type ", words(3), " argument ", nwords-1, " must be a number"
+                                else
+                                    print *, err, err_inpnn, "symfunction_short type ", words(3), " needs ", nwords-1, " arguments"; stop
+                                end if
+
+                            case default
+                                print *, err, err_inpnn, "Error in symfunction_short key, symfunction type ", words(3), " not implemented"
+                                stop
+
+                        end select
 
                     case default
                         if (trim(words(1)) /= '' .and. words(1)(1:1) /= '#') & ! check for empty and comment lines
@@ -882,12 +1041,19 @@ module pes_nene_mod
 
                 end select
 
+                rinpparam%maxcutoff_local = max(rinpparam%maxcutoff_local, rinpparam%funccutoff_local)
+
             else
                 write(*,*) err // err_inpnn // 'iostat = ', ios
                 stop
             end if
 
         close(inpnn_unit)
+
+        if (rinpparam%maxcutoff_local == default_real) then
+            print *, err, err_inpnn, "maxcutoff_local is zero, specify symmetry functions"
+            stop
+        end if
 
 
 
