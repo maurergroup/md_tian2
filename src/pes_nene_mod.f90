@@ -62,7 +62,7 @@ module pes_nene_mod
         logical :: lfound_nelem
         integer :: nelem
         integer :: npairs
-	integer :: max_num_pairs
+        integer :: max_num_pairs
 
         character(len=3), dimension(atoms%ntypes)                  :: element
         integer, dimension(atoms%ntypes)                           :: nucelem
@@ -83,9 +83,9 @@ module pes_nene_mod
 
         integer :: function_type_local
         integer :: function_type_temp
-	real(dp) :: funccutoff_local
-	real(dp) :: maxcutoff_local
-	character(len=3) :: elementtemp1, elementtemp2, elementtemp3
+        real(dp) :: funccutoff_local
+        real(dp) :: maxcutoff_local
+        character(len=3) :: elementtemp1, elementtemp2, elementtemp3
 
 
 
@@ -144,7 +144,7 @@ module pes_nene_mod
         new_runner_input_parameters%lfound_nelem                   = default_bool
         new_runner_input_parameters%nelem                          = default_int
         new_runner_input_parameters%npairs                         = default_int
-	new_runner_input_parameters%max_num_pairs                  = default_int
+        new_runner_input_parameters%max_num_pairs                  = default_int
         new_runner_input_parameters%element                        = default_string
         new_runner_input_parameters%nucelem                        = default_int
         new_runner_input_parameters%dmin_element                   = default_real
@@ -162,10 +162,10 @@ module pes_nene_mod
         new_runner_input_parameters%function_type_local            = default_int
         new_runner_input_parameters%function_type_temp             = default_int
         new_runner_input_parameters%funccutoff_local               = default_real
-	new_runner_input_parameters%maxcutoff_local                = default_real
-	new_runner_input_parameters%elementtemp1                   = default_string
-	new_runner_input_parameters%elementtemp2                   = default_string
-	new_runner_input_parameters%elementtemp3                   = default_string
+        new_runner_input_parameters%maxcutoff_local                = default_real
+        new_runner_input_parameters%elementtemp1                   = default_string
+        new_runner_input_parameters%elementtemp2                   = default_string
+        new_runner_input_parameters%elementtemp3                   = default_string
 
 
         new_runner_input_parameters%           = default_
@@ -1282,6 +1282,46 @@ module pes_nene_mod
         end if
 
         rinpparam%max_num_pairs = 0
+
+        !according to initnn.f90
+        if(lshort.and.(nn_type_short.eq.1))then
+        allocate (num_funcvalues_short_atomic(nelem))
+        num_funcvalues_short_atomic(:)=0
+        allocate (windex_short_atomic(2*maxnum_layers_short_atomic,nelem))
+        allocate (num_layers_short_atomic(nelem))
+        num_layers_short_atomic(:)=maxnum_layers_short_atomic
+        allocate (actfunc_short_atomic(maxnodes_short_atomic,maxnum_layers_short_atomic,nelem))
+        allocate (nodes_short_atomic(0:maxnum_layers_short_atomic,nelem))
+        nodes_short_atomic(:,:)=0
+        allocate (num_weights_short_atomic(nelem))
+        num_weights_short_atomic(:)=0
+        end if
+
+        if(lelec.and.(nn_type_elec.eq.1))then
+        call mpi_bcast(maxnum_layers_elec,1,mpi_integer,0,mpi_comm_world,mpierror)
+        call mpi_bcast(maxnum_funcvalues_elec,1,mpi_integer,0,mpi_comm_world,mpierror)
+        call mpi_bcast(maxnodes_elec,1,mpi_integer,0,mpi_comm_world,mpierror)
+        allocate (num_funcvalues_elec(nelem))
+        num_funcvalues_elec(:)=0
+        allocate (windex_elec(2*maxnum_layers_elec,nelem))
+        allocate (num_layers_elec(nelem))
+        num_layers_elec(:)=maxnum_layers_elec
+        allocate (actfunc_elec(maxnodes_elec,maxnum_layers_elec,nelem))
+        allocate (nodes_elec(0:maxnum_layers_elec,nelem))
+        nodes_elec(:,:)=0
+        allocate (num_weights_elec(nelem))
+        num_weights_elec(:)=0
+        endif
+
+        allocate (fixedcharge(nelem))
+        fixedcharge(:)=0.0d0
+        allocate (nucelem(nelem))
+        allocate (element(nelem))
+        allocate (atomrefenergies(nelem))
+        allocate (elempair(npairs,2))
+        elempair(:,:)=0
+
+
 
 
 
