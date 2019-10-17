@@ -30,6 +30,8 @@ module pes_nene_mod
 !2do:
 !   use RuNNer modules if necessary, otherwise make own ones
 !   include RuNNer subroutine files -> are all subroutines completely independent or are they using global variables, if not ask Jorg to change that!!
+!   rename md_tian2 into MDT2/MDXT2?
+!   change how the seeed for the random number generator will be (add new variable)
 
     implicit none
 
@@ -1298,9 +1300,6 @@ module pes_nene_mod
         end if
 
         if(lelec.and.(nn_type_elec.eq.1))then
-        call mpi_bcast(maxnum_layers_elec,1,mpi_integer,0,mpi_comm_world,mpierror)
-        call mpi_bcast(maxnum_funcvalues_elec,1,mpi_integer,0,mpi_comm_world,mpierror)
-        call mpi_bcast(maxnodes_elec,1,mpi_integer,0,mpi_comm_world,mpierror)
         allocate (num_funcvalues_elec(nelem))
         num_funcvalues_elec(:)=0
         allocate (windex_elec(2*maxnum_layers_elec,nelem))
@@ -1320,6 +1319,10 @@ module pes_nene_mod
         allocate (atomrefenergies(nelem))
         allocate (elempair(npairs,2))
         elempair(:,:)=0
+
+        call allocatesymfunctions()
+
+        call readinput(ielem,iseed,lelement) !ielem iseed defined in main.f90/initnn.f90
 
 
 
@@ -2529,8 +2532,25 @@ module pes_nene_mod
 !            deallocate(lambda_short_atomic)
 !            deallocate(rshift_short_atomic)
 !        endif
+!
+!        if(lelec.and.(nn_type_elec.eq.1))then
+!            deallocate(weights_elec)
+!            deallocate(symfunction_elec_list)
+!            deallocate(num_funcvalues_elec)
+!            deallocate(windex_elec)
+!            deallocate(num_layers_elec)
+!            deallocate(actfunc_elec)
+!            deallocate(nodes_elec)
+!            deallocate(num_weights_elec)
+!            deallocate(function_type_elec)
+!            deallocate(symelement_elec)
+!            deallocate(funccutoff_elec)
+!            deallocate(eta_elec)
+!            deallocate(zeta_elec)
+!            deallocate(lambda_elec)
+!            deallocate(rshift_elec)
+!        endif
 
-!        call mpi_barrier(mpi_comm_world,mpierror)
 
         ! from RuNNer main.f90
         ! shutdown mpi routines
@@ -2588,5 +2608,43 @@ module pes_nene_mod
         end do
 
     end subroutine sortelements
+
+    subroutine allocatesymfunctions()
+
+        type(runner_input_parameters), intent(inout)   :: rinpparam
+
+        if(lshort.and.(nn_type_short.eq.1))then
+            allocate(function_type_short_atomic(maxnum_funcvalues_short_atomic,nelem))
+            function_type_short_atomic(:,:)=0
+            allocate(symelement_short_atomic(maxnum_funcvalues_short_atomic,2,nelem))
+            symelement_short_atomic(:,:,:)=0
+            allocate(funccutoff_short_atomic(maxnum_funcvalues_short_atomic,nelem))
+            funccutoff_short_atomic(:,:)=0.0d0
+            allocate(eta_short_atomic(maxnum_funcvalues_short_atomic,nelem))
+            eta_short_atomic(:,:)=0.0d0
+            allocate(zeta_short_atomic(maxnum_funcvalues_short_atomic,nelem))
+            zeta_short_atomic(:,:)=0.0d0
+            allocate(lambda_short_atomic(maxnum_funcvalues_short_atomic,nelem))
+            lambda_short_atomic(:,:)=0.0d0
+            allocate(rshift_short_atomic(maxnum_funcvalues_short_atomic,nelem))
+            rshift_short_atomic(:,:)=0.0d0
+        endif
+
+        if(lelec.and.(nn_type_elec.eq.1))then
+            allocate(function_type_elec(maxnum_funcvalues_elec,nelem))
+            function_type_elec(:,:)=0
+            allocate(symelement_elec(maxnum_funcvalues_elec,2,nelem))
+            symelement_elec(:,:,:)=0
+            allocate(funccutoff_elec(maxnum_funcvalues_elec,nelem))
+            funccutoff_elec(:,:)=0.0d0
+            allocate(eta_elec(maxnum_funcvalues_elec,nelem))
+            eta_elec(:,:)=0.0d0
+            allocate(zeta_elec(maxnum_funcvalues_elec,nelem))
+            zeta_elec(:,:)=0.0d0
+            allocate(lambda_elec(maxnum_funcvalues_elec,nelem))
+            lambda_elec(:,:)=0.0d0
+            allocate(rshift_elec(maxnum_funcvalues_elec,nelem))
+            rshift_elec(:,:)=0.0d0
+        endif
 
 end module pes_nene_mod
