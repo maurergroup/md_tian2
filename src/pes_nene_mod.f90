@@ -129,7 +129,7 @@ module pes_nene_mod
         new_runner_input_parameters%nn_type_short                  = default_int ! 1 default, no pair available
         new_runner_input_parameters%mode                           = default_int ! 3 default, only RuNNer mode 3 implemented
         new_runner_input_parameters%lshort                         = default_bool ! .true. default, only short implemented
-        new_runner_input_parameters%lelec                          = default_bool ! not implemented yet, but in the future?
+        new_runner_input_parameters%lelec                          = default_bool ! not implemented yet, but overall structure already there
         new_runner_input_parameters%nn_type_elec                   = default_int
         new_runner_input_parameters%lfounddebug                    = default_bool
         new_runner_input_parameters%ldebug                         = default_bool
@@ -1320,9 +1320,82 @@ module pes_nene_mod
         allocate (elempair(npairs,2))
         elempair(:,:)=0
 
-        call allocatesymfunctions()
+        call allocatesymfunctions() ! new subroutine in pes_nene_mod.f90 (this file) -> finish!
 
         call readinput(ielem,iseed,lelement) !ielem iseed defined in main.f90/initnn.f90
+
+            call initializecounters()
+
+            if(lshort.and.(nn_type_short.eq.1))then
+                nodes_short_atomic_temp(:)   =0
+                actfunc_short_atomic_dummy(:)=' '
+            endif
+            endif
+            if(lelec.and.(nn_type_elec.eq.1))then
+                nodes_elec_temp(:)           =0
+                actfunc_elec_dummy(:)        =' '
+            endif
+            kalmanlambda_local =0.98000d0
+            kalmanlambdae_local=0.98000d0
+            iseed=200
+
+            call inputnndefaults()
+
+            if(lshort.and.(nn_type_short.eq.1))then
+                windex_short_atomic(:,:)    =0
+                num_weights_short_atomic(:) =0
+                maxnum_weights_short_atomic =0
+            endif
+            if(lelec.and.(nn_type_elec.eq.1))then
+                windex_elec(:,:)            =0
+                num_weights_elec(:)         =0
+                maxnum_weights_elec         =0
+            endif
+
+            call readkeywords(iseed, nodes_short_atomic_temp,nodes_elec_temp,nodes_short_pair_temp, kalmanlambda_local,kalmanlambdae_local)
+
+            if(lshort.and.(nn_type_short.eq.1))then
+                do i1=1,nelem
+                    nodes_short_atomic(maxnum_layers_short_atomic,i1)=1
+                    if(lelec.and.(nn_type_elec.eq.2))then
+                        nodes_short_atomic(maxnum_layers_short_atomic,i1) = nodes_short_atomic(maxnum_layers_short_atomic,i1)+1
+                    endif
+                enddo
+            endif
+            if(lshort.and.(nn_type_short.eq.2))then
+                do i1=1,npairs
+                    nodes_short_pair(maxnum_layers_short_pair,i1)=1
+                enddo
+            endif
+            if(lelec.and.(nn_type_elec.eq.1))then
+                do i1=1,nelem
+                    nodes_elec(maxnum_layers_elec,i1)=1
+                enddo
+            endif
+
+        call getlistdim()
+
+        call distribute_predictionoptions()
+
+        call distribute_symfunctions()
+
+        call distribute_globaloptions()
+
+        if(lshort.and.(nn_type_short.eq.1))then
+            allocate (weights_short_atomic(maxnum_weights_short_atomic,nelem))
+            weights_short_atomic(:,:)=0.0d0
+            allocate (symfunction_short_atomic_list(maxnum_funcvalues_short_atomic,max_num_atoms,nblock))
+            symfunction_short_atomic_list(:,:,:)=0.0d0
+        end if
+
+        if(lelec.and.(nn_type_elec.eq.1))then
+            allocate (weights_elec(maxnum_weights_elec,nelem))
+            weights_elec(:,:)=0.0d0
+            allocate (symfunction_elec_list(maxnum_funcvalues_elec,max_num_atoms,nblock))
+            symfunction_elec_list(:,:,:)=0.0d0
+        end if
+
+
 
 
 
