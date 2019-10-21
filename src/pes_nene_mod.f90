@@ -37,7 +37,7 @@ module pes_nene_mod
 
 
 
-    contains
+
 
     type runner_input_parameters
 
@@ -89,7 +89,140 @@ module pes_nene_mod
         real(dp) :: maxcutoff_local
         character(len=3) :: elementtemp1, elementtemp2, elementtemp3
 
+        ! nnflags.f90
+        integer originatom_id
+      	integer zatom_id
 
+        ! timings.f90
+        integer dayshort
+      	real*8 timeshortstart
+    	real*8 timeshortend
+    	real*8 timeshort
+
+    	integer dayallocshort
+    	real*8 timeallocshortstart
+    	real*8 timeallocshortend
+    	real*8 timeallocshort
+
+    	integer daysymshort
+     	real*8 timesymshortstart
+     	real*8 timesymshortend
+     	real*8 timesymshort
+
+     	integer dayextrapolationshort
+      	real*8 timeextrapolationshortstart
+      	real*8 timeextrapolationshortend
+      	real*8 timeextrapolationshort
+
+      	integer dayextrapolationewald
+      	real*8 timeextrapolationewaldstart
+      	real*8 timeextrapolationewaldend
+      	real*8 timeextrapolationewald
+
+      	integer dayscalesymshort
+      	real*8 timescalesymshortstart
+      	real*8 timescalesymshortend
+      	real*8 timescalesymshort
+
+      	integer dayscalesymewald
+      	real*8 timescalesymewaldstart
+      	real*8 timescalesymewaldend
+      	real*8 timescalesymewald
+
+      	integer dayscaledsfuncshort
+      	real*8 timescaledsfuncshortstart
+      	real*8 timescaledsfuncshortend
+      	real*8 timescaledsfuncshort
+
+      	integer dayeshort
+      	real*8 timeeshortstart
+      	real*8 timeeshortend
+      	real*8 timeeshort
+
+      	integer dayfshort
+      	real*8 timefshortstart
+      	real*8 timefshortend
+      	real*8 timefshort
+
+      	integer daysshort
+      	real*8 timesshortstart
+      	real*8 timesshortend
+        real*8 timeeshort
+
+        integer dayfshort
+      	real*8 timefshortstart
+      	real*8 timefshortend
+      	real*8 timefshort
+
+      	integer daysshort
+      	real*8 timesshortstart
+      	real*8 timesshortend
+      	real*8 timesshort
+
+      	integer daycharge
+      	real*8 timechargestart
+      	real*8 timechargeend
+      	real*8 timecharge
+
+      	integer daycomm1
+      	real*8 timecomm1start
+      	real*8 timecomm1end
+      	real*8 timecomm1
+
+      	integer dayelec
+      	real*8 timeelecstart
+      	real*8 timeelecend
+      	real*8 timeelec
+
+      	integer daysymelec1
+      	real*8 timesymelec1start
+      	real*8 timesymelec1end
+      	real*8 timesymelec1
+
+      	integer daysymelec2
+      	real*8 timesymelec2start
+      	real*8 timesymelec2end
+      	real*8 timesymelec2
+
+      	integer dayeelec
+      	real*8 timeeelecstart
+      	real*8 timeeelecend
+      	real*8 timeeelec
+
+        character*8 fulldate
+      	character*10 fulltime
+      	character*5 zone
+      	integer*4 timevalues(8)
+
+        ! nnshort_atomic.f90
+
+        integer, dimension(:)  , allocatable :: num_layers_short_atomic
+      	integer, dimension(:,:), allocatable :: nodes_short_atomic
+      	integer, dimension(:,:), allocatable :: windex_short_atomic
+      	integer, dimension(:)  , allocatable :: num_weights_short_atomic
+      	integer, dimension(:)  , allocatable :: num_funcvalues_short_atomic
+      	integer maxnodes_short_atomic
+
+      	real*8, dimension(:,:)   , allocatable :: weights_short_atomic
+      	real*8, dimension(:,:,:) , allocatable :: symfunction_short_atomic_list
+      	real*8 scmin_short_atomic
+      	real*8 scmax_short_atomic
+
+      	character*1, dimension(:,:,:), allocatable :: actfunc_short_atomic
+
+        ! mpi_dummy.f90
+        integer mpierror
+      	integer mpirank
+      	integer mpisize
+      	integer mpi_comm_world
+      	integer mpi_sum
+      	integer mpi_double_precision
+      	integer mpi_lor
+      	integer mpi_integer
+      	integer mpi_real8
+      	integer mpi_character
+      	integer mpi_logical
+      	integer mpi_in_place
 
 
 
@@ -121,6 +254,8 @@ module pes_nene_mod
     end type
 
     type(runner_input_parameters) :: rinpparam
+
+    contains
 
     function new_runner_input_parameters
 
@@ -1286,9 +1421,9 @@ module pes_nene_mod
         rinpparam%max_num_pairs = 0
 
         !according to initnn.f90
-        if(lshort.and.(nn_type_short.eq.1))then
-        allocate (num_funcvalues_short_atomic(nelem))
-        num_funcvalues_short_atomic(:)=0
+        if(rinpparam%lshort.and.(rinpparam%nn_type_short.eq.1))then
+        allocate (rinpparam%num_funcvalues_short_atomic(rinpparam%nelem))
+        rinpparam%num_funcvalues_short_atomic(:)=0
         allocate (windex_short_atomic(2*maxnum_layers_short_atomic,nelem))
         allocate (num_layers_short_atomic(nelem))
         num_layers_short_atomic(:)=maxnum_layers_short_atomic
