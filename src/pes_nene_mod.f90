@@ -470,6 +470,14 @@ module pes_nene_mod
 !
 !       close(inpnn_unit)
 
+        ! according to initnn.f90 (initialization subroutine in main.f90)
+
+        ! call get_nnconstants() -> already included in constants.f90 in MDT2
+
+        ! call initialization(ielem,lelement) -> here only getdimensions and paircount is needed
+
+
+        ! start readout according to getdimensions.f90
         call open_for_read(inpnn_unit, filename_inpnn); ios = 0
 
         do while (ios == 0)
@@ -1421,90 +1429,96 @@ module pes_nene_mod
         rinpparam%max_num_pairs = 0
 
         !according to initnn.f90
+
+        ! call distribute_nnflags() -> not needed, only mpi functions
+
         if(rinpparam%lshort.and.(rinpparam%nn_type_short.eq.1))then
         allocate (rinpparam%num_funcvalues_short_atomic(rinpparam%nelem))
         rinpparam%num_funcvalues_short_atomic(:)=0
-        allocate (windex_short_atomic(2*maxnum_layers_short_atomic,nelem))
-        allocate (num_layers_short_atomic(nelem))
-        num_layers_short_atomic(:)=maxnum_layers_short_atomic
-        allocate (actfunc_short_atomic(maxnodes_short_atomic,maxnum_layers_short_atomic,nelem))
-        allocate (nodes_short_atomic(0:maxnum_layers_short_atomic,nelem))
-        nodes_short_atomic(:,:)=0
-        allocate (num_weights_short_atomic(nelem))
-        num_weights_short_atomic(:)=0
+        allocate (rinpparam%windex_short_atomic(2*rinpparam%maxnum_layers_short_atomic,rinpparam%nelem))
+        allocate (rinpparam%num_layers_short_atomic(rinpparam%nelem))
+        rinpparam%num_layers_short_atomic(:)=rinpparam%maxnum_layers_short_atomic
+        allocate (rinpparam%actfunc_short_atomic(rinpparam%maxnodes_short_atomic,rinpparam%maxnum_layers_short_atomic,rinpparam%nelem))
+        allocate (rinpparam%nodes_short_atomic(0:rinpparam%maxnum_layers_short_atomic,rinpparam%nelem))
+        rinpparam%nodes_short_atomic(:,:)=0
+        allocate (rinpparam%num_weights_short_atomic(rinpparam%nelem))
+        rinpparam%num_weights_short_atomic(:)=0
         end if
 
-        if(lelec.and.(nn_type_elec.eq.1))then
-        allocate (num_funcvalues_elec(nelem))
-        num_funcvalues_elec(:)=0
-        allocate (windex_elec(2*maxnum_layers_elec,nelem))
-        allocate (num_layers_elec(nelem))
-        num_layers_elec(:)=maxnum_layers_elec
-        allocate (actfunc_elec(maxnodes_elec,maxnum_layers_elec,nelem))
-        allocate (nodes_elec(0:maxnum_layers_elec,nelem))
-        nodes_elec(:,:)=0
-        allocate (num_weights_elec(nelem))
-        num_weights_elec(:)=0
+        if(rinpparam%lelec.and.(rinpparam%nn_type_elec.eq.1))then
+        allocate (rinpparam%num_funcvalues_elec(rinpparam%nelem))
+        rinpparam%num_funcvalues_elec(:)=0
+        allocate (rinpparam%windex_elec(2*rinpparam%maxnum_layers_elec,rinpparam%nelem))
+        allocate (rinpparam%num_layers_elec(rinpparam%nelem))
+        rinpparam%num_layers_elec(:)=rinpparam%maxnum_layers_elec
+        allocate (rinpparam%actfunc_elec(rinpparam%maxnodes_elec,rinpparam%maxnum_layers_elec,rinpparam%nelem))
+        allocate (rinpparam%nodes_elec(0:rinpparam%maxnum_layers_elec,rinpparam%nelem))
+        rinpparam%nodes_elec(:,:)=0
+        allocate (rinpparam%num_weights_elec(rinpparam%nelem))
+        rinpparam%num_weights_elec(:)=0
         endif
 
-        allocate (fixedcharge(nelem))
-        fixedcharge(:)=0.0d0
-        allocate (nucelem(nelem))
-        allocate (element(nelem))
-        allocate (atomrefenergies(nelem))
-        allocate (elempair(npairs,2))
-        elempair(:,:)=0
+        allocate (rinpparam%fixedcharge(rinpparam%nelem))
+        rinpparam%fixedcharge(:)=0.0d0
+        allocate (rinpparam%nucelem(rinpparam%nelem))
+        allocate (rinpparam%element(rinpparam%nelem))
+        allocate (rinpparam%atomrefenergies(rinpparam%nelem))
+        allocate (rinpparam%elempair(rinpparam%npairs,2))
+        rinpparam%elempair(:,:)=0
 
         call allocatesymfunctions() ! new subroutine in pes_nene_mod.f90 (this file) -> finish!
 
-        call readinput(ielem,iseed,lelement) !ielem iseed defined in main.f90/initnn.f90
+        call readinput(rinpparam%ielem,rinpparam%iseed,rinpparam%lelement) !ielem iseed defined in main.f90/initnn.f90
 
-            call initializecounters()
+        ! start readout of input.nn according to readinput.f90
 
-            if(lshort.and.(nn_type_short.eq.1))then
-                nodes_short_atomic_temp(:)   =0
-                actfunc_short_atomic_dummy(:)=' '
+
+            !call initializecounters() -> not needed, since we use default values to check for multiple use of keywords
+
+            if(rinpparam%lshort.and.(rinpparam%nn_type_short.eq.1))then
+                rinpparam%nodes_short_atomic_temp(:)   =0
+                rinpparam%actfunc_short_atomic_dummy(:)=' '
             endif
             endif
-            if(lelec.and.(nn_type_elec.eq.1))then
-                nodes_elec_temp(:)           =0
-                actfunc_elec_dummy(:)        =' '
+            if(rinpparam%lelec.and.(rinpparam%nn_type_elec.eq.1))then
+                rinpparam%nodes_elec_temp(:)           =0
+                rinpparam%actfunc_elec_dummy(:)        =' '
             endif
-            kalmanlambda_local =0.98000d0
-            kalmanlambdae_local=0.98000d0
-            iseed=200
+            rinpparam%kalmanlambda_local =0.98000d0
+            rinpparam%kalmanlambdae_local=0.98000d0
+            rinpparam%iseed=200
 
             call inputnndefaults()
 
-            if(lshort.and.(nn_type_short.eq.1))then
-                windex_short_atomic(:,:)    =0
-                num_weights_short_atomic(:) =0
-                maxnum_weights_short_atomic =0
+            if(rinpparam%lshort.and.(rinpparam%nn_type_short.eq.1))then
+                rinpparam%windex_short_atomic(:,:)    =0
+                rinpparam%num_weights_short_atomic(:) =0
+                rinpparam%maxnum_weights_short_atomic =0
             endif
-            if(lelec.and.(nn_type_elec.eq.1))then
-                windex_elec(:,:)            =0
-                num_weights_elec(:)         =0
-                maxnum_weights_elec         =0
+            if(rinpparam%lelec.and.(rinpparam%nn_type_elec.eq.1))then
+                rinpparam%windex_elec(:,:)            =0
+                rinpparam%num_weights_elec(:)         =0
+                rinpparam%maxnum_weights_elec         =0
             endif
 
-            call readkeywords(iseed, nodes_short_atomic_temp,nodes_elec_temp,nodes_short_pair_temp, kalmanlambda_local,kalmanlambdae_local)
+            call readkeywords(rinpparam%iseed, rinpparam%nodes_short_atomic_temp,rinpparam%nodes_elec_temp,rinpparam%nodes_short_pair_temp, rinpparam%kalmanlambda_local,rinpparam%kalmanlambdae_local)
 
-            if(lshort.and.(nn_type_short.eq.1))then
-                do i1=1,nelem
-                    nodes_short_atomic(maxnum_layers_short_atomic,i1)=1
-                    if(lelec.and.(nn_type_elec.eq.2))then
-                        nodes_short_atomic(maxnum_layers_short_atomic,i1) = nodes_short_atomic(maxnum_layers_short_atomic,i1)+1
+            if(rinpparam%lshort.and.(rinpparam%nn_type_short.eq.1))then
+                do general_counter=1,rinpparam%nelem
+                    rinpparam%nodes_short_atomic(rinpparam%maxnum_layers_short_atomic,general_counter)=1
+                    if(rinpparam%lelec.and.(rinpparam%nn_type_elec.eq.2))then
+                        rinpparam%nodes_short_atomic(rinpparam%maxnum_layers_short_atomic,general_counter) = rinpparam%nodes_short_atomic(rinpparam%maxnum_layers_short_atomic,general_counter)+1
                     endif
                 enddo
             endif
-            if(lshort.and.(nn_type_short.eq.2))then
-                do i1=1,npairs
-                    nodes_short_pair(maxnum_layers_short_pair,i1)=1
+            if(rinpparam%lshort.and.(rinpparam%nn_type_short.eq.2))then
+                do general_counter=1,rinpparam%npairs
+                    rinpparam%nodes_short_pair(rinpparam%maxnum_layers_short_pair,general_counter)=1
                 enddo
             endif
-            if(lelec.and.(nn_type_elec.eq.1))then
-                do i1=1,nelem
-                    nodes_elec(maxnum_layers_elec,i1)=1
+            if(rinpparam%lelec.and.(rinpparam%nn_type_elec.eq.1))then
+                do general_counter=1,rinpparam%nelem
+                    rinpparam%nodes_elec(rinpparam%maxnum_layers_elec,general_counter)=1
                 enddo
             endif
 
@@ -1516,18 +1530,18 @@ module pes_nene_mod
 
         call distribute_globaloptions()
 
-        if(lshort.and.(nn_type_short.eq.1))then
-            allocate (weights_short_atomic(maxnum_weights_short_atomic,nelem))
-            weights_short_atomic(:,:)=0.0d0
-            allocate (symfunction_short_atomic_list(maxnum_funcvalues_short_atomic,max_num_atoms,nblock))
-            symfunction_short_atomic_list(:,:,:)=0.0d0
+        if(rinpparam%lshort.and.(rinpparam%nn_type_short.eq.1))then
+            allocate (rinpparam%weights_short_atomic(rinpparam%maxnum_weights_short_atomic,rinpparam%nelem))
+            rinpparam%weights_short_atomic(:,:)=0.0d0
+            allocate (rinpparam%symfunction_short_atomic_list(rinpparam%maxnum_funcvalues_short_atomic,rinpparam%max_num_atoms,rinpparam%nblock))
+            rinpparam%symfunction_short_atomic_list(:,:,:)=0.0d0
         end if
 
-        if(lelec.and.(nn_type_elec.eq.1))then
-            allocate (weights_elec(maxnum_weights_elec,nelem))
-            weights_elec(:,:)=0.0d0
-            allocate (symfunction_elec_list(maxnum_funcvalues_elec,max_num_atoms,nblock))
-            symfunction_elec_list(:,:,:)=0.0d0
+        if(rinpparam%lelec.and.(rinpparam%nn_type_elec.eq.1))then
+            allocate (rinpparam%weights_elec(rinpparam%maxnum_weights_elec,rinpparam%nelem))
+            rinpparam%weights_elec(:,:)=0.0d0
+            allocate (rinpparam%symfunction_elec_list(rinpparam%maxnum_funcvalues_elec,rinpparam%max_num_atoms,rinpparam%nblock))
+            rinpparam%symfunction_elec_list(:,:,:)=0.0d0
         end if
 
 
@@ -2821,38 +2835,40 @@ module pes_nene_mod
 
         type(runner_input_parameters), intent(inout)   :: rinpparam
 
-        if(lshort.and.(nn_type_short.eq.1))then
-            allocate(function_type_short_atomic(maxnum_funcvalues_short_atomic,nelem))
-            function_type_short_atomic(:,:)=0
-            allocate(symelement_short_atomic(maxnum_funcvalues_short_atomic,2,nelem))
-            symelement_short_atomic(:,:,:)=0
-            allocate(funccutoff_short_atomic(maxnum_funcvalues_short_atomic,nelem))
-            funccutoff_short_atomic(:,:)=0.0d0
-            allocate(eta_short_atomic(maxnum_funcvalues_short_atomic,nelem))
-            eta_short_atomic(:,:)=0.0d0
-            allocate(zeta_short_atomic(maxnum_funcvalues_short_atomic,nelem))
-            zeta_short_atomic(:,:)=0.0d0
-            allocate(lambda_short_atomic(maxnum_funcvalues_short_atomic,nelem))
-            lambda_short_atomic(:,:)=0.0d0
-            allocate(rshift_short_atomic(maxnum_funcvalues_short_atomic,nelem))
-            rshift_short_atomic(:,:)=0.0d0
+        if(rinpparam%lshort.and.(rinpparam%nn_type_short.eq.1))then
+            allocate(rinpparam%function_type_short_atomic(rinpparam%maxnum_funcvalues_short_atomic,rinpparam%nelem))
+            rinpparam%function_type_short_atomic(:,:)=0
+            allocate(rinpparam%symelement_short_atomic(rinpparam%maxnum_funcvalues_short_atomic,2,rinpparam%nelem))
+            rinpparam%symelement_short_atomic(:,:,:)=0
+            allocate(rinpparam%funccutoff_short_atomic(rinpparam%maxnum_funcvalues_short_atomic,rinpparam%nelem))
+            rinpparam%funccutoff_short_atomic(:,:)=0.0d0
+            allocate(rinpparam%eta_short_atomic(rinpparam%maxnum_funcvalues_short_atomic,rinpparam%nelem))
+            rinpparam%eta_short_atomic(:,:)=0.0d0
+            allocate(rinpparam%zeta_short_atomic(rinpparam%maxnum_funcvalues_short_atomic,rinpparam%nelem))
+            rinpparam%zeta_short_atomic(:,:)=0.0d0
+            allocate(rinpparam%lambda_short_atomic(rinpparam%maxnum_funcvalues_short_atomic,rinpparam%nelem))
+            rinpparam%lambda_short_atomic(:,:)=0.0d0
+            allocate(rinpparam%rshift_short_atomic(rinpparam%maxnum_funcvalues_short_atomic,rinpparam%nelem))
+            rinpparam%rshift_short_atomic(:,:)=0.0d0
         endif
 
-        if(lelec.and.(nn_type_elec.eq.1))then
-            allocate(function_type_elec(maxnum_funcvalues_elec,nelem))
-            function_type_elec(:,:)=0
-            allocate(symelement_elec(maxnum_funcvalues_elec,2,nelem))
-            symelement_elec(:,:,:)=0
-            allocate(funccutoff_elec(maxnum_funcvalues_elec,nelem))
-            funccutoff_elec(:,:)=0.0d0
-            allocate(eta_elec(maxnum_funcvalues_elec,nelem))
-            eta_elec(:,:)=0.0d0
-            allocate(zeta_elec(maxnum_funcvalues_elec,nelem))
-            zeta_elec(:,:)=0.0d0
-            allocate(lambda_elec(maxnum_funcvalues_elec,nelem))
-            lambda_elec(:,:)=0.0d0
-            allocate(rshift_elec(maxnum_funcvalues_elec,nelem))
-            rshift_elec(:,:)=0.0d0
+        if(rinpparam%lelec.and.(rinpparam%nn_type_elec.eq.1))then
+            allocate(rinpparam%function_type_elec(rinpparam%maxnum_funcvalues_elec,rinpparam%nelem))
+            rinpparam%function_type_elec(:,:)=0
+            allocate(rinpparam%symelement_elec(rinpparam%maxnum_funcvalues_elec,2,rinpparam%nelem))
+            rinpparam%symelement_elec(:,:,:)=0
+            allocate(rinpparam%funccutoff_elec(rinpparam%maxnum_funcvalues_elec,rinpparam%nelem))
+            rinpparam%funccutoff_elec(:,:)=0.0d0
+            allocate(rinpparam%eta_elec(rinpparam%maxnum_funcvalues_elec,rinpparam%nelem))
+            rinpparam%eta_elec(:,:)=0.0d0
+            allocate(rinpparam%zeta_elec(rinpparam%maxnum_funcvalues_elec,rinpparam%nelem))
+            rinpparam%zeta_elec(:,:)=0.0d0
+            allocate(rinpparam%lambda_elec(rinpparam%maxnum_funcvalues_elec,rinpparam%nelem))
+            rinpparam%lambda_elec(:,:)=0.0d0
+            allocate(rinpparam%rshift_elec(rinpparam%maxnum_funcvalues_elec,rinpparam%nelem))
+            rinpparam%rshift_elec(:,:)=0.0d0
         endif
+
+    end subroutine sortelements
 
 end module pes_nene_mod
