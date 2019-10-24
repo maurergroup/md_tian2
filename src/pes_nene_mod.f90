@@ -1473,7 +1473,7 @@ module pes_nene_mod
         ! start readout of input.nn according to readinput.f90
 
 
-            !call initializecounters() -> not needed, since we use default values to check for multiple use of keywords
+            !call initializecounters() initializecounters.f90 -> not needed, since we use default values to check for multiple use of keywords
 
             if(rinpparam%lshort.and.(rinpparam%nn_type_short.eq.1))then
                 rinpparam%nodes_short_atomic_temp(:)   =0
@@ -1488,7 +1488,7 @@ module pes_nene_mod
             rinpparam%kalmanlambdae_local=0.98000d0
             rinpparam%iseed=200
 
-            call inputnndefaults()
+            call inputnndefaults() ! inputnndefaults.f90
 
             if(rinpparam%lshort.and.(rinpparam%nn_type_short.eq.1))then
                 rinpparam%windex_short_atomic(:,:)    =0
