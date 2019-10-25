@@ -26,6 +26,7 @@
       logical ldoforces
       logical lpreparemd
       logical lprintforcecomponents
+      logical lwritesymfunctions
 
       end module predictionoptions 
 

@@ -35,6 +35,7 @@
       use symfunctions
       use timings
       use predictionoptions
+      use mpi_mod
 !!
       implicit none
 !!
@@ -102,6 +103,13 @@
           ' contributor ',' contribution (Ha/bohr)'
       endif
 
+!! write symmetry functions to file if requested
+      if(lwritesymfunctions.and.(mpisize.eq.1))then
+        open(symoutunit,file='symfunctions.out',form='formatted',status='replace')
+        write(symoutunit,*)natoms
+      endif
+
+
       jcount=n_start
       do i1=1,natoms
 
@@ -155,33 +163,6 @@
             timeextrapolationshort=timeextrapolationshort+timeextrapolationshortend-timeextrapolationshortstart
           endif ! lfinetime
 !!====================================================================================
-!! scale symmetry functions for the short-range interaction
-!! caution: internally nblock and npoints are set to 1 to avoid _list in zelem, symfunction and num_atoms
-!!====================================================================================
-          if(lfinetime)then
-            dayscalesymshort=0
-            call abstime(timescalesymshortstart,dayscalesymshort)
-          endif ! lfinetime
-          if(lcentersym.and..not.lscalesym)then
-!! For each symmetry function remove the CMS of the respective element 
-            symfunction(i2)=symfunction(i2)-avvalue_local(ielem,i2)
-          elseif(lscalesym.and..not.lcentersym)then
-!! Scale each symmetry function value for the respective element
-            symfunction(i2)=(symfunction(i2)&
-           -minvalue_local(ielem,i2))/ &
-           (maxvalue_local(ielem,i2)-minvalue_local(ielem,i2))&
-            *(scmax_local-scmin_local) + scmin_local
-          elseif(lscalesym.and.lcentersym)then
-            symfunction(i2)=(symfunction(i2)&
-            -avvalue_local(ielem,i2))/ &
-            (maxvalue_local(ielem,i2)-minvalue_local(ielem,i2))
-          else
-          endif
-          if(lfinetime)then
-            call abstime(timescalesymshortend,dayscalesymshort)
-            timescalesymshort=timescalesymshort+timescalesymshortend-timescalesymshortstart
-          endif ! lfinetime
-!!====================================================================================
 !! scale dsfuncdxyz for forces if requested
 !!====================================================================================
           if(ldoforces.and.lscalesym)then
@@ -211,6 +192,44 @@
           endif
         enddo ! i2 loop over all symmetry functions
 !!
+!! if requested write symmetry functions of this atom to file
+        if(lwritesymfunctions.and.(mpisize.eq.1))then
+          write(symoutunit,'(i3,x,500f16.10)')zelem(jcount),&
+            (symfunction(i3),i3=1,num_funcvalues_short_atomic(elementindex(zelem(jcount))))
+        endif
+!!
+!! we need to center/scale the symfunctions after writing them
+        do i2=1,num_funcvalues_short_atomic(ielem) ! over all symmetry functions
+!!====================================================================================
+!! scale symmetry functions for the short-range interaction
+!! caution: internally nblock and npoints are set to 1 to avoid _list in zelem, symfunction and num_atoms
+!!====================================================================================
+          if(lfinetime)then
+            dayscalesymshort=0
+            call abstime(timescalesymshortstart,dayscalesymshort)
+          endif ! lfinetime
+          if(lcentersym.and..not.lscalesym)then
+!! For each symmetry function remove the CMS of the respective element 
+            symfunction(i2)=symfunction(i2)-avvalue_local(ielem,i2)
+          elseif(lscalesym.and..not.lcentersym)then
+!! Scale each symmetry function value for the respective element
+            symfunction(i2)=(symfunction(i2)&
+           -minvalue_local(ielem,i2))/ &
+           (maxvalue_local(ielem,i2)-minvalue_local(ielem,i2))&
+            *(scmax_local-scmin_local) + scmin_local
+          elseif(lscalesym.and.lcentersym)then
+            symfunction(i2)=(symfunction(i2)&
+            -avvalue_local(ielem,i2))/ &
+            (maxvalue_local(ielem,i2)-minvalue_local(ielem,i2))
+          else
+          endif
+          if(lfinetime)then
+            call abstime(timescalesymshortend,dayscalesymshort)
+            timescalesymshort=timescalesymshort+timescalesymshortend-timescalesymshortstart
+          endif ! lfinetime
+        enddo ! i2 loop over all symmetry functions
+
+
 !!====================================================================================
 !! now we have all symmetry functions of atom i1/jcount, now calculate the atom energy 
 !! calculation of the values on all nodes (nodes_values) in the NN (needed below for the derivatives)
@@ -332,6 +351,10 @@
 !!
         jcount=jcount+1
       enddo ! i1 ! natoms
+!!
+      if(lwritesymfunctions.and.(mpisize.eq.1))then
+        close(symoutunit)
+      endif
 !!
       return
       end

@@ -339,6 +339,7 @@ module pes_nene_mod
         character(len=*), parameter :: err_inpnn = "Error when reading input.nn: "
         character(len=*), parameter :: err_scaling = "Error when reading scaling.data: "
         character(len=*), parameter :: err_weight = "Error when reading the following weight file: "
+        character(len=*), parameter :: warn_inpnn = "Warning when reading input.nn: "
 
         ntypes = simparams%nprojectiles+simparams%nlattices
 
@@ -549,7 +550,7 @@ module pes_nene_mod
 
                     case default
                         if (trim(words(1)) /= '' .and. words(1)(1:1) /= '#') & ! check for empty and comment lines
-                            print *, 'Skipping invalid label ', trim(words(1)),' in line ', line
+                            print *, warn_inpnn, 'Skipping invalid label ', trim(words(1)),' in line ', line
 
                 end select
 
@@ -650,7 +651,7 @@ module pes_nene_mod
 
                     case default
                         if (trim(words(1)) /= '' .and. words(1)(1:1) /= '#') & ! check for empty and comment lines
-                            print *, 'Skipping invalid label ', trim(words(1)),' in line ', line
+                            print *, warn_inpnn, 'Skipping invalid label ', trim(words(1)),' in line ', line
 
                 end select
 
@@ -693,7 +694,7 @@ module pes_nene_mod
 
                     case default
                         if (trim(words(1)) /= '' .and. words(1)(1:1) /= '#') & ! check for empty and comment lines
-                            print *, 'Skipping invalid label ', trim(words(1)),' in line ', line
+                            print *, warn_inpnn, 'Skipping invalid label ', trim(words(1)),' in line ', line
 
                 end select
 
@@ -941,7 +942,7 @@ module pes_nene_mod
 
                     case default
                         if (trim(words(1)) /= '' .and. words(1)(1:1) /= '#') & ! check for empty and comment lines
-                            print *, 'Skipping invalid label ', trim(words(1)),' in line ', line
+                            print *, warn_inpnn, 'Skipping invalid label ', trim(words(1)),' in line ', line
 
                 end select
 
@@ -1186,7 +1187,7 @@ module pes_nene_mod
 
                         case default
                             if (trim(words(1)) /= '' .and. words(1)(1:1) /= '#') & ! check for empty and comment lines
-                                print *, 'Skipping invalid label ', trim(words(1)),' in line ', line
+                                print *, warn_inpnn, 'Skipping invalid label ', trim(words(1)),' in line ', line
 
                     end select
 
@@ -1406,7 +1407,7 @@ module pes_nene_mod
 
                         case default
                             if (trim(words(1)) /= '' .and. words(1)(1:1) /= '#') & ! check for empty and comment lines
-                                print *, 'Skipping invalid label ', trim(words(1)),' in line ', line
+                                print *, warn_inpnn, 'Skipping invalid label ', trim(words(1)),' in line ', line
 
                     end select
 
@@ -1466,7 +1467,7 @@ module pes_nene_mod
         allocate (rinpparam%elempair(rinpparam%npairs,2))
         rinpparam%elempair(:,:)=0
 
-        call allocatesymfunctions() ! new subroutine in pes_nene_mod.f90 (this file) -> finish!
+        call allocatesymfunctions() ! new subroutine in pes_nene_mod.f90 (this file)
 
         call readinput(rinpparam%ielem,rinpparam%iseed,rinpparam%lelement) !ielem iseed defined in main.f90/initnn.f90
 
@@ -1488,7 +1489,7 @@ module pes_nene_mod
             rinpparam%kalmanlambdae_local=0.98000d0
             rinpparam%iseed=200
 
-            call inputnndefaults() ! inputnndefaults.f90
+            call inputnndefaults() ! inputnndefaults.f90; look up which default values are needed for mode 3
 
             if(rinpparam%lshort.and.(rinpparam%nn_type_short.eq.1))then
                 rinpparam%windex_short_atomic(:,:)    =0
@@ -1502,6 +1503,39 @@ module pes_nene_mod
             endif
 
             call readkeywords(rinpparam%iseed, rinpparam%nodes_short_atomic_temp,rinpparam%nodes_elec_temp,rinpparam%nodes_short_pair_temp, rinpparam%kalmanlambda_local,rinpparam%kalmanlambdae_local)
+
+
+            ! start readout according to readkeywords.f90
+            call open_for_read(inpnn_unit, filename_inpnn); ios = 0
+
+            do while (ios == 0)
+                read(inpnn_unit, '(A)', iostat=ios) buffer
+                if (ios == 0) then
+                    line = line + 1
+                    call split_string(buffer, words, nwords)
+
+                    select case (words(1))
+
+                        case ('check_input_forces')
+                            if (rinpparam% /= default_int) stop err // err_inpnn // 'Multiple use of the  key'
+                            if (nwords == 2) then
+                                read(words(2),'(i1000)', iostat=ios) rinpparam%
+                                if (ios /= 0) stop err // err_inpnn // " value must be integer"
+                            else
+                                print *, err, err_inpnn, " key needs a single argument"; stop
+                            end if
+
+                        case default
+                            if (trim(words(1)) /= '' .and. words(1)(1:1) /= '#') & ! check for empty and comment lines
+                                print *, warn_inpnn, 'Skipping invalid label ', trim(words(1)),' in line ', line
+
+                    end select
+                else
+                    write(*,*) err // err_inpnn // 'iostat = ', ios
+                    stop
+                end if
+
+            close(inpnn_unit)
 
             if(rinpparam%lshort.and.(rinpparam%nn_type_short.eq.1))then
                 do general_counter=1,rinpparam%nelem
@@ -1571,7 +1605,7 @@ module pes_nene_mod
 
                     case default
                         if (trim(words(1)) /= '' .and. words(1)(1:1) /= '#') & ! check for empty and comment lines
-                            print *, 'Skipping invalid label ', trim(words(1)),' in line ', line
+                            print *, warn_inpnn, 'Skipping invalid label ', trim(words(1)),' in line ', line
 
                 end select
             else
@@ -2377,7 +2411,7 @@ module pes_nene_mod
 
                     case default
                         if (trim(words(1)) /= '' .and. words(1)(1:1) /= '#') & !check for empty and comment lines
-                            print *, 'Skipping invalid label ',trim(words(1)),' in line ', line
+                            print *, warn_inpnn, 'Skipping invalid label ',trim(words(1)),' in line ', line
 
                 end select
 
@@ -2389,171 +2423,6 @@ module pes_nene_mod
             end if
 
         close(inpnn_unit)
-
-
-!       from paircount.f90
-!! get the cutoff for nn_type_short_local = 1
-!     if(nn_type_short_local.eq.1)then
-!       open(nnunit,file='input.nn')
-!       rewind(nnunit)
-
-!110     read(nnunit,*,END=100) keyword
-
-!         if(keyword.eq.'global_symfunction_short')then
-!           backspace(nnunit)
-!           read(nnunit,*)dummy,function_type_temp
-!           if(function_type_temp.eq.1)then
-!             backspace(nnunit)
-!             read(nnunit,*)dummy,function_type_temp,funccutoff_local
-!           elseif(function_type_temp.eq.2)then
-!             backspace(nnunit)
-!             read(nnunit,*)dummy,function_type_temp,dummy,dummy,funccutoff_local
-!           elseif(function_type_temp.eq.3)then
-!             backspace(nnunit)
-!             read(nnunit,*)dummy,function_type_temp,dummy,dummy,dummy,funccutoff_local
-!           elseif(function_type_temp.eq.4)then
-!             backspace(nnunit)
-!             read(nnunit,*)dummy,function_type_temp,dummy,funccutoff_local
-!           elseif(function_type_temp.eq.8)then
-!             backspace(nnunit)
-!             read(nnunit,*)dummy,function_type_temp,dummy,dummy,funccutoff_local
-!           elseif(function_type_temp.eq.9)then
-!             backspace(nnunit)
-!             read(nnunit,*)dummy,function_type_temp,dummy,dummy,dummy,funccutoff_local
-!           else
-!             write(ounit,*)'Error: unknown symfunction in paircount'
-!             stop
-!           endif
-
-!         elseif(keyword.eq.'element_symfunction_short')then
-!           backspace(nnunit)
-!           read(nnunit,*)dummy,elementtemp1,function_type_temp
-!           if(function_type_temp.eq.1)then
-!             backspace(nnunit)
-!             read(nnunit,*)dummy,elementtemp1,function_type_temp,&
-!               funccutoff_local
-!           elseif(function_type_temp.eq.2)then
-!             backspace(nnunit)
-!             read(nnunit,*)dummy,elementtemp1,function_type_temp,&
-!               dummy,dummy,funccutoff_local
-!           elseif(function_type_temp.eq.3)then
-!             backspace(nnunit)
-!             read(nnunit,*)dummy,elementtemp1,function_type_temp,&
-!               dummy,dummy,dummy,funccutoff_local
-!           elseif(function_type_temp.eq.4)then
-!             backspace(nnunit)
-!             read(nnunit,*)dummy,elementtemp1,function_type_temp,&
-!               dummy,funccutoff_local
-!           elseif(function_type_temp.eq.8)then
-!             backspace(nnunit)
-!             read(nnunit,*)dummy,elementtemp1,function_type_temp,&
-!               dummy,dummy,funccutoff_local
-!           elseif(function_type_temp.eq.9)then
-!             backspace(nnunit)
-!             read(nnunit,*)dummy,elementtemp1,function_type_temp,&
-!               dummy,dummy,dummy,funccutoff_local
-!           else
-!             write(ounit,*)'Error: unknown symfunction in paircount'
-!             stop
-!          endif
-!!
-!         elseif(keyword.eq.'symfunction_short')then
-!           backspace(nnunit)
-!           read(nnunit,*)dummy,elementtemp1,function_type_temp
-!           if(function_type_temp.eq.1)then
-!             backspace(nnunit)
-!             read(nnunit,*)dummy,elementtemp1,function_type_temp,&
-!               elementtemp2,funccutoff_local
-!           elseif(function_type_temp.eq.2)then
-!             backspace(nnunit)
-!             read(nnunit,*)dummy,elementtemp1,function_type_temp,&
-!               elementtemp2,dummy,dummy,funccutoff_local
-!           elseif(function_type_temp.eq.3)then
-!             backspace(nnunit)
-!             read(nnunit,*)dummy,elementtemp1,function_type_temp,&
-!               elementtemp2,elementtemp3,dummy,dummy,dummy,funccutoff_local
-!           elseif(function_type_temp.eq.4)then
-!             backspace(nnunit)
-!             read(nnunit,*)dummy,elementtemp1,function_type_temp,&
-!               elementtemp2,dummy,dummy,funccutoff_local
-!           elseif(function_type_temp.eq.8)then
-!             backspace(nnunit)
-!             read(nnunit,*)dummy,elementtemp1,function_type_temp,&
-!               elementtemp2,elementtemp3,dummy,dummy,funccutoff_local
-!           elseif(function_type_temp.eq.9)then
-!             backspace(nnunit)
-!             read(nnunit,*)dummy,elementtemp1,function_type_temp,&
-!               elementtemp2,elementtemp3,dummy,dummy,dummy,funccutoff_local
-!           else
-!             write(ounit,*)'Error: unknown symfunction in paircount'
-!             stop
-!          endif
-!         endif
-!!
-!         maxcutoff_local=max(maxcutoff_local,funccutoff_local)
-!         goto 110
-!100       continue
-!       close(nnunit)
-
-!! check if maxcutoff_local has been found properly
-!       if(maxcutoff_local.eq.0.0d0)then
-!         write(ounit,*)'Error: maxcutoff_local is zero in paircount'
-!         write(ounit,*)'Did you forget to specify symmetry functions???'
-!         stop !'
-!       endif
-!     endif ! --> nn_type_short_local = 1
-
-!??
-!       count_struct=0
-!       open(dataunit,file='input.data',form='formatted')
-!         backspace(dataunit)
-!10       continue
-!         read(dataunit,*,END=30) keyword
-!         if(keyword.eq.'begin') then
-!           count_struct= count_struct+1
-!           nlattice  = 0
-!           num_atoms = 0
-!           lperiodic =.false.
-!         endif
-!         if(keyword.eq.'lattice') then
-!           nlattice=nlattice+1
-!           backspace(dataunit)
-!           read(dataunit,*)keyword,(lattice(nlattice,i1),i1=1,3)
-!         endif
-!         if(keyword.eq.'atom') then
-!           backspace(dataunit)
-!           num_atoms=num_atoms+1
-!           read(dataunit,*)keyword,(xyzstruct(i1,num_atoms),i1=1,3),elementsymbol(num_atoms)
-!           call nuccharge(elementsymbol(num_atoms),zelem(num_atoms))
-!         endif
-!         if(keyword.eq.'end') then
-!           if(nlattice.eq.3)then
-!             lperiodic=.true.
-!           endif
-!           if(lperiodic)then
-!              call translate(num_atoms,lattice,xyzstruct)
-!           endif
-!! determine num_pairs
-!           call getnumpairs(num_atoms,num_pairs,zelem,&
-!             maxcutoff_local,lattice,xyzstruct,dmin_temp,lperiodic)
-!           max_num_pairs=max(max_num_pairs,num_pairs)
-!           do i1=1,nelem*(nelem+1)/2
-!!              write(ounit,*)i1,dmin_element(i1),dmin_temp(i1)
-!             dmin_element(i1)=min(dmin_element(i1),dmin_temp(i1))
-!           enddo
-!!
-!         endif
-!         goto 10
-!30       continue
-!       close(dataunit)
-!??
-
-
-
-
-!     if(nn_type_short_local.ne.2)then
-!       max_num_pairs=0
-!     endif
 
 
         ! check existance of scaling.data
@@ -2699,13 +2568,6 @@ module pes_nene_mod
 !     endif
 
 
-
-
-
-
-
-
-
     end subroutine read_nene
 
 
@@ -2733,52 +2595,43 @@ module pes_nene_mod
 
 
 
-!    subroutine cleanup_nene
+!    subroutine cleanup
 
         ! from RuNNer cleanup.f90
-        ! deallocate everything
-!        if(lshort.and.(nn_type_short.eq.1))then
-!            deallocate(weights_short_atomic)
-!            deallocate(symfunction_short_atomic_list)
-!            deallocate(num_funcvalues_short_atomic)
-!            deallocate(windex_short_atomic)
-!            deallocate(num_layers_short_atomic)
-!            deallocate(actfunc_short_atomic)
-!            deallocate(nodes_short_atomic)
-!            deallocate(num_weights_short_atomic)
-!            deallocate(function_type_short_atomic)
-!            deallocate(symelement_short_atomic)
-!            deallocate(funccutoff_short_atomic)
-!            deallocate(eta_short_atomic)
-!            deallocate(zeta_short_atomic)
-!            deallocate(lambda_short_atomic)
-!            deallocate(rshift_short_atomic)
+!        if(rinpparam%lshort .and. (rinpparam%nn_type_short == 1)) then
+!            deallocate(rinpparam%weights_short_atomic)
+!            deallocate(rinpparam%symfunction_short_atomic_list)
+!            deallocate(rinpparam%num_funcvalues_short_atomic)
+!            deallocate(rinpparam%windex_short_atomic)
+!            deallocate(rinpparam%num_layers_short_atomic)
+!            deallocate(rinpparam%actfunc_short_atomic)
+!            deallocate(rinpparam%nodes_short_atomic)
+!            deallocaterinpparam%(num_weights_short_atomic)
+!            deallocate(rinpparam%function_type_short_atomic)
+!            deallocate(rinpparam%symelement_short_atomic)
+!            deallocate(rinpparam%funccutoff_short_atomic)
+!            deallocate(rinpparam%eta_short_atomic)
+!            deallocate(rinpparam%zeta_short_atomic)
+!            deallocate(rinpparam%lambda_short_atomic)
+!            deallocate(rinpparam%rshift_short_atomic)
 !        endif
 !
-!        if(lelec.and.(nn_type_elec.eq.1))then
-!            deallocate(weights_elec)
-!            deallocate(symfunction_elec_list)
-!            deallocate(num_funcvalues_elec)
-!            deallocate(windex_elec)
-!            deallocate(num_layers_elec)
-!            deallocate(actfunc_elec)
-!            deallocate(nodes_elec)
-!            deallocate(num_weights_elec)
-!            deallocate(function_type_elec)
-!            deallocate(symelement_elec)
-!            deallocate(funccutoff_elec)
-!            deallocate(eta_elec)
-!            deallocate(zeta_elec)
-!            deallocate(lambda_elec)
-!            deallocate(rshift_elec)
-!        endif
-
-
-        ! from RuNNer main.f90
-        ! shutdown mpi routines
-!        call mpi_finalize(mpierror)
-!        if(mpierror.ne.0)then
-!            print *, 'mpierror finalize ', mpierror
+!        if(rinpparam%lelec .and. (rinpparam%nn_type_elec == 1)) then
+!            deallocate(rinpparam%weights_elec)
+!            deallocate(rinpparam%symfunction_elec_list)
+!            deallocate(rinpparam%num_funcvalues_elec)
+!            deallocate(rinpparam%windex_elec)
+!            deallocate(rinpparam%num_layers_elec)
+!            deallocate(rinpparam%actfunc_elec)
+!            deallocate(rinpparam%nodes_elec)
+!            deallocate(rinpparam%num_weights_elec)
+!            deallocate(rinpparam%function_type_elec)
+!            deallocate(rinpparam%symelement_elec)
+!            deallocate(rinpparam%funccutoff_elec)
+!            deallocate(rinpparam%eta_elec)
+!            deallocate(rinpparam%zeta_elec)
+!            deallocate(rinpparam%lambda_elec)
+!            deallocate(rinpparam%rshift_elec)
 !        endif
 
 !    end subroutine cleanup_nene

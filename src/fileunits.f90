@@ -73,6 +73,7 @@
       integer, parameter :: nnmdunit        = 57 ! nnmd.in 
       integer, parameter :: chargeunit      = 58 ! charges.in 
 
+      integer, parameter :: symoutunit      = 71 ! symfunctions.out 
 
       end module fileunits 
 
