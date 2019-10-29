@@ -539,13 +539,19 @@ module pes_nene_mod
                             print *, err, err_inpnn, "use_electrostatics key needs no argument(s)"; stop
                         end if
 
-                    case ('electrostatic_type', 'nn_type_elec')
-                        if (rinpparam%nn_type_elec /= default_int) stop err // err_inpnn // 'Multiple use of the electrostatic_type/nn_type_elec key'
+                    !case ('electrostatic_type', 'nn_type_elec')
+                    !case ('nn_type_elec')
+                        !print *, err, err_inpnn, "nn_type_elec key is obsolete, use electrostatic_type instead"; stop
+                    case ('electrostatic_type')
+                        !if (rinpparam%nn_type_elec /= default_int) stop err // err_inpnn // 'Multiple use of the electrostatic_type/nn_type_elec key'
+                        if (rinpparam%nn_type_elec /= default_int) stop err // err_inpnn // 'Multiple use of the electrostatic_type key'
                         if (nwords == 2) then
                             read(words(2),'(i1000)', iostat=ios) rinpparam%nn_type_elec
-                            if (ios /= 0) stop err // err_inpnn // "electrostatic_type/nn_type_elec value must be integer"
+                            !if (ios /= 0) stop err // err_inpnn // "electrostatic_type/nn_type_elec value must be integer"
+                            if (ios /= 0) stop err // err_inpnn // "electrostatic_type value must be integer"
                         else
-                            print *, err, err_inpnn, "electrostatic_type/nn_type_elec key needs a single argument"; stop
+                            !print *, err, err_inpnn, "electrostatic_type/nn_type_elec key needs a single argument"; stop
+                            print *, err, err_inpnn, "electrostatic_type key needs a single argument"; stop
                         end if
 
                     case default
@@ -1517,6 +1523,273 @@ module pes_nene_mod
                     select case (words(1))
 
                         case ('check_input_forces')
+                            if (rinpparam%inputforcethreshold /= default_real) stop err // err_inpnn // 'Multiple use of the check_input_forces key'
+                            if (nwords == 2) then
+                                rinpparam%lcheckinputforces = .true.
+                                read(words(2),*, iostat=ios) rinpparam%inputforcethreshold
+                                if (ios /= 0) stop err // err_inpnn // "check_input_forces value must be a number"
+                            else
+                                print *, err, err_inpnn, "check_input_forces key needs a single argument"; stop
+                            end if
+
+                        case ('print_force_components')
+                            if (rinpparam%lprintforcecomponents /= default_bool) stop err // err_inpnn // 'Multiple use of the print_force_components key'
+                            if (nwords == 1) then
+                                rinpparam%lprintforcecomponents = .true.
+                            else
+                                print *, err, err_inpnn, "print_force_components key needs no argument(s)"; stop
+                            end if
+
+                        case ('use_ipi')
+                            if (rinpparam%luseipi /= default_bool) stop err // err_inpnn // 'Multiple use of the use_ipi key'
+                            if (nwords == 4) then
+                                rinpparam%luseipi = .true.
+                            else
+                                print *, err, err_inpnn, "use_ipi key needs 3 arguments"; stop
+                            end if
+
+                        case ('ion_forces_only')
+                            if (rinpparam%lionforcesonly /= default_int) stop err // err_inpnn // 'Multiple use of the ion_forces_only key'
+                            if (nwords == 1) then
+                                rinpparam%lionforcesonly = .true.
+                            else
+                                print *, err, err_inpnn, "ion_forces_only key needs no argument(s)"; stop
+                            end if
+
+                        case ('use_electrostatic_nn')
+                            print *, err, err_inpnn, "use_electrostatic_nn is obsolete, please use electrostatic_type and use_electrostatics instead"; stop
+
+!                       case ('debug_mode')
+!                           if (rinpparam%ldebug /= default_bool) stop err // err_inpnn // 'Multiple use of the debug_mode key'
+!                           if (nwords == 1) then
+!                               rinpparam%ldebug = .true.
+!                           else
+!                               print *, err, err_inpnn, "debug_mode key needs no argument(s)"; stop
+!                           end if
+
+                        case ('cutoff_type')
+                            if (rinpparam%cutoff_type /= default_int) stop err // err_inpnn // 'Multiple use of the cutoff_type key'
+                            if (nwords == 2) then
+                                read(words(2),'(i1000)', iostat=ios) rinpparam%cutoff_type
+                                if (ios /= 0) stop err // err_inpnn // "cutoff_type value must be integer"
+                            else
+                                print *, err, err_inpnn, "cutoff_type key needs a single argument"; stop
+                            end if
+
+                        case ('cutoff_alpha')
+                            if (rinpparam%cutoff_alpha /= default_real) stop err // err_inpnn // 'Multiple use of the cutoff_alpha key'
+                            if (nwords == 2) then
+                                read(words(2),*, iostat=ios) rinpparam%cutoff_alpha
+                                if (ios /= 0) stop err // err_inpnn // "cutoff_alpha value must be a number"
+                            else
+                                print *, err, err_inpnn, "cutoff_alpha key needs a single argument"; stop
+                            end if
+
+                        case ('dynamic_force_grouping')
+                            if (rinpparam%ldynforcegroup /= default_bool) stop err // err_inpnn // 'Multiple use of the dynamic_force_grouping key'
+                            if (nwords == 3) then
+                                rinpparam%ldynforcegroup = .true.
+                                read(words(2),'(i1000)', iostat=ios) rinpparam%dynforcegroup_start
+                                if (ios /= 0) stop err // err_inpnn // "dynamic_force_grouping first argument value must be integer"
+                                read(words(3),'(i1000)', iostat=ios) rinpparam%dynforcegroup_step
+                                if (ios /= 0) stop err // err_inpnn // "dynamic_force_grouping second argument value must be integer"
+                            else
+                                print *, err, err_inpnn, "dynamic_force_grouping key needs a single argument"; stop
+                            end if
+
+                        case ('detect_saturation')
+                            if (rinpparam%ldetect_saturation /= default_bool) stop err // err_inpnn // 'Multiple use of the detect_saturation key'
+                            if (nwords == 2) then
+                                rinpparam%ldetect_saturation = .true.
+                                read(words(2),*, iostat=ios) rinpparam%saturation_threshold
+                                if (ios /= 0) stop err // err_inpnn // "detect_saturation value must be a number"
+                            else
+                                print *, err, err_inpnn, "detect_saturation key needs a single argument"; stop
+                            end if
+
+                        case ('data_clustering')
+                            if (rinpparam%ldataclustering /= default_bool) stop err // err_inpnn // 'Multiple use of the data_clustering key'
+                            if (nwords == 3) then
+                                rinpparam%ldataclustering=.true.
+                                read(words(2),*, iostat=ios) rinpparam%dataclusteringthreshold1
+                                if (ios /= 0) stop err // err_inpnn // "data_clustering value must be a number"
+                                read(words(3),*, iostat=ios) rinpparam%dataclusteringthreshold2
+                                if (ios /= 0) stop err // err_inpnn // "data_clustering value must be a number"
+                            else
+                                print *, err, err_inpnn, "data_clustering key needs two arguments"; stop
+                            end if
+
+                        case ('analyze_error_energy_step')
+                            if (rinpparam%analyze_error_energy_step /= default_real) stop err // err_inpnn // 'Multiple use of the analyze_error_energy_step key'
+                            if (nwords == 2) then
+                                read(words(2),*, iostat=ios) rinpparam%analyze_error_energy_step
+                                if (ios /= 0) stop err // err_inpnn // "analyze_error_energy_step value must be a number"
+                            else
+                                print *, err, err_inpnn, "analyze_error_energy_step key needs a single argument"; stop
+                            end if
+
+                        case ('analyze_error_force_step')
+                            if (rinpparam%analyze_error_force_step /= default_real) stop err // err_inpnn // 'Multiple use of the analyze_error_force_step key'
+                            if (nwords == 2) then
+                                read(words(2),*, iostat=ios) rinpparam%analyze_error_force_step
+                                if (ios /= 0) stop err // err_inpnn // "analyze_error_force_step value must be a number"
+                            else
+                                print *, err, err_inpnn, "analyze_error_force_step key needs a single argument"; stop
+                            end if
+
+                        case ('analyze_error_charge_step')
+                            if (rinpparam%analyze_error_charge_step /= default_real) stop err // err_inpnn // 'Multiple use of the analyze_error_charge_step key'
+                            if (nwords == 2) then
+                                read(words(2),*, iostat=ios) rinpparam%analyze_error_charge_step
+                                if (ios /= 0) stop err // err_inpnn // "analyze_error_charge_step value must be a number"
+                            else
+                                print *, err, err_inpnn, "analyze_error_charge_step key needs a single argument"; stop
+                            end if
+
+                        case ('parallel_mode')
+                            if (rinpparam%paramode /= default_int) stop err // err_inpnn // 'Multiple use of the parallel_mode key'
+                            if (nwords == 2) then
+                                read(words(2),'(i1000)', iostat=ios) rinpparam%paramode
+                                if (ios /= 0) stop err // err_inpnn // "parallel_mode value must be integer"
+                            else
+                                print *, err, err_inpnn, "parallel_mode key needs a single argument"; stop
+                            end if
+
+                        case ('symfunction_correlation')
+                            if (rinpparam%lpearson_correlation /= default_bool) stop err // err_inpnn // 'Multiple use of the symfunction_correlation key'
+                            if (nwords == 1) then
+                                rinpparam%lpearson_correlation = .true.
+                            else
+                                print *, err, err_inpnn, "symfunction_correlation key needs no argument(s)"; stop
+                            end if
+
+                        case ('weight_analysis')
+                            if (rinpparam%lweightanalysis /= default_bool) stop err // err_inpnn // 'Multiple use of the weight_analysis key'
+                            if (nwords == 1) then
+                                rinpparam%lweightanalysis = .true.
+                            else
+                                print *, err, err_inpnn, "weight_analysis key needs no argument(s)"; stop
+                            end if
+
+                        case ('environment_analysis')
+                            if (rinpparam%lenvironmentanalysis /= default_bool) stop err // err_inpnn // 'Multiple use of the environment_analysis key'
+                            if (nwords == 1) then
+                                rinpparam%lenvironmentanalysis = .true.
+                            else
+                                print *, err, err_inpnn, "environment_analysis key needs no argument(s)"; stop
+                            end if
+
+                        case ('find_contradictions')
+                            if (rinpparam%lfindcontradictions /= default_bool) stop err // err_inpnn // 'Multiple use of the find_contradictions key'
+                            if (nwords == 3) then
+                                rinpparam%lfindcontradictions = .true.
+                                read(words(2),*, iostat=ios) rinpparam%deltagthres
+                                if (ios /= 0) stop err // err_inpnn // "find_contradictions first argument value must be a number"
+                                read(words(3),*, iostat=ios) rinpparam%deltafthres
+                                if (ios /= 0) stop err // err_inpnn // "find_contradictions second argument value must be a number"
+                            else
+                                print *, err, err_inpnn, "find_contradictions key needs two arguments"; stop
+                            end if
+
+                        case ('use_old_scaling')
+                            if (rinpparam%luseoldscaling /= default_bool) stop err // err_inpnn // 'Multiple use of the use_old_scaling key'
+                            if (nwords == 1) then
+                                rinpparam%luseoldscaling = .true.
+                            else
+                                print *, err, err_inpnn, "use_old_scaling key needs no argument(s)"; stop
+                            end if
+
+                        case ('md_mode')
+                            if (rinpparam%lmd /= default_bool) stop err // err_inpnn // 'Multiple use of the md_mode key'
+                            if (nwords == 1) then
+                                rinpparam%lmd = .true.
+                            else
+                                print *, err, err_inpnn, "md_mode key needs no argument(s)"; stop
+                            end if
+
+                        !case ('global_nodes_short', 'global_nodes_short_atomic')
+                        !case ('global_nodes_short_atomic')
+                            !print *, err, err_inpnn, "global_nodes_short_atomic key is obsolete, use global_nodes_short instead"; stop
+
+                        case ('global_nodes_short')
+                            if(rinpparam%lshort .and. (rainpparam%nn_type_short == 1)) then
+                                if (nwords == rinpparam%maxnum_layers_short_atomic) then
+                                    do general_counter = 1,rinpparam%maxnum_layers_short_atomic-1
+                                        read(words(general_counter),'(i1000)', iostat=ios) rinpparam%nodes_short_atomic_temp(general_counter)
+                                        if (ios /= 0) stop err // err_inpnn // "global_nodes_short value must be integer"
+                                    end do
+                                    do
+
+                                    end do
+                                else
+                                    print *, err, err_inpnn, "global_nodes_short key needs ", rinpparam%maxnum_layers_short_atomic, " arguments"; stop
+                                end if
+                            end if
+
+                        case ('')
+                            if (rinpparam% /= default_int) stop err // err_inpnn // 'Multiple use of the  key'
+                            if (nwords == 2) then
+                                read(words(2),'(i1000)', iostat=ios) rinpparam%
+                                if (ios /= 0) stop err // err_inpnn // " value must be integer"
+                            else
+                                print *, err, err_inpnn, " key needs a single argument"; stop
+                            end if
+
+                        case ('')
+                            if (rinpparam% /= default_int) stop err // err_inpnn // 'Multiple use of the  key'
+                            if (nwords == 2) then
+                                read(words(2),'(i1000)', iostat=ios) rinpparam%
+                                if (ios /= 0) stop err // err_inpnn // " value must be integer"
+                            else
+                                print *, err, err_inpnn, " key needs a single argument"; stop
+                            end if
+
+                        case ('')
+                            if (rinpparam% /= default_int) stop err // err_inpnn // 'Multiple use of the  key'
+                            if (nwords == 2) then
+                                read(words(2),'(i1000)', iostat=ios) rinpparam%
+                                if (ios /= 0) stop err // err_inpnn // " value must be integer"
+                            else
+                                print *, err, err_inpnn, " key needs a single argument"; stop
+                            end if
+
+                        case ('')
+                            if (rinpparam% /= default_int) stop err // err_inpnn // 'Multiple use of the  key'
+                            if (nwords == 2) then
+                                read(words(2),'(i1000)', iostat=ios) rinpparam%
+                                if (ios /= 0) stop err // err_inpnn // " value must be integer"
+                            else
+                                print *, err, err_inpnn, " key needs a single argument"; stop
+                            end if
+
+                        case ('')
+                            if (rinpparam% /= default_int) stop err // err_inpnn // 'Multiple use of the  key'
+                            if (nwords == 2) then
+                                read(words(2),'(i1000)', iostat=ios) rinpparam%
+                                if (ios /= 0) stop err // err_inpnn // " value must be integer"
+                            else
+                                print *, err, err_inpnn, " key needs a single argument"; stop
+                            end if
+
+                        case ('')
+                            if (rinpparam% /= default_int) stop err // err_inpnn // 'Multiple use of the  key'
+                            if (nwords == 2) then
+                                read(words(2),'(i1000)', iostat=ios) rinpparam%
+                                if (ios /= 0) stop err // err_inpnn // " value must be integer"
+                            else
+                                print *, err, err_inpnn, " key needs a single argument"; stop
+                            end if
+
+                        case ('')
+                            if (rinpparam% /= default_int) stop err // err_inpnn // 'Multiple use of the  key'
+                            if (nwords == 2) then
+                                read(words(2),'(i1000)', iostat=ios) rinpparam%
+                                if (ios /= 0) stop err // err_inpnn // " value must be integer"
+                            else
+                                print *, err, err_inpnn, " key needs a single argument"; stop
+                            end if
+
+                        case ('')
                             if (rinpparam% /= default_int) stop err // err_inpnn // 'Multiple use of the  key'
                             if (nwords == 2) then
                                 read(words(2),'(i1000)', iostat=ios) rinpparam%
