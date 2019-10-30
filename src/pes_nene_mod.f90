@@ -23,27 +23,21 @@
 
 module pes_nene_mod
 
-    use constants
-    use useful_things, only : split_string, lower_case, file_exists
-    use universe_mod
-    use open_file, only : open_for_read
-!2do:
+    implicit none
+
+!   2do:
 !   use RuNNer modules if necessary, otherwise make own ones
 !   include RuNNer subroutine files -> are all subroutines completely independent or are they using global variables, if not ask Jorg to change that!!
 !   rename md_tian2 into MDT2/MDXT2?
 !   change how the seeed for the random number generator will be (add new variable)
-
-    implicit none
-
-
-
-
+!   change name of the program in licence header? (Molecular Dynamics Tian Xia 2 vs. Molecular Dynamics Xia Tian 2)
 
     type runner_input_parameters
 
         ! input.nn
         ! 1) getdimensions.f90, 2) readinput.f90, 3) readkeywords.f90, 4) checkinputnn.f90
         ! getdimensions.f90
+        private
         integer :: nn_type_short
         integer :: mode
         logical :: lshort
@@ -318,6 +312,11 @@ module pes_nene_mod
     ! Here all necessary files and keywords are read in for the high-dimensional neural network potentials (HDNNPs)
     subroutine read_nene(atoms, inp_unit)
 
+        !use constants
+        use useful_things, only : split_string, lower_case, file_exists
+        use universe_mod
+        use open_file, only : open_for_read
+
         use run_config, only : simparams
 
         type(universe), intent(inout) :: atoms
@@ -572,9 +571,10 @@ module pes_nene_mod
                             print *, err, err_inpnn, "electrostatic_type key needs a single argument"; stop
                         end if
 
+                    ! for every other keyword pass here, check for unrecognized keywords later
                     case default
-                        if (trim(words(1)) /= '' .and. words(1)(1:1) /= '#') & ! check for empty and comment lines
-                            print *, warn_inpnn, 'Skipping invalid label ', trim(words(1)),' in line ', line
+                        !if (trim(words(1)) /= '' .and. words(1)(1:1) /= '#') & ! check for empty and comment lines
+                            !print *, warn_inpnn, 'Skipping invalid label ', trim(words(1)),' in line ', line
 
                 end select
 
@@ -674,9 +674,10 @@ module pes_nene_mod
                             print *, err, err_inpnn, "number_of_elements key needs a single argument"; stop
                         end if
 
+                    ! for every other keyword pass here, check for unrecognized keywords later
                     case default
-                        if (trim(words(1)) /= '' .and. words(1)(1:1) /= '#') & ! check for empty and comment lines
-                            print *, warn_inpnn, 'Skipping invalid label ', trim(words(1)),' in line ', line
+                        !if (trim(words(1)) /= '' .and. words(1)(1:1) /= '#') & ! check for empty and comment lines
+                            !print *, warn_inpnn, 'Skipping invalid label ', trim(words(1)),' in line ', line
 
                 end select
 
@@ -709,7 +710,9 @@ module pes_nene_mod
 
                     case ('elements')
                         if (rinpparam%element /= default_string) stop err // err_inpnn // 'Multiple use of the elements key'
+                        !if (nwords == atoms%nnelem+1) then
                         if (nwords == atoms%ntypes+1) then
+                            !do element_counter = 1,atoms%nelem
                             do element_counter = 1,atoms%ntypes
                                 read(words(element_counter+1),'(A)') rinpparam%element(element_counter)
                                 !if (ios /= 0) stop err // err_inpnn // "element symbol ", element_counter, " must be string not a number" -> maybe check for proper string without digits -> use white list (periodic table) and forget about black list (done in nuccharge.f90!)
@@ -719,9 +722,10 @@ module pes_nene_mod
                             print *, err, err_inpnn, "elements key does not match with number of element types"; stop
                         end if
 
+                    ! for every other keyword pass here, check for unrecognized keywords later
                     case default
-                        if (trim(words(1)) /= '' .and. words(1)(1:1) /= '#') & ! check for empty and comment lines
-                            print *, warn_inpnn, 'Skipping invalid label ', trim(words(1)),' in line ', line
+                        !if (trim(words(1)) /= '' .and. words(1)(1:1) /= '#') & ! check for empty and comment lines
+                            !print *, warn_inpnn, 'Skipping invalid label ', trim(words(1)),' in line ', line
 
                 end select
 
@@ -971,9 +975,10 @@ module pes_nene_mod
                     case ('global_pairsymfunction_short') ! not needed
                         print *, err, err_inpnn, "global_pairsymfunction_short key is not supported, Pair NN not implemented"
 
+                    ! for every other keyword pass here, check for unrecognized keywords later
                     case default
-                        if (trim(words(1)) /= '' .and. words(1)(1:1) /= '#') & ! check for empty and comment lines
-                            print *, warn_inpnn, 'Skipping invalid label ', trim(words(1)),' in line ', line
+                        !if (trim(words(1)) /= '' .and. words(1)(1:1) /= '#') & ! check for empty and comment lines
+                            !print *, warn_inpnn, 'Skipping invalid label ', trim(words(1)),' in line ', line
 
                 end select
 
@@ -1217,9 +1222,10 @@ module pes_nene_mod
 
                             end select
 
+                        ! for every other keyword pass here, check for unrecognized keywords later
                         case default
-                            if (trim(words(1)) /= '' .and. words(1)(1:1) /= '#') & ! check for empty and comment lines
-                                print *, warn_inpnn, 'Skipping invalid label ', trim(words(1)),' in line ', line
+                            !if (trim(words(1)) /= '' .and. words(1)(1:1) /= '#') & ! check for empty and comment lines
+                                !print *, warn_inpnn, 'Skipping invalid label ', trim(words(1)),' in line ', line
 
                     end select
 
@@ -1438,9 +1444,10 @@ module pes_nene_mod
 
                             end select
 
+                        ! for every other keyword pass here, check for unrecognized keywords later
                         case default
-                            if (trim(words(1)) /= '' .and. words(1)(1:1) /= '#') & ! check for empty and comment lines
-                                print *, warn_inpnn, 'Skipping invalid label ', trim(words(1)),' in line ', line
+                            !if (trim(words(1)) /= '' .and. words(1)(1:1) /= '#') & ! check for empty and comment lines
+                                !print *, warn_inpnn, 'Skipping invalid label ', trim(words(1)),' in line ', line
 
                     end select
 
@@ -2399,11 +2406,10 @@ module pes_nene_mod
                                 print *, err, err_inpnn, " key needs no argument(s)"; stop
                             end if
 
-
-
+                        ! check for keyword which is not related to RuNNer keywords
                         case default
                             if (trim(words(1)) /= '' .and. words(1)(1:1) /= '#') & ! check for empty and comment lines
-                                print *, warn_inpnn, 'Skipping invalid label ', trim(words(1)),' in line ', line
+                                print *, err, err_inpnn, 'The keyword ', trim(words(1)),' in line ', line, ' was not recognized, check the spelling or look at the manual'; stop
 
                     end select
                 else
@@ -3210,15 +3216,6 @@ module pes_nene_mod
 
 
 
-                    case ('elements') ! check with md_tian.inp
-                        if (rinpparam%element /= default_string) stop err // err_inpnn // 'Multiple use of the elements key'
-                        if (nwords == atoms%ntypes+1) then
-                            do element_counter = 1,atoms%ntypes
-                                read(words(element_counter+1),'(A)') rinpparam%element(element_counter)
-                            end do
-                        else
-                            print *, err, "elements key does not match with number of element types"; stop
-                        end if
 
 
 
@@ -3449,20 +3446,17 @@ module pes_nene_mod
 
     subroutine compute_nene(atoms, flag)
 
+        use constants
+        use useful_things, only : split_string, lower_case, file_exists
+        use universe_mod
+        use open_file, only : open_for_read
+
         ! Calculates energy and forces with HDNNPs
 
         type(universe), intent(inout)   :: atoms
         integer, intent(in)             :: flag
 
-!       from predict.f90
-!       call predictionshortatomic(&
-!             num_atoms,num_atoms_element,zelem,&
-!             lattice,xyzstruct,&
-!             minvalue_short_atomic,maxvalue_short_atomic,avvalue_short_atomic,&
-!             eshortmin,eshortmax,&
-!             nntotalenergy,nnshortforce,&
-!             nnatomenergy,nnshortenergy,nnstress_short,&
-!             atomenergysum,sens,lperiodic)
+
 
 
 
@@ -3471,49 +3465,9 @@ module pes_nene_mod
 
 
 
-!    subroutine cleanup
-
-        ! from RuNNer cleanup.f90
-!        if(rinpparam%lshort .and. (rinpparam%nn_type_short == 1)) then
-!            deallocate(rinpparam%weights_short_atomic)
-!            deallocate(rinpparam%symfunction_short_atomic_list)
-!            deallocate(rinpparam%num_funcvalues_short_atomic)
-!            deallocate(rinpparam%windex_short_atomic)
-!            deallocate(rinpparam%num_layers_short_atomic)
-!            deallocate(rinpparam%actfunc_short_atomic)
-!            deallocate(rinpparam%nodes_short_atomic)
-!            deallocaterinpparam%(num_weights_short_atomic)
-!            deallocate(rinpparam%function_type_short_atomic)
-!            deallocate(rinpparam%symelement_short_atomic)
-!            deallocate(rinpparam%funccutoff_short_atomic)
-!            deallocate(rinpparam%eta_short_atomic)
-!            deallocate(rinpparam%zeta_short_atomic)
-!            deallocate(rinpparam%lambda_short_atomic)
-!            deallocate(rinpparam%rshift_short_atomic)
-!        endif
-!
-!        if(rinpparam%lelec .and. (rinpparam%nn_type_elec == 1)) then
-!            deallocate(rinpparam%weights_elec)
-!            deallocate(rinpparam%symfunction_elec_list)
-!            deallocate(rinpparam%num_funcvalues_elec)
-!            deallocate(rinpparam%windex_elec)
-!            deallocate(rinpparam%num_layers_elec)
-!            deallocate(rinpparam%actfunc_elec)
-!            deallocate(rinpparam%nodes_elec)
-!            deallocate(rinpparam%num_weights_elec)
-!            deallocate(rinpparam%function_type_elec)
-!            deallocate(rinpparam%symelement_elec)
-!            deallocate(rinpparam%funccutoff_elec)
-!            deallocate(rinpparam%eta_elec)
-!            deallocate(rinpparam%zeta_elec)
-!            deallocate(rinpparam%lambda_elec)
-!            deallocate(rinpparam%rshift_elec)
-!        endif
-
-!    end subroutine cleanup_nene
 
 
-    subroutine sortelements()
+    subroutine sortelements() ! -> not needed anymore?
 
         type(runner_input_parameters), intent(inout)   :: rinpparam
 
@@ -3560,7 +3514,7 @@ module pes_nene_mod
 
     end subroutine sortelements
 
-    subroutine allocatesymfunctions()
+    subroutine allocatesymfunctions() ! -> not needed anymore?
 
         type(runner_input_parameters), intent(inout)   :: rinpparam
 

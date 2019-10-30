@@ -7,18 +7,18 @@
 ! MPI for Biophysical Chemistry Goettingen, Germany
 ! Georg-August-Universitaet Goettingen, Germany
 !
-! This program is free software: you can redistribute it and/or modify it 
-! under the terms of the GNU General Public License as published by the 
-! Free Software Foundation, either version 3 of the License, or 
+! This program is free software: you can redistribute it and/or modify it
+! under the terms of the GNU General Public License as published by the
+! Free Software Foundation, either version 3 of the License, or
 ! (at your option) any later version.
 !
-! This program is distributed in the hope that it will be useful, but 
-! WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY 
-! or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License 
+! This program is distributed in the hope that it will be useful, but
+! WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
 ! for more details.
 !
-! You should have received a copy of the GNU General Public License along 
-! with this program. If not, see http://www.gnu.org/licenses. 
+! You should have received a copy of the GNU General Public License along
+! with this program. If not, see http://www.gnu.org/licenses.
 !############################################################################
 
 ! Initialize molecular dynamics simulation
@@ -35,7 +35,7 @@ module md_init
     use pes_emt_mod,  only : read_emt
     use pes_non_mod,  only : read_non_interacting
     use pes_rebo_mod, only : read_rebo
-    use pes_nene_mod, only : read_nene
+    use pes_nene_mod, only : read_nene ! only use read_nene which is independent from compute_nene with the
 
     implicit none
 
@@ -119,7 +119,7 @@ contains
 
                         case (pes_name_emt)
                             call read_emt(atoms, pes_unit)
-                        
+
                         case (pes_name_rebo)
                             call read_rebo(atoms, pes_unit)
 
@@ -297,7 +297,7 @@ contains
 
         else
             print *,  err // "cannot read initial atom velocities. Did you specify &
-            all species in the *.inp file?"            
+            all species in the *.inp file?"
             stop
         end if
 
@@ -414,8 +414,8 @@ contains
 !            if (.not. allocated(simparams%output_type) .or. .not. allocated(simparams%output_interval)) &
 !                stop err // "output options not set."
             if (any(simparams%output_interval > simparams%nsteps)) print *, warn // "one or more outputs will not show, &
-                since the output interval is larger than the total number of simulation steps."            
-        
+                since the output interval is larger than the total number of simulation steps."
+
             ! If one of them is set, the others must be set as well.
             if (any([simparams%einc, simparams%polar] == default_real) .and.  &
                 .not. all([simparams%einc, simparams%polar] == default_real)) &
