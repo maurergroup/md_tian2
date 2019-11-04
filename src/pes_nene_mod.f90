@@ -25,6 +25,9 @@ module pes_nene_mod
 
     implicit none
 
+    character(len=max_string_length) :: filename_inpnn, filename_scaling
+    character(len=max_string_length), dimension(atoms%ntypes) :: filename_weights
+
 !   2do:
 !   use RuNNer modules if necessary, otherwise make own ones
 !   include RuNNer subroutine files -> are all subroutines completely independent or are they using global variables, if not ask Jorg to change that!!
@@ -32,291 +35,15 @@ module pes_nene_mod
 !   change how the seeed for the random number generator will be (add new variable)
 !   change name of the program in licence header? (Molecular Dynamics Tian Xia 2 vs. Molecular Dynamics Xia Tian 2)
 
-    type runner_input_parameters
-
-        ! input.nn
-        ! 1) getdimensions.f90, 2) readinput.f90, 3) readkeywords.f90, 4) checkinputnn.f90
-        ! getdimensions.f90
-        private
-        integer :: nn_type_short
-        integer :: mode
-        logical :: lshort
-        logical :: lelec
-        integer :: nn_type_elec
-        logical :: lfounddebug
-        logical :: ldebug
-        logical :: lfound_num_layersshort
-        integer :: maxnum_layers_short_atomic
-        logical :: lfound_num_layersewald
-        integer :: maxnum_layers_elec
-        logical :: lfound_num_layerspair
-        integer :: maxnum_layers_short_pair
-        logical :: lfound_luseatomenergies
-        logical :: luseatomenergies
-        logical :: lfound_luseatomcharges
-        logical :: luseatomcharges
-        logical :: lfound_nelem
-        integer :: nelem
-        integer :: npairs
-        integer :: max_num_pairs
-
-        character(len=3), dimension(atoms%ntypes)                  :: element
-        integer, dimension(atoms%ntypes)                           :: nucelem
-        real(dp), dimension(atoms%ntypes * (atoms%ntypes + 1) / 2) :: dmin_element
-
-        integer, dimension(:),   allocatable :: nodes_short_local
-        integer, dimension(:),   allocatable :: nodes_ewald_local
-        integer, dimension(:),   allocatable :: nodes_pair_local
-        integer, dimension(:),   allocatable :: num_funcvalues_local
-        integer, dimension(:),   allocatable :: num_funcvaluese_local
-        integer, dimension(:,:), allocatable :: num_funcvaluesp_local
-
-        character(len=3) :: elementtemp
-        integer :: ztemp
-        integer :: maxnum_funcvalues_short_atomic
-        integer :: maxnum_funcvalues_elec
-        integer :: maxnum_funcvalues_short_pair ! not needed?
-
-        integer :: function_type_local
-        integer :: function_type_temp
-        real(dp) :: funccutoff_local
-        real(dp) :: maxcutoff_local
-        character(len=3) :: elementtemp1, elementtemp2, elementtemp3
-
-        ! nnflags.f90
-        integer originatom_id
-      	integer zatom_id
-
-        ! timings.f90
-        integer dayshort
-      	real*8 timeshortstart
-    	real*8 timeshortend
-    	real*8 timeshort
-
-    	integer dayallocshort
-    	real*8 timeallocshortstart
-    	real*8 timeallocshortend
-    	real*8 timeallocshort
-
-    	integer daysymshort
-     	real*8 timesymshortstart
-     	real*8 timesymshortend
-     	real*8 timesymshort
-
-     	integer dayextrapolationshort
-      	real*8 timeextrapolationshortstart
-      	real*8 timeextrapolationshortend
-      	real*8 timeextrapolationshort
-
-      	integer dayextrapolationewald
-      	real*8 timeextrapolationewaldstart
-      	real*8 timeextrapolationewaldend
-      	real*8 timeextrapolationewald
-
-      	integer dayscalesymshort
-      	real*8 timescalesymshortstart
-      	real*8 timescalesymshortend
-      	real*8 timescalesymshort
-
-      	integer dayscalesymewald
-      	real*8 timescalesymewaldstart
-      	real*8 timescalesymewaldend
-      	real*8 timescalesymewald
-
-      	integer dayscaledsfuncshort
-      	real*8 timescaledsfuncshortstart
-      	real*8 timescaledsfuncshortend
-      	real*8 timescaledsfuncshort
-
-      	integer dayeshort
-      	real*8 timeeshortstart
-      	real*8 timeeshortend
-      	real*8 timeeshort
-
-      	integer dayfshort
-      	real*8 timefshortstart
-      	real*8 timefshortend
-      	real*8 timefshort
-
-      	integer daysshort
-      	real*8 timesshortstart
-      	real*8 timesshortend
-        real*8 timeeshort
-
-        integer dayfshort
-      	real*8 timefshortstart
-      	real*8 timefshortend
-      	real*8 timefshort
-
-      	integer daysshort
-      	real*8 timesshortstart
-      	real*8 timesshortend
-      	real*8 timesshort
-
-      	integer daycharge
-      	real*8 timechargestart
-      	real*8 timechargeend
-      	real*8 timecharge
-
-      	integer daycomm1
-      	real*8 timecomm1start
-      	real*8 timecomm1end
-      	real*8 timecomm1
-
-      	integer dayelec
-      	real*8 timeelecstart
-      	real*8 timeelecend
-      	real*8 timeelec
-
-      	integer daysymelec1
-      	real*8 timesymelec1start
-      	real*8 timesymelec1end
-      	real*8 timesymelec1
-
-      	integer daysymelec2
-      	real*8 timesymelec2start
-      	real*8 timesymelec2end
-      	real*8 timesymelec2
-
-      	integer dayeelec
-      	real*8 timeeelecstart
-      	real*8 timeeelecend
-      	real*8 timeeelec
-
-        character*8 fulldate
-      	character*10 fulltime
-      	character*5 zone
-      	integer*4 timevalues(8)
-
-        ! nnshort_atomic.f90
-
-        integer, dimension(:)  , allocatable :: num_layers_short_atomic
-      	integer, dimension(:,:), allocatable :: nodes_short_atomic
-      	integer, dimension(:,:), allocatable :: windex_short_atomic
-      	integer, dimension(:)  , allocatable :: num_weights_short_atomic
-      	integer, dimension(:)  , allocatable :: num_funcvalues_short_atomic
-      	integer maxnodes_short_atomic
-
-      	real*8, dimension(:,:)   , allocatable :: weights_short_atomic
-      	real*8, dimension(:,:,:) , allocatable :: symfunction_short_atomic_list
-      	real*8 scmin_short_atomic
-      	real*8 scmax_short_atomic
-
-      	character*1, dimension(:,:,:), allocatable :: actfunc_short_atomic
-
-        ! mpi_dummy.f90
-        integer mpierror
-      	integer mpirank
-      	integer mpisize
-      	integer mpi_comm_world
-      	integer mpi_sum
-      	integer mpi_double_precision
-      	integer mpi_lor
-      	integer mpi_integer
-      	integer mpi_real8
-      	integer mpi_character
-      	integer mpi_logical
-      	integer mpi_in_place
-
-
-
-        ! shared
-        integer :: ndim ! in
-
-        ! weights.XXX.data
-        ! readweights.f90
-        integer :: maxnum_weights_local ! in
-        integer :: num_weights_local(ndim) ! in
-        real(dp)  :: weights_local, dimension(maxnum_weights_local, ndim) ! out
-
-        ! scaling.data
-        ! readscale.f90
-        integer :: maxnum_funcvalues_local                        ! in
-        integer :: num_funcvalues_local(ndim)                     ! in
-        real(dp)  :: avvalue_local(ndim,maxnum_funcvalues_local)  ! out
-        real(dp)  :: maxvalue_local(ndim,maxnum_funcvalues_local) ! out
-        real(dp)  :: minvalue_local(ndim,maxnum_funcvalues_local) ! out
-        real(dp)  :: eshortmin                                    ! out
-        real(dp)  :: eshortmax                                    ! out
-
-
-
-
-
-
-
-    end type
-
-    type(runner_input_parameters) :: rinpparam
-
-    contains
-
-    function new_runner_input_parameters
-
-        type(runner_input_parameters) new_runner_input_parameters
-
-        new_runner_input_parameters%nn_type_short                  = default_int ! 1 default, no pair available
-        new_runner_input_parameters%mode                           = default_int ! 3 default, only RuNNer mode 3 implemented
-        new_runner_input_parameters%lshort                         = default_bool ! .true. default, only short implemented
-        new_runner_input_parameters%lelec                          = default_bool ! not implemented yet, but overall structure already there
-        new_runner_input_parameters%nn_type_elec                   = default_int
-        new_runner_input_parameters%lfounddebug                    = default_bool
-        new_runner_input_parameters%ldebug                         = default_bool
-        new_runner_input_parameters%lfound_num_layersshort         = default_bool
-        new_runner_input_parameters%maxnum_layers_short_atomic     = default_int
-        new_runner_input_parameters%lfound_num_layersewald         = default_bool
-        new_runner_input_parameters%maxnum_layers_elec             = default_int
-        new_runner_input_parameters%lfound_num_layerspair          = default_bool
-        new_runner_input_parameters%maxnum_layers_short_pair       = default_int
-        new_runner_input_parameters%lfound_luseatomenergies        = default_bool
-        new_runner_input_parameters%luseatomenergies               = default_bool
-        new_runner_input_parameters%lfound_luseatomcharges         = default_bool
-        new_runner_input_parameters%luseatomcharges                = default_bool
-        new_runner_input_parameters%lfound_nelem                   = default_bool
-        new_runner_input_parameters%nelem                          = default_int
-        new_runner_input_parameters%npairs                         = default_int
-        new_runner_input_parameters%max_num_pairs                  = default_int
-        new_runner_input_parameters%element                        = default_string
-        new_runner_input_parameters%nucelem                        = default_int
-        new_runner_input_parameters%dmin_element                   = default_real
-        new_runner_input_parameters%nodes_short_local              = default_int
-        new_runner_input_parameters%nodes_ewald_local              = default_int
-        new_runner_input_parameters%nodes_pair_local               = default_int
-        new_runner_input_parameters%num_funcvalues_local           = default_int
-        new_runner_input_parameters%num_funcvaluese_local          = default_int
-        new_runner_input_parameters%num_funcvaluesp_local          = default_int
-        new_runner_input_parameters%elementtemp                    = default_string
-        new_runner_input_parameters%ztemp                          = default_int
-        new_runner_input_parameters%maxnum_funcvalues_short_atomic = default_int
-        new_runner_input_parameters%maxnum_funcvalues_elec         = default_int
-        new_runner_input_parameters%maxnum_funcvalues_short_pair   = default_int ! not needed?
-        new_runner_input_parameters%function_type_local            = default_int
-        new_runner_input_parameters%function_type_temp             = default_int
-        new_runner_input_parameters%funccutoff_local               = default_real
-        new_runner_input_parameters%maxcutoff_local                = default_real
-        new_runner_input_parameters%elementtemp1                   = default_string
-        new_runner_input_parameters%elementtemp2                   = default_string
-        new_runner_input_parameters%elementtemp3                   = default_string
-
-
-        new_runner_input_parameters%           = default_
-
-
-        new_runner_input_parameters%weights_local                  = default_real
-
-
-
-    end function
 
 
     ! Here all necessary files and keywords are read in for the high-dimensional neural network potentials (HDNNPs)
     subroutine read_nene(atoms, inp_unit)
 
-        !use constants
-        use useful_things, only : split_string, lower_case, file_exists
+        use constants
+        use useful_things, only : split_string, lower_case
         use universe_mod
-        use open_file, only : open_for_read
-
+        !use open_file, only : open_for_read
         use run_config, only : simparams
 
         type(universe), intent(inout) :: atoms
@@ -327,20 +54,21 @@ module pes_nene_mod
         character(len=max_string_length) :: words(100)
         character(len=max_string_length) :: inp_path
 
-        character(len=max_string_length) :: filename_inpnn, filename_scaling
-        character(len=max_string_length), dimension(atoms%ntypes) :: weights_path, filename_weights
+        character(len=max_string_length), dimension(atoms%ntypes) :: weights_path
 
         !logical, dimension(2) :: lshort
 
-        integer  :: idx1, idx2, ntypes, weight_counter
-        integer  :: npairs_counter_1, npairs_counter_2, element_counter, nodes_counter, general_counter_1, general_counter_2
+        integer  :: idx1, idx2, weight_counter
+        !integer :: ntypes
+        !integer  :: npairs_counter_1, npairs_counter_2, element_counter, nodes_counter, general_counter_1, general_counter_2
         character(len=*), parameter :: err = "Error in read_nene: "
-        character(len=*), parameter :: err_inpnn = "Error when reading input.nn: "
-        character(len=*), parameter :: err_scaling = "Error when reading scaling.data: "
-        character(len=*), parameter :: err_weight = "Error when reading the following weight file: "
-        character(len=*), parameter :: warn_inpnn = "Warning when reading input.nn: "
+        !character(len=*), parameter :: err_inpnn = "Error when reading input.nn: "
+        !character(len=*), parameter :: err_scaling = "Error when reading scaling.data: "
+        !character(len=*), parameter :: err_weight = "Error when reading the following weight file: "
+        !character(len=*), parameter :: warn_inpnn = "Warning when reading input.nn: "
 
-        ntypes = simparams%nprojectiles+simparams%nlattices
+        !ntypes = simparams%nprojectiles+simparams%nlattices
+        !ntypes = atoms%ntypes
 
         read(inp_unit, '(A)', iostat=ios) buffer
         call split_string(buffer, words, nwords)
@@ -425,6 +153,9 @@ module pes_nene_mod
             filename_weights(weight_counter)  = trim(inp_path) // trim(weights_path(weight_counter))
         end do
 
+
+
+        ! everything below this line should go to compute_nene subroutine
 
         ! check existance of input.nn
         if (.not. file_exists(filename_inpnn)) stop err // err_inpnn // "file does not exist"
@@ -3446,20 +3177,305 @@ module pes_nene_mod
 
     subroutine compute_nene(atoms, flag)
 
-        use constants
+        ! Calculates energy and forces with HDNNPs
+
+        use constants ! be careful when using this module since variables might be collide with RuNNer ones!!
         use useful_things, only : split_string, lower_case, file_exists
         use universe_mod
         use open_file, only : open_for_read
 
-        ! Calculates energy and forces with HDNNPs
-
         type(universe), intent(inout)   :: atoms
         integer, intent(in)             :: flag
 
+        character(len=*), parameter :: err = "Error in compute_nene: "
+
+
+        type runner_input_parameters
+
+        ! input.nn
+        ! 1) getdimensions.f90, 2) readinput.f90, 3) readkeywords.f90, 4) checkinputnn.f90
+        ! getdimensions.f90
+        private
+        integer :: nn_type_short
+        integer :: mode
+        logical :: lshort
+        logical :: lelec
+        integer :: nn_type_elec
+        logical :: lfounddebug
+        logical :: ldebug
+        logical :: lfound_num_layersshort
+        integer :: maxnum_layers_short_atomic
+        logical :: lfound_num_layersewald
+        integer :: maxnum_layers_elec
+        logical :: lfound_num_layerspair
+        integer :: maxnum_layers_short_pair
+        logical :: lfound_luseatomenergies
+        logical :: luseatomenergies
+        logical :: lfound_luseatomcharges
+        logical :: luseatomcharges
+        logical :: lfound_nelem
+        integer :: nelem
+        integer :: npairs
+        integer :: max_num_pairs
+
+        character(len=3), dimension(atoms%ntypes)                  :: element
+        integer, dimension(atoms%ntypes)                           :: nucelem
+        real(dp), dimension(atoms%ntypes * (atoms%ntypes + 1) / 2) :: dmin_element
+
+        integer, dimension(:),   allocatable :: nodes_short_local
+        integer, dimension(:),   allocatable :: nodes_ewald_local
+        integer, dimension(:),   allocatable :: nodes_pair_local
+        integer, dimension(:),   allocatable :: num_funcvalues_local
+        integer, dimension(:),   allocatable :: num_funcvaluese_local
+        integer, dimension(:,:), allocatable :: num_funcvaluesp_local
+
+        character(len=3) :: elementtemp
+        integer :: ztemp
+        integer :: maxnum_funcvalues_short_atomic
+        integer :: maxnum_funcvalues_elec
+        integer :: maxnum_funcvalues_short_pair ! not needed?
+
+        integer :: function_type_local
+        integer :: function_type_temp
+        real(dp) :: funccutoff_local
+        real(dp) :: maxcutoff_local
+        character(len=3) :: elementtemp1, elementtemp2, elementtemp3
+
+        ! nnflags.f90
+        integer originatom_id
+      	integer zatom_id
+
+        ! timings.f90
+        integer dayshort
+      	real*8 timeshortstart
+    	real*8 timeshortend
+    	real*8 timeshort
+
+    	integer dayallocshort
+    	real*8 timeallocshortstart
+    	real*8 timeallocshortend
+    	real*8 timeallocshort
+
+    	integer daysymshort
+     	real*8 timesymshortstart
+     	real*8 timesymshortend
+     	real*8 timesymshort
+
+     	integer dayextrapolationshort
+      	real*8 timeextrapolationshortstart
+      	real*8 timeextrapolationshortend
+      	real*8 timeextrapolationshort
+
+      	integer dayextrapolationewald
+      	real*8 timeextrapolationewaldstart
+      	real*8 timeextrapolationewaldend
+      	real*8 timeextrapolationewald
+
+      	integer dayscalesymshort
+      	real*8 timescalesymshortstart
+      	real*8 timescalesymshortend
+      	real*8 timescalesymshort
+
+      	integer dayscalesymewald
+      	real*8 timescalesymewaldstart
+      	real*8 timescalesymewaldend
+      	real*8 timescalesymewald
+
+      	integer dayscaledsfuncshort
+      	real*8 timescaledsfuncshortstart
+      	real*8 timescaledsfuncshortend
+      	real*8 timescaledsfuncshort
+
+      	integer dayeshort
+      	real*8 timeeshortstart
+      	real*8 timeeshortend
+      	real*8 timeeshort
+
+      	integer dayfshort
+      	real*8 timefshortstart
+      	real*8 timefshortend
+      	real*8 timefshort
+
+      	integer daysshort
+      	real*8 timesshortstart
+      	real*8 timesshortend
+        real*8 timeeshort
+
+        integer dayfshort
+      	real*8 timefshortstart
+      	real*8 timefshortend
+      	real*8 timefshort
+
+      	integer daysshort
+      	real*8 timesshortstart
+      	real*8 timesshortend
+      	real*8 timesshort
+
+      	integer daycharge
+      	real*8 timechargestart
+      	real*8 timechargeend
+      	real*8 timecharge
+
+      	integer daycomm1
+      	real*8 timecomm1start
+      	real*8 timecomm1end
+      	real*8 timecomm1
+
+      	integer dayelec
+      	real*8 timeelecstart
+      	real*8 timeelecend
+      	real*8 timeelec
+
+      	integer daysymelec1
+      	real*8 timesymelec1start
+      	real*8 timesymelec1end
+      	real*8 timesymelec1
+
+      	integer daysymelec2
+      	real*8 timesymelec2start
+      	real*8 timesymelec2end
+      	real*8 timesymelec2
+
+      	integer dayeelec
+      	real*8 timeeelecstart
+      	real*8 timeeelecend
+      	real*8 timeeelec
+
+        character*8 fulldate
+      	character*10 fulltime
+      	character*5 zone
+      	integer*4 timevalues(8)
+
+        ! nnshort_atomic.f90
+
+        integer, dimension(:)  , allocatable :: num_layers_short_atomic
+      	integer, dimension(:,:), allocatable :: nodes_short_atomic
+      	integer, dimension(:,:), allocatable :: windex_short_atomic
+      	integer, dimension(:)  , allocatable :: num_weights_short_atomic
+      	integer, dimension(:)  , allocatable :: num_funcvalues_short_atomic
+      	integer maxnodes_short_atomic
+
+      	real*8, dimension(:,:)   , allocatable :: weights_short_atomic
+      	real*8, dimension(:,:,:) , allocatable :: symfunction_short_atomic_list
+      	real*8 scmin_short_atomic
+      	real*8 scmax_short_atomic
+
+      	character*1, dimension(:,:,:), allocatable :: actfunc_short_atomic
+
+        ! mpi_dummy.f90
+        integer mpierror
+      	integer mpirank
+      	integer mpisize
+      	integer mpi_comm_world
+      	integer mpi_sum
+      	integer mpi_double_precision
+      	integer mpi_lor
+      	integer mpi_integer
+      	integer mpi_real8
+      	integer mpi_character
+      	integer mpi_logical
+      	integer mpi_in_place
+
+
+
+        ! shared
+        integer :: ndim ! in
+
+        ! weights.XXX.data
+        ! readweights.f90
+        integer :: maxnum_weights_local ! in
+        integer :: num_weights_local(ndim) ! in
+        real(dp)  :: weights_local, dimension(maxnum_weights_local, ndim) ! out
+
+        ! scaling.data
+        ! readscale.f90
+        integer :: maxnum_funcvalues_local                        ! in
+        integer :: num_funcvalues_local(ndim)                     ! in
+        real(dp)  :: avvalue_local(ndim,maxnum_funcvalues_local)  ! out
+        real(dp)  :: maxvalue_local(ndim,maxnum_funcvalues_local) ! out
+        real(dp)  :: minvalue_local(ndim,maxnum_funcvalues_local) ! out
+        real(dp)  :: eshortmin                                    ! out
+        real(dp)  :: eshortmax                                    ! out
 
 
 
 
+
+
+
+    end type
+
+    type(runner_input_parameters) :: rinpparam
+
+    contains
+
+    function new_runner_input_parameters
+
+        type(runner_input_parameters) new_runner_input_parameters
+
+        new_runner_input_parameters%nn_type_short                  = default_int ! 1 default, no pair available
+        new_runner_input_parameters%mode                           = default_int ! 3 default, only RuNNer mode 3 implemented
+        new_runner_input_parameters%lshort                         = default_bool ! .true. default, only short implemented
+        new_runner_input_parameters%lelec                          = default_bool ! not implemented yet, but overall structure already there
+        new_runner_input_parameters%nn_type_elec                   = default_int
+        new_runner_input_parameters%lfounddebug                    = default_bool
+        new_runner_input_parameters%ldebug                         = default_bool
+        new_runner_input_parameters%lfound_num_layersshort         = default_bool
+        new_runner_input_parameters%maxnum_layers_short_atomic     = default_int
+        new_runner_input_parameters%lfound_num_layersewald         = default_bool
+        new_runner_input_parameters%maxnum_layers_elec             = default_int
+        new_runner_input_parameters%lfound_num_layerspair          = default_bool
+        new_runner_input_parameters%maxnum_layers_short_pair       = default_int
+        new_runner_input_parameters%lfound_luseatomenergies        = default_bool
+        new_runner_input_parameters%luseatomenergies               = default_bool
+        new_runner_input_parameters%lfound_luseatomcharges         = default_bool
+        new_runner_input_parameters%luseatomcharges                = default_bool
+        new_runner_input_parameters%lfound_nelem                   = default_bool
+        new_runner_input_parameters%nelem                          = default_int
+        new_runner_input_parameters%npairs                         = default_int
+        new_runner_input_parameters%max_num_pairs                  = default_int
+        new_runner_input_parameters%element                        = default_string
+        new_runner_input_parameters%nucelem                        = default_int
+        new_runner_input_parameters%dmin_element                   = default_real
+        new_runner_input_parameters%nodes_short_local              = default_int
+        new_runner_input_parameters%nodes_ewald_local              = default_int
+        new_runner_input_parameters%nodes_pair_local               = default_int
+        new_runner_input_parameters%num_funcvalues_local           = default_int
+        new_runner_input_parameters%num_funcvaluese_local          = default_int
+        new_runner_input_parameters%num_funcvaluesp_local          = default_int
+        new_runner_input_parameters%elementtemp                    = default_string
+        new_runner_input_parameters%ztemp                          = default_int
+        new_runner_input_parameters%maxnum_funcvalues_short_atomic = default_int
+        new_runner_input_parameters%maxnum_funcvalues_elec         = default_int
+        new_runner_input_parameters%maxnum_funcvalues_short_pair   = default_int ! not needed?
+        new_runner_input_parameters%function_type_local            = default_int
+        new_runner_input_parameters%function_type_temp             = default_int
+        new_runner_input_parameters%funccutoff_local               = default_real
+        new_runner_input_parameters%maxcutoff_local                = default_real
+        new_runner_input_parameters%elementtemp1                   = default_string
+        new_runner_input_parameters%elementtemp2                   = default_string
+        new_runner_input_parameters%elementtemp3                   = default_string
+
+
+        new_runner_input_parameters%           = default_
+
+
+        new_runner_input_parameters%weights_local                  = default_real
+
+
+
+    end function
+
+
+
+
+
+
+
+
+        ! return the two following variables only
+        atoms%epot = new_RuNNer_calue
+        atoms%f(:,:,:) = new_RuNNer_calue
 
     end subroutine compute_nene
 
