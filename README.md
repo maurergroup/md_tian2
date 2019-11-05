@@ -1,7 +1,7 @@
 md_tian2
 ========
 
-md_tian 2 (Molecular Dynamics Xia Tian 2) is a program for simulating 
+md_tian 2 (Molecular Dynamics Tian Xia 2) is a program for simulating 
 the scattering of atoms (and molecules) from a surface. 
 
 Purpose: -> maybe also here, but put in manual!
@@ -10,6 +10,7 @@ Do molecular dynamics, Langevin dynamics, Ring Polymer dynamics
 Source code is in Fortran. 
 
 List of modules: -> maybe also here, but put in manual!
+2do: add RuNNer related files in the following list
 
 constants.f90           :contains the global constants
 fit.f90                 :fitting routine for EMT

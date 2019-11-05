@@ -1,6 +1,6 @@
 !############################################################################
 ! This routine is part of
-! md_tian2 (Molecular Dynamics Xia Tian 2)
+! md_tian2 (Molecular Dynamics Tian Xia 2)
 ! (c) 2014-2019 Dan J. Auerbach, Sascha Kandratsenka, Svenja M. Janke, Marvin
 ! Kammler, Sebastian Wille
 ! Dynamics at Surfaces Department
@@ -44,7 +44,7 @@ module pes_nene_mod
 !   include RuNNer subroutine files -> are all subroutines completely independent or are they using global variables, if not ask Jorg to change that!!
 !   rename md_tian2 into MDT2/MDXT2?
 !   change how the seeed for the random number generator will be (add new variable)
-!   change name of the program in licence header? (Molecular Dynamics Tian Xia 2 vs. Molecular Dynamics Xia Tian 2)
+!   change name of the program in licence header? (Molecular Dynamics Tian Xia 2 vs. Molecular Dynamics Tian Xia 2)
 ! variable declarations concerning RuNNer in the corresponding modules, but set
 ! to (our) default values has to be done before reading out keywords (own
 ! subroutine or in compute_nene?)
@@ -206,7 +206,18 @@ module pes_nene_mod
         type(universe), intent(inout)   :: atoms
         integer, intent(in)             :: flag
 
+        integer :: nwords, ios = 0, line = 0
+        character(len=max_string_length) :: buffer
+        character(len=max_string_length) :: words(100)
+
+        integer  :: npairs_counter_1, npairs_counter_2, element_counter, nodes_counter, general_counter_1, general_counter_2
+
         character(len=*), parameter :: err = "Error in compute_nene: "
+        character(len=*), parameter :: err_inpnn = "Error when reading input.nn: "
+        character(len=*), parameter :: err_scaling = "Error when reading scaling.data: "
+        character(len=*), parameter :: err_weight = "Error when reading the following weight file: "
+        character(len=*), parameter :: warn_inpnn = "Warning when reading input.nn: "
+
 
 
         !type runner_input_parameters
