@@ -141,7 +141,7 @@
 !!======================================================================
         if((mpirank.eq.0).and.(.not.lmd))then
           write(ounit,*)'-------------------------------------------------------------'
-          write(ounit,'(a,i8,a)')'This cycle calculates total ',npoints,' atoms'
+          write(ounit,'(a29,i8,a)')'This cycle calculates total ',npoints,' atoms'
         endif !'
 !! each process now picks 'natoms' atoms from the total number of 'npoints' atoms of this block
         call mpifitdistribution(npoints,natoms,n_start,n_end)

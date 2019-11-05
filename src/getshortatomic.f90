@@ -148,12 +148,12 @@
           endif ! lfinetime
           lextrapolation=.false.
           if((symfunction(i2)-maxvalue_local(ielem,i2)).gt.threshold)then
-            write(ounit,'(a,a5,x,2i5,x,a,2f18.8)')&
+            write(ounit,'(a31,a5,x,2i5,x,a,2f18.8)')&
             '### EXTRAPOLATION WARNING ### ','short',&
             atomindex(i1),i2,'too large ',symfunction(i2),maxvalue_local(ielem,i2)
             lextrapolation=.true.
           elseif((-symfunction(i2)+minvalue_local(ielem,i2)).gt.threshold)then
-            write(ounit,'(a,a5,x,2i5,x,a,2f18.8)')&
+            write(ounit,'(a31,a5,x,2i5,x,a,2f18.8)')&
             '### EXTRAPOLATION WARNING ### ','short',&
             atomindex(i1),i2,'too small ',symfunction(i2),minvalue_local(ielem,i2)
             lextrapolation=.true.

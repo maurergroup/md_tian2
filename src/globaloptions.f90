@@ -119,7 +119,6 @@
       logical lsens
 
       logical ldostress
-      logical ldohessian
 
       logical ldetect_saturation
       real*8 saturation_threshold

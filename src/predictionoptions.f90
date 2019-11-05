@@ -24,6 +24,7 @@
       integer enforcetotcharge
 
       logical ldoforces
+      logical ldohessian
       logical lpreparemd
       logical lprintforcecomponents
       logical lwritesymfunctions
