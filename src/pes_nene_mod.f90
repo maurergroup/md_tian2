@@ -45,7 +45,9 @@ module pes_nene_mod
 !   rename md_tian2 into MDT2/MDXT2?
 !   change how the seeed for the random number generator will be (add new variable)
 !   change name of the program in licence header? (Molecular Dynamics Tian Xia 2 vs. Molecular Dynamics Xia Tian 2)
-
+! variable declarations concerning RuNNer in the corresponding modules, but set
+! to (our) default values has to be done before reading out keywords (own
+! subroutine or in compute_nene?)
 
 
     ! Here all necessary files and keywords are read in for the high-dimensional neural network potentials (HDNNPs)
@@ -359,9 +361,9 @@ module pes_nene_mod
       	real*8 timeeelec
 
         character*8 fulldate
-      	character*10 fulltime
-      	character*5 zone
-      	integer*4 timevalues(8)
+        character*10 fulltime
+        character*5 zone
+        integer*4 timevalues(8)
 
         ! nnshort_atomic.f90
 
