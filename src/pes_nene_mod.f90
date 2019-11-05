@@ -24,6 +24,7 @@
 module pes_nene_mod
 
     use universe_mod
+    use useful_things, only : split_string, lower_case
 
     implicit none
 
@@ -43,46 +44,30 @@ module pes_nene_mod
 !   use RuNNer modules if necessary, otherwise make own ones
 !   include RuNNer subroutine files -> are all subroutines completely independent or are they using global variables, if not ask Jorg to change that!!
 !   rename md_tian2 into MDT2/MDXT2?
-!   change how the seeed for the random number generator will be (add new variable)
-!   change name of the program in licence header? (Molecular Dynamics Tian Xia 2 vs. Molecular Dynamics Tian Xia 2)
-! variable declarations concerning RuNNer in the corresponding modules, but set
-! to (our) default values has to be done before reading out keywords (own
-! subroutine or in compute_nene?)
+!   change how the seeed for the random number generator will be (add new variable?)
+!   variable declarations concerning RuNNer in the corresponding modules, but set to (our) default values has to be done before reading out keywords (own subroutine or in compute_nene?)
 
 
     ! Here all necessary files and keywords are read in for the high-dimensional neural network potentials (HDNNPs)
     subroutine read_nene(atoms, inp_unit)
 
         use constants
-        use useful_things, only : split_string, lower_case
-        !use universe_mod
-        !use open_file, only : open_for_read
         use run_config, only : simparams
 
         type(universe), intent(inout) :: atoms
         integer, intent(in) :: inp_unit
 
-        integer :: nwords, ios = 0, line = 0
+        integer :: nwords, ios = 0
         character(len=max_string_length) :: buffer
         character(len=max_string_length) :: words(100)
         character(len=max_string_length) :: inp_path
 
         character(len=max_string_length), allocatable :: weights_path(:)
 
-        !logical, dimension(2) :: lshort
-
         integer  :: idx1, idx2, weight_counter
-        !integer :: ntypes
-        !integer  :: npairs_counter_1, npairs_counter_2, element_counter, nodes_counter, general_counter_1, general_counter_2
+
         character(len=*), parameter :: err = "Error in read_nene: "
         character(len=*), parameter :: err_pes = "Error in the PES file: "
-        !character(len=*), parameter :: err_inpnn = "Error when reading input.nn: "
-        !character(len=*), parameter :: err_scaling = "Error when reading scaling.data: "
-        !character(len=*), parameter :: err_weight = "Error when reading the following weight file: "
-        !character(len=*), parameter :: warn_inpnn = "Warning when reading input.nn: "
-
-        !ntypes = simparams%nprojectiles+simparams%nlattices
-        !ntypes = atoms%ntypes
 
         read(inp_unit, '(A)', iostat=ios) buffer
         call split_string(buffer, words, nwords)
@@ -187,20 +172,33 @@ module pes_nene_mod
 
         ! Calculates energy and forces with HDNNPs
 
+        ! md_tian2 related modules
         use constants ! be careful when using this module since variables might collide with RuNNer ones!!
-        use useful_things, only : split_string, lower_case, file_exists
-        !use universe_mod
+        !use constants, mdt_pi => pi ! use the value of variable pi of constants.f90 in variable mdt_pi (pi is global, mdt_pi is local)
+        !use constants, mdt_rad2deg => rad2deg
+        !use constants, mdt_ha2ev => ha2ev
         use open_file, only : open_for_read
+        use useful_things, only : file_exists
 
-        !starting from here the RuNNer related modules
-        use mpi_mod
+
+        ! RuNNer related modules (needed for and in predictionshortatomic.f90)
         use fileunits
-        use predictionoptions
+        use globaloptions
+        use mpi_mod
         use nnflags
-        use globalooptions
+        use nnshort_atomic
+        use predictionoptions
+        use saturation
         use symfunctions
         use timings
-        use nnshort_atomic
+
+        ! RuNNer related modules (needed for and in initnn.f90)
+        use fittingoptions
+        use mode1options
+        use nnewald
+        use nnconstants
+
+
 
 
         type(universe), intent(inout)   :: atoms
@@ -210,7 +208,7 @@ module pes_nene_mod
         character(len=max_string_length) :: buffer
         character(len=max_string_length) :: words(100)
 
-        integer  :: npairs_counter_1, npairs_counter_2, element_counter, nodes_counter, general_counter_1, general_counter_2
+        integer  :: npairs_counter_1, npairs_counter_2, element_counter, nodes_counter, general_counter_1, general_counter_2, weight_counter
 
         character(len=*), parameter :: err = "Error in compute_nene: "
         character(len=*), parameter :: err_inpnn = "Error when reading input.nn: "
@@ -219,227 +217,6 @@ module pes_nene_mod
         character(len=*), parameter :: warn_inpnn = "Warning when reading input.nn: "
 
 
-
-        !type runner_input_parameters
-
-        ! input.nn
-        ! 1) getdimensions.f90, 2) readinput.f90, 3) readkeywords.f90, 4) checkinputnn.f90
-        ! getdimensions.f90
-        !private
-        integer :: nn_type_short
-        integer :: mode
-        logical :: lshort
-        logical :: lelec
-        integer :: nn_type_elec
-        logical :: lfounddebug
-        logical :: ldebug
-        logical :: lfound_num_layersshort
-        integer :: maxnum_layers_short_atomic
-        logical :: lfound_num_layersewald
-        integer :: maxnum_layers_elec
-        logical :: lfound_num_layerspair
-        integer :: maxnum_layers_short_pair
-        logical :: lfound_luseatomenergies
-        logical :: luseatomenergies
-        logical :: lfound_luseatomcharges
-        logical :: luseatomcharges
-        logical :: lfound_nelem
-        integer :: nelem
-        integer :: npairs
-        integer :: max_num_pairs
-
-        character(len=3), dimension(atoms%ntypes)                  :: element
-        integer, dimension(atoms%ntypes)                           :: nucelem
-        real(dp), dimension(atoms%ntypes * (atoms%ntypes + 1) / 2) :: dmin_element
-
-        integer, dimension(:),   allocatable :: nodes_short_local
-        integer, dimension(:),   allocatable :: nodes_ewald_local
-        integer, dimension(:),   allocatable :: nodes_pair_local
-        integer, dimension(:),   allocatable :: num_funcvalues_local
-        integer, dimension(:),   allocatable :: num_funcvaluese_local
-        integer, dimension(:,:), allocatable :: num_funcvaluesp_local
-
-        character(len=3) :: elementtemp
-        integer :: ztemp
-        integer :: maxnum_funcvalues_short_atomic
-        integer :: maxnum_funcvalues_elec
-        integer :: maxnum_funcvalues_short_pair ! not needed?
-
-        integer :: function_type_local
-        integer :: function_type_temp
-        real(dp) :: funccutoff_local
-        real(dp) :: maxcutoff_local
-        character(len=3) :: elementtemp1, elementtemp2, elementtemp3
-
-        ! nnflags.f90
-        integer originatom_id
-      	integer zatom_id
-
-        ! timings.f90
-        integer dayshort
-      	real*8 timeshortstart
-    	real*8 timeshortend
-    	real*8 timeshort
-
-    	integer dayallocshort
-    	real*8 timeallocshortstart
-    	real*8 timeallocshortend
-    	real*8 timeallocshort
-
-    	integer daysymshort
-     	real*8 timesymshortstart
-     	real*8 timesymshortend
-     	real*8 timesymshort
-
-     	integer dayextrapolationshort
-      	real*8 timeextrapolationshortstart
-      	real*8 timeextrapolationshortend
-      	real*8 timeextrapolationshort
-
-      	integer dayextrapolationewald
-      	real*8 timeextrapolationewaldstart
-      	real*8 timeextrapolationewaldend
-      	real*8 timeextrapolationewald
-
-      	integer dayscalesymshort
-      	real*8 timescalesymshortstart
-      	real*8 timescalesymshortend
-      	real*8 timescalesymshort
-
-      	integer dayscalesymewald
-      	real*8 timescalesymewaldstart
-      	real*8 timescalesymewaldend
-      	real*8 timescalesymewald
-
-      	integer dayscaledsfuncshort
-      	real*8 timescaledsfuncshortstart
-      	real*8 timescaledsfuncshortend
-      	real*8 timescaledsfuncshort
-
-      	integer dayeshort
-      	real*8 timeeshortstart
-      	real*8 timeeshortend
-      	real*8 timeeshort
-
-      	integer dayfshort
-      	real*8 timefshortstart
-      	real*8 timefshortend
-      	real*8 timefshort
-
-      	integer daysshort
-      	real*8 timesshortstart
-      	real*8 timesshortend
-        real*8 timeeshort
-
-        integer dayfshort
-      	real*8 timefshortstart
-      	real*8 timefshortend
-      	real*8 timefshort
-
-      	integer daysshort
-      	real*8 timesshortstart
-      	real*8 timesshortend
-      	real*8 timesshort
-
-      	integer daycharge
-      	real*8 timechargestart
-      	real*8 timechargeend
-      	real*8 timecharge
-
-      	integer daycomm1
-      	real*8 timecomm1start
-      	real*8 timecomm1end
-      	real*8 timecomm1
-
-      	integer dayelec
-      	real*8 timeelecstart
-      	real*8 timeelecend
-      	real*8 timeelec
-
-      	integer daysymelec1
-      	real*8 timesymelec1start
-      	real*8 timesymelec1end
-      	real*8 timesymelec1
-
-      	integer daysymelec2
-      	real*8 timesymelec2start
-      	real*8 timesymelec2end
-      	real*8 timesymelec2
-
-      	integer dayeelec
-      	real*8 timeeelecstart
-      	real*8 timeeelecend
-      	real*8 timeeelec
-
-        character*8 fulldate
-        character*10 fulltime
-        character*5 zone
-        integer*4 timevalues(8)
-
-        ! nnshort_atomic.f90
-
-        integer, dimension(:)  , allocatable :: num_layers_short_atomic
-      	integer, dimension(:,:), allocatable :: nodes_short_atomic
-      	integer, dimension(:,:), allocatable :: windex_short_atomic
-      	integer, dimension(:)  , allocatable :: num_weights_short_atomic
-      	integer, dimension(:)  , allocatable :: num_funcvalues_short_atomic
-      	integer maxnodes_short_atomic
-
-      	real*8, dimension(:,:)   , allocatable :: weights_short_atomic
-      	real*8, dimension(:,:,:) , allocatable :: symfunction_short_atomic_list
-      	real*8 scmin_short_atomic
-      	real*8 scmax_short_atomic
-
-      	character*1, dimension(:,:,:), allocatable :: actfunc_short_atomic
-
-        ! mpi_dummy.f90
-        integer mpierror
-      	integer mpirank
-      	integer mpisize
-      	integer mpi_comm_world
-      	integer mpi_sum
-      	integer mpi_double_precision
-      	integer mpi_lor
-      	integer mpi_integer
-      	integer mpi_real8
-      	integer mpi_character
-      	integer mpi_logical
-      	integer mpi_in_place
-
-
-
-        ! shared
-        integer :: ndim ! in
-
-        ! weights.XXX.data
-        ! readweights.f90
-        integer :: maxnum_weights_local ! in
-        integer :: num_weights_local(ndim) ! in
-        real(dp)  :: weights_local, dimension(maxnum_weights_local, ndim) ! out
-
-        ! scaling.data
-        ! readscale.f90
-        integer :: maxnum_funcvalues_local                        ! in
-        integer :: num_funcvalues_local(ndim)                     ! in
-        real(dp)  :: avvalue_local(ndim,maxnum_funcvalues_local)  ! out
-        real(dp)  :: maxvalue_local(ndim,maxnum_funcvalues_local) ! out
-        real(dp)  :: minvalue_local(ndim,maxnum_funcvalues_local) ! out
-        real(dp)  :: eshortmin                                    ! out
-        real(dp)  :: eshortmax                                    ! out
-
-
-
-
-
-
-
-        !end type
-
-        !type(runner_input_parameters) :: rinpparam
-
-
-    ! check existance of input.nn
-        if (.not. file_exists(filename_inpnn)) stop err // err_inpnn // "file does not exist"
 
         ! read all input keywords from input.nn several times to respect dependencies
 
@@ -502,18 +279,22 @@ module pes_nene_mod
 
         ! according to initnn.f90 (initialization subroutine in main.f90)
 
-        ! call get_nnconstants() -> already included in constants.f90 in MDT2
+        call get_nnconstants() ! in principal included in constants.f90, but due to variable name conflicts, this should stay!!
 
         ! call initialization(ielem,lelement) -> here only getdimensions and paircount is needed
 
 
         ! start readout according to getdimensions.f90
+
+        ! check existance of input.nn
+        if (.not. file_exists(filename_inpnn)) stop err // err_inpnn // "file does not exist"
+
         call open_for_read(inpnn_unit, filename_inpnn); ios = 0
 
         do while (ios == 0)
             read(inpnn_unit, '(A)', iostat=ios) buffer
             if (ios == 0) then
-                line = line + 1
+                !line = line + 1
                 call split_string(buffer, words, nwords)
 
                 select case (words(1))
@@ -715,7 +496,7 @@ module pes_nene_mod
         do while (ios == 0)
             read(inpnn_unit, '(A)', iostat=ios) buffer
             if (ios == 0) then
-                line = line + 1
+                !line = line + 1
                 call split_string(buffer, words, nwords)
 
                 select case (words(1))
@@ -791,7 +572,7 @@ module pes_nene_mod
         do while (ios == 0)
             read(inpnn_unit, '(A)', iostat=ios) buffer
             if (ios == 0) then
-                line = line + 1
+                !line = line + 1
                 call split_string(buffer, words, nwords)
 
                 select case (words(1))
@@ -1038,7 +819,7 @@ module pes_nene_mod
             do while (ios == 0)
                 read(inpnn_unit, '(A)', iostat=ios) buffer
                 if (ios == 0) then
-                    line = line + 1
+                    !line = line + 1
                     call split_string(buffer, words, nwords)
 
                     select case (words(1))
@@ -1260,7 +1041,7 @@ module pes_nene_mod
             do while (ios == 0)
                 read(inpnn_unit, '(A)', iostat=ios) buffer
                 if (ios == 0) then
-                    line = line + 1
+                    !line = line + 1
                     call split_string(buffer, words, nwords)
 
                     select case (words(1))
@@ -1484,7 +1265,7 @@ module pes_nene_mod
 
         !according to initnn.f90
 
-        ! call distribute_nnflags() -> not needed, only mpi functions
+        !call distribute_nnflags() ! -> not really needed, only mpi functions
 
         if(rinpparam%lshort.and.(rinpparam%nn_type_short.eq.1))then
         allocate (rinpparam%num_funcvalues_short_atomic(rinpparam%nelem))
@@ -1520,7 +1301,7 @@ module pes_nene_mod
         allocate (rinpparam%elempair(rinpparam%npairs,2))
         rinpparam%elempair(:,:)=0
 
-        call allocatesymfunctions() ! new subroutine in pes_nene_mod.f90 (this file)
+        call allocatesymfunctions()
 
         call readinput(rinpparam%ielem,rinpparam%iseed,rinpparam%lelement) !ielem iseed defined in main.f90/initnn.f90
 
@@ -3485,100 +3266,9 @@ module pes_nene_mod
 
 
         ! return the two following variables only
-        atoms%epot = new_RuNNer_calue
-        atoms%f(:,:,:) = new_RuNNer_calue
+        atoms%epot = new_RuNNer_value * ha2ev
+        atoms%f(:,:,:) = new_RuNNer_value * forceconv
 
     end subroutine compute_nene
-
-
-
-
-
-    subroutine sortelements() ! -> not needed anymore?
-
-        type(runner_input_parameters), intent(inout)   :: rinpparam
-
-        integer counter
-        integer ztemp
-        integer nuc_counter_1,nuc_counter_2
-
-        character*2 elementtemp
-
-        rinpparam%elementindex(:) = 0
-
-        if(nelem.gt.1)then
-            do nuc_counter_1 = 1,rinpparam%nelem - 1
-                if (rinpparam%nucelem(nuc_counter_1) .gt. rinpparam%nucelem(nuc_counter_2)) then
-                    ztemp = rinpparam%nucelem(nuc_counter_1)
-                    elementtemp = rinpparam%element(nuc_counter_1)
-                    rinpparam%nucelem(nuc_counter_1) = rinpparam%nucelem(nuc_counter_1 + 1)
-                    rinpparam%element(nuc_counter_1) = rinpparam%element(nuc_counter_1 + 1)
-                    rinpparam%nucelem(nuc_counter_1 + 1) = ztemp
-                    rinpparam%element(nuc_counter_1 + 1) = elementtemp
-                end if
-            end do
-        end if
-
-        do nuc_counter_1 = 1,102
-            do nuc_counter_2 = 1,rinpparam%nelem
-                if (rinpparam%nucelem(nuc_counter_2) .eq. nuc_counter_1) then
-                    rinpparam%elementindex(nuc_counter_1) = nuc_counter_2
-                end if
-            end do
-        end do
-
-        rinpparam%pairindex(:,:) = 0
-        counter = 0
-        do nuc_counter_1 = 1,rinpparam%nelem
-            do nuc_counter_2 = 1,rinpparam%nelem
-                if (rinpparam%nucelem(nuc_counter_2) .ge. rinpparam%nucelem(nuc_counter_1)) then
-                    counter = cpunter + 1
-                    rinpparam%pairindex(rinpparam%nucelem(nuc_counter_1),rinpparam%nucelem(nuc_counter_2)) = counter
-                    rinpparam%pairindex(rinpparam%nucelem(nuc_counter_2),rinpparam%nucelem(nuc_counter_1)) = counter
-                end if
-            end do
-        end do
-
-    end subroutine sortelements
-
-    subroutine allocatesymfunctions() ! -> not needed anymore?
-
-        type(runner_input_parameters), intent(inout)   :: rinpparam
-
-        if(rinpparam%lshort.and.(rinpparam%nn_type_short.eq.1))then
-            allocate(rinpparam%function_type_short_atomic(rinpparam%maxnum_funcvalues_short_atomic,rinpparam%nelem))
-            rinpparam%function_type_short_atomic(:,:)=0
-            allocate(rinpparam%symelement_short_atomic(rinpparam%maxnum_funcvalues_short_atomic,2,rinpparam%nelem))
-            rinpparam%symelement_short_atomic(:,:,:)=0
-            allocate(rinpparam%funccutoff_short_atomic(rinpparam%maxnum_funcvalues_short_atomic,rinpparam%nelem))
-            rinpparam%funccutoff_short_atomic(:,:)=0.0d0
-            allocate(rinpparam%eta_short_atomic(rinpparam%maxnum_funcvalues_short_atomic,rinpparam%nelem))
-            rinpparam%eta_short_atomic(:,:)=0.0d0
-            allocate(rinpparam%zeta_short_atomic(rinpparam%maxnum_funcvalues_short_atomic,rinpparam%nelem))
-            rinpparam%zeta_short_atomic(:,:)=0.0d0
-            allocate(rinpparam%lambda_short_atomic(rinpparam%maxnum_funcvalues_short_atomic,rinpparam%nelem))
-            rinpparam%lambda_short_atomic(:,:)=0.0d0
-            allocate(rinpparam%rshift_short_atomic(rinpparam%maxnum_funcvalues_short_atomic,rinpparam%nelem))
-            rinpparam%rshift_short_atomic(:,:)=0.0d0
-        endif
-
-        if(rinpparam%lelec.and.(rinpparam%nn_type_elec.eq.1))then
-            allocate(rinpparam%function_type_elec(rinpparam%maxnum_funcvalues_elec,rinpparam%nelem))
-            rinpparam%function_type_elec(:,:)=0
-            allocate(rinpparam%symelement_elec(rinpparam%maxnum_funcvalues_elec,2,rinpparam%nelem))
-            rinpparam%symelement_elec(:,:,:)=0
-            allocate(rinpparam%funccutoff_elec(rinpparam%maxnum_funcvalues_elec,rinpparam%nelem))
-            rinpparam%funccutoff_elec(:,:)=0.0d0
-            allocate(rinpparam%eta_elec(rinpparam%maxnum_funcvalues_elec,rinpparam%nelem))
-            rinpparam%eta_elec(:,:)=0.0d0
-            allocate(rinpparam%zeta_elec(rinpparam%maxnum_funcvalues_elec,rinpparam%nelem))
-            rinpparam%zeta_elec(:,:)=0.0d0
-            allocate(rinpparam%lambda_elec(rinpparam%maxnum_funcvalues_elec,rinpparam%nelem))
-            rinpparam%lambda_elec(:,:)=0.0d0
-            allocate(rinpparam%rshift_elec(rinpparam%maxnum_funcvalues_elec,rinpparam%nelem))
-            rinpparam%rshift_elec(:,:)=0.0d0
-        endif
-
-    end subroutine sortelements
 
 end module pes_nene_mod

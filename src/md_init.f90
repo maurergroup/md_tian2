@@ -35,7 +35,7 @@ module md_init
     use pes_emt_mod,  only : read_emt
     use pes_non_mod,  only : read_non_interacting
     use pes_rebo_mod, only : read_rebo
-    use pes_nene_mod, only : read_nene ! only use read_nene which is independent from compute_nene with the
+    use pes_nene_mod, only : read_nene
 
     implicit none
 

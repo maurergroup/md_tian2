@@ -24,8 +24,9 @@
 module pes_emt_mod
 
     use constants
-    use useful_things, only : split_string, lower_case
     use universe_mod
+    use useful_things, only : split_string, lower_case
+
 
     implicit none
 
