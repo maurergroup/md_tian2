@@ -69,6 +69,7 @@ module pes_nene_mod
         character(len=*), parameter :: err = "Error in read_nene: "
         character(len=*), parameter :: err_pes = "Error in the PES file: "
 
+        ! line should read something like "H   H   proj    proj"
         read(inp_unit, '(A)', iostat=ios) buffer
         call split_string(buffer, words, nwords)
 
