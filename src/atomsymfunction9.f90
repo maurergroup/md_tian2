@@ -19,14 +19,14 @@
 !######################################################################
 
 !! called by:
-!! - calconefunction_para.f90
+!! - getatomsymfunctions.f90
 !!
       subroutine atomsymfunction9(i1,i2,iindex,natoms,atomindex,natomsdim,nelem,&
         max_num_atoms,max_num_neighbors_local,invneighboridx,&
         jcount,listdim,lsta,lstc,lste,symelement_local,maxnum_funcvalues_local,&
         cutoff_type,cutoff_alpha,lstb,funccutoff_local,xyzstruct,eta_local,zeta_local,&
         lambda_local,rmin,symfunction_temp,dsfuncdxyz_temp,strs_temp,&
-        ldoforces,ldostress,lrmin)
+        ldoforces,ldostress,ldohessian_local,lrmin)
 !!
       use fileunits
       use nnconstants 
@@ -115,6 +115,7 @@
 !!
       logical ldoforces
       logical ldostress
+      logical ldohessian_local
       logical lrmin
 !!
         do i3=lsta(1,atomindex(i1)),lsta(2,atomindex(i1)) ! loop over neighbors

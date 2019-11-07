@@ -128,12 +128,13 @@ module constants
     real(dp), parameter :: p2GPa     = 160.2176565_dp
     real(dp), parameter :: joule2ev  = 6.2415093433e+18_dp
     real(dp), parameter :: kelvin2ev = kB
-    real(dp), parameter :: ha2ev     = 27.21138602_dp
-    real(dp), parameter :: forceconv = ha2ev/bohr2ang !51.4220670398_dp; convert Ha/bohr to eV/ang
 
     ! constants used in pes_nene -> move to compute_nene subroutine
-    integer, parameter :: inpnn_unit      = 61
-    integer, parameter :: scaling_unit    = 62
-    integer, parameter :: weight_unit     = 63
+    real(dp), parameter :: energyconv       = 27.21138602_dp ! convert Ha to eV
+    real(dp), parameter :: forceconv        = energyconv/bohr2ang !51.4220670398_dp; convert Ha/bohr to eV/ang
+
+    integer, parameter  :: inpnn_unit       = 61
+    integer, parameter  :: scaling_unit     = 62
+    integer, parameter  :: weight_unit      = 63
 
 end module constants

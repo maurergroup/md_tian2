@@ -174,10 +174,9 @@ module pes_nene_mod
         ! Calculates energy and forces with HDNNPs
 
         ! md_tian2 related modules
-        use constants ! be careful when using this module since variables might collide with RuNNer ones!!
+        use constants ! it seems only two variables have the same name compared to RuNNer variable names
         !use constants, mdt_pi => pi ! use the value of variable pi of constants.f90 in variable mdt_pi (pi is global, mdt_pi is local)
         !use constants, mdt_rad2deg => rad2deg
-        !use constants, mdt_ha2ev => ha2ev
         use open_file, only : open_for_read
         use useful_things, only : file_exists
 
@@ -226,57 +225,6 @@ module pes_nene_mod
 !       2) paircount.f90; not all, but have a further look
 !       3) readkeywords.f90
 !       4) readinput.f90
-
-!       following the dummy readout
-!
-!       call open_for_read(inpnn_unit, filename_inpnn); ios = 0
-!
-!       do while (ios == 0)
-!           read(inpnn_unit, '(A)', iostat=ios) buffer
-!           if (ios == 0) then
-!               line = line + 1
-!               call split_string(buffer, words, nwords)
-!
-!               select case (words(1))
-!
-!                   case ('')
-!                       if (rinpparam% /= default_int) stop err // err_inpnn // 'Multiple use of the  key'
-!                       if (nwords == 2) then
-!                           read(words(2),'(i1000)', iostat=ios) rinpparam%
-!                           if (ios /= 0) stop err // err_inpnn // " value must be integer"
-!                       else
-!                           print *, err, err_inpnn, " key needs a single argument"; stop
-!                       end if
-!
-!                   case ('')
-!                       if (rinpparam% /= default_real) stop err // err_inpnn // 'Multiple use of the  key'
-!                       if (nwords == 2) then
-!                           read(words(2),'(i1000)', iostat=ios) rinpparam%
-!                           if (ios /= 0) stop err // err_inpnn // " value must be a number"
-!                       else
-!                           print *, err, err_inpnn, " key needs a single argument"; stop
-!                       end if
-!
-!                   case ('')
-!                       if (rinpparam% /= default_bool) stop err // err_inpnn // 'Multiple use of the  key'
-!                       if (nwords == 1) then
-!                           rinpparam% = .true.
-!                       else
-!                           print *, err, err_inpnn, " key needs no argument(s)"; stop
-!                       end if
-!
-!                   case default
-!                       if (trim(words(1)) /= '' .and. words(1)(1:1) /= '#') & ! check for empty and comment lines
-!                           print *, 'Skipping invalid label', trim(words(1)),'in line', line
-!
-!               end select
-!           else
-!               write(*,*) err // err_inpnn // 'iostat = ', ios
-!               stop
-!           end if
-!       end do
-!
-!       close(inpnn_unit)
 
         ! according to initnn.f90 (initialization subroutine in main.f90)
 
@@ -350,25 +298,17 @@ module pes_nene_mod
                             print *, err, err_inpnn, "use_electrostatics key needs no argument(s)"; stop
                         end if
 
-                    !case ('electrostatic_type', 'nn_type_elec')
-                    !case ('nn_type_elec')
-                        !print *, err, err_inpnn, "nn_type_elec key is obsolete, use electrostatic_type instead"; stop
-                    case ('electrostatic_type')
-                        !if (rinpparam%nn_type_elec /= default_int) stop err // err_inpnn // 'Multiple use of the electrostatic_type/nn_type_elec key'
-                        if (rinpparam%nn_type_elec /= default_int) stop err // err_inpnn // 'Multiple use of the electrostatic_type key'
+                    case ('electrostatic_type', 'nn_type_elec')
+                        if (rinpparam%nn_type_elec /= default_int) stop err // err_inpnn // 'Multiple use of the electrostatic_type/nn_type_elec key'
                         if (nwords == 2) then
                             read(words(2),'(i1000)', iostat=ios) rinpparam%nn_type_elec
-                            !if (ios /= 0) stop err // err_inpnn // "electrostatic_type/nn_type_elec value must be integer"
-                            if (ios /= 0) stop err // err_inpnn // "electrostatic_type value must be integer"
+                            if (ios /= 0) stop err // err_inpnn // "electrostatic_type/nn_type_elec value must be integer"
                         else
-                            !print *, err, err_inpnn, "electrostatic_type/nn_type_elec key needs a single argument"; stop
-                            print *, err, err_inpnn, "electrostatic_type key needs a single argument"; stop
+                            print *, err, err_inpnn, "electrostatic_type/nn_type_elec key needs a single argument"; stop
                         end if
 
-                    ! for every other keyword pass here, check for unrecognized keywords later
                     case default
-                        !if (trim(words(1)) /= '' .and. words(1)(1:1) /= '#') & ! check for empty and comment lines
-                            !print *, warn_inpnn, 'Skipping invalid label ', trim(words(1)),' in line ', line
+                        ! for every other keyword pass here, check for unrecognized keywords later
 
                 end select
 
@@ -391,7 +331,7 @@ module pes_nene_mod
 
                 select case (words(1))
 
-                    case ('debug_mode') ! not needed
+                    case ('debug_mode')
                         if (rinpparam%lfounddebug /= default_bool) stop err // err_inpnn // 'Multiple use of the debug_mode key'
                         if (nwords == 1) then
                             rinpparam%lfounddebug = .true.
@@ -422,16 +362,8 @@ module pes_nene_mod
                             print *, err, err_inpnn, "global_hidden_layers_electrostatic key needs a single argument"; stop
                         end if
 
-                    case ('global_hidden_layers_pair') ! not needed - make dummy and include error message that pair type is not implemented
-                        if (rinpparam%lfound_num_layerspair  /= default_bool) stop err // err_inpnn // 'Multiple use of the global_hidden_layers_pair key'
-                        if (nwords == 2) then
-                            rinpparam%lfound_num_layerspair = .true.
-                            read(words(2),'(i1000)', iostat=ios) rinpparam%maxnum_layers_short_pair
-                            if (ios /= 0) stop err // err_inpnn // "global_hidden_layers_pair value must be integer"
-                            rinpparam%maxnum_layers_short_pair = rinpparam%maxnum_layers_short_pair + 1
-                        else
-                            print *, err, err_inpnn, "global_hidden_layers_pair key needs a single argument"; stop
-                        end if
+                    case ('global_hidden_layers_pair')
+                        print *, err, err_inpnn, "global_hidden_layers_pair key not supported, Pair NN not implemented"; stop
 
                     case ('use_atom_energies')
                         if (rinpparam%lfound_luseatomenergies /= default_bool) stop err // err_inpnn // 'Multiple use of the use_atom_energies key'
@@ -468,10 +400,8 @@ module pes_nene_mod
                             print *, err, err_inpnn, "number_of_elements key needs a single argument"; stop
                         end if
 
-                    ! for every other keyword pass here, check for unrecognized keywords later
                     case default
-                        !if (trim(words(1)) /= '' .and. words(1)(1:1) /= '#') & ! check for empty and comment lines
-                            !print *, warn_inpnn, 'Skipping invalid label ', trim(words(1)),' in line ', line
+                        ! for every other keyword pass here, check for unrecognized keywords later
 
                 end select
 
@@ -484,12 +414,12 @@ module pes_nene_mod
         close(inpnn_unit)
 
         if (rinpparam%lshort .and. (rinpparam%nn_type_short == 1) .and. (rinpparam%maxnum_layers_short_atomic == default_int)) stop err // err_inpnn // 'global_hidden_layers_short key not set'
-        if (rinpparam%lshort .and. (rinpparam%nn_type_short == 2) .and. (rinpparam%maxnum_layers_short_pair == default_int)) stop err // err_inpnn // 'global_hidden_layers_pairs key not set'
+        !if (rinpparam%lshort .and. (rinpparam%nn_type_short == 2) .and. (rinpparam%maxnum_layers_short_pair == default_int)) stop err // err_inpnn // 'global_hidden_layers_pairs key not set'
         if (rinpparam%lelec .and. (rinpparam%nn_type_elec == 1) .and. (rinpparam%maxnum_layers_elec == default_int)) stop err // err_inpnn // 'global_hidden_layers_electrostatic key not set'
 
-        !allocate(rinpparam%nucelem(rinpparam%nelem))
-        !allocate(rinpparam%element(rinpparam%nelem))
-        !allocate(rinpparam%dmin_element(rinpparam%nelem*(rinpparam%nelem+1)/2))
+        allocate(rinpparam%nucelem(rinpparam%nelem))
+        allocate(rinpparam%element(rinpparam%nelem))
+        allocate(rinpparam%dmin_element(rinpparam%nelem*(rinpparam%nelem+1)/2))
 
 
         call open_for_read(inpnn_unit, filename_inpnn); ios = 0 ! maybe move to readout before since nelem is given by atoms%ntypes
@@ -534,6 +464,7 @@ module pes_nene_mod
         do nuc_counter=1,atoms%ntypes
             call nuccharge(rinpparam%element(i),rinpparam%nucelem(i))
         end do
+
         call sortelements()
 
         if (rinpparam%maxnum_layers_short_atomic == default_int) then
@@ -542,10 +473,10 @@ module pes_nene_mod
         if (rinpparam%maxnum_layers_elec == default_int) then
             rinpparam%maxnum_layers_elec = 0
         end if
-        if (rinpparam%maxnum_layers_short_pair == default_int) then ! not needed
-            rinpparam%maxnum_layers_short_pair = 0
-        end if
-        if (rinpparam%lfound_nelem == default_bool) stop err // err_inpnn // "number of elements not found"
+        !if (rinpparam%maxnum_layers_short_pair == default_int) then ! not needed
+        !    rinpparam%maxnum_layers_short_pair = 0
+        !end if
+        if (rinpparam%lfound_nelem == default_bool) stop err // err_inpnn // "number_of_elements key not found"
 
         allocate(rinpparam%num_funcvalues_local(102))
         allocate(rinpparam%num_funcvaluese_local(102))
@@ -769,10 +700,8 @@ module pes_nene_mod
                     case ('global_pairsymfunction_short') ! not needed
                         print *, err, err_inpnn, "global_pairsymfunction_short key is not supported, Pair NN not implemented"
 
-                    ! for every other keyword pass here, check for unrecognized keywords later
                     case default
-                        !if (trim(words(1)) /= '' .and. words(1)(1:1) /= '#') & ! check for empty and comment lines
-                            !print *, warn_inpnn, 'Skipping invalid label ', trim(words(1)),' in line ', line
+                        ! for every other keyword pass here, check for unrecognized keywords later
 
                 end select
 
@@ -798,7 +727,7 @@ module pes_nene_mod
 
         if (allocated(rinpparam%nodes_ewald_local)) deallocate(rinpparam%nodes_ewald_local)
         if (allocated(rinpparam%nodes_short_local)) deallocate(rinpparam%nodes_short_local)
-        if (allocated(rinpparam%nodes_pair_local)) deallocate(rinpparam%nodes_pair_local) ! not needed
+        !if (allocated(rinpparam%nodes_pair_local)) deallocate(rinpparam%nodes_pair_local)
 
         do general_counter_1 = 1,102
             rinpparam%maxnum_funcvalues_short_atomic = max(rinpparam%maxnum_funcvalues_short_atomic, )
@@ -1351,6 +1280,83 @@ module pes_nene_mod
 
                     select case (words(1))
 
+                        ! add already read keywords here so that a keyword which is NOT related to RuNNer will be recognized!!
+                        case ('nn_type_short') !in readkeywords.f90
+                            ! do nothing here, just let it pass
+
+                        case ('runner_mode') !in readkeywords.f90
+                            ! do nothing here, just let it pass
+
+                        case ('use_short_nn') !in readkeywords.f90
+                            ! do nothing here, just let it pass
+
+                        case ('use_electrostatics') !in readkeywords.f90
+                            ! do nothing here, just let it pass
+
+                        case ('electrostatic_type', 'nn_type_elec') !in readkeywords.f90
+                            ! do nothing here, just let it pass
+
+                        case ('debug_mode') !in readkeywords.f90
+                            ! do nothing here, just let it pass
+
+                        case ('global_hidden_layers_short') !in readkeywords.f90
+                            ! do nothing here, just let it pass
+
+                        case ('global_hidden_layers_electrostatic') !in readkeywords.f90
+                            ! do nothing here, just let it pass
+
+                        !case ('global_hidden_layers_pair') !in readkeywords.f90
+                            ! do nothing here, just let it pass
+
+                        !case ('use_atom_energies') !in readkeywords.f90
+                            ! do nothing here, just let it pass
+
+                        !case ('use_atom_charges') !in readkeywords.f90
+                            ! do nothing here, just let it pass
+
+                        case ('number_of_elements') !in readkeywords.f90
+                            ! do nothing here, just let it pass
+
+                        case ('elements') !in readkeywords.f90
+                            ! do nothing here, just let it pass
+
+                        !case ('global_nodes_short')
+                            ! do nothing here, just let it pass
+
+                        !case ('global_nodes_electrostatic')
+                            ! do nothing here, just let it pass
+
+                        !case ('global_nodes_pair')
+                            ! do nothing here, just let it pass
+
+                        case ('element_symfunction_short') !in readkeywords.f90
+                            ! do nothing here, just let it pass
+
+                        case ('element_symfunction_electrostatic') !in readkeywords.f90
+                            ! do nothing here, just let it pass
+
+                        case ('global_symfunction_short') !in readkeywords.f90
+                            ! do nothing here, just let it pass
+
+                        case ('global_symfunction_electrostatic') !in readkeywords.f90
+                            ! do nothing here, just let it pass
+
+                        case ('symfunction_short') !in readkeywords.f90
+                            ! do nothing here, just let it pass
+
+                        case ('symfunction_electrostatic') !in readkeywords.f90
+                            ! do nothing here, just let it pass
+
+                        !case ('pairsymfunction_short') !in readkeywords.f90
+                            ! done before, not needed here anymore
+
+                        !case ('element_pairsymfunction_short') !in readkeywords.f90
+                            ! done before, not needed here anymore
+
+                        !case ('global_pairsymfunction_short') !in readkeywords.f90
+                            ! done before, not needed here anymore
+
+
                         case ('check_input_forces')
                             if (rinpparam%inputforcethreshold /= default_real) stop err // err_inpnn // 'Multiple use of the check_input_forces key'
                             if (nwords == 2) then
@@ -1369,14 +1375,6 @@ module pes_nene_mod
                                 print *, err, err_inpnn, "print_force_components key needs no argument(s)"; stop
                             end if
 
-                        case ('use_ipi')
-                            if (rinpparam%luseipi /= default_bool) stop err // err_inpnn // 'Multiple use of the use_ipi key'
-                            if (nwords == 4) then
-                                rinpparam%luseipi = .true.
-                            else
-                                print *, err, err_inpnn, "use_ipi key needs 3 arguments"; stop
-                            end if
-
                         case ('ion_forces_only')
                             if (rinpparam%lionforcesonly /= default_int) stop err // err_inpnn // 'Multiple use of the ion_forces_only key'
                             if (nwords == 1) then
@@ -1386,7 +1384,7 @@ module pes_nene_mod
                             end if
 
                         case ('use_electrostatic_nn')
-                            print *, err, err_inpnn, "use_electrostatic_nn is obsolete, please use electrostatic_type and use_electrostatics instead"; stop
+                            print *, err, err_inpnn, "use_electrostatic_nn key is obsolete, please use electrostatic_type and use_electrostatics instead"; stop
 
 !                       case ('debug_mode')
 !                           if (rinpparam%ldebug /= default_bool) stop err // err_inpnn // 'Multiple use of the debug_mode key'
@@ -1762,20 +1760,22 @@ module pes_nene_mod
                             end if
 
                         case ('use_atom_charges')
-                            if (rinpparam%luseatomcharges /= default_bool) stop err // err_inpnn // 'Multiple use of the use_atom_charges key'
-                            if (nwords == 1) then
-                                rinpparam%luseatomcharges = .true.
-                            else
-                                print *, err, err_inpnn, "use_atom_charges key needs no argument(s)"; stop
-                            end if
+                            ! let it pass, since done before
+                            !if (rinpparam%luseatomcharges /= default_bool) stop err // err_inpnn // 'Multiple use of the use_atom_charges key'
+                            !if (nwords == 1) then
+                            !    rinpparam%luseatomcharges = .true.
+                            !else
+                            !    print *, err, err_inpnn, "use_atom_charges key needs no argument(s)"; stop
+                            !end if
 
                         case ('use_atom_energies')
-                            if (rinpparam%luseatomenergies /= default_bool) stop err // err_inpnn // 'Multiple use of the use_atom_energies key'
-                            if (nwords == 1) then
-                                rinpparam%luseatomenergies = .true.
-                            else
-                                print *, err, err_inpnn, "use_atom_energies key needs no argument(s)"; stop
-                            end if
+                            ! let it pass, since done before
+                            !if (rinpparam%luseatomenergies /= default_bool) stop err // err_inpnn // 'Multiple use of the use_atom_energies key'
+                            !if (nwords == 1) then
+                            !    rinpparam%luseatomenergies = .true.
+                            !else
+                            !    print *, err, err_inpnn, "use_atom_energies key needs no argument(s)"; stop
+                            !end if
 
                         case ('remove_atom_energies')
                             if (rinpparam%lremoveatomenergies /= default_bool) stop err // err_inpnn // 'Multiple use of the remove_atom_energies key'
@@ -2167,13 +2167,160 @@ module pes_nene_mod
                             end if
 
                         case ('charge_update_scaling')
-                            if (rinpparam% /= default_real) stop err // err_inpnn // 'Multiple use of the charge_update_scaling key'
+                            if (rinpparam%scalefactorq /= default_real) stop err // err_inpnn // 'Multiple use of the charge_update_scaling key'
                             if (nwords == 2) then
-                                read(words(2),*, iostat=ios) rinpparam%
+                                read(words(2),*, iostat=ios) rinpparam%scalefactorq
                                 if (ios /= 0) stop err // err_inpnn // "charge_update_scaling value must be a number"
                             else
                                 print *, err, err_inpnn, "charge_update_scaling key needs a single argument"; stop
                             end if
+
+                        case ('random_order_training')
+                            print *, err, err_inpnn, "random_order_training key is obsolete, please use mix_all_points instead"; stop
+
+                        case ('scale_symmetry_functions')
+                            if (rinpparam%lscalesym /= default_bool) stop err // err_inpnn // 'Multiple use of the scale_symmetry_functions key'
+                            if (nwords == 1) then
+                                rinpparam%lscalesym = .true.
+                            else
+                                print *, err, err_inpnn, "scale_symmetry_functions key needs no argument(s)"; stop
+                            end if
+
+                        case ('center_symmetry_functions')
+                            if (rinpparam%lcentersym /= default_bool) stop err // err_inpnn // 'Multiple use of the center_symmetry_functions key'
+                            if (nwords == 1) then
+                                rinpparam%lcentersym = .true.
+                            else
+                                print *, err, err_inpnn, "center_symmetry_functions key needs no argument(s)"; stop
+                            end if
+
+                      case ('use_old_weights_short')
+                            if (rinpparam%luseoldweightsshort /= default_bool) stop err // err_inpnn // 'Multiple use of the use_old_weights_short key'
+                            if (nwords == 1) then
+                                rinpparam%luseoldweightsshort = .true.
+                            else
+                                print *, err, err_inpnn, "use_old_weights_short key needs no argument(s)"; stop
+                            end if
+
+                        case ('use_old_weights_charge')
+                            if (rinpparam%luseoldweightscharge /= default_bool) stop err // err_inpnn // 'Multiple use of the use_old_weights_charge key'
+                            if (nwords == 1) then
+                                rinpparam%luseoldweightscharge = .true.
+                            else
+                                print *, err, err_inpnn, "use_old_weights_charge key needs no argument(s)"; stop
+                            end if
+
+                        case ('save_kalman_matrices')
+                            if (rinpparam%lsavekalman /= default_bool) stop err // err_inpnn // 'Multiple use of the save_kalman_matrices key'
+                            if (nwords == 1) then
+                                rinpparam%lsavekalman = .true.
+                            else
+                                print *, err, err_inpnn, "save_kalman_matrices key needs no argument(s)"; stop
+                            end if
+
+                        case ('read_kalman_matrices')
+                            if (rinpparam%lrestkalman /= default_bool) stop err // err_inpnn // 'Multiple use of the read_kalman_matrices key'
+                            if (nwords == 1) then
+                                rinpparam%lrestkalman = .true.
+                            else
+                                print *, err, err_inpnn, "read_kalman_matrices key needs no argument(s)"; stop
+                            end if
+
+                        case ('update_single_element')
+                            if (rinpparam%lupdatebyelement /= default_bool) stop err // err_inpnn // 'Multiple use of the update_single_element key'
+                            if (nwords == 2) then
+                                rinpparam%lupdatebyelement = .true.
+                                read(words(2),'(i1000)', iostat=ios) rinpparam%elemupdate
+                                if (ios /= 0) stop err // err_inpnn // "update_single_element value must be integer"
+                            else
+                                print *, err, err_inpnn, "update_single_element key needs a single argument"; stop
+                            end if
+
+                        case ('update_worst_short_energies')
+                            if (rinpparam%luseworste /= default_bool) stop err // err_inpnn // 'Multiple use of the update_worst_short_energies key'
+                            if (nwords == 2) then
+                                rinpparam%luseworste = .true.
+                                read(words(2),*, iostat=ios) rinpparam%worste
+                                if (ios /= 0) stop err // err_inpnn // "update_worst_short_energies value must be a number"
+                            else
+                                print *, err, err_inpnn, "update_worst_short_energies key needs a single argument"; stop
+                            end if
+
+                        case ('update_worst_short_forces')
+                            if (rinpparam%luseworstf /= default_bool) stop err // err_inpnn // 'Multiple use of the update_worst_short_forces key'
+                            if (nwords == 2) then
+                                rinpparam%luseworstf = .true.
+                                read(words(2),*, iostat=ios) rinpparam%worstf
+                                if (ios /= 0) stop err // err_inpnn // "update_worst_short_forces value must be a number"
+                            else
+                                print *, err, err_inpnn, "update_worst_short_forces key needs a single argument"; stop
+                            end if
+
+                        case ('update_worst_charges')
+                            if (rinpparam%luseworstq /= default_bool) stop err // err_inpnn // 'Multiple use of the update_worst_charges key'
+                            if (nwords == 2) then
+                                rinpparam%luseworstq = .true.
+                                read(words(2),*, iostat=ios) rinpparam%worstq
+                                if (ios /= 0) stop err // err_inpnn // "update_worst_charges value must be a number"
+                            else
+                                print *, err, err_inpnn, "update_worst_charges key needs a single argument"; stop
+                            end if
+
+                        case ('growth_mode')
+                            if (rinpparam%lgrowth /= default_bool) stop err // err_inpnn // 'Multiple use of the growth_mode key'
+                            if (nwords == 3) then
+                                rinpparam%lgrowth = .true.
+                                read(words(2),'(i1000)', iostat=ios) rinpparam%ngrowth
+                                if (ios /= 0) stop err // err_inpnn // "growth_mode first argument value must be integer"
+                                read(words(3),'(i1000)', iostat=ios) rinpparam%growthstep
+                                if (ios /= 0) stop err // err_inpnn // "growth_mode second argument must be integer"
+                            else
+                                print *, err, err_inpnn, "growth_mode key needs a single argument"; stop
+                            end if
+
+                        case ('use_damping')
+                            if (rinpparam%ldampw /= default_bool) stop err // err_inpnn // 'Multiple use of the use_damping key'
+                            if (nwords == 2) then
+                                rinpparam%ldampw = .true.
+                                read(words(2),*, iostat=ios) rinpparam%dampw
+                                if (ios /= 0) stop err // err_inpnn // "use_damping value must be a number"
+                            else
+                                print *, err, err_inpnn, "use_damping key needs a single argument"; stop
+                            end if
+
+                        case ('fix_weights')
+                            if (rinpparam%lfixweights /= default_bool) stop err // err_inpnn // 'Multiple use of the fix_weights key'
+                            if (nwords == 1) then
+                                rinpparam%lfixweights = .true.
+                            else
+                                print *, err, err_inpnn, "fix_weights key needs no argument(s)"; stop
+                            end if
+
+                        case ('calculate_forces')
+                            if (rinpparam%ldoforces /= default_bool) stop err // err_inpnn // 'Multiple use of the calculate_forces key'
+                            if (nwords == 1) then
+                                rinpparam%ldoforces = .true.
+                            else
+                                print *, err, err_inpnn, "calculate_forces key needs no argument(s)"; stop
+                            end if
+
+                        case ('calculate_hessian')
+                            if (rinpparam%ldohessian /= default_bool) stop err // err_inpnn // 'Multiple use of the calculate_hessian key'
+                            if (nwords == 1) then
+                                rinpparam%ldohessian = .true.
+                            else
+                                print *, err, err_inpnn, "calculate_hessian key needs no argument(s)"; stop
+                            end if
+
+                        case ('calculate_stress')
+                            if (rinpparam%ldostress /= default_bool) stop err // err_inpnn // 'Multiple use of the calculate_stress key'
+                            if (nwords == 1) then
+                                rinpparam%ldostress = .true.
+                            else
+                                print *, err, err_inpnn, "calculate_stress key needs no argument(s)"; stop
+                            end if
+
+
 
 
 
@@ -2268,7 +2415,7 @@ module pes_nene_mod
 
 
 
-
+        ! following the dummy readout
         call open_for_read(inpnn_unit, filename_inpnn); ios = 0
 
         do while (ios == 0)
@@ -2322,7 +2469,7 @@ module pes_nene_mod
 
 
 
-
+        ! here the full list of keywords, remove after implementing according to readkeywords.f90!!
         call open_for_read(inpnn_unit, filename_inpnn); ios = 0
 
         do while (ios == 0) ! analog to read_input_file subroutine in run_config.f90
@@ -3267,7 +3414,7 @@ module pes_nene_mod
 
 
         ! return the two following variables only
-        atoms%epot = new_RuNNer_value * ha2ev
+        atoms%epot = new_RuNNer_value * energyconv
         atoms%f(:,:,:) = new_RuNNer_value * forceconv
 
     end subroutine compute_nene

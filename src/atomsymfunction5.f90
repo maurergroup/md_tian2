@@ -19,7 +19,7 @@
 !######################################################################
 
 !! called by:
-!! - calconefunction_para.f90
+!! - getatomsymfunctions.f90
 !!
       subroutine atomsymfunction5(i1,i2,iindex,natoms,atomindex,natomsdim,nelem,&
         max_num_atoms,max_num_neighbors_local,invneighboridx,&

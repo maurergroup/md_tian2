@@ -53,6 +53,7 @@
       integer, parameter :: outunit         = 40 ! output.data 
       integer, parameter :: nnsunit         = 41 ! nnstress.out 
       integer, parameter :: nnfunit         = 42 ! nnforces.out 
+      integer, parameter :: nnhunit         = 72 ! nnhessian.out 
       integer, parameter :: nneunit         = 43 ! energy.out 
       integer, parameter :: debugunit       = 44 ! debug.out 
 !! element-specific files

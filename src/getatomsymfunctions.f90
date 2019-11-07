@@ -31,7 +31,7 @@
         cutoff_type,cutoff_alpha,nelem,function_type_local,&
         lstb,funccutoff_local,xyzstruct,symfunction_temp,dsfuncdxyz_temp,strs_temp,&
         eta_local,zeta_local,lambda_local,rshift_local,rmin,&
-        ldoforces,ldostress)
+        ldoforces,ldostress,ldohessian_local)
 !!
       use fileunits
 !! don't use globaloptions here
@@ -74,6 +74,7 @@
 
       logical ldoforces                                          ! in
       logical ldostress                                          ! in
+      logical ldohessian_local                                   ! in
       logical lrmin                                              ! internal, to be removed?
 !!
       dsfuncdxyz_temp(:,:) = 0.0d0
@@ -86,7 +87,7 @@
           invneighboridx_local,&
           jcount,listdim,lsta,lstc,lste,symelement_local,maxnum_funcvalues_local,&
           lstb,funccutoff_local,xyzstruct,symfunction_temp,dsfuncdxyz_temp,strs_temp,&
-          ldoforces,ldostress)
+          ldoforces,ldostress,ldohessian_local)
 !!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       elseif(function_type_local(i2,iindex).eq.2)then ! radial function
@@ -97,27 +98,19 @@
           jcount,listdim,lsta,lstc,lste,symelement_local,maxnum_funcvalues_local,&
           cutoff_type,cutoff_alpha,lstb,funccutoff_local,xyzstruct,eta_local,rshift_local,&
           symfunction_temp,dsfuncdxyz_temp,strs_temp,&
-          ldoforces,ldostress)
+          ldoforces,ldostress,ldohessian_local)
 !!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       elseif(function_type_local(i2,iindex).eq.3)then ! angular function
 !!
-        if(ldostress)then
+        if(ldostress.or.ldohessian_local)then
           call atomsymfunction3(i1,i2,iindex,natoms,atomindex,natomsdim,nelem,&
             max_num_atoms,max_num_neighbors_local,&
             invneighboridx_local,&
             jcount,listdim,lsta,lstc,lste,symelement_local,maxnum_funcvalues_local,&
             cutoff_type,cutoff_alpha,lstb,funccutoff_local,xyzstruct,eta_local,zeta_local,&
             lambda_local,rmin,symfunction_temp,dsfuncdxyz_temp,strs_temp,&
-            ldoforces,ldostress,lrmin)
-!! old
-!!          call atomsymfunction3(i1,i2,iindex,natoms,atomindex,natomsdim,nelem,&
-!!            max_num_atoms,max_num_neighbors_local,&
-!!            invneighboridx_local,&
-!!            jcount,listdim,lsta,lstc,lste,symelement_local,maxnum_funcvalues_local,&
-!!            cutoff_type,lstb,funccutoff_local,xyzstruct,eta_local,zeta_local,&
-!!            lambda_local,rmin,symfunction_temp,dsfuncdxyz_temp,strs_temp,&
-!!            ldoforces,ldostress,lrmin)
+            ldoforces,ldostress,ldohessian_local,lrmin)
         else
           call atomsymfunction3Andi(i1,i2,iindex,natoms,atomindex,natomsdim,nelem,&
             max_num_atoms,max_num_neighbors_local,&
@@ -125,7 +118,7 @@
             jcount,listdim,lsta,lstc,lste,symelement_local,maxnum_funcvalues_local,&
             cutoff_type,cutoff_alpha,lstb,funccutoff_local,xyzstruct,eta_local,zeta_local,&
             lambda_local,rmin,symfunction_temp,dsfuncdxyz_temp,strs_temp,&
-            ldoforces,ldostress,lrmin)
+            ldoforces,ldostress,ldohessian_local,lrmin)
         endif
 
 !!
@@ -138,11 +131,11 @@
           jcount,listdim,lsta,lstc,lste,symelement_local,maxnum_funcvalues_local,&
           cutoff_type,cutoff_alpha,lstb,funccutoff_local,xyzstruct,eta_local,&
           symfunction_temp,dsfuncdxyz_temp,strs_temp,&
-          ldoforces,ldostress)
+          ldoforces,ldostress,ldohessian_local)
 !!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       elseif(function_type_local(i2,iindex).eq.5)then ! just Cartesian coordinate
-!!
+!! This symmetry function is for special testing only, no PES!
         call atomsymfunction5(i1,i2,iindex,natoms,atomindex,natomsdim,nelem,&
           max_num_atoms,max_num_neighbors_local,&
           invneighboridx_local,&
@@ -152,7 +145,7 @@
 !!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       elseif(function_type_local(i2,iindex).eq.6)then ! radial function
-!!
+!! This symmetry function is for special testing only, no PES!
         call atomsymfunction6(i1,i2,iindex,natoms,atomindex,natomsdim,nelem,&
           max_num_atoms,max_num_neighbors_local,&
           invneighboridx_local,&
@@ -176,7 +169,7 @@
           jcount,listdim,lsta,lstc,lste,symelement_local,maxnum_funcvalues_local,&
           cutoff_type,cutoff_alpha,lstb,funccutoff_local,xyzstruct,eta_local,rshift_local,&
           lambda_local,rmin,symfunction_temp,dsfuncdxyz_temp,strs_temp,&
-          ldoforces,ldostress,lrmin)
+          ldoforces,ldostress,ldohessian_local,lrmin)
 !!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       elseif(function_type_local(i2,iindex).eq.9)then ! angular function
@@ -187,7 +180,7 @@
           jcount,listdim,lsta,lstc,lste,symelement_local,maxnum_funcvalues_local,&
           cutoff_type,cutoff_alpha,lstb,funccutoff_local,xyzstruct,eta_local,zeta_local,&
           lambda_local,rmin,symfunction_temp,dsfuncdxyz_temp,strs_temp,&
-          ldoforces,ldostress,lrmin)
+          ldoforces,ldostress,ldohessian_local,lrmin)
 !!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       else

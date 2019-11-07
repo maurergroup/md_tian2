@@ -26,7 +26,7 @@
         jcount,listdim,lsta,lstc,lste,symelement_local,maxnum_funcvalues_local,&
         cutoff_type,cutoff_alpha,lstb,funccutoff_local,xyzstruct,eta_local,rshift_local,&
         symfunction_temp,dsfuncdxyz_temp,strs_temp,&
-        ldoforces,ldostress)
+        ldoforces,ldostress,ldohessian_local)
 !!
       use fileunits
       use nnconstants
@@ -75,6 +75,7 @@
 !!
       logical ldoforces
       logical ldostress
+      logical ldohessian_local
 !!
         do i3=lsta(1,atomindex(i1)),lsta(2,atomindex(i1)) ! loop over neighbors
           if(symelement_local(i2,1,iindex).eq.lste(i3))then

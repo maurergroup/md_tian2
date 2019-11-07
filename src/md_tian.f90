@@ -45,6 +45,8 @@ program md_tian2
     real(dp) :: vec(3)
 
 
+    call write_info()
+
     call simbox_init(atoms)
 
     select case (simparams%run)

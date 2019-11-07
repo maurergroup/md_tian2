@@ -132,7 +132,7 @@
             cutoff_type,cutoff_alpha,nelem,function_type_short_atomic,&
             lstb,funccutoff_short_atomic,xyzstruct,symfunction,dsfuncdxyz_local,strs,&
             eta_short_atomic,zeta_short_atomic,lambda_short_atomic,rshift_short_atomic,rmin,&
-            ldoforces,ldostress)
+            ldoforces,ldostress,ldohessian)
           dsfuncdxyz_temp(i2,:,:)=dsfuncdxyz_local(:,:)
           if(.not.lrmin)then
             write(ounit,*)'Error in prediction: lrmin=.false. (atoms too close)'
