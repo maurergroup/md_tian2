@@ -480,10 +480,10 @@ module pes_nene_mod
 
         allocate(rinpparam%num_funcvalues_local(102))
         allocate(rinpparam%num_funcvaluese_local(102))
-        allocate(rinpparam%num_funcvaluesp_local(102,102)) ! not needed
+        !allocate(rinpparam%num_funcvaluesp_local(102,102)) ! not needed
         rinpparam%num_funcvalues_local(:) = 0
         rinpparam%num_funcvaluese_local(:) = 0
-        rinpparam%num_funcvaluesp_local(:) = 0 ! not needed
+        !rinpparam%num_funcvaluesp_local(:) = 0 ! not needed
 
         if (rinpparam%maxnum_layers_short_atomic .gt. 0) then
             allocate(rinpparam%nodes_short_local(0:rinpparam%maxnum_layers_short_atomic))
@@ -2319,6 +2319,8 @@ module pes_nene_mod
                             else
                                 print *, err, err_inpnn, "calculate_stress key needs no argument(s)"; stop
                             end if
+
+
 
 
 
