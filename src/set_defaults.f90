@@ -44,37 +44,44 @@ subroutine set_defaults()
 
     implicit none
 
-    nn_type_short = default_int
-    mode = default_int
-    lshort = default_bool
-    lelec = default_bool
-    nn_type_elec = default_int
-    lfounddebug = default_bool
-    ldebug = default_bool
-    lfound_num_layersshort = default_bool
-    maxnum_layers_short_atomic = default_int
-    lfound_num_layersewald = default_bool
-    lfound_luseatomenergies = default_bool
-    luseatomenergies
-    lfound_luseatomcharges
-    luseatomcharges
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    nn_type_short               = default_int
+    mode                        = default_int
+    lshort                      = default_bool
+    lelec                       = default_bool
+    nn_type_elec                = default_int
+    lfounddebug                 = default_bool
+    ldebug                      = default_bool
+    lfound_num_layersshort      = default_bool
+    maxnum_layers_short_atomic  = default_int
+    lfound_num_layersewald      = default_bool
+    maxnum_layers_elec          = default_int
+    lfound_luseatomenergies     = default_bool
+    luseatomenergies            = default_bool
+    lfound_luseatomcharges      = default_bool
+    luseatomcharges             = default_bool
+    lfound_nelem                = default_bool
+    nelem                       = default_int
+    npairs                      = default_int
+    max_num_pairs               = default_
+    element                     = default_string
+    nucelem                     = 
+    dmin_element
+    nodes_short_local
+    nodes_ewald_local
+    num_funcvalues_local
+    num_funcvaluese_local
+    num_funcvaluesp_local
+    elementtemp
+    ztemp
+    maxnum_funcvalues_short_atomic
+    maxnum_funcvalues_elec
+    function_type_local
+    function_type_temp
+    funccutoff_local
+    maxcutoff_local
+    elementtemp1
+    elementtemp2
+    elementtemp3
     
     
     
