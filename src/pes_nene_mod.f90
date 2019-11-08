@@ -375,7 +375,7 @@ module pes_nene_mod
                         end if
 
                     case ('use_atom_charges')
-                        if (rinpparam%lfound_luseatomcharges /= default_int) stop err // err_inpnn // 'Multiple use of the use_atom_charges key'
+                        if (rinpparam%lfound_luseatomcharges /= default_bool) stop err // err_inpnn // 'Multiple use of the use_atom_charges key'
                         if (nwords == 1) then
                             rinpparam%lfound_luseatomcharges = .true.
                             rinpparam%luseatomcharges = .true.

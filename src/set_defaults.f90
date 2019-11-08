@@ -49,11 +49,97 @@ subroutine set_defaults()
     lshort = default_bool
     lelec = default_bool
     nn_type_elec = default_int
-
+    lfounddebug = default_bool
+    ldebug = default_bool
+    lfound_num_layersshort = default_bool
+    maxnum_layers_short_atomic = default_int
+    lfound_num_layersewald = default_bool
+    lfound_luseatomenergies = default_bool
+    luseatomenergies
+    lfound_luseatomcharges
+    luseatomcharges
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+        
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+        
+    
+    
+    
+    
+    
+    
+        
+    
+    
+    
+    
     ldebug = default_bool
     maxnum_layers_short_atomic = default_int
     luseatomenergies = default_bool
     luseatomcharges = default_bool
+    
 
 
 
