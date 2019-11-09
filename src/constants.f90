@@ -39,6 +39,16 @@ module constants
     real(dp), parameter :: twelfth        = 1.0_dp/12.0_dp
     integer,  parameter :: dimensionality = 3
 
+    ! file units
+    !integer, parameter  :: inp_unit = 67
+    !integer, parameter  :: inp_unit = 38
+    !integer, parameter  :: pes_unit = 38
+    !integer, parameter  :: geo_unit = 55
+    !integer, parameter  :: out_unit = 86
+    !integer, parameter  :: inpnn_unit       = 61
+    !integer, parameter  :: scaling_unit     = 62
+    !integer, parameter  :: weight_unit      = 63
+
 
     ! PES-related constants
     integer, parameter :: nparams_lj            = 2
@@ -73,10 +83,10 @@ module constants
 
 
     ! Defaults
-    integer, parameter   :: default_int           = huge(0_4)
-    real(dp), parameter  :: default_real          = huge(0_dp)
-    character, parameter :: default_string        = ""
-    logical, parameter   :: default_bool          = .false.
+    integer,   parameter  :: default_int           = huge(0_4)
+    real(dp),  parameter  :: default_real          = huge(0_dp)
+    character, parameter  :: default_string        = ""
+    logical,   parameter  :: default_bool          = .false.
 
 
     ! Propagation
@@ -120,21 +130,15 @@ module constants
     !           Mass   : eV fs^2 / A^2 = 1/103.6382 amu
     !           Angle  : radian = 180 deg
     !           bohr   : bohr = 0.5291772 Angstroem
-    real(dp), parameter :: amu2mass  = 103.638239276_dp
-    real(dp), parameter :: deg2rad   = pi/180.0_dp
-    real(dp), parameter :: rad2deg   = 180.0_dp/pi
-    real(dp), parameter :: bohr2ang  = 0.529177211_dp
-    real(dp), parameter :: ang2bohr  = 1/bohr2ang
-    real(dp), parameter :: p2GPa     = 160.2176565_dp
-    real(dp), parameter :: joule2ev  = 6.2415093433e+18_dp
-    real(dp), parameter :: kelvin2ev = kB
-
-    ! constants used in pes_nene -> move to compute_nene subroutine
-    real(dp), parameter :: energyconv       = 27.21138602_dp ! convert Ha to eV
-    real(dp), parameter :: forceconv        = energyconv/bohr2ang !51.4220670398_dp; convert Ha/bohr to eV/ang
-
-    integer, parameter  :: inpnn_unit       = 61
-    integer, parameter  :: scaling_unit     = 62
-    integer, parameter  :: weight_unit      = 63
+    real(dp), parameter :: amu2mass         = 103.638239276_dp
+    real(dp), parameter :: deg2rad          = pi/180.0_dp
+    real(dp), parameter :: rad2deg          = 180.0_dp/pi
+    real(dp), parameter :: bohr2ang         = 0.529177211_dp
+    real(dp), parameter :: ang2bohr         = 1/bohr2ang
+    real(dp), parameter :: p2GPa            = 160.2176565_dp
+    real(dp), parameter :: joule2ev         = 6.2415093433e+18_dp
+    real(dp), parameter :: kelvin2ev        = kB
+    real(dp), parameter :: ha2ev            = 27.21138602_dp ! convert Ha to eV
+    real(dp), parameter :: habohr2evang     = ha2ev/bohr2ang !51.4220670398_dp; convert Ha/bohr to eV/ang
 
 end module constants

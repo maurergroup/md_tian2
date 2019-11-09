@@ -23,6 +23,7 @@
 
 module pes_nene_mod
 
+    !use constants, only : max_string_length, pes_id_nene, default_string, default_int, default_real, default_bool, inpnn_unit, scaling_unit, weight_unit,
     use universe_mod
     use useful_things, only : split_string, lower_case
 
@@ -174,9 +175,6 @@ module pes_nene_mod
         ! Calculates energy and forces with HDNNPs
 
         ! md_tian2 related modules
-        use constants ! it seems only two variables have the same name compared to RuNNer variable names
-        !use constants, mdt_pi => pi ! use the value of variable pi of constants.f90 in variable mdt_pi (pi is global, mdt_pi is local)
-        !use constants, mdt_rad2deg => rad2deg
         use open_file, only : open_for_read
         use useful_things, only : file_exists
 
@@ -3408,6 +3406,35 @@ module pes_nene_mod
 !       call mpi_bcast(eshortmax,1,mpi_real8,0,mpi_comm_world,mpierror)
 !     endif
 
+        ! Pass needed variables to predictionshortatomic (in a way that input.data would be read) ->
+        ! according to checkonestructure.f90
+        atoms%simbox(3,3) -> read(dataunit,*,err=90)keyword,(lattice(nlattice,i),i=1,3) (nlattice = 1)
+        atoms%r(:,:,:) ->
+
+        if(keyword.eq.'lattice') then
+            nlattice=nlattice+1
+            backspace(dataunit)
+            read(dataunit,*,err=90)keyword,(lattice(nlattice,i),i=1,3)
+        endif
+
+        if(keyword.eq.'atom') then
+            num_atoms=num_atoms+1
+            backspace(dataunit)
+            read(dataunit,*,err=91)keyword,(xyzstruct(i,num_atoms),i=1,3),&
+                elementsymbol(num_atoms),atomcharge(num_atoms),&
+                atomenergy(num_atoms),(totalforce(i,num_atoms),i=1,3)
+            call nuccharge(elementsymbol(num_atoms),zelem(num_atoms))
+            lelement(zelem(num_atoms))=.true. ! element found
+        endif
+
+        !! check if lattice vectors make sense
+        if(lperiodic)then
+            call getvolume(lattice,volume)
+            if(volume.lt.0.0000001d0)then
+                write(ounit,*)'ERROR: volume of a periodic structure is very small ',volume
+                stop
+            endif
+        endif
 
 
 

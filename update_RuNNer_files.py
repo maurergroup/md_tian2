@@ -54,6 +54,12 @@ file_list = \
 
 runner_dir=os.chdir(runner_path) # change to RuNNer directory
 
-copy_files_command = "cp "+str(file_list)+" "+md_tian_path # set up copy command
+print("Copying the following files")
 
-os.system(copy_files_command) # copy files
+for i,name in enumerate(file_list.split()):
+    #print(name)
+    #print("Copying the following files")
+    #copy_files_command = "cp "+str(name)+" "+md_tian_path # set up copy command
+    copy_files_command = "cp "+str(name)+" "+md_tian_path+"RuNNer_"+str(name)
+    print(copy_files_command)
+    os.system(copy_files_command) # copy files
