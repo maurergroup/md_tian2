@@ -1,8 +1,8 @@
 !############################################################################
 ! This routine is part of
 ! md_tian2 (Molecular Dynamics Tian Xia 2)
-! (c) 2014-2019 Dan J. Auerbach, Sascha Kandratsenka, Svenja M. Janke, Marvin
-! Kammler, Sebastian Wille
+! (c) 2014-2019 Dan J. Auerbach, Svenja M. Janke, Marvin Kammler,
+!               Sascha Kandratsenka, Sebastian Wille
 ! Dynamics at Surfaces Department
 ! MPI for Biophysical Chemistry Goettingen, Germany
 ! Georg-August-Universitaet Goettingen, Germany
@@ -64,7 +64,7 @@ subroutine set_defaults()
     npairs                      = default_int
     max_num_pairs               = default_
     element                     = default_string
-    nucelem                     = 
+    nucelem                     =
     dmin_element
     nodes_short_local
     nodes_ewald_local
@@ -82,71 +82,71 @@ subroutine set_defaults()
     elementtemp1
     elementtemp2
     elementtemp3
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-        
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-        
-    
-    
-    
-    
-    
-    
-        
-    
-    
-    
-    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     ldebug = default_bool
     maxnum_layers_short_atomic = default_int
     luseatomenergies = default_bool
     luseatomcharges = default_bool
-    
+
 
 
 

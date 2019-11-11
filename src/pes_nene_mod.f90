@@ -1,8 +1,8 @@
 !############################################################################
 ! This routine is part of
 ! md_tian2 (Molecular Dynamics Tian Xia 2)
-! (c) 2014-2019 Dan J. Auerbach, Sascha Kandratsenka, Svenja M. Janke, Marvin
-! Kammler, Sebastian Wille
+! (c) 2014-2019 Dan J. Auerbach, Svenja M. Janke, Marvin Kammler,
+!               Sascha Kandratsenka, Sebastian Wille
 ! Dynamics at Surfaces Department
 ! MPI for Biophysical Chemistry Goettingen, Germany
 ! Georg-August-Universitaet Goettingen, Germany
@@ -25,19 +25,18 @@ module pes_nene_mod
 
     !use constants, only : max_string_length, pes_id_nene, default_string, default_int, default_real, default_bool, inpnn_unit, scaling_unit, weight_unit,
     use universe_mod
-    use useful_things, only : split_string, lower_case
 
     implicit none
 
-    type runner_input_parameters
+    !type runner_input_parameters
 
-        private
-        character(len=max_string_length)                :: filename_inpnn, filename_scaling
-        character(len=max_string_length), allocatable   :: filename_weights(:)
+        !private
+        !character(len=max_string_length)                :: filename_inpnn, filename_scaling
+        !character(len=max_string_length), allocatable   :: filename_weights(:)
 
-    end type
+    !end type
 
-    type(runner_input_parameters) :: rinpparam
+    !type(runner_input_parameters) :: rinpparam
 
 
 
@@ -47,13 +46,17 @@ module pes_nene_mod
 !   rename md_tian2 into MDT2/MDXT2?
 !   change how the seeed for the random number generator will be (add new variable?)
 !   variable declarations concerning RuNNer in the corresponding modules, but set to (our) default values has to be done before reading out keywords (own subroutine or in compute_nene?)
+!   move RuNNer related files to folder and change the makefile
 
 
     ! Here all necessary files and keywords are read in for the high-dimensional neural network potentials (HDNNPs)
     subroutine read_nene(atoms, inp_unit)
 
-        use constants
+        use constants, only : max_string_length, pes_id_nene, default_string, default_int, default_real, default_bool
+        use open_file, only : lower_case, open_for_read, split_string
         use run_config, only : simparams
+        use useful_things, only : file_exists
+
 
         type(universe), intent(inout) :: atoms
         integer, intent(in) :: inp_unit
@@ -63,13 +66,25 @@ module pes_nene_mod
         character(len=max_string_length) :: words(100)
         character(len=max_string_length) :: inp_path
 
-        character(len=max_string_length), allocatable :: weights_path(:)
+        character(len=max_string_length)                :: filename_inpnn, filename_scaling
+        character(len=max_string_length), allocatable   :: weights_path(:), filename_weights(:)
+
+        integer, parameter  :: inpnn_unit       = 61
+        integer, parameter  :: scaling_unit     = 62
+        integer, parameter  :: weight_unit      = 63
 
         integer  :: idx1, idx2, weight_counter
+        integer  :: npairs_counter_1, npairs_counter_2, element_counter, nodes_counter, general_counter_1, general_counter_2
 
         character(len=*), parameter :: err = "Error in read_nene: "
         character(len=*), parameter :: err_pes = "Error in the PES file: "
 
+        character(len=*), parameter :: err_inpnn = "Error when reading input.nn: "
+        character(len=*), parameter :: err_scaling = "Error when reading scaling.data: "
+        character(len=*), parameter :: err_weight = "Error when reading the following weight file: "
+        character(len=*), parameter :: warn_inpnn = "Warning when reading input.nn: "
+
+        ! first read the pes file:
         ! line should read something like "H   H   proj    proj"
         read(inp_unit, '(A)', iostat=ios) buffer
         call split_string(buffer, words, nwords)
@@ -159,62 +174,15 @@ module pes_nene_mod
         end do
 
         ! set name strings for RuNNer related files
-        rinpparam%filename_inpnn   = trim(inp_path) // "input.nn"
-        rinpparam%filename_scaling = trim(inp_path) // "scaling.data"
+        filename_inpnn   = trim(inp_path) // "input.nn"
+        filename_scaling = trim(inp_path) // "scaling.data"
 
         ! loop over weight file names
         do weight_counter = 1,atoms%ntypes
-            rinpparam%filename_weights(weight_counter)  = trim(inp_path) // trim(weights_path(weight_counter))
+            filename_weights(weight_counter)  = trim(inp_path) // trim(weights_path(weight_counter))
         end do
 
-    end subroutine read_nene
-
-
-    subroutine compute_nene(atoms, flag)
-
-        ! Calculates energy and forces with HDNNPs
-
-        ! md_tian2 related modules
-        use open_file, only : open_for_read
-        use useful_things, only : file_exists
-
-
-        ! RuNNer related modules (needed for and in predictionshortatomic.f90)
-        use fileunits
-        use globaloptions
-        use mpi_mod
-        use nnflags
-        use nnshort_atomic
-        use predictionoptions
-        use saturation
-        use symfunctions
-        use timings
-
-        ! RuNNer related modules (needed for and in initnn.f90)
-        use fittingoptions
-        use mode1options
-        use nnewald
-        use nnconstants
-
-
-
-
-        type(universe), intent(inout)   :: atoms
-        integer, intent(in)             :: flag
-
-        integer :: nwords, ios = 0, line = 0
-        character(len=max_string_length) :: buffer
-        character(len=max_string_length) :: words(100)
-
-        integer  :: npairs_counter_1, npairs_counter_2, element_counter, nodes_counter, general_counter_1, general_counter_2, weight_counter
-
-        character(len=*), parameter :: err = "Error in compute_nene: "
-        character(len=*), parameter :: err_inpnn = "Error when reading input.nn: "
-        character(len=*), parameter :: err_scaling = "Error when reading scaling.data: "
-        character(len=*), parameter :: err_weight = "Error when reading the following weight file: "
-        character(len=*), parameter :: warn_inpnn = "Warning when reading input.nn: "
-
-
+        ! in case of the HDNNPs several iadditional input files have to be read
 
         ! read all input keywords from input.nn several times to respect dependencies
 
@@ -228,7 +196,7 @@ module pes_nene_mod
 
         call get_nnconstants() ! in principal included in constants.f90, but due to variable name conflicts, this should stay!!
 
-        ! call initialization(ielem,lelement) -> here only getdimensions and paircount is needed
+        ! call initialization(ielem,lelement) -> here only getdimensions and paircount is needed, check checkstructures.f90
 
 
         ! start readout according to getdimensions.f90
@@ -2415,7 +2383,7 @@ module pes_nene_mod
 
 
 
-        ! following the dummy readout
+        ! in the following the dummy readout
         call open_for_read(inpnn_unit, filename_inpnn); ios = 0
 
         do while (ios == 0)
@@ -3437,14 +3405,133 @@ module pes_nene_mod
         endif
 
 
+    end subroutine read_nene
 
 
+    subroutine compute_nene(atoms, flag)
+
+        ! Calculates energy and forces with HDNNPs
+
+        ! md_tian2 related modules
+        use constants, only : habohr2evang, Ha2eV
+
+        ! RuNNer related modules (needed for and in predictionshortatomic.f90)
+        use fileunits
+        use globaloptions
+        use mpi_mod
+        use nnflags
+        use nnshort_atomic
+        use predictionoptions
+        use saturation
+        use symfunctions
+        use timings
+
+        ! RuNNer related modules (needed for and in initnn.f90)
+        use fittingoptions
+        use mode1options
+        use nnewald
+        use nnconstants
+
+
+        type(universe), intent(inout)   :: atoms
+        integer, intent(in)             :: flag
+
+        character(len=*), parameter :: err = "Error in compute_nene: "
+
+
+        ! according to predict.f90
+        if(lshort)then
+          if(nn_type_short.eq.1)then
+            call predictionshortatomic(&
+              num_atoms,num_atoms_element,zelem,&
+              lattice,xyzstruct,&
+              minvalue_short_atomic,maxvalue_short_atomic,avvalue_short_atomic,&
+              eshortmin,eshortmax,&
+              nntotalenergy,nnshortforce,&
+              nnatomenergy,nnshortenergy,nnstress_short,&
+              atomenergysum,sens,lperiodic)
+          !elseif(nn_type_short.eq.2)then
+            !call predictionshortpair(&
+              !num_atoms,num_atoms_element,zelem,&
+              !lattice,xyzstruct,&
+              !minvalue_short_pair,maxvalue_short_pair,avvalue_short_pair,&
+              !eshortmin,eshortmax,&
+              !nntotalenergy,nnshortforce,&
+              !nnatomenergy,nnpairenergy,nnshortenergy,&
+              !nnstress_short,pairs_charge,&
+              !atomenergysum,sens,lperiodic)
+          endif
+        endif
+        if(lelec.and.((nn_type_elec.eq.1).or.(nn_type_elec.eq.3)&
+           .or.(nn_type_elec.eq.4)))then
+          call predictionelectrostatic(&
+            num_atoms,zelem,&
+            minvalue_elec,maxvalue_elec,avvalue_elec,&
+            lattice,xyzstruct,&
+            nntotalcharge,nnatomcharge,&
+            chargemin,chargemax,nnelecenergy,&
+            nnelecforce,nnstress_elec,sense,lperiodic)
+        else
+          nnatomcharge(:)=0.0d0
+        endif
+
+        ! combine short range and electrostatic energies
+        nntotalenergy=nnshortenergy+nnelecenergy
+
+        ! add energies of free atoms
+        if(lremoveatomenergies.and.lshort)then
+          call addatoms(num_atoms,&
+            zelem,num_atoms_element,&
+            atomenergysum,nnatomenergy)
+          nntotalenergy=nntotalenergy+atomenergysum
+        endif
+
+
+        ! combination of short-range and electrostatic forces
+        if(ldoforces)then
+          nntotalforce(:,:)=nnshortforce(:,:)+nnelecforce(:,:)
+        endif
+
+        ! calculate the volume, needed also for stress
+        if(lperiodic)then
+          volume=0.0d0
+          call getvolume(lattice,volume)
+          if((mpirank.eq.0).and.(.not.lmd))then
+            write(ounit,*)'-------------------------------------------------------------'
+            write(ounit,*)'volume ',volume,' Bohr^3 for configuration ', i4
+          endif
+        endif
+
+        ! combination of short-range and electrostatic stress
+        if(ldostress.and.lperiodic)then
+          nnstress(:,:)=nnstress_short(:,:)+nnstress_elec(:,:)
+          nnstress(:,:)=nnstress(:,:)/volume
+        endif
+
+        ! check sum of forces if requested
+        if(lcheckf)then
+            forcesum(:)=0.0d0
+            do i3=1,num_atoms
+              do i2=1,3
+                forcesum(i2)=forcesum(i2)+nntotalforce(i2,i3)
+              enddo ! i2
+            enddo ! i3
+            write(ounit,'(A10,3A25)')'Conf.','Sum of Fx(Ha/Bohr)', 'Sum of Fy(Ha/Bohr)','Sum of Fz(Ha/Bohr)'
+            write(ounit,'(I10,3f25.8)')i1,forcesum(1),forcesum(2),forcesum(3)
+            do i2=1,3
+              if(abs(forcesum(i2)).gt.0.000001d0)then
+                write(ounit,'(I10,A31,I10,f25.8)')i4,'Error in forces of component: ',&
+                  i2,forcesum(i2)
+                stop
+              endif
+            enddo ! i2
+          endif
 
 
 
         ! return the two following variables only
-        atoms%epot = new_RuNNer_value * energyconv
-        atoms%f(:,:,:) = new_RuNNer_value * forceconv
+        atoms%epot = nntotalenergy * Ha2eV
+        atoms%f(:,:,:) = nntotalforce * habohr2evang
 
     end subroutine compute_nene
 

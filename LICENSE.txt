@@ -631,7 +631,7 @@ to attach them to the start of each source file to most effectively
 state the exclusion of warranty; and each file should have at least
 the "copyright" line and a pointer to where the full notice is found.
 
-    md_tian2 (Molecular Dynamics Tian Xia 2; program for simulating the 
+    md_tian2 (Molecular Dynamics Tian Xia 2; program for simulating the
 	      scattering of atoms and molecules from a surface)
     Copyright (C) 2019 Dan J. Auerbach, Svenja M. Janke, Marvin Kammler,
 		       Sascha Kandratsenka, Sebastian Wille
@@ -654,8 +654,8 @@ Also add information on how to contact you by electronic and paper mail.
   If the program does terminal interaction, make it output a short
 notice like this when it starts in an interactive mode:
 
-    md_tian2  Copyright (C) 2019 Dan J. Auerbach, Sascha Kandratsenka, 
-              Svenja M. Janke, Marvin Kammler, Sebastian Wille
+    md_tian2  Copyright (C) 2019 Dan J. Auerbach, Svenja M. Janke,
+              Marvin Kammler, Sascha Kandratsenka, Sebastian Wille
     This program comes with ABSOLUTELY NO WARRANTY; for details type `show w'.
     This is free software, and you are welcome to redistribute it
     under certain conditions; type `show c' for details.

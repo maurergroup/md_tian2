@@ -1,8 +1,8 @@
 !############################################################################
 ! This routine is part of
 ! md_tian2 (Molecular Dynamics Tian Xia 2)
-! (c) 2014-2019 Dan J. Auerbach, Sascha Kandratsenka, Svenja M. Janke, Marvin
-! Kammler, Sebastian Wille
+! (c) 2014-2019 Dan J. Auerbach, Svenja M. Janke, Marvin Kammler,
+!               Sascha Kandratsenka, Sebastian Wille
 ! Dynamics at Surfaces Department
 ! MPI for Biophysical Chemistry Goettingen, Germany
 ! Georg-August-Universitaet Goettingen, Germany
@@ -138,7 +138,7 @@ module constants
     real(dp), parameter :: p2GPa            = 160.2176565_dp
     real(dp), parameter :: joule2ev         = 6.2415093433e+18_dp
     real(dp), parameter :: kelvin2ev        = kB
-    real(dp), parameter :: ha2ev            = 27.21138602_dp ! convert Ha to eV
-    real(dp), parameter :: habohr2evang     = ha2ev/bohr2ang !51.4220670398_dp; convert Ha/bohr to eV/ang
+    real(dp), parameter :: Ha2eV            = 27.21138602_dp ! convert Ha to eV
+    real(dp), parameter :: habohr2evang     = ha2ev*ang2bohr !51.4220670398_dp; convert Ha/bohr to eV/ang
 
 end module constants
