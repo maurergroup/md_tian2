@@ -54,7 +54,7 @@ module pes_nene_mod
 
         use constants, only : max_string_length, pes_id_nene, default_string, default_int, default_real, default_bool
         use open_file, only : lower_case, open_for_read, split_string
-        use run_config, only : simparams
+        !use run_config, only : simparams
         use useful_things, only : file_exists
 
 
@@ -196,7 +196,7 @@ module pes_nene_mod
 
         call get_nnconstants() ! in principal included in constants.f90, but due to variable name conflicts, this should stay!!
 
-        ! call initialization(ielem,lelement) -> here only getdimensions and paircount is needed, check checkstructures.f90
+        ! call initialization(ielem,lelement) -> here only getdimensions, paircount and checkstructures are needed
 
 
         ! start readout according to getdimensions.f90
@@ -701,7 +701,7 @@ module pes_nene_mod
 
         deallocate(rinpparam%num_funcvalues_local)
         deallocate(rinpparam%num_funcvaluese_local)
-        deallocate(rinpparam%num_funcvaluesp_local) ! not needed
+        !deallocate(rinpparam%num_funcvaluesp_local) ! not needed
 
         deallocate(rinpparam%nucelem)
         deallocate(rinpparam%element)
@@ -1158,10 +1158,50 @@ module pes_nene_mod
         end if
 
         rinpparam%max_num_pairs = 0
+        ! end readout according to paircount.f90
 
-        !according to initnn.f90
+        ! start checkstructures.f90
 
-        !call distribute_nnflags() ! -> not really needed, only mpi functions
+        !call checkonestructure(i1,lelement)
+
+        ! according to checkonestructure.f90
+        atoms%simbox(3,3) -> read(dataunit,*,err=90)keyword,(lattice(nlattice,i),i=1,3) (nlattice = 1)
+        atoms%r(:,:,:) ->
+
+        if(keyword.eq.'lattice') then
+            nlattice=nlattice+1
+            backspace(dataunit)
+            read(dataunit,*,err=90)keyword,(lattice(nlattice,i),i=1,3)
+        endif
+
+        if(keyword.eq.'atom') then
+            num_atoms=num_atoms+1
+            backspace(dataunit)
+            read(dataunit,*,err=91)keyword,(xyzstruct(i,num_atoms),i=1,3),&
+                elementsymbol(num_atoms),atomcharge(num_atoms),&
+                atomenergy(num_atoms),(totalforce(i,num_atoms),i=1,3)
+            call nuccharge(elementsymbol(num_atoms),zelem(num_atoms))
+            lelement(zelem(num_atoms))=.true. ! element found
+        endif
+
+        !! check if lattice vectors make sense
+        if(lperiodic)then
+            call getvolume(lattice,volume)
+            if(volume.lt.0.0000001d0)then
+                write(ounit,*)'ERROR: volume of a periodic structure is very small ',volume
+                stop
+            endif
+        endif
+
+        ielem=0
+        do i1=1,102
+            if(lelement(i1)) ielem=ielem+1
+        enddo
+        ! end checkstructures.f90
+
+        ! further according to initnn.f90
+
+        !call distribute_nnflags() ! -> not really needed, only mpi functions (add as dummy?)
 
         if(rinpparam%lshort.and.(rinpparam%nn_type_short.eq.1))then
         allocate (rinpparam%num_funcvalues_short_atomic(rinpparam%nelem))
@@ -3275,8 +3315,7 @@ module pes_nene_mod
         do weight_counter = 1,atoms%ntypes ! weights loop
 
             ! check existance of each weight file before reading
-            if (.not. file_exists(weight_names_list(weight_counter))) stop err // err_weights // weight_names_list(weight_counter),
-            ' file does not exist!'
+            if (.not. file_exists(weight_names_list(weight_counter))) stop err // err_weights // weight_names_list(weight_counter), ' file does not exist!'
 
             call open_for_read(weight_unit, weight_names_list(weight_counter)); ios = 0
 
@@ -3374,37 +3413,6 @@ module pes_nene_mod
 !       call mpi_bcast(eshortmax,1,mpi_real8,0,mpi_comm_world,mpierror)
 !     endif
 
-        ! Pass needed variables to predictionshortatomic (in a way that input.data would be read) ->
-        ! according to checkonestructure.f90
-        atoms%simbox(3,3) -> read(dataunit,*,err=90)keyword,(lattice(nlattice,i),i=1,3) (nlattice = 1)
-        atoms%r(:,:,:) ->
-
-        if(keyword.eq.'lattice') then
-            nlattice=nlattice+1
-            backspace(dataunit)
-            read(dataunit,*,err=90)keyword,(lattice(nlattice,i),i=1,3)
-        endif
-
-        if(keyword.eq.'atom') then
-            num_atoms=num_atoms+1
-            backspace(dataunit)
-            read(dataunit,*,err=91)keyword,(xyzstruct(i,num_atoms),i=1,3),&
-                elementsymbol(num_atoms),atomcharge(num_atoms),&
-                atomenergy(num_atoms),(totalforce(i,num_atoms),i=1,3)
-            call nuccharge(elementsymbol(num_atoms),zelem(num_atoms))
-            lelement(zelem(num_atoms))=.true. ! element found
-        endif
-
-        !! check if lattice vectors make sense
-        if(lperiodic)then
-            call getvolume(lattice,volume)
-            if(volume.lt.0.0000001d0)then
-                write(ounit,*)'ERROR: volume of a periodic structure is very small ',volume
-                stop
-            endif
-        endif
-
-
     end subroutine read_nene
 
 
@@ -3423,6 +3431,7 @@ module pes_nene_mod
         use nnshort_atomic
         use predictionoptions
         use saturation
+        !use structures -> in predict.f90
         use symfunctions
         use timings
 
@@ -3440,8 +3449,45 @@ module pes_nene_mod
 
 
         ! according to predict.f90
-        if(lshort)then
-          if(nn_type_short.eq.1)then
+
+        if(lshort.and.(nn_type_short.eq.1))then
+          allocate(sens(nelem,maxnum_funcvalues_short_atomic))
+        !elseif(lshort.and.(nn_type_short.eq.2))then
+        !  allocate(sens(npairs,maxnum_funcvalues_short_pair))
+        endif
+
+        if(lelec.and.(nn_type_elec.eq.1).or.(nn_type_elec.eq.3).or.(nn_type_elec.eq.4))then
+          allocate(sense(nelem,maxnum_funcvalues_elec))
+        endif
+
+        !call getstructure_mode3(i4,num_atoms,num_pairs,zelem,&
+        !  num_atoms_element,lattice,xyzstruct,&
+        !  totalenergy,totalcharge,totalforce,atomenergy,atomcharge,&
+        !  elementsymbol,lperiodic)
+
+        ! from getstructure_mode3.f90
+        if(mpirank.eq.0)then
+            if(npoints.eq.1)then
+                open(dataunit,file='input.data',form='formatted',status='old')
+                rewind(dataunit)
+            endif
+            call readonestructure(num_atoms,&
+                zelem,num_atoms_element,lattice,&
+                totalcharge,totalenergy,atomcharge,atomenergy,xyzstruct,&
+                totalforce,elementsymbol,lperiodic)
+            if(npoints.eq.totnum_structures)then
+                close(dataunit)
+            endif
+        endif
+
+        !call initmode3(i4,&
+        !  minvalue_short_atomic,maxvalue_short_atomic,avvalue_short_atomic,&
+        !  minvalue_short_pair,maxvalue_short_pair,avvalue_short_pair,&
+        !  minvalue_elec,maxvalue_elec,avvalue_elec,&
+        !  eshortmin,eshortmax,chargemin,chargemax)
+
+        if(lshort .and. nn_type_short == 1) then
+          !if(nn_type_short.eq.1)then
             call predictionshortatomic(&
               num_atoms,num_atoms_element,zelem,&
               lattice,xyzstruct,&
@@ -3460,10 +3506,10 @@ module pes_nene_mod
               !nnatomenergy,nnpairenergy,nnshortenergy,&
               !nnstress_short,pairs_charge,&
               !atomenergysum,sens,lperiodic)
-          endif
+          !endif
         endif
-        if(lelec.and.((nn_type_elec.eq.1).or.(nn_type_elec.eq.3)&
-           .or.(nn_type_elec.eq.4)))then
+
+        if(lelec .and. ((nn_type_elec == 1) .or. (nn_type_elec == 3) .or. (nn_type_elec == 4))) then ! will probably be implemented later, leave in comments or make dummy subroutine!
           call predictionelectrostatic(&
             num_atoms,zelem,&
             minvalue_elec,maxvalue_elec,avvalue_elec,&
@@ -3508,7 +3554,7 @@ module pes_nene_mod
           nnstress(:,:)=nnstress(:,:)/volume
         endif
 
-        ! check sum of forces if requested
+        ! check sum of forces if requested -> do we need that? seems fine, but clarify
         if(lcheckf)then
             forcesum(:)=0.0d0
             do i3=1,num_atoms
@@ -3526,6 +3572,16 @@ module pes_nene_mod
               endif
             enddo ! i2
           endif
+
+        if(lshort.and.(nn_type_short.eq.1))then
+            deallocate(sens)
+        elseif(lshort.and.(nn_type_short.eq.2))then
+            deallocate(sens)
+        endif
+        if(lelec.and.(nn_type_elec.eq.1).or.(nn_type_elec.eq.3).or.(nn_type_elec.eq.4))then
+            deallocate(sense)
+        endif
+
 
 
 
