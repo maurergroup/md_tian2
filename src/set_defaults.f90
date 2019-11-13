@@ -23,7 +23,7 @@
 
 subroutine set_defaults()
 
-    use constants ! to get default values
+    use constants, only : default_int, default_real, default_string, default_bool ! to get default values
 
     ! RuNNer related modules (predictionshortatomic.f90)
     use fileunits
@@ -44,67 +44,44 @@ subroutine set_defaults()
 
     implicit none
 
-    nn_type_short               = default_int
-    mode                        = default_int
-    lshort                      = default_bool
-    lelec                       = default_bool
-    nn_type_elec                = default_int
-    lfounddebug                 = default_bool
-    ldebug                      = default_bool
-    lfound_num_layersshort      = default_bool
-    maxnum_layers_short_atomic  = default_int
-    lfound_num_layersewald      = default_bool
-    maxnum_layers_elec          = default_int
-    lfound_luseatomenergies     = default_bool
-    luseatomenergies            = default_bool
-    lfound_luseatomcharges      = default_bool
-    luseatomcharges             = default_bool
-    lfound_nelem                = default_bool
-    nelem                       = default_int
-    npairs                      = default_int
-    max_num_pairs               = default_
-    element                     = default_string
-    nucelem                     =
-    dmin_element
-    nodes_short_local
-    nodes_ewald_local
-    num_funcvalues_local
-    num_funcvaluese_local
-    num_funcvaluesp_local
-    elementtemp
-    ztemp
-    maxnum_funcvalues_short_atomic
-    maxnum_funcvalues_elec
-    function_type_local
-    function_type_temp
-    funccutoff_local
-    maxcutoff_local
-    elementtemp1
-    elementtemp2
-    elementtemp3
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    nn_type_short                   = default_int
+    mode                            = default_int
+    lshort                          = default_bool
+    lelec                           = default_bool
+    nn_type_elec                    = default_int
+    lfounddebug                     = default_bool
+    ldebug                          = default_bool
+    lfound_num_layersshort          = default_bool
+    maxnum_layers_short_atomic      = default_int
+    lfound_num_layersewald          = default_bool
+    maxnum_layers_elec              = default_int
+    lfound_luseatomenergies         = default_bool
+    luseatomenergies                = default_bool
+    lfound_luseatomcharges          = default_bool
+    luseatomcharges                 = default_bool
+    lfound_nelem                    = default_bool
+    nelem                           = default_int
+    npairs                          = default_int
+    max_num_pairs                   = default_
+    element                         = default_string
+    nucelem                         = default_int
+    dmin_element                    = default_real
+    nodes_short_local               = default_int
+    nodes_ewald_local               = default_int
+    num_funcvalues_local            = default_int
+    num_funcvaluese_local           = default_int
+    num_funcvaluesp_local           = default_int
+    elementtemp                     = default_string
+    ztemp                           = default_int
+    maxnum_funcvalues_short_atomic  = default_int
+    maxnum_funcvalues_elec          = default_int
+    function_type_local             = default_int
+    function_type_temp              = default_int
+    funccutoff_local                = default_real
+    maxcutoff_local                 = default_real
+    elementtemp1                    = default_string
+    elementtemp2                    = default_string
+    elementtemp3                    = default_string
 
 
 
@@ -143,7 +120,7 @@ subroutine set_defaults()
 
 
     ldebug = default_bool
-    maxnum_layers_short_atomic = default_int
+    !maxnum_layers_short_atomic = default_int
     luseatomenergies = default_bool
     luseatomcharges = default_bool
 
