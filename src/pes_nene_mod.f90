@@ -42,10 +42,8 @@ module pes_nene_mod
 
 !   2do:
 !   use RuNNer modules if necessary, otherwise make own ones
-!   include RuNNer subroutine files -> are all subroutines completely independent or are they using global variables, if not ask Jorg to change that!!
-!   rename md_tian2 into MDT2/MDXT2?
 !   change how the seeed for the random number generator will be (add new variable?)
-!   variable declarations concerning RuNNer in the corresponding modules, but set to (our) default values has to be done before reading out keywords (own subroutine or in compute_nene?)
+!   variable declarations concerning RuNNer in the corresponding modules, but set to (our) default values has to be done before reading out keywords (own subroutine called in compute_nene)
 !   move RuNNer related files to folder and change the makefile
 
 
@@ -191,6 +189,9 @@ module pes_nene_mod
 !       2) paircount.f90; not all, but have a further look
 !       3) readkeywords.f90
 !       4) readinput.f90
+
+        ! set all variables to default values
+        call set_defaults()
 
         ! according to initnn.f90 (initialization subroutine in main.f90)
 
