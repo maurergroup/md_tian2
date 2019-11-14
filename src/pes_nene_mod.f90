@@ -170,6 +170,7 @@ module pes_nene_mod
                     stop
 
             end select
+
         end do
 
         ! set name strings for RuNNer related files
@@ -191,12 +192,13 @@ module pes_nene_mod
 !       3) readkeywords.f90
 !       4) readinput.f90
 
-        ! set all variables to default values
+        ! set all variables to default values -> rethink this subroutine!!
         call set_defaults()
 
         ! according to initnn.f90 (initialization subroutine in main.f90)
 
         call get_nnconstants() ! in principal included in constants.f90, but due to variable name conflicts, this should stay!!
+        ! call writeheader() ! ask if this has to be printed when we use RuNNer!!
 
         ! call initialization(ielem,lelement) -> here only getdimensions, paircount and checkstructures are needed
 
@@ -526,6 +528,7 @@ module pes_nene_mod
                         end if
                         rinpparam%num_funcvalues_local(rinpparam%ztemp) = 0
                         call lower_case(words(3))
+
                         select case (words(3))
 
                             case (1,2,4)
@@ -557,6 +560,7 @@ module pes_nene_mod
                         if (ios /= 0) stop err // err_inpnn // "element_symfunction_electrostatic second argument value must be integer"
                         call nuccharge(rinpparam%elementtemp, rinpparam%ztemp)
                         call lower_case(words(3))
+
                         select case (words(3))
 
                             case (1,2,4)
@@ -584,6 +588,7 @@ module pes_nene_mod
                         if (ios /= 0) stop err // err_inpnn // "global_symfunction_short (second?) argument value must be integer"
                         !call nuccharge(rinpparam%elementtemp, rinpparam%ztemp)
                         call lower_case(words(2))
+
                         select case (words(2))
 
                             case (1,2,4)
@@ -619,6 +624,7 @@ module pes_nene_mod
                         if (ios /= 0) stop err // err_inpnn // "global_symfunction_electrostatic (second?) argument value must be integer"
                         !call nuccharge(rinpparam%elementtemp, rinpparam%ztemp)
                         call lower_case(words(2))
+
                         select case (words(2))
 
                             case (1,2,4)
@@ -790,6 +796,7 @@ module pes_nene_mod
                             read(words(3),'(i1000)', iostat=ios) rinpparam%function_type_temp
                             if (ios /= 0) stop err // err_inpnn // "element_symfunction_short second argument value must be integer"
                             call lower_case(words(2))
+
                             select case (words(3))
 
                                 case (1)
@@ -851,6 +858,7 @@ module pes_nene_mod
                             read(words(3),'(i1000)', iostat=ios) rinpparam%function_type_temp
                             if (ios /= 0) stop err // err_inpnn // "symfunction_short second argument value must be integer"
                             call lower_case(words(2))
+
                             select case (words(2))
 
                                 case (1)
@@ -951,6 +959,7 @@ module pes_nene_mod
                             read(words(2),'(i1000)', iostat=ios) rinpparam%function_type_temp
                             if (ios /= 0) stop err // err_inpnn // "global_symfunction_electrostatic first argument value must be integer"
                             call lower_case(words(2))
+
                             select case (words(2))
 
                                 case (1)
@@ -1012,6 +1021,7 @@ module pes_nene_mod
                             read(words(3),'(i1000)', iostat=ios) rinpparam%function_type_temp
                             if (ios /= 0) stop err // err_inpnn // "element_symfunction_electrostatic second argument value must be integer"
                             call lower_case(words(2))
+
                             select case (words(3))
 
                                 case (1)
@@ -1073,6 +1083,7 @@ module pes_nene_mod
                             read(words(3),'(i1000)', iostat=ios) rinpparam%function_type_temp
                             if (ios /= 0) stop err // err_inpnn // "symfunction_electrostatic second argument value must be integer"
                             call lower_case(words(2))
+
                             select case (words(2))
 
                                 case (1)
@@ -1133,8 +1144,7 @@ module pes_nene_mod
                                     end if
 
                                 case default
-                                    print *, err, err_inpnn, "Error in symfunction_electrostatic key, symfunction type ", words(3), " not implemented"
-                                    stop
+                                    print *, err, err_inpnn, "Error in symfunction_electrostatic key, symfunction type ", words(3), " not implemented"; stop
 
                             end select
 
@@ -1244,12 +1254,12 @@ module pes_nene_mod
 
         call allocatesymfunctions()
 
-        call readinput(rinpparam%ielem,rinpparam%iseed,rinpparam%lelement) !ielem iseed defined in main.f90/initnn.f90
+        call readinput(ielem,iseed,lelement) !ielem iseed defined in main.f90/initnn.f90
 
         ! start readout of input.nn according to readinput.f90
 
 
-            !call initializecounters() initializecounters.f90 -> not needed, since we use default values to check for multiple use of keywords
+            call initializecounters() ! initializecounters.f90 -> not needed, since we use default values to check for multiple use of keywords -> reintroduce again!!
 
             if(rinpparam%lshort.and.(rinpparam%nn_type_short.eq.1))then
                 rinpparam%nodes_short_atomic_temp(:)   =0
@@ -1277,7 +1287,7 @@ module pes_nene_mod
                 rinpparam%maxnum_weights_elec         =0
             endif
 
-            call readkeywords(rinpparam%iseed, rinpparam%nodes_short_atomic_temp,rinpparam%nodes_elec_temp,rinpparam%nodes_short_pair_temp, rinpparam%kalmanlambda_local,rinpparam%kalmanlambdae_local)
+            !call readkeywords(rinpparam%iseed, rinpparam%nodes_short_atomic_temp,rinpparam%nodes_elec_temp,rinpparam%nodes_short_pair_temp, rinpparam%kalmanlambda_local,rinpparam%kalmanlambdae_local)
 
 
             ! start readout according to readkeywords.f90
@@ -2825,6 +2835,7 @@ module pes_nene_mod
                                 print *, err, err_inpnn, 'The keyword ', trim(words(1)),' in line ', line, ' was not recognized, check the spelling or look at the manual'; stop
 
                     end select
+
                 else
                     write(*,*) err // err_inpnn // 'iostat = ', ios
                     stop
@@ -2864,34 +2875,50 @@ module pes_nene_mod
                     select case (words(1))
 
                         case ('global_activation_short')
-                            if (rinpparam% /= default_int) stop err // err_inpnn // 'Multiple use of the global_activation_short key'
-                            if (nwords == 2) then
+                            if (any(actfunc_short_atomic /= default_string)) stop err // err_inpnn // 'Multiple use of the global_activation_short key'
+                            if (nwords == maxnum_layers_short_atomic+1) then
                                 do general_counter_1 = 1,maxnum_layers_short_atomic
                                     do general_counter_3 = 1,nelem
                                         do general_counter_2 = 1,nodes_short_atomic
-                                            read(words(2),'(i1000)', iostat=ios) rinpparam%
-                                            if (ios /= 0) stop err // err_inpnn // " value must be integer"
+                                            read(words(general_counter_1+1),'(A)', iostat=ios) rinpparam%actfunc_short_atomic_dummy(general_counter_1)
+                                            actfunc_short_atomic(general_counter_2, general_counter_1, general_counter_3) = actfunc_short_atomic_dummy(general_counter_1)
+                                            !actfunc_short_atomic(general_counter_2, general_counter_1, general_counter_3) = words(general_counter_1+1)
                                         end do
+                                        if(nodes_short_atomic(general_counter_1, general_counter_3) .lt. maxnodes_short_atomic)then
+                                            do general_counter_2 = nodes_short_atomic(general_counter_1, general_counter_3)+1,maxnodes_short_atomic
+                                                actfunc_short_atomic(general_counter_2, general_counter_1, general_counter_3) = ' '
+                                            enddo
                                     end do
                                 end do
                             else
-                                print *, err, err_inpnn, " key needs a single argument"; stop
+                                print *, err, err_inpnn, "global_activation_short key needs ", maxnum_layers_short_atomic, " arguments according to maxnum_layers_short_atomic value"; stop
                             end if
 
                         case ('global_activation_electrostatic')
-                            if (rinpparam% /= default_int) stop err // err_inpnn // 'Multiple use of the global_activation_short key'
-                            if (nwords == 2) then
-                                read(words(2),'(i1000)', iostat=ios) rinpparam%
-                                if (ios /= 0) stop err // err_inpnn // " value must be integer"
+                            if (any(actfunc_elec /= default_string)) stop err // err_inpnn // 'Multiple use of the global_activation_electrostatic key'
+                            if (nwords == maxnum_layers_elec+1) then
+                                do general_counter_1 = 1,maxnum_layers_elec
+                                    do general_counter_3 = 1,nelem
+                                        do general_counter_2 = 1,nodes_elec
+                                            read(words(general_counter_1+1),'(A)', iostat=ios) rinpparam%actfunc_elec_dummy(general_counter_1)
+                                            actfunc_elec(general_counter_2, general_counter_1, general_counter_3) = actfunc_elec_dummy(general_counter_1)
+                                            !actfunc_elec(general_counter_2, general_counter_1, general_counter_3) = words(general_counter_1+1)
+                                        end do
+                                        if (nodes_elec(general_counter_1, general_counter_3) .lt. maxnodes_elec) then
+                                            do general_counter_2 = nodes_elec(general_counter_1, general_counter_3)+1,maxnodes_elec
+                                                actfunc_elec(general_counter_2, general_counter_1, general_counter_3) = ' '
+                                            enddo
+                                    end do
+                                end do
                             else
-                                print *, err, err_inpnn, " key needs a single argument"; stop
+                                print *, err, err_inpnn, "global_activation_electrostatic key needs ", maxnum_layers_elec, " arguments according to maxnum_layers_elec value"; stop
                             end if
 
                         case ('global_activation_pair')
                             print *, err, err_inpnn, "global_activation_pair key not supported, Pair NN not implemented"; stop
 
-
-
+                        case default
+                            ! Smeagol shows them secret ways that nobody else could find
 
                     end select
 
@@ -2903,15 +2930,366 @@ module pes_nene_mod
 
             close(inpnn_unit)
 
+            do i=1,nelem
+                call nuccharge(element(i),nucelem(i))
+            enddo
+            call sortelements()
+
+            if(lelec.and.(nn_type_elec.eq.3))then
+                call open_for_read(inpnn_unit, filename_inpnn); ios = 0
+
+                do while (ios == 0)
+                    read(inpnn_unit, '(A)', iostat=ios) buffer
+                    if (ios == 0) then
+
+                        call split_string(buffer, words, nwords)
+
+                        select case (words(1))
+
+                            case ('fixed_charge')
+                                !if ((rinpparam%elementtemp /= default_string) .and. (rinpparam%chargetemp /= default_real)) stop err // err_inpnn // 'Multiple use of the fixed_charge key'
+                                if (nwords == 3) then
+                                    read(words(2),'(A)', iostat=ios) rinpparam%elementtemp
+                                    read(words(3),*, iostat=ios) rinpparam%chargetemp
+                                    if (ios /= 0) stop err // err_inpnn // "fixed_charge second argument value must be a number"
+                                    call nuccharge(elementtemp,ztemp)
+                                    fixedcharge(elementindex(ztemp))=chargetemp
+                                else
+                                    print *, err, err_inpnn, "fixed_charge key needs a single argument"; stop
+                                end if
+
+
+
+                            case default
+                                ! just let it pass
+
+                        end select
+
+                    else
+                        write(*,*) err // err_inpnn // 'iostat = ', ios
+                        stop
+                    end if
+                end do
+
+                close(inpnn_unit)
+
+                do general_counter_1 = 1,nelem
+                    if (fixedcharge(general_counter_1) .gt. 10.0d0) then
+                        print *, err, err_inpnn, "Error when reading fixed_charge: No fixed charge specified for element ",element(general_counter_1); stop
+                    endif
+                enddo
+            endif
+
+            call open_for_read(inpnn_unit, filename_inpnn); ios = 0
+
+            do while (ios == 0)
+                read(inpnn_unit, '(A)', iostat=ios) buffer
+                if (ios == 0) then
+                    call split_string(buffer, words, nwords)
+
+                    select case (words(1))
+
+                        case ('element_hidden_layers_short')
+                            !if (rinpparam%elementtemp /= default_string) stop err // err_inpnn // 'Multiple use of the element_hidden_layers_short key'
+                            if (nwords == 3) then
+                                read(words(2),'(A)', iostat=ios) rinpparam%elementtemp
+                                call checkelement(elementtemp)
+                                call nuccharge(elementtemp,ztemp)
+                                read(words(3),'(i1000)', iostat=ios) rinpparam%num_layers_short_atomic(elementindex(ztemp))
+                                if (ios /= 0) stop err // err_inpnn // "element_hidden_layers_short second argument value for element ", ztemp," must be integer"
+                                num_layers_short_atomic(elementindex(ztemp)) = num_layers_short_atomic(elementindex(ztemp)) + 1
+                                if (num_layers_short_atomic(elementindex(ztemp)) .gt. maxnum_layers_short_atomic) then
+                                    print *, err, err_inpnn, "Error when reading element_hidden_layers_short: element ", ztemp, " has too many hidden layers"; stop
+                                endif
+                                nodes_short_atomic(num_layers_short_atomic(elementindex(ztemp)),elementindex(ztemp)) = 1
+                                do general_counter_1=2,maxnodes_short_atomic
+                                    actfunc_short_atomic(general_counter_1,num_layers_short_atomic(elementindex(ztemp)),elementindex(ztemp)) = ' '
+                                enddo
+                            else
+                                print *, err, err_inpnn, "element_hidden_layers_short key for element ", ztemp, " needs two arguments"; stop
+                            end if
+
+                        case ('element_hidden_layers_electrostatic')
+                            !if (rinpparam%elementtemp /= default_string) stop err // err_inpnn // 'Multiple use of the element_hidden_layers_short key'
+                            if (nwords == 3) then
+                                read(words(2),'(A)', iostat=ios) rinpparam%elementtemp
+                                call checkelement(elementtemp)
+                                call nuccharge(elementtemp,ztemp)
+                                read(words(3),'(i1000)', iostat=ios) rinpparam%num_layers_elec(elementindex(ztemp))
+                                if (ios /= 0) stop err // err_inpnn // "element_hidden_layers_electrostatic second argument value for element ", ztemp," must be integer"
+                                num_layers_elec(elementindex(ztemp)) = num_layers_elec(elementindex(ztemp)) + 1
+                                if (num_layers_elec(elementindex(ztemp)) .gt. maxnum_layers_elec) then
+                                    print *, err, err_inpnn, "Error when reading element_hidden_layers_electrostatic: element ", ztemp, " has too many hidden layers"; stop
+                                endif
+                                nodes_elec(num_layers_elec(elementindex(ztemp)),elementindex(ztemp)) = 1
+                                do general_counter_1=2,maxnodes_elec
+                                    actfunc_elec(general_counter_1,num_layers_elec(elementindex(ztemp)),elementindex(ztemp)) = ' '
+                                enddo
+                            else
+                                print *, err, err_inpnn, "element_hidden_layers_electrostatic key for element ", ztemp, " needs two arguments"; stop
+                            end if
+
+                        case ('element_hidden_layers_pair')
+                            print *, err, err_inpnn, "element_hidden_layers_pair key not supported, Pair NN not implemented"; stop
+
+                        case default
+                            ! just let it pass
+
+                    end select
+
+                else
+                    write(*,*) err // err_inpnn // 'iostat = ', ios
+                    stop
+                end if
+            end do
+
+            close(inpnn_unit)
+
+            call open_for_read(inpnn_unit, filename_inpnn); ios = 0
+
+            do while (ios == 0)
+                read(inpnn_unit, '(A)', iostat=ios) buffer
+                if (ios == 0) then
+                    call split_string(buffer, words, nwords)
+
+                    select case (words(1))
+
+                        case ('element_nodes_short')
+                            if (nwords == 4) then
+                                read(words(2),'(A)', iostat=ios) rinpparam%elementtemp
+                                call checkelement(elementtemp)
+                                call nuccharge(elementtemp,ztemp)
+                                read(words(3),'(i1000)', iostat=ios) rinpparam%layer
+                                if (ios /= 0) stop err // err_inpnn // "element_nodes_short second argument value for element ", element(elementindex(ztemp)), " must be integer"
+                                read(words(4),'(i1000)', iostat=ios) rinpparam%node
+                                if (ios /= 0) stop err // err_inpnn // "element_nodes_short third argument value for element ", element(elementindex(ztemp)), " must be integer"
+                                if (layer .eq. num_layers_short_atomic(elementindex(ztemp))) then
+                                    print *, err, err_inpnn, "Error when reading element_nodes_short: do not modifiy the number of output nodes for element ", element(elementindex(ztemp)); stop
+                                endif
+                                if (node .gt. maxnodes_short_atomic) then
+                                   print *, err, err_inpnn, "Error when reading element_nodes_short: too many nodes requested for element ", element(elementindex(ztemp)); stop
+                                end if
+                                nodes_short_atomic(layer,elementindex(ztemp)) = node
+                                do general_counter_1 = nodes_short_atomic(layer,elementindex(ztemp))+1,maxnodes_short_atomic
+                                    actfunc_short_atomic(general_counter_1,layer,elementindex(ztemp)) = ' '
+                                end do
+                            else
+                                print *, err, err_inpnn, "element_nodes_short key for element ", element(elementindex(ztemp)), " needs three arguments"; stop
+                            end if
+
+                        case ('element_nodes_electrostatic')
+                            if (nwords == 4) then
+                                read(words(2),'(A)', iostat=ios) rinpparam%elementtemp
+                                call checkelement(elementtemp)
+                                call nuccharge(elementtemp,ztemp)
+                                read(words(3),'(i1000)', iostat=ios) rinpparam%layer
+                                if (ios /= 0) stop err // err_inpnn // "element_nodes_electrostatic second argument value for element ", element(elementindex(ztemp)), " must be integer"
+                                read(words(4),'(i1000)', iostat=ios) rinpparam%node
+                                if (ios /= 0) stop err // err_inpnn // "element_nodes_electrostatic third argument value for element ", element(elementindex(ztemp)), " must be integer"
+                                if (layer .eq. num_layers_elec(elementindex(ztemp))) then
+                                    print *, err, err_inpnn, "Error when reading element_nodes_electrostatic: do not modifiy the number of output nodes for element ", element(elementindex(ztemp)); stop
+                                endif
+                                if (node .gt. maxnodes_elec) then
+                                   print *, err, err_inpnn, "Error when reading element_nodes_electrostatic: too many nodes requested for element ", element(elementindex(ztemp)); stop
+                                end if
+                                nodes_elec(layer,elementindex(ztemp)) = node
+                                do general_counter_1 = nodes_elec(layer,elementindex(ztemp))+1,maxnodes_elec
+                                    actfunc_elec(general_counter_1,layer,elementindex(ztemp)) = ' '
+                                end do
+                            else
+                                print *, err, err_inpnn, "element_nodes_electrostatic key for element ", element(elementindex(ztemp)), " needs three arguments"; stop
+                            end if
+
+                        case ('element_hidden_layers_pair')
+                            print *, err, err_inpnn, "element_hidden_layers_pair key not supported, Pair NN not implemented"; stop
+
+                        case default
+                            ! just let it pass
+
+                    end select
+
+                else
+                    write(*,*) err // err_inpnn // 'iostat = ', ios
+                    stop
+                end if
+            end do
+
+            close(inpnn_unit)
+
+            call open_for_read(inpnn_unit, filename_inpnn); ios = 0
+
+            do while (ios == 0)
+                read(inpnn_unit, '(A)', iostat=ios) buffer
+                if (ios == 0) then
+                    call split_string(buffer, words, nwords)
+
+                    select case (words(1))
+
+                        case ('element_activation_short')
+                            if (nwords == 5) then
+                                read(words(2),'(A)', iostat=ios) rinpparam%elementtemp
+                                call checkelement(elementtemp)
+                                call nuccharge(elementtemp,ztemp)
+                                read(words(3),'(i1000)', iostat=ios) rinpparam%layer
+                                if (ios /= 0) stop err // err_inpnn // "element_activation_short second argument value for element ", element(elementindex(ztemp)), " must be integer"
+                                read(words(4),'(i1000)', iostat=ios) rinpparam%node
+                                if (ios /= 0) stop err // err_inpnn // "element_activation_short third argument value for element ", element(elementindex(ztemp)), " must be integer"
+                                read(words(5),'(A)', iostat=ios) rinpparam%actfunc
+                                if (layer .gt. num_layers_short_atomic(elementindex(ztemp))) then
+                                    print *, err, err_inpnn, "Error when reading element_activation_short: layer is too large for element ", element(elementindex(ztemp)); stop
+                                endif
+                                if (node .gt. nodes_short_atomic(layer,elementindex(ztemp))) then
+                                    print *, err, err_inpnn, "Error when reading element_activation_short: node is too large for element ", element(elementindex(ztemp)); stop
+                                endif
+                                actfunc_short_atomic(node,layer,elementindex(ztemp))=actfunc
+                            else
+                                print *, err, err_inpnn, "element_activation_short key for element ", element(elementindex(ztemp)), " needs four arguments"; stop
+                            end if
+
+                        case ('element_activation_electrostatic')
+                            if (nwords == 5) then
+                                read(words(2),'(A)', iostat=ios) rinpparam%elementtemp
+                                call checkelement(elementtemp)
+                                call nuccharge(elementtemp,ztemp)
+                                read(words(3),'(i1000)', iostat=ios) rinpparam%layer
+                                if (ios /= 0) stop err // err_inpnn // "element_activation_electrostatic second argument value for element ", element(elementindex(ztemp)), " must be integer"
+                                read(words(4),'(i1000)', iostat=ios) rinpparam%node
+                                if (ios /= 0) stop err // err_inpnn // "element_activation_electrostatic third argument value for element ", element(elementindex(ztemp)), " must be integer"
+                                read(words(5),'(A)', iostat=ios) rinpparam%actfunc
+                                if (layer .gt. num_layers_elec(elementindex(ztemp))) then
+                                    print *, err, err_inpnn, "Error when reading element_activation_electrostatic: layer is too large for element ", element(elementindex(ztemp)); stop
+                                endif
+                                if (node .gt. nodes_elec(layer,elementindex(ztemp))) then
+                                    print *, err, err_inpnn, "Error when reading element_activation_electrostatic: node is too large for element ", element(elementindex(ztemp)); stop
+                                endif
+                                actfunc_elec(node,layer,elementindex(ztemp))=actfunc
+                            else
+                                print *, err, err_inpnn, "element_activation_electrostatic key for element ", element(elementindex(ztemp)), " needs four arguments"; stop
+                            end if
+
+                        case ('element_activation_pair')
+                            print *, err, err_inpnn, "element_activation_pair key not supported, Pair NN not implemented"; stop
+
+                        case default
+                            ! just let it pass
+
+                    end select
+
+                else
+                    write(*,*) err // err_inpnn // 'iostat = ', ios
+                    stop
+                end if
+            end do
+
+            close(inpnn_unit)
+
+            if (lshort .and. (nn_type_short == 1)) then
+                sym_short_atomic_count(:)=0
+                num_funcvalues_short_atomic(:)=0
+            endif
+            if (lelec .and. (nn_type_elec == 1)) then
+                sym_elec_count(:)=0
+                num_funcvalues_elec(:)=0
+            endif
+
+            call open_for_read(inpnn_unit, filename_inpnn); ios = 0
+
+            do while (ios == 0)
+                read(inpnn_unit, '(A)', iostat=ios) buffer
+                if (ios == 0) then
+                    call split_string(buffer, words, nwords)
+
+                    select case (words(1))
+
+                        case ('symfunction_short')
+                            if (lshort .and. (nn_type_short == 1)) then
+                                if (nwords == 5) then
+                                    read(words(2),'(A)', iostat=ios) rinpparam%elementtemp
+                                else
+                                    print *, err, err_inpnn, "element_activation_short key for element ", element(elementindex(ztemp)), " needs four arguments"; stop
+                                end if
+                            end if
+
+                        case ('')
+
+                        case ('')
+                            print *, err, err_inpnn, " key not supported, Pair NN not implemented"; stop
+
+                        case default
+                            ! just let it pass
+
+                    end select
+
+                else
+                    write(*,*) err // err_inpnn // 'iostat = ', ios
+                    stop
+                end if
+            end do
+
+            close(inpnn_unit)
+
+            do i1=1,nelem
+                if(lshort.and.(nn_type_short.eq.1))then
+                    num_funcvalues_short_atomic(i1)=sym_short_atomic_count(i1)
+                    nodes_short_atomic(0,i1)=num_funcvalues_short_atomic(i1)
+                endif
+                if(lelec.and.(nn_type_elec.eq.1))then
+                    num_funcvalues_elec(i1)=sym_elec_count(i1)
+                    nodes_elec(0,i1)=num_funcvalues_elec(i1)
+                endif
+            enddo
+
+            if(lshort.and.(nn_type_short.eq.1))then
+                do i1=1,nelem
+                    if(num_funcvalues_short_atomic(i1).eq.0)then
+                        write(ounit,*)'ERROR: No short range symfunctions specified for ',element(i1)
+                        stop
+                    endif
+                enddo
+            endif
+            if(lelec.and.(nn_type_elec.eq.1))then
+                do i1=1,nelem
+                    if(num_funcvalues_elec(i1).eq.0)then
+                        write(ounit,*)'ERROR: No electrostatic symfunctions specified for ',element(i1)
+                        stop
+                    endif
+                enddo
+            endif
+
+            call checkinputnn() ! reintroduce counter variables so that this subroutine make sense
+
+            call printinputnn(iseed,ielem,&
+                nodes_short_atomic_temp,nodes_elec_temp,nodes_short_pair_temp,&
+                kalmanlambda_local,kalmanlambdae_local,&
+                actfunc_short_atomic_dummy,actfunc_elec_dummy,actfunc_short_pair_dummy) ! this subroutine should work by just copy paste
+
+            write(ounit,'(a15,i4,a30)')' Element pairs: ',npairs,' , shortest distance (Bohr)'
+            icount=0
+            do i=1,nelem
+                do j=i,nelem
+                    icount=icount+1
+                    if(dmin_element(icount).lt.9999.d0)then ! write the distance only if the pair has been found, JB 2019/07/22
+                        write(ounit,'(a6,i4,2a3,1x,f10.3)')' pair ',&
+                        icount,element(i),element(j),dmin_element(icount)
+                    endif
+                enddo
+            enddo
+            write(ounit,*)'============================================================='
+
+
+
+
+
+
 
         ! further readout according to initnn.f90
         call getlistdim()
 
-        call distribute_predictionoptions()
+        !call distribute_predictionoptions() only mpi
 
-        call distribute_symfunctions()
+        !call distribute_symfunctions() in symfunctions.f90, only mpi
 
-        call distribute_globaloptions()
+        !call distribute_globaloptions() only mpi
 
         if(rinpparam%lshort.and.(rinpparam%nn_type_short.eq.1))then
             allocate (rinpparam%weights_short_atomic(rinpparam%maxnum_weights_short_atomic,rinpparam%nelem))
@@ -2926,6 +3304,7 @@ module pes_nene_mod
             allocate (rinpparam%symfunction_elec_list(rinpparam%maxnum_funcvalues_elec,rinpparam%max_num_atoms,rinpparam%nblock))
             rinpparam%symfunction_elec_list(:,:,:)=0.0d0
         end if
+        ! end of readout according to initnn.f90, all things have been read and set up, ready for compute_nene()!!
 
 
 
@@ -2985,6 +3364,7 @@ module pes_nene_mod
                             print *, warn_inpnn, 'Skipping invalid label ', trim(words(1)),' in line ', line
 
                 end select
+
             else
                 write(*,*) err // err_inpnn // 'iostat = ', ios
                 stop
@@ -3968,8 +4348,11 @@ module pes_nene_mod
         character(len=*), parameter :: err = "Error in compute_nene: "
 
 
+        ! the elements have to be sorted according to RuNNer before calling the prediction -> better way than calling sortelements in every MD step -> do that when reading the structure file in md_tian2!!
+
         ! according to predict.f90
 
+        ! move allocation/deallocation to read_nene() and before closing program like with the cleanup subroutine??
         if(lshort.and.(nn_type_short.eq.1))then
           allocate(sens(nelem,maxnum_funcvalues_short_atomic))
         !elseif(lshort.and.(nn_type_short.eq.2))then
@@ -4107,8 +4490,50 @@ module pes_nene_mod
 
         ! return the two following variables only
         atoms%epot = nntotalenergy * Ha2eV
-        atoms%f(:,:,:) = nntotalforce * habohr2evang
+        atoms%f(:,:,:) = nntotalforce * habohr2evang ! check if dimensions match
 
     end subroutine compute_nene
+
+    ! according to cleanupt.f90 called in main.f90
+!    subroutine cleanup
+
+        ! from RuNNer cleanup.f90
+!        if(rinpparam%lshort .and. (rinpparam%nn_type_short == 1)) then
+!            deallocate(rinpparam%weights_short_atomic)
+!            deallocate(rinpparam%symfunction_short_atomic_list)
+!            deallocate(rinpparam%num_funcvalues_short_atomic)
+!            deallocate(rinpparam%windex_short_atomic)
+!            deallocate(rinpparam%num_layers_short_atomic)
+!            deallocate(rinpparam%actfunc_short_atomic)
+!            deallocate(rinpparam%nodes_short_atomic)
+!            deallocaterinpparam%(num_weights_short_atomic)
+!            deallocate(rinpparam%function_type_short_atomic)
+!            deallocate(rinpparam%symelement_short_atomic)
+!            deallocate(rinpparam%funccutoff_short_atomic)
+!            deallocate(rinpparam%eta_short_atomic)
+!            deallocate(rinpparam%zeta_short_atomic)
+!            deallocate(rinpparam%lambda_short_atomic)
+!            deallocate(rinpparam%rshift_short_atomic)
+!        endif
+!
+!        if(rinpparam%lelec .and. (rinpparam%nn_type_elec == 1)) then
+!            deallocate(rinpparam%weights_elec)
+!            deallocate(rinpparam%symfunction_elec_list)
+!            deallocate(rinpparam%num_funcvalues_elec)
+!            deallocate(rinpparam%windex_elec)
+!            deallocate(rinpparam%num_layers_elec)
+!            deallocate(rinpparam%actfunc_elec)
+!            deallocate(rinpparam%nodes_elec)
+!            deallocate(rinpparam%num_weights_elec)
+!            deallocate(rinpparam%function_type_elec)
+!            deallocate(rinpparam%symelement_elec)
+!            deallocate(rinpparam%funccutoff_elec)
+!            deallocate(rinpparam%eta_elec)
+!            deallocate(rinpparam%zeta_elec)
+!            deallocate(rinpparam%lambda_elec)
+!            deallocate(rinpparam%rshift_elec)
+!        endif
+
+!    end subroutine cleanup_nene
 
 end module pes_nene_mod

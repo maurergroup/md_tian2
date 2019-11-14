@@ -25,15 +25,19 @@ file_list = \
         atomsymfunction8.f90 \
         atomsymfunction9.f90 \
         calconenn.f90 \
+        checkinputnn.f90 \
         fileunits.f90 \
         fittingoptions.f90 \
         getatomsymfunctions.f90 \
         getcutoff.f90 \
         getdnodes_values.f90 \
+        getlistdim.f90 \
         getneighboridxatomic_para.f90 \
         getneighborsatomic_para.f90 \
         getshortatomic.f90 \
         globaloptions.f90 \
+        initializecounters.f90 \
+        inputnndefaults.f90 \
         mode1options.f90 \
         mpi_dummy.f90 \
         mpi_dummy_routines.f90 \
@@ -46,6 +50,7 @@ file_list = \
         nuccharge.f90 \
         predictionoptions.f90 \
         predictionshortatomic.f90 \
+        printinputnn.f90 \
         saturation.f90 \
         sortelements.f90 \
         symfunctions.f90 \
