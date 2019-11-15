@@ -248,6 +248,8 @@ module pes_nene_mod
                         if (nwords == 2) then
                             read(words(2),'(i1000)', iostat=ios) rinpparam%mode
                             if (ios /= 0) stop err // err_inpnn // "runner_mode value must be integer"
+                            if (rinpparam%mode /= 3) then
+                                print *, err, err_inpnn, "Only mode 3 (prediction mode) available"; stop
                         else
                             print *, err, err_inpnn, "runner_mode key needs a single argument"; stop
                         end if
@@ -859,7 +861,7 @@ module pes_nene_mod
                             if (ios /= 0) stop err // err_inpnn // "symfunction_short second argument value must be integer"
                             call lower_case(words(2))
 
-                            select case (words(2))
+                            select case (words(3))
 
                                 case (1)
                                     if (nwords == 5)
@@ -1084,7 +1086,7 @@ module pes_nene_mod
                             if (ios /= 0) stop err // err_inpnn // "symfunction_electrostatic second argument value must be integer"
                             call lower_case(words(2))
 
-                            select case (words(2))
+                            select case (words(3))
 
                                 case (1)
                                     if (nwords == 5)
@@ -2958,8 +2960,6 @@ module pes_nene_mod
                                     print *, err, err_inpnn, "fixed_charge key needs a single argument"; stop
                                 end if
 
-
-
                             case default
                                 ! just let it pass
 
@@ -3100,8 +3100,8 @@ module pes_nene_mod
                                 print *, err, err_inpnn, "element_nodes_electrostatic key for element ", element(elementindex(ztemp)), " needs three arguments"; stop
                             end if
 
-                        case ('element_hidden_layers_pair')
-                            print *, err, err_inpnn, "element_hidden_layers_pair key not supported, Pair NN not implemented"; stop
+                        case ('element_nodes_pair')
+                            print *, err, err_inpnn, "element_nodes_pair key not supported, Pair NN not implemented"; stop
 
                         case default
                             ! just let it pass
@@ -3203,17 +3203,53 @@ module pes_nene_mod
 
                         case ('symfunction_short')
                             if (lshort .and. (nn_type_short == 1)) then
-                                if (nwords == 5) then
-                                    read(words(2),'(A)', iostat=ios) rinpparam%elementtemp
-                                else
-                                    print *, err, err_inpnn, "element_activation_short key for element ", element(elementindex(ztemp)), " needs four arguments"; stop
-                                end if
+                                !if (nwords == 5) then
+                                read(words(2),'(A)', iostat=ios) rinpparam%elementtemp1
+                                call checkelement(elementtemp1)
+                                call nuccharge(elementtemp1,ztemp1)
+                                sym_short_atomic_count(elementindex(ztemp1)) = sym_short_atomic_count(elementindex(ztemp1)) + 1
+                                read(words(3),'(i1000)', iostat=ios) rinpparam%function_type_temp
+                                if (ios /= 0) stop err // err_inpnn // "symfunction_short second argument value must be integer"
+
+                                select case(words(3))
+
+                                    case ('1')
+                                        if (nwords == 5) then
+                                           read(words(4),'(A)') rinpparam%elementtemp2
+                                           call checkelement(elementtemp2)
+                                           call nuccharge(elementtemp2,ztemp2)
+                                           read(words(5),*, iostat=ios) rinpparam%funccutoff_local
+                                           if (ios /= 0) stop err // err_inpnn // "symfunction_short type ", words(3), " argument ", nwords-1, " must be a number"
+                                        else
+                                            print *, err, err_inpnn, "symfunction_short type ", words(3), " needs ", nwords-1, " arguments"; stop
+                                        end if
+
+                                    case ('')
+
+                                end select
+
                             end if
 
-                        case ('')
+                        case ('element_symfunction_short')
 
-                        case ('')
-                            print *, err, err_inpnn, " key not supported, Pair NN not implemented"; stop
+                        case ('global_symfunction_short')
+
+                        case ('symfunction_electrostatic')
+                            if (lelec .and. (nn_type_elec == 1)) then
+                            end if
+
+                        case ('element_symfunction_electrostatic')
+
+                        case ('global_symfunction_electrostatic')
+
+                        case ('global_pairsymfunction_short')
+                            print *, err, err_inpnn, "global_pairsymfunction_short key not supported, Pair NN not implemented"; stop
+
+                        case ('element_pairsymfunction_short')
+                            print *, err, err_inpnn, "element_pairsymfunction_short key not supported, Pair NN not implemented"; stop
+
+                        case ('pairsymfunction_short')
+                            print *, err, err_inpnn, "pairsymfunction_short key not supported, Pair NN not implemented"; stop
 
                         case default
                             ! just let it pass
