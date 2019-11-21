@@ -544,7 +544,7 @@ module pes_nene_mod
                                     end do
                                 end if
 
-                            case (5,6) ! only for Pair NN?
+                            case (5,6) ! only for Pair NN!
                                 rinpparam%num_funcvalues_local(rinpparam%ztemp) = rinpparam%num_funcvalues_local(rinpparam%ztemp) + 1
 
                             case default
@@ -576,7 +576,7 @@ module pes_nene_mod
                                     end do
                                 end if
 
-                            case (5,6) ! only for Pair NN
+                            case (5,6) ! only for Pair NN!
                                 rinpparam%num_funcvalues_local(rinpparam%ztemp) = rinpparam%num_funcvalues_local(rinpparam%ztemp) + 1
 
                             case default
@@ -610,7 +610,7 @@ module pes_nene_mod
                                     end if
                                 end do
 
-                            case (5,6) ! only for Pair NN
+                            case (5,6) ! only for Pair NN!
                                 do general_counter_1 = 1,rinpparam%nelem
                                     rinpparam%num_funcvalues_local(rinpparam%nucelem(general_counter_1)) = rinpparam%num_funcvalues_local(rinpparam%nucelem(general_counter_1)) + 1
                                 end do
@@ -3208,7 +3208,7 @@ module pes_nene_mod
                                 call checkelement(elementtemp1)
                                 call nuccharge(elementtemp1,ztemp1)
                                 sym_short_atomic_count(elementindex(ztemp1)) = sym_short_atomic_count(elementindex(ztemp1)) + 1
-                                read(words(3),'(i1000)', iostat=ios) rinpparam%function_type_temp
+                                read(words(3),'(i1000)', iostat=ios) rinpparam%function_type_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1))
                                 if (ios /= 0) stop err // err_inpnn // "symfunction_short second argument value must be integer"
 
                                 select case(words(3))
@@ -3218,13 +3218,24 @@ module pes_nene_mod
                                            read(words(4),'(A)') rinpparam%elementtemp2
                                            call checkelement(elementtemp2)
                                            call nuccharge(elementtemp2,ztemp2)
-                                           read(words(5),*, iostat=ios) rinpparam%funccutoff_local
+                                           read(words(5),*, iostat=ios) rinpparam%funccutoff_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1))
                                            if (ios /= 0) stop err // err_inpnn // "symfunction_short type ", words(3), " argument ", nwords-1, " must be a number"
+                                           symelement_short_atomic(symcount_local(elementindex(ztemp)),1,elementindex(ztemp))=ztemp2
                                         else
                                             print *, err, err_inpnn, "symfunction_short type ", words(3), " needs ", nwords-1, " arguments"; stop
                                         end if
 
-                                    case ('')
+                                    case ('2')
+                                        if (nwords == 5) then
+                                           read(words(4),'(A)') rinpparam%elementtemp2
+                                           call checkelement(elementtemp2)
+                                           call nuccharge(elementtemp2,ztemp2)
+                                           read(words(5),*, iostat=ios) rinpparam%funccutoff_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1))
+                                           if (ios /= 0) stop err // err_inpnn // "symfunction_short type ", words(3), " argument ", nwords-1, " must be a number"
+                                           symelement_short_atomic(symcount_local(elementindex(ztemp)),1,elementindex(ztemp))=ztemp2
+                                        else
+                                            print *, err, err_inpnn, "symfunction_short type ", words(3), " needs ", nwords-1, " arguments"; stop
+                                        end if
 
                                 end select
 
