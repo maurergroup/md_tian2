@@ -361,7 +361,7 @@ module pes_nene_mod
                             rinpparam%lfound_nelem = .true.
                             read(words(2),'(i1000)', iostat=ios) rinpparam%nelem
                             if (ios /= 0) stop err // err_inpnn // "number_of_elements value must be integer"
-                            if (rinpparam%nelem /= atoms%ntypes) stop err // err_inpnn // "number of elements in input.nn and structure file differ"
+                            if (rinpparam%nelem /= atoms%ntypes) stop err // err_inpnn // "number of elements in input.nn and in structure file differ"
                             rinpparam%npairs = 0
                             do npairs_counter_1 = 1,rinpparam%nelem
                                 do npairs_counter_2 = npairs_counter_1,rinpparam%nelem
@@ -405,23 +405,22 @@ module pes_nene_mod
                 select case (words(1))
 
                     case ('elements')
-                        if (rinpparam%element /= default_string) stop err // err_inpnn // 'Multiple use of the elements key'
+                        if (any(rinpparam%element /= default_string)) stop err // err_inpnn // 'Multiple use of the elements key'
                         !if (nwords == atoms%nnelem+1) then
-                        if (nwords == atoms%ntypes+1) then
+                        if (nwords == atoms%ntypes+1) then ! check if ntypes is equal to number of elements!!
+                        !if (nwords == rinpparam%nelem+1) then
                             !do element_counter = 1,atoms%nelem
                             do element_counter = 1,atoms%ntypes
-                                read(words(element_counter+1),'(A)') rinpparam%element(element_counter)
-                                !if (ios /= 0) stop err // err_inpnn // "element symbol ", element_counter, " must be string not a number" -> maybe check for proper string without digits -> use white list (periodic table) and forget about black list (done in nuccharge.f90!)
+                            !do element_counter = 1,rinpparam%nelem
+                                read(words(element_counter+1),'(A)') rinpparam%element(element_counter) !! check for valid name will be done later!
                             end do
-                            if (any(rinpparam%element /= atoms%name)) stop err // err_inpnn // "element names in input.nn and *.inp/poscar files differ"
+                            if (any(rinpparam%element /= atoms%name)) stop err // err_inpnn // "element names in input.nn and in structure file differ"
                         else
                             print *, err, err_inpnn, "elements key does not match with number of element types"; stop
                         end if
 
-                    ! for every other keyword pass here, check for unrecognized keywords later
                     case default
-                        !if (trim(words(1)) /= '' .and. words(1)(1:1) /= '#') & ! check for empty and comment lines
-                            !print *, warn_inpnn, 'Skipping invalid label ', trim(words(1)),' in line ', line
+                        ! for every other keyword pass here, check for unrecognized keywords later
 
                 end select
 
@@ -709,7 +708,8 @@ module pes_nene_mod
         !if (allocated(rinpparam%nodes_pair_local)) deallocate(rinpparam%nodes_pair_local)
 
         do general_counter_1 = 1,102
-            rinpparam%maxnum_funcvalues_short_atomic = max(rinpparam%maxnum_funcvalues_short_atomic, )
+            rinpparam%maxnum_funcvalues_short_atomic = max(rinpparam%maxnum_funcvalues_short_atomic, rinpparam%num_funcvalues_local(general_counter_1))
+            rinpparam%maxnum_funcvalues_elec = max(rinpparam%maxnum_funcvalues_elec, rinpparam%num_funcvaluese_local(i))
         end do
 
         deallocate(rinpparam%num_funcvalues_local)
@@ -892,9 +892,9 @@ module pes_nene_mod
                                     end if
 
                                 case (4)
-                                    if (nwords == 7)
+                                    if (nwords == 6)
                                         read(words(4),'(A)') rinpparam%elementtemp2
-                                        read(words(7),*, iostat=ios) rinpparam%funccutoff_local
+                                        read(words(6),*, iostat=ios) rinpparam%funccutoff_local
                                         if (ios /= 0) stop err // err_inpnn // "symfunction_short type ", words(3), " argument ", nwords-1, " must be a number"
                                     else
                                         print *, err, err_inpnn, "symfunction_short type ", words(3), " needs ", nwords-1, " arguments"; stop
@@ -1501,6 +1501,7 @@ module pes_nene_mod
                             if (nwords == 2) then
                                 read(words(2),'(i1000)', iostat=ios) rinpparam%paramode
                                 if (ios /= 0) stop err // err_inpnn // "parallel_mode value must be integer"
+                                if (rinpparam%paramode /= 1) stop err // err_inpnn // "parallel_mode ", rinpparam%paramode, " not implemented, only parallel_mode 1 (serial version) available"
                             else
                                 print *, err, err_inpnn, "parallel_mode key needs a single argument"; stop
                             end if
@@ -1559,7 +1560,7 @@ module pes_nene_mod
 
                         !case ('global_nodes_short', 'global_nodes_short_atomic')
                         !case ('global_nodes_short_atomic')
-                            !print *, err, err_inpnn, "global_nodes_short_atomic key is obsolete, use global_nodes_short instead"; stop
+                            !print *, err, err_inpnn, "global_nodes_short_atomic key is obsolete, please use global_nodes_short instead"; stop
 
                         case ('global_nodes_short')
                             if(rinpparam%lshort .and. (rainpparam%nn_type_short == 1)) then
@@ -1596,7 +1597,7 @@ module pes_nene_mod
                             end if
 
                         !case ('global_nodes_short_pair')
-                            !print *, err, err_inpnn, "global_nodes_short_pair key is obsolete, use global_nodes_pair instead"; stop
+                            !print *, err, err_inpnn, "global_nodes_short_pair key is obsolete, please use global_nodes_pair instead"; stop
 
                         !case ('global_nodes_pair')
                             !print *, err, err_inpnn, "global_nodes_pair key not supported, Pair NN not implemented"; stop
@@ -2424,7 +2425,7 @@ module pes_nene_mod
                             end if
 
                         case ('nn_type')
-                            print *, err, err_inpnn, "nn_type key is obsolete, use nn_type_short instead"; stop
+                            print *, err, err_inpnn, "nn_type key is obsolete, please use nn_type_short instead"; stop
 
                         case ('random_number_type')
                             if (rinpparam%nran /= default_int) stop err // err_inpnn // 'Multiple use of the random_number_type key'
@@ -2682,7 +2683,7 @@ module pes_nene_mod
                                 print *, err, err_inpnn, "prepare_md key needs no argument(s)"; stop
                             end if
 
-                        case('fitting_unit')
+                        case ('fitting_unit')
                             if (rinpparam%fitting_unit /= default_int) stop err // err_inpnn // 'Multiple use of the fitting_unit'
                             if (nwords == 2) then
                                 call lower_case(words(2))
@@ -2704,40 +2705,40 @@ module pes_nene_mod
                                 print *, err, err_inpnn, "fitting_unit key needs a single"; stop
                             end if
 
-                        case('global_activation_short')
+                        case ('global_activation_short')
                             ! just let it pass
 
-                        case('global_activation_electrostatic')
+                        case ('global_activation_electrostatic')
                             ! just let it pass
 
-                        case('global_activation_pair')
+                        case ('global_activation_pair')
                             print *, err, err_inpnn, "global_activation_pair key not supported, Pair NN not implemented"; stop
 
-                        case('element_hidden_layers_short')
+                        case ('element_hidden_layers_short')
                             ! just let it pass
 
-                        case('element_hidden_layers_electrostatic')
+                        case ('element_hidden_layers_electrostatic')
                             ! just let it pass
 
-                        case('element_hidden_layers_pair')
+                        case ('element_hidden_layers_pair')
                             print *, err, err_inpnn, "element_hidden_layers_pair key not supported, Pair NN not implemented"; stop
 
-                        case('element_nodes_short')
+                        case ('element_nodes_short')
                             ! just let it pass
 
-                        case('element_nodes_electrostatic')
+                        case ('element_nodes_electrostatic')
                             ! just let it pass
 
-                        case('element_nodes_pair')
+                        case ('element_nodes_pair')
                             print *, err, err_inpnn, "element_nodes_pair key not supported, Pair NN not implemented"; stop
 
-                        case('element_activation_short')
+                        case ('element_activation_short')
                             ! just let it pass
 
-                        case('element_activation_electrostatic')
+                        case ('element_activation_electrostatic')
                             ! just let it pass
 
-                        case('element_activation_pair')
+                        case ('element_activation_pair')
                             print *, err, err_inpnn, "element_activation_pair key not supported, Pair NN not implemented"; stop
 
                         case ('joint_energy_force_update')
@@ -2747,6 +2748,9 @@ module pes_nene_mod
                             else
                                 print *, err, err_inpnn, "joint_energy_force_update key needs no argument(s)"; stop
                             end if
+
+                        case ('use_fixed_charges')
+                            print *, err, err_inpnn, "use_fixed_charges key is obsolete, please use electrostatic_type 3 instead"; stop
 
                         case ('use_omp_mkl')
                             if (rinpparam%lompmkl /= default_bool) stop err // err_inpnn // 'Multiple use of the use_omp_mkl key'
@@ -3203,36 +3207,155 @@ module pes_nene_mod
 
                         case ('symfunction_short')
                             if (lshort .and. (nn_type_short == 1)) then
+                                call allocate_readsymfunctionatomic(maxnum_funcvalues_short_atomic, sym_short_atomic_count, function_type_short_atomic, symelement_short_atomic, &
+                                     funccutoff_short_atomic, eta_short_atomic, zeta_short_atomic, rshift_short_atomic, lambda_short_atomic) ! maybe there is a better way to set the dimensions of variables needed for the readout?
                                 !if (nwords == 5) then
                                 read(words(2),'(A)', iostat=ios) rinpparam%elementtemp1
                                 call checkelement(elementtemp1)
                                 call nuccharge(elementtemp1,ztemp1)
                                 sym_short_atomic_count(elementindex(ztemp1)) = sym_short_atomic_count(elementindex(ztemp1)) + 1
                                 read(words(3),'(i1000)', iostat=ios) rinpparam%function_type_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1))
-                                if (ios /= 0) stop err // err_inpnn // "symfunction_short second argument value must be integer"
+                                if (ios /= 0) stop err // err_inpnn // "symfunction_short argument 2 value must be integer"
 
                                 select case(words(3))
 
                                     case ('1')
                                         if (nwords == 5) then
-                                           read(words(4),'(A)') rinpparam%elementtemp2
-                                           call checkelement(elementtemp2)
-                                           call nuccharge(elementtemp2,ztemp2)
-                                           read(words(5),*, iostat=ios) rinpparam%funccutoff_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1))
-                                           if (ios /= 0) stop err // err_inpnn // "symfunction_short type ", words(3), " argument ", nwords-1, " must be a number"
-                                           symelement_short_atomic(symcount_local(elementindex(ztemp)),1,elementindex(ztemp))=ztemp2
+                                            read(words(4),'(A)') rinpparam%elementtemp2
+                                            call checkelement(elementtemp2)
+                                            call nuccharge(elementtemp2,ztemp2)
+                                            read(words(5),*, iostat=ios) rinpparam%funccutoff_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1))
+                                            if (ios /= 0) stop err // err_inpnn // "symfunction_short type ", words(3), " argument ", nwords-1, " must be a number"
+                                            symelement_short_atomic(symcount_local(elementindex(ztemp1)),1,elementindex(ztemp1))=ztemp2
                                         else
                                             print *, err, err_inpnn, "symfunction_short type ", words(3), " needs ", nwords-1, " arguments"; stop
                                         end if
 
                                     case ('2')
+                                        if (nwords == 7) then
+                                            read(words(4),'(A)') rinpparam%elementtemp2
+                                            call checkelement(elementtemp2)
+                                            call nuccharge(elementtemp2,ztemp2)
+                                            read(words(5),*, iostat=ios) rinpparam%eta_lshort_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1))
+                                            if (ios /= 0) stop err // err_inpnn //" symfunction_short type ", words(3), " argument 4 must be a number"
+                                            read(words(6),*, iostat=ios) rinpparam%rshift_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1))
+                                            if (ios /= 0) stop err // err_inpnn // "symfunction_short type ", words(3), " argument 5 must be a number"
+                                            read(words(7),*, iostat=ios) rinpparam%funccutoff_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1))
+                                            if (ios /= 0) stop err // err_inpnn // "symfunction_short type ", words(3), " argument 6 must be a number"
+                                            symelement_short_atomic(symcount_local(elementindex(ztemp1)),1,elementindex(ztemp1))=ztemp2
+                                        else
+                                            print *, err, err_inpnn, "symfunction_short type ", words(3), " needs ", nwords-1, " arguments"; stop
+                                        end if
+
+                                    case ('3')
+                                        if (nwords == 9) then
+                                            read(words(4),'(A)') rinpparam%elementtemp2
+                                            read(words(5),'(A)') rinpparam%elementtemp3
+                                            call checkelement(elementtemp2)
+                                            call checkelement(elementtemp3)
+                                            call nuccharge(elementtemp2,ztemp2)
+                                            call nuccharge(elementtemp2,ztemp3)
+                                            if (ztemp2 .gt. ztemp3) then
+                                                itemp = ztemp2
+                                                ztemp2 = ztemp3
+                                                ztemp3 = itemp
+                                            endif
+                                            read(words(6),*, iostat=ios) rinpparam%eta_lshort_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1))
+                                            if (ios /= 0) stop err // err_inpnn //" symfunction_short type ", words(3), " argument 5 must be a number"
+                                            read(words(7),*, iostat=ios) rinpparam%lambda_lshort_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1))
+                                            if (ios /= 0) stop err // err_inpnn //" symfunction_short type ", words(3), " argument 6 must be a number"
+                                            read(words(8),*, iostat=ios) rinpparam%zeta_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1))
+                                            if (ios /= 0) stop err // err_inpnn // "symfunction_short type ", words(3), " argument 7 must be a number"
+                                            read(words(9),*, iostat=ios) rinpparam%funccutoff_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1))
+                                            if (ios /= 0) stop err // err_inpnn // "symfunction_short type ", words(3), " argument 8 must be a number"
+                                            symelement_short_atomic(symcount_local(elementindex(ztemp1)),1,elementindex(ztemp1))=ztemp2
+                                            symelement_short_atomic(symcount_local(elementindex(ztemp1)),2,elementindex(ztemp1))=ztemp3
+                                        else
+                                            print *, err, err_inpnn, "symfunction_short type ", words(3), " needs ", nwords-1, " arguments"; stop
+                                        end if
+
+                                    case ('4')
+                                        if (nwords == 6) then
+                                            read(words(4),'(A)') rinpparam%elementtemp2
+                                            call checkelement(elementtemp2)
+                                            call nuccharge(elementtemp2,ztemp2)
+                                            read(words(5),*, iostat=ios) rinpparam%eta_lshort_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1))
+                                            if (ios /= 0) stop err // err_inpnn //" symfunction_short type ", words(3), " argument 4 must be a number"
+                                            read(words(6),*, iostat=ios) rinpparam%funccutoff_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1))
+                                            if (ios /= 0) stop err // err_inpnn // "symfunction_short type ", words(3), " argument 5 must be a number"
+                                            symelement_short_atomic(symcount_local(elementindex(ztemp1)),1,elementindex(ztemp1))=ztemp2
+                                        else
+                                            print *, err, err_inpnn, "symfunction_short type ", words(3), " needs ", nwords-1, " arguments"; stop
+                                        end if
+
+                                    case ('5')
+                                        if (nwords == 4) then
+                                            read(words(4),*, iostat=ios) rinpparam%eta_lshort_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1))
+                                            if (ios /= 0) stop err // err_inpnn //" symfunction_short type ", words(3), " argument 3 must be a number"
+                                        else
+                                            print *, err, err_inpnn, "symfunction_short type ", words(3), " needs ", nwords-1, " arguments"; stop
+                                        end if
+
+                                    case ('6')
                                         if (nwords == 5) then
-                                           read(words(4),'(A)') rinpparam%elementtemp2
-                                           call checkelement(elementtemp2)
-                                           call nuccharge(elementtemp2,ztemp2)
-                                           read(words(5),*, iostat=ios) rinpparam%funccutoff_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1))
-                                           if (ios /= 0) stop err // err_inpnn // "symfunction_short type ", words(3), " argument ", nwords-1, " must be a number"
-                                           symelement_short_atomic(symcount_local(elementindex(ztemp)),1,elementindex(ztemp))=ztemp2
+                                            read(words(4),'(A)') rinpparam%elementtemp2
+                                            call checkelement(elementtemp2)
+                                            call nuccharge(elementtemp2,ztemp2)
+                                            read(words(5),*, iostat=ios) rinpparam%funccutoff_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1))
+                                            if (ios /= 0) stop err // err_inpnn // "symfunction_short type ", words(3), " argument 4 must be a number"
+                                            symelement_short_atomic(symcount_local(elementindex(ztemp1)),1,elementindex(ztemp1))=ztemp2
+                                        else
+                                            print *, err, err_inpnn, "symfunction_short type ", words(3), " needs ", nwords-1, " arguments"; stop
+                                        end if
+
+                                    case ('8')
+                                        if (nwords == 8) then
+                                            read(words(4),'(A)') rinpparam%elementtemp2
+                                            read(words(5),'(A)') rinpparam%elementtemp3
+                                            call checkelement(elementtemp2)
+                                            call checkelement(elementtemp3)
+                                            call nuccharge(elementtemp2,ztemp2)
+                                            call nuccharge(elementtemp2,ztemp3)
+                                            if (ztemp2 .gt. ztemp3) then
+                                                itemp = ztemp2
+                                                ztemp2 = ztemp3
+                                                ztemp3 = itemp
+                                            endif
+                                            read(words(6),*, iostat=ios) rinpparam%eta_lshort_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1))
+                                            if (ios /= 0) stop err // err_inpnn //" symfunction_short type ", words(3), " argument 5 must be a number"
+                                            read(words(7),*, iostat=ios) rinpparam%rshift_lshort_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1))
+                                            if (ios /= 0) stop err // err_inpnn //" symfunction_short type ", words(3), " argument 6 must be a number"
+                                            read(words(8),*, iostat=ios) rinpparam%funccutoff_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1))
+                                            if (ios /= 0) stop err // err_inpnn // "symfunction_short type ", words(3), " argument 7 must be a number"
+                                            symelement_short_atomic(symcount_local(elementindex(ztemp1)),1,elementindex(ztemp1))=ztemp2
+                                            symelement_short_atomic(symcount_local(elementindex(ztemp1)),2,elementindex(ztemp1))=ztemp3
+                                        else
+                                            print *, err, err_inpnn, "symfunction_short type ", words(3), " needs ", nwords-1, " arguments"; stop
+                                        end if
+
+                                    case ('9')
+                                        if (nwords == 9) then
+                                            read(words(4),'(A)') rinpparam%elementtemp2
+                                            read(words(5),'(A)') rinpparam%elementtemp3
+                                            call checkelement(elementtemp2)
+                                            call checkelement(elementtemp3)
+                                            call nuccharge(elementtemp2,ztemp2)
+                                            call nuccharge(elementtemp2,ztemp3)
+                                            if (ztemp2 .gt. ztemp3) then
+                                                itemp = ztemp2
+                                                ztemp2 = ztemp3
+                                                ztemp3 = itemp
+                                            endif
+                                            read(words(6),*, iostat=ios) rinpparam%eta_lshort_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1))
+                                            if (ios /= 0) stop err // err_inpnn //" symfunction_short type ", words(3), " argument 5 must be a number"
+                                            read(words(7),*, iostat=ios) rinpparam%lambda_lshort_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1))
+                                            if (ios /= 0) stop err // err_inpnn //" symfunction_short type ", words(3), " argument 6 must be a number"
+                                            read(words(8),*, iostat=ios) rinpparam%zeta_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1))
+                                            if (ios /= 0) stop err // err_inpnn // "symfunction_short type ", words(3), " argument 7 must be a number"
+                                            read(words(9),*, iostat=ios) rinpparam%funccutoff_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1))
+                                            if (ios /= 0) stop err // err_inpnn // "symfunction_short type ", words(3), " argument 8 must be a number"
+                                            symelement_short_atomic(symcount_local(elementindex(ztemp1)),1,elementindex(ztemp1))=ztemp2
+                                            symelement_short_atomic(symcount_local(elementindex(ztemp1)),2,elementindex(ztemp1))=ztemp3
                                         else
                                             print *, err, err_inpnn, "symfunction_short type ", words(3), " needs ", nwords-1, " arguments"; stop
                                         end if
@@ -3247,6 +3370,8 @@ module pes_nene_mod
 
                         case ('symfunction_electrostatic')
                             if (lelec .and. (nn_type_elec == 1)) then
+                                call allocate_readsymfunctionatomic(maxnum_funcvalues_elec, sym_elec_count, function_type_elec, symelement_elec, &
+                                     funccutoff_elec, eta_elec, zeta_elec, rshift_elec, lambda_elec)
                             end if
 
                         case ('element_symfunction_electrostatic')
@@ -3425,57 +3550,8 @@ module pes_nene_mod
 
 
         ! here the full list of keywords, remove after implementing according to readkeywords.f90!!
-        call open_for_read(inpnn_unit, filename_inpnn); ios = 0
-
-        do while (ios == 0) ! analog to read_input_file subroutine in run_config.f90
-            read(inpnn_unit, '(A)', iostat=ios) buffer
-            if (ios == 0) then
-                line = line + 1
-                call split_string(buffer, words, nwords)
 
                 select case (words(1))
-
-                    case ('analyze_composition')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the analyze_composition key'
-
-                    case ('analyze_error')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the analyze_error key'
-
-                    case ('analyze_error_charge_step')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the analyze_error_charge_step key'
-
-                    case ('analyze_error_energy_step')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the analyze_error_energy_step key'
-
-                    case ('analyze_error_force_step')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the analyze_error_force_step key'
-
-                    case ('atom_energy')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the atom_energy key'
-
-                    case ('biasweights_max')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the biasweights_max key'
-
-                    case ('biasweights_min')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the biasweights_min key'
-
-                    case ('bond_threshold')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the bond_threshold key'
-
-                    case ('calculate_final_force')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the calculate_final_force key'
-
-                    case ('calculate_forces')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the calculate_forces key'
-
-                    case ('calculate_stress')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the calculate_stress key'
-
-                    case ('center_symmetry_functions')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the center_symmetry_functions key'
-
-                    case ('charge_error_threshold')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the charge_error_threshold key'
 
                     case ('charge_fraction')
                         if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the charge_fraction key'
@@ -3552,29 +3628,8 @@ module pes_nene_mod
                     case ('element_nodes_short')
                         if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the element_nodes_short key'
 
-                    case ('element_pairsymfunction_short')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the element_pairsymfunction_short key'
-                        ! you shall pass
-
-                    case ('element_symfunction_electrostatic')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the element_symfunction_electrostatic key'
-                        ! you shall pass
-
                     case ('element_symfunction_short')
                         if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the element_symfunction_short key'
-                        ! you shall pass
-
-                    case ('elements')
-                        if (any(rinpparam%element /= default_string)) stop err // err_inpnn // 'Multiple use of the elements key'
-                        if (nwords == atoms%nelem+1)
-                            do i=1,atoms%nelem
-                                read(words(i+1),'(A)', iostat=ios) element(i)
-                                if (ios /= 0) stop err // err_inpnn // "elements keyword values must be string"
-                                if (any(rinpparam%element /= atoms%name)) stop err // err_inpnn // "element names in input.nn and *.inp/poscar files differ"
-                        else
-                            print *, err, err_inpnn, "Error: number of element symbols given does not match with number of elements from structure file"; stop
-                        end if
-
 
                     case ('enable_on_the_fly_input')
                         if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the enable_on_the_fly_input key'
@@ -3660,18 +3715,6 @@ module pes_nene_mod
                     case ('global_nodes_short' .or. 'global_nodes_short_atomic')
                         if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the global_nodes_short/global_nodes_short_atomic key'
 
-                    case ('global_output_nodes_electrostatic')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the global_output_nodes_electrostatic key'
-                        print *, err, err_inpnn, "Error: global_output_nodes_electrostatic keyword is obsolete, please remove it"; stop
-
-                    case ('global_output_nodes_pair')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the global_output_nodes_pair key'
-                        print *, err, err_inpnn, "Error: global_output_nodes_pair keyword is obsolete, please remove it"; stop
-
-                    case ('global_output_nodes_short')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the global_output_nodes_short key'
-                        print *, err, err_inpnn, "Error: global_output_nodes_short keyword is obsolete, please remove it"; stop
-
                     case ('global_pairsymfunction_short' .or. 'global_symfunction_short_pair')
                         if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the global_pairsymfunction_short/global_symfunction_short_pair key'
 
@@ -3750,22 +3793,6 @@ module pes_nene_mod
                     case ('nguyen_widrow_weights_short')
                         if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the nguyen_widrow_weights_short key'
 
-                    case ('nn_type')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the nn_type key'
-                        print *, err, err_inpnn, "Error: nn_type keyword is obsolete, use nn_type_short instead"; stop
-
-                    case ('nn_type_short') ! only short available
-                        if (rinpparam%nn_type_short /= default_int) stop err // err_inpnn // 'Multiple use of the nn_type_short key'
-                        if (nwords == 2) then
-                            read(words(2),'(i1000)', iostat=ios) rinpparam%nn_type_short
-                            if (ios /= 0) stop err // err_inpnn // "nn_type_short value must be integer"
-                            if (words(2) /= 1) then
-                                print *, err, err_inpnn, "Only nn_type_short 1 (Behler-Parrinello) available!"; stop
-                            end if
-                        else
-                            print *, err, err_inpnn, "nn_type_short key needs a single argument"; stop
-                        end if
-
                     case ('noise_charge')
                         if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the noise_charge key'
 
@@ -3778,35 +3805,6 @@ module pes_nene_mod
                     case ('normalize_nodes')
                         if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the normalize_nodes key'
 
-                    case ('number_of_elements')
-                        if (rinpparam%nelem /= default_int) stop err // err_inpnn // 'Multiple use of the number_of_elements key'
-                        if (nwords == 2) then
-                            read(words(2),'(i1000)',iostat=ios) rinpparam%nelem
-                            if (ios /= 0) stop err // err_inpnn // "number_of_elements value must be integer"
-                            if (rinpparam%nelem /= atoms%ntypes) stop err // err_inpnn // "element number in input.nn and *.inp/poscar files differ"
-                        else
-                            print *, err, err_inpnn, "number_of_elements key needs a single argument"
-                        end if
-
-
-
-
-                    case ('number_of_elements') ! check with md_tian input
-                        if (rinpparam%nelem /= default_int) stop err // err_inpnn // 'Multiple use of the number_of_elements key'
-                        if (nwords == 2) then
-                            read(words(2),'(A)',iostat=ios) rinpparam%nelem
-
-                            do nelem_counter_1=1,rinpparam%nelem
-                                do nelem_counter_2=1,rinpparam%nelem
-                                    rinpparam%npairs = rinpparam%npairs + 1
-                                end do
-                            end do
-                        else
-                            print *, err, err_inpnn, "number_of_elements key needs a single argument"; stop
-                        end if
-
-
-
                     case ('optmode_charge')
                         if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the optmode_charge key'
 
@@ -3818,16 +3816,6 @@ module pes_nene_mod
 
                     case ('pairsymfunction_short')
                         if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the pairsymfunction_short key'
-
-                    case ('parallel_mode')
-                        if (rinpparam%paramode /= default_) stop err // err_inpnn // 'Multiple use of the parallel_mode key'
-                        if (nwords == 2) then
-                            read(words(2),'(A)') rinpparam%paramode
-                            if (words(2) .neqv. 1) then
-                                print *, err, err_inpnn, "Only parallel_mode 1 (serial) available"; stop
-                        else
-                            print *, err, err_inpnn, "parallel_mode key needs a single argument"; stop
-                        end if
 
                     case ('points_in_memory' .or. 'nblock')
                         if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the points_in_memory/nblock key'
@@ -3859,23 +3847,6 @@ module pes_nene_mod
                     case ('print_force_components')
                         if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the print_force_components key'
 
-                    case ('print_mad')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the print_mad key'
-
-                    case ('print_sensitivity')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the print_sensitivity key'
-
-                    case ('random_number_type')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the random_number_type key'
-
-                    case ('random_order_training')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the random_order_training key'
-                        print *, err, err_inpnn, "Error: random_order_training keyword is obsolete, please use mix_all_points
-                        instead"; stop
-
-                    case ('random_seed')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the random_seed key'
-
                     case ('read_kalman_matrices')
                         if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the read_kalman_matrices key'
 
@@ -3893,17 +3864,6 @@ module pes_nene_mod
 
                     case ('restrict_weights')
                         if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the restrict_weights key'
-
-                    case ('runner_mode') ! only mode 3 available
-                        if (rinpparam%mode /= default_int) stop err // err_inpnn // 'Multiple use of the runner_mode key'
-
-                        if (nwords == 2) then
-                            read(words(2),'') rinpparam%mode
-                            if (words(2) /= 3)
-                                print *, err, err_inpnn, "Only mode 3 available"; stop
-                        else
-                            print *, err, err_inpnn, "runner_mode key needs a single argument"; stop
-                        end if
 
                     case ('save_kalman_matrices')
                         if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the save_kalman_matrices key'
@@ -3986,12 +3946,6 @@ module pes_nene_mod
                     case ('symfunction_short')
                         if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the symfunction_short key'
 
-                    case ('test_fraction')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the test_fraction key'
-
-                    case ('total_charge_error_threshold')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the total_charge_error_threshold key'
-
                     case ('update_single_element')
                         if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the update_single_element key'
 
@@ -4019,14 +3973,8 @@ module pes_nene_mod
                     case ('use_electrostatic_nn')
                         if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the use_electrostatic_nn key'
 
-                    case ('use_electrostatics')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the use_electrostatics key'
-
                     case ('use_fixed_charges')
                         if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the use_fixed_charges key'
-
-                    case ('use_ipi')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the use_ipi key'
 
                     case ('use_noisematrix')
                         if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the use_noisematrix key'
@@ -4040,19 +3988,8 @@ module pes_nene_mod
                     case ('use_old_weights_short')
                         if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the use_old_weights_short key'
 
-                    case ('use_omp_mkl')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the use_omp_mkl key'
-
                     case ('use_short_forces')
                         if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the use_short_forces key'
-
-                    case ('use_short_nn')
-                        if (rinpparam%lshort_local /= default_bool) stop err // err_inpnn // 'Multiple use of the use_short_nn key'
-                        if (nwords == 1) then
-                            rinpparam%lshort_local = .true.
-                        else
-                            print *, err, err_inpnn, "use_short_nn key has additional arguments"; stop
-                        end if
 
                     case ('use_systematic_weights_electrostatic')
                         if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the use_systematic_weights_electrostatic key'
@@ -4060,164 +3997,6 @@ module pes_nene_mod
                     case ('use_systematic_weights_short')
                         if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the use_systematic_weights_short key'
 
-                    case ('weight_analysis')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the weight_analysis key'
-
-                    case ('weight_constraint')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the weight_constraint key'
-
-                    case ('weighte_constraint')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the weighte_constraint key'
-
-                    case ('weights_max')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the weights_max key'
-
-                    case ('weights_min')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the weights_min key'
-
-                    case ('weightse_max')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the weightse_max key'
-
-                    case ('weightse_min')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the weightse_min key'
-
-                    case ('write_fit_statistics')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the write_fit_statistics key'
-
-                    case ('write_pdb')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the write_pdb key'
-                        print *, err, err_inpnn, "Error: write_pdb keyword is no longer supported"; stop
-
-                    case ('write_pov')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the write_pov key'
-                        print *, err, err_inpnn, "Error: write_pov keyword is no longer supported"; stop
-
-                    case ('write_pwscf')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the write_pwscf key'
-                        print *, err, err_inpnn, "Error: write_pwscf keyword is no longer supported"; stop
-
-                    case ('write_temporary_weights')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the write_temporary_weights key'
-
-                    case ('write_traincharges')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the write_traincharges key'
-
-                    case ('write_trainforces')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the write_trainforces key'
-
-                    case ('write_trainpoints')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the write_trainpoints key'
-
-                    case ('write_unformatted')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the write_unformatted key'
-
-                    case ('write_weights_epoch')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the write_weights_epoch key'
-
-                    case ('write_xyz')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the write_xyz key'
-                        print *, err, err_inpnn, "Error: write_xyz keyword is no longer supported"; stop
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-                    case ('global_hidden_layers_short')
-                        if (rinpparam%global_hidden_layers_short /= default_int) stop err // err_inpnn // 'Multiple use of the global_hidden_layers_short key'
-                        if (nwords == 2) then
-                            rinpparam%global_hidden_layers_short = rinpparam%global_hidden_layers_short + 1
-                        else
-                            print *, err, err_inpnn, "global_hidden_layers_short key needs a single argument"; stop
-                        end if
-
-
-
-                    case ('global_output_nodes_short')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-                        print *, "Error: global_output_nodes_short keyword is obsolete, please remove it"
-                        stop
-
-                    case ('global_output_nodes_electrostatic')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-                        print *, "Error: global_output_nodes_electrostatic keyword is obsolete, please remove it"
-                        stop
-
-                    case ('global_output_nodes_pair')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-                        print *, "Error: global_output_nodes_pair keyword is obsolete, please remove it"
-                        stop
-
-
-
-                    case ('random_order_training')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-                        print *, "Error: random_order_training keyword is obsolete, please use mix_all_points instead"
-                        stop
-
-
-
-
-
-
-
-                    case ('nn_type')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-                        print *, "Error: nn_type keyword is obsolete, use nn_type_short instead"
-                        stop
-
-
-
-
-
-
-                    case ('use_fixed_charges')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-                        print *, "use_fixed_charges keyword is obsolete, use electrostatic_type 3 instead"
-                        stop
-
-
-
-                    case ('use_electrostatic_nn')
-                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-                        print *, "Error: use_electrostatic_nn keyword is obsolete, please use electrostatic_type and use_electrostatics instead"
-                        stop
-
-!                    case ('')
-!                        if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the  key'
-
-                    case default
-                        if (trim(words(1)) /= '' .and. words(1)(1:1) /= '#') & !check for empty and comment lines
-                            print *, warn_inpnn, 'Skipping invalid label ',trim(words(1)),' in line ', line
-
-                end select
-
-            else
-                write(*,*) err // err_inpnn // 'iostat = ', ios
-                stop
-            end if
-        end do
-
-        close(inpnn_unit)
 
 
         ! check existance of scaling.data
@@ -4541,6 +4320,36 @@ module pes_nene_mod
 
     end subroutine compute_nene
 
+    subroutine allocate_readsymfunctionatomic(maxnum_funcvalues_local, symcount_local, function_type_local, symelement_local, funccutoff_local,eta_local,zeta_local,rshift_local,lambda_local)
+
+        !use fileunits
+        use globaloptions
+
+        implicit none
+
+        integer, allocatable    :: symcount_local(:)
+        integer                 :: maxnum_funcvalues_local
+
+        integer, allocatable    :: function_type_local(:,:)
+        integer, allocatable    :: symelement_local(:,:,:)
+
+        real*8, allocatable     :: funccutoff_local(:,:)
+        real*8, allocatable     :: eta_local(:,:)
+        real*8, allocatable     :: zeta_local(:,:)
+        real*8, allocatable     :: rshift_local(:,:)
+        real*8, allocatable     :: lambda_local(:,:)
+
+        allocate(symcount_local(nelem))
+        allocate(function_type_local(maxnum_funcvalues_local,nelem))
+        allocate(symelement_local(maxnum_funcvalues_local,2,nelem))
+        allocate(funccutoff_local(maxnum_funcvalues_local,nelem))
+        allocate(eta_local(maxnum_funcvalues_local,nelem))
+        allocate(zeta_local(maxnum_funcvalues_local,nelem))
+        allocate(rshift_local(maxnum_funcvalues_local,nelem))
+        allocate(lambda_local(maxnum_funcvalues_local,nelem))
+
+    end subroutine allocate_readsymfunctionatomic
+
     ! according to cleanupt.f90 called in main.f90
 !    subroutine cleanup
 
@@ -4580,7 +4389,28 @@ module pes_nene_mod
 !            deallocate(rinpparam%lambda_elec)
 !            deallocate(rinpparam%rshift_elec)
 !        endif
-
+!
+!        ! added by SW related to readsymfunctionatomic.f90, readsymfunctionelementatomic.f90 and readsymfunctionglobalatomic.f90
+!        if(rinpparam%lshort .and. (rinpparam%nn_type_short == 1)) then
+!           deallocate(function_type_short_atomic)
+!           deallocate(symelement_short_atomic)
+!           deallocate(funccutoff_short_atomic)
+!           deallocate(eta_short_atomic)
+!           deallocate(zeta_short_atomic)
+!           deallocate(rshift_short_atomic)
+!           deallocate(lambda_short_atomic)
+!        end if
+!
+!        if(rinpparam%lelec .and. (rinpparam%nn_type_elec == 1)) then
+!           deallocate(function_type_elec)
+!           deallocate(symelement_elec)
+!           deallocate(funccutoff_elec)
+!           deallocate(eta_elec)
+!           deallocate(zeta_elec)
+!           deallocate(rshift_elec)
+!           deallocate(lambda_elec)
+!        end if
+!
 !    end subroutine cleanup_nene
 
 end module pes_nene_mod
