@@ -24,6 +24,7 @@
 module pes_nene_mod
 
     !use constants, only : max_string_length, pes_id_nene, default_string, default_int, default_real, default_bool, inpnn_unit, scaling_unit, weight_unit,
+    !use constants, disabled1 => pi, disabled2 => rad2deg ! with as the opposite of "use module, only :"
     use universe_mod
 
     implicit none
@@ -3205,7 +3206,7 @@ module pes_nene_mod
 
                     select case (words(1))
 
-                        case ('symfunction_short')
+                        case ('symfunction_short') ! allocation of arrays is done in allocatesymfunctions() from module symfunctions.f90 when called in initnn.f90! -> no additional allocation subroutine needed!!
                             if (lshort .and. (nn_type_short == 1)) then
                                 call allocate_readsymfunctionatomic(maxnum_funcvalues_short_atomic, sym_short_atomic_count, function_type_short_atomic, symelement_short_atomic, &
                                      funccutoff_short_atomic, eta_short_atomic, zeta_short_atomic, rshift_short_atomic, lambda_short_atomic) ! maybe there is a better way to set the dimensions of variables needed for the readout?
@@ -4147,7 +4148,7 @@ module pes_nene_mod
         ! Calculates energy and forces with HDNNPs
 
         ! md_tian2 related modules
-        use constants, only : habohr2evang, Ha2eV
+        use constants, only : habohr2evang, timestep_ha2ev => ha2ev ! think about better way to realize that here we need our more precise ha2ev variable!!; conflict due to ha2ev from nnconstants.f90 and constants.f90
 
         ! RuNNer related modules (needed for and in predictionshortatomic.f90)
         use fileunits
@@ -4319,36 +4320,6 @@ module pes_nene_mod
         atoms%f(:,:,:) = nntotalforce * habohr2evang ! check if dimensions match
 
     end subroutine compute_nene
-
-    subroutine allocate_readsymfunctionatomic(maxnum_funcvalues_local, symcount_local, function_type_local, symelement_local, funccutoff_local,eta_local,zeta_local,rshift_local,lambda_local)
-
-        !use fileunits
-        use globaloptions
-
-        implicit none
-
-        integer, allocatable    :: symcount_local(:)
-        integer                 :: maxnum_funcvalues_local
-
-        integer, allocatable    :: function_type_local(:,:)
-        integer, allocatable    :: symelement_local(:,:,:)
-
-        real*8, allocatable     :: funccutoff_local(:,:)
-        real*8, allocatable     :: eta_local(:,:)
-        real*8, allocatable     :: zeta_local(:,:)
-        real*8, allocatable     :: rshift_local(:,:)
-        real*8, allocatable     :: lambda_local(:,:)
-
-        allocate(symcount_local(nelem))
-        allocate(function_type_local(maxnum_funcvalues_local,nelem))
-        allocate(symelement_local(maxnum_funcvalues_local,2,nelem))
-        allocate(funccutoff_local(maxnum_funcvalues_local,nelem))
-        allocate(eta_local(maxnum_funcvalues_local,nelem))
-        allocate(zeta_local(maxnum_funcvalues_local,nelem))
-        allocate(rshift_local(maxnum_funcvalues_local,nelem))
-        allocate(lambda_local(maxnum_funcvalues_local,nelem))
-
-    end subroutine allocate_readsymfunctionatomic
 
     ! according to cleanupt.f90 called in main.f90
 !    subroutine cleanup
