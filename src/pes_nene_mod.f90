@@ -500,7 +500,7 @@ module pes_nene_mod
                                 if (ios /= 0) stop err // err_inpnn // "global_nodes_electrostatic value", nodes_counter, " must be integer"
                             end do
                         else
-                            print *, err, err_inpnn, "global_nodes_electrostatic argument number does not match with global_hidden_layers_electrostatic value"; stop
+                            print *, err, err_inpnn, "global_nodes_electrostatic argument number ", nwords, " does not match with global_hidden_layers_electrostatic value ", maxnum_layers_elec-1; stop
                         end if
 
 !                   case ('global_nodes_pair') ! not needed - make dummy
@@ -525,7 +525,7 @@ module pes_nene_mod
                         if (ios /= 0) stop err // err_inpnn // "element_symfunction_short second argument value must be integer"
                         call nuccharge(rinpparam%elementtemp, rinpparam%ztemp)
                         if (rinpparam%num_funcvalues_local(rinpparam%ztemp) /= default_int) then
-                            print *, err // err_inpnn // 'Error in element_symfunction_short: Element with atomic number', rinpparam%num_funcvalues_local(rinpparam%ztemp), 'already set, check for multiple use of key'
+                            print *, err // err_inpnn // 'Error in element_symfunction_short: Element with atomic number ', rinpparam%num_funcvalues_local(rinpparam%ztemp), 'already set, check for multiple use of key'
                             stop
                         end if
                         rinpparam%num_funcvalues_local(rinpparam%ztemp) = 0
@@ -745,7 +745,7 @@ module pes_nene_mod
                                         read(words(3),*, iostat=ios) rinpparam%funccutoff_local
                                         if (ios /= 0) stop err // err_inpnn // "global_symfunction_short type ", words(2), " argument ", nwords-1, " must be a number"
                                     else
-                                        print *, err, err_inpnn, "global_symfunction_short type ", words(2), " needs ", nwords-1, " arguments"; stop
+                                        print *, err, err_inpnn, "global_symfunction_short type ", words(2), " needs 2 arguments"; stop
                                     end if
 
                                 case (2)
@@ -753,7 +753,7 @@ module pes_nene_mod
                                         read(words(5),*, iostat=ios) rinpparam%funccutoff_local
                                         if (ios /= 0) stop err // err_inpnn // "global_symfunction_short type ", words(2), " argument ", nwords-1, " must be a number"
                                     else
-                                        print *, err, err_inpnn, "global_symfunction_short type ", words(2), " needs ", nwords-1, " arguments"; stop
+                                        print *, err, err_inpnn, "global_symfunction_short type ", words(2), " needs 4 arguments"; stop
                                     end if
 
                                 case (3)
@@ -761,7 +761,7 @@ module pes_nene_mod
                                         read(words(6),*, iostat=ios) rinpparam%funccutoff_local
                                         if (ios /= 0) stop err // err_inpnn // "global_symfunction_short type ", words(2), " argument ", nwords-1, " must be a number"
                                     else
-                                        print *, err, err_inpnn, "global_symfunction_short type ", words(2), " needs ", nwords-1, " arguments"; stop
+                                        print *, err, err_inpnn, "global_symfunction_short type ", words(2), " needs 5 arguments"; stop
                                     end if
 
                                 case (4)
@@ -769,7 +769,7 @@ module pes_nene_mod
                                         read(words(4),*, iostat=ios) rinpparam%funccutoff_local
                                         if (ios /= 0) stop err // err_inpnn // "global_symfunction_short type ", words(2), " argument ", nwords-1, " must be a number"
                                     else
-                                        print *, err, err_inpnn, "global_symfunction_short type ", words(2), " needs ", nwords-1, " arguments"; stop
+                                        print *, err, err_inpnn, "global_symfunction_short type ", words(2), " needs 3 arguments"; stop
                                     end if
 
                                 case (8)
@@ -777,7 +777,7 @@ module pes_nene_mod
                                         read(words(5),*, iostat=ios) rinpparam%funccutoff_local
                                         if (ios /= 0) stop err // err_inpnn // "global_symfunction_short type ", words(2), " argument ", nwords-1, " must be a number"
                                     else
-                                        print *, err, err_inpnn, "global_symfunction_short type ", words(2), " needs ", nwords-1, " arguments"; stop
+                                        print *, err, err_inpnn, "global_symfunction_short type ", words(2), " needs 4 arguments"; stop
                                     end if
 
                                 case (9)
@@ -785,7 +785,7 @@ module pes_nene_mod
                                         read(words(6),*, iostat=ios) rinpparam%funccutoff_local
                                         if (ios /= 0) stop err // err_inpnn // "global_symfunction_short type ", words(2), " argument ", nwords-1, " must be a number"
                                     else
-                                        print *, err, err_inpnn, "global_symfunction_short type ", words(2), " needs ", nwords-1, " arguments"; stop
+                                        print *, err, err_inpnn, "global_symfunction_short type ", words(2), " needs 5 arguments"; stop
                                     end if
 
                                 case default
@@ -807,7 +807,7 @@ module pes_nene_mod
                                         read(words(4),*, iostat=ios) rinpparam%funccutoff_local
                                         if (ios /= 0) stop err // err_inpnn // "element_symfunction_short type ", words(3), " argument ", nwords-1, " must be a number"
                                     else
-                                        print *, err, err_inpnn, "element_symfunction_short type ", words(3), " needs ", nwords-1, " arguments"; stop
+                                        print *, err, err_inpnn, "element_symfunction_short type ", words(3), " needs 3 arguments"; stop
                                     end if
 
                                 case (2)
@@ -815,7 +815,7 @@ module pes_nene_mod
                                         read(words(6),*, iostat=ios) rinpparam%funccutoff_local
                                         if (ios /= 0) stop err // err_inpnn // "element_symfunction_short type ", words(3), " argument ", nwords-1, " must be a number"
                                     else
-                                        print *, err, err_inpnn, "element_symfunction_short type ", words(3), " needs ", nwords-1, " arguments"; stop
+                                        print *, err, err_inpnn, "element_symfunction_short type ", words(3), " needs 5 arguments"; stop
                                     end if
 
                                 case (3)
@@ -823,7 +823,7 @@ module pes_nene_mod
                                         read(words(7),*, iostat=ios) rinpparam%funccutoff_local
                                         if (ios /= 0) stop err // err_inpnn // "element_symfunction_short type ", words(3), " argument ", nwords-1, " must be a number"
                                     else
-                                        print *, err, err_inpnn, "element_symfunction_short type ", words(3), " needs ", nwords-1, " arguments"; stop
+                                        print *, err, err_inpnn, "element_symfunction_short type ", words(3), " needs 6 arguments"; stop
                                     end if
 
                                 case (4)
@@ -831,7 +831,7 @@ module pes_nene_mod
                                         read(words(5),*, iostat=ios) rinpparam%funccutoff_local
                                         if (ios /= 0) stop err // err_inpnn // "element_symfunction_short type ", words(3), " argument ", nwords-1, " must be a number"
                                     else
-                                        print *, err, err_inpnn, "element_symfunction_short type ", words(3), " needs ", nwords-1, " arguments"; stop
+                                        print *, err, err_inpnn, "element_symfunction_short type ", words(3), " needs 4 arguments"; stop
                                     end if
 
                                 case (8)
@@ -839,7 +839,7 @@ module pes_nene_mod
                                         read(words(6),*, iostat=ios) rinpparam%funccutoff_local
                                         if (ios /= 0) stop err // err_inpnn // "element_symfunction_short type ", words(3), " argument ", nwords-1, " must be a number"
                                     else
-                                        print *, err, err_inpnn, "element_symfunction_short type ", words(3), " needs ", nwords-1, " arguments"; stop
+                                        print *, err, err_inpnn, "element_symfunction_short type ", words(3), " needs 5 arguments"; stop
                                     end if
 
                                 case (9)
@@ -847,7 +847,7 @@ module pes_nene_mod
                                         read(words(7),*, iostat=ios) rinpparam%funccutoff_local
                                         if (ios /= 0) stop err // err_inpnn // "element_symfunction_short type ", words(3), " argument ", nwords-1, " must be a number"
                                     else
-                                        print *, err, err_inpnn, "element_symfunction_short type ", words(3), " needs ", nwords-1, " arguments"; stop
+                                        print *, err, err_inpnn, "element_symfunction_short type ", words(3), " needs 6 arguments"; stop
                                     end if
 
                                 case default
@@ -870,7 +870,7 @@ module pes_nene_mod
                                         read(words(5),*, iostat=ios) rinpparam%funccutoff_local
                                         if (ios /= 0) stop err // err_inpnn // "symfunction_short type ", words(3), " argument ", nwords-1, " must be a number"
                                     else
-                                        print *, err, err_inpnn, "symfunction_short type ", words(3), " needs ", nwords-1, " arguments"; stop
+                                        print *, err, err_inpnn, "symfunction_short type ", words(3), " needs 4 arguments"; stop
                                     end if
 
                                 case (2)
@@ -879,7 +879,7 @@ module pes_nene_mod
                                         read(words(7),*, iostat=ios) rinpparam%funccutoff_local
                                         if (ios /= 0) stop err // err_inpnn // "symfunction_short type ", words(3), " argument ", nwords-1, " must be a number"
                                     else
-                                        print *, err, err_inpnn, "symfunction_short type ", words(3), " needs ", nwords-1, " arguments"; stop
+                                        print *, err, err_inpnn, "symfunction_short type ", words(3), " needs 6 arguments"; stop
                                     end if
 
                                 case (3)
@@ -889,7 +889,7 @@ module pes_nene_mod
                                         read(words(9),*, iostat=ios) rinpparam%funccutoff_local
                                         if (ios /= 0) stop err // err_inpnn // "symfunction_short type ", words(3), " argument ", nwords-1, " must be a number"
                                     else
-                                        print *, err, err_inpnn, "symfunction_short type ", words(3), " needs ", nwords-1, " arguments"; stop
+                                        print *, err, err_inpnn, "symfunction_short type ", words(3), " needs 8 arguments"; stop
                                     end if
 
                                 case (4)
@@ -898,7 +898,7 @@ module pes_nene_mod
                                         read(words(6),*, iostat=ios) rinpparam%funccutoff_local
                                         if (ios /= 0) stop err // err_inpnn // "symfunction_short type ", words(3), " argument ", nwords-1, " must be a number"
                                     else
-                                        print *, err, err_inpnn, "symfunction_short type ", words(3), " needs ", nwords-1, " arguments"; stop
+                                        print *, err, err_inpnn, "symfunction_short type ", words(3), " needs 5 arguments"; stop
                                     end if
 
                                 case (8)
@@ -908,7 +908,7 @@ module pes_nene_mod
                                         read(words(8),*, iostat=ios) rinpparam%funccutoff_local
                                         if (ios /= 0) stop err // err_inpnn // "symfunction_short type ", words(3), " argument ", nwords-1, " must be a number"
                                     else
-                                        print *, err, err_inpnn, "symfunction_short type ", words(3), " needs ", nwords-1, " arguments"; stop
+                                        print *, err, err_inpnn, "symfunction_short type ", words(3), " needs 7 arguments"; stop
                                     end if
 
                                 case (9)
@@ -918,7 +918,7 @@ module pes_nene_mod
                                         read(words(9),*, iostat=ios) rinpparam%funccutoff_local
                                         if (ios /= 0) stop err // err_inpnn // "symfunction_short type ", words(3), " argument ", nwords-1, " must be a number"
                                     else
-                                        print *, err, err_inpnn, "symfunction_short type ", words(3), " needs ", nwords-1, " arguments"; stop
+                                        print *, err, err_inpnn, "symfunction_short type ", words(3), " needs 8 arguments"; stop
                                     end if
 
                                 case default
@@ -970,7 +970,7 @@ module pes_nene_mod
                                         read(words(3),*, iostat=ios) rinpparam%funccutoff_local
                                         if (ios /= 0) stop err // err_inpnn // "global_symfunction_electrostatic type ", words(2), " argument ", nwords-1, " must be a number"
                                     else
-                                        print *, err, err_inpnn, "global_symfunction_electrostatic type ", words(2), " needs ", nwords-1, " arguments"; stop
+                                        print *, err, err_inpnn, "global_symfunction_electrostatic type ", words(2), " needs 2 arguments"; stop
                                     end if
 
                                 case (2)
@@ -978,7 +978,7 @@ module pes_nene_mod
                                         read(words(5),*, iostat=ios) rinpparam%funccutoff_local
                                         if (ios /= 0) stop err // err_inpnn // "global_symfunction_electrostatic type ", words(2), " argument ", nwords-1, " must be a number"
                                     else
-                                        print *, err, err_inpnn, "global_symfunction_electrostatic type ", words(2), " needs ", nwords-1, " arguments"; stop
+                                        print *, err, err_inpnn, "global_symfunction_electrostatic type ", words(2), " needs 4 arguments"; stop
                                     end if
 
                                 case (3)
@@ -986,7 +986,7 @@ module pes_nene_mod
                                         read(words(6),*, iostat=ios) rinpparam%funccutoff_local
                                         if (ios /= 0) stop err // err_inpnn // "global_symfunction_electrostatic type ", words(2), " argument ", nwords-1, " must be a number"
                                     else
-                                        print *, err, err_inpnn, "global_symfunction_electrostatic type ", words(2), " needs ", nwords-1, " arguments"; stop
+                                        print *, err, err_inpnn, "global_symfunction_electrostatic type ", words(2), " needs 5 arguments"; stop
                                     end if
 
                                 case (4)
@@ -994,7 +994,7 @@ module pes_nene_mod
                                         read(words(4),*, iostat=ios) rinpparam%funccutoff_local
                                         if (ios /= 0) stop err // err_inpnn // "global_symfunction_electrostatic type ", words(2), " argument ", nwords-1, " must be a number"
                                     else
-                                        print *, err, err_inpnn, "global_symfunction_electrostatic type ", words(2), " needs ", nwords-1, " arguments"; stop
+                                        print *, err, err_inpnn, "global_symfunction_electrostatic type ", words(2), " needs 3 arguments"; stop
                                     end if
 
                                 case (8)
@@ -1002,7 +1002,7 @@ module pes_nene_mod
                                         read(words(5),*, iostat=ios) rinpparam%funccutoff_local
                                         if (ios /= 0) stop err // err_inpnn // "global_symfunction_electrostatic type ", words(2), " argument ", nwords-1, " must be a number"
                                     else
-                                        print *, err, err_inpnn, "global_symfunction_electrostatic type ", words(2), " needs ", nwords-1, " arguments"; stop
+                                        print *, err, err_inpnn, "global_symfunction_electrostatic type ", words(2), " needs 4 arguments"; stop
                                     end if
 
                                 case (9)
@@ -1010,7 +1010,7 @@ module pes_nene_mod
                                         read(words(6),*, iostat=ios) rinpparam%funccutoff_local
                                         if (ios /= 0) stop err // err_inpnn // "global_symfunction_electrostatic type ", words(2), " argument ", nwords-1, " must be a number"
                                     else
-                                        print *, err, err_inpnn, "global_symfunction_electrostatic type ", words(2), " needs ", nwords-1, " arguments"; stop
+                                        print *, err, err_inpnn, "global_symfunction_electrostatic type ", words(2), " needs 6 arguments"; stop
                                     end if
 
                                 case default
@@ -1032,7 +1032,7 @@ module pes_nene_mod
                                         read(words(4),*, iostat=ios) rinpparam%funccutoff_local
                                         if (ios /= 0) stop err // err_inpnn // "element_symfunction_electrostatic type ", words(3), " argument ", nwords-1, " must be a number"
                                     else
-                                        print *, err, err_inpnn, "element_symfunction_electrostatic type ", words(3), " needs ", nwords-1, " arguments"; stop
+                                        print *, err, err_inpnn, "element_symfunction_electrostatic type ", words(3), " needs 3 arguments"; stop
                                     end if
 
                                 case (2)
@@ -1040,7 +1040,7 @@ module pes_nene_mod
                                         read(words(6),*, iostat=ios) rinpparam%funccutoff_local
                                         if (ios /= 0) stop err // err_inpnn // "element_symfunction_electrostatic type ", words(3), " argument ", nwords-1, " must be a number"
                                     else
-                                        print *, err, err_inpnn, "element_symfunction_electrostatic type ", words(3), " needs ", nwords-1, " arguments"; stop
+                                        print *, err, err_inpnn, "element_symfunction_electrostatic type ", words(3), " needs 5 arguments"; stop
                                     end if
 
                                 case (3)
@@ -1048,7 +1048,7 @@ module pes_nene_mod
                                         read(words(7),*, iostat=ios) rinpparam%funccutoff_local
                                         if (ios /= 0) stop err // err_inpnn // "element_symfunction_electrostatic type ", words(3), " argument ", nwords-1, " must be a number"
                                     else
-                                        print *, err, err_inpnn, "element_symfunction_electrostatic type ", words(3), " needs ", nwords-1, " arguments"; stop
+                                        print *, err, err_inpnn, "element_symfunction_electrostatic type ", words(3), " needs 6 arguments"; stop
                                     end if
 
                                 case (4)
@@ -1056,7 +1056,7 @@ module pes_nene_mod
                                         read(words(5),*, iostat=ios) rinpparam%funccutoff_local
                                         if (ios /= 0) stop err // err_inpnn // "element_symfunction_electrostatic type ", words(3), " argument ", nwords-1, " must be a number"
                                     else
-                                        print *, err, err_inpnn, "element_symfunction_electrostatic type ", words(3), " needs ", nwords-1, " arguments"; stop
+                                        print *, err, err_inpnn, "element_symfunction_electrostatic type ", words(3), " needs 4 arguments"; stop
                                     end if
 
                                 case (8)
@@ -1064,7 +1064,7 @@ module pes_nene_mod
                                         read(words(6),*, iostat=ios) rinpparam%funccutoff_local
                                         if (ios /= 0) stop err // err_inpnn // "element_symfunction_electrostatic type ", words(3), " argument ", nwords-1, " must be a number"
                                     else
-                                        print *, err, err_inpnn, "element_symfunction_electrostatic type ", words(3), " needs ", nwords-1, " arguments"; stop
+                                        print *, err, err_inpnn, "element_symfunction_electrostatic type ", words(3), " needs 5 arguments"; stop
                                     end if
 
                                 case (9)
@@ -1072,7 +1072,7 @@ module pes_nene_mod
                                         read(words(7),*, iostat=ios) rinpparam%funccutoff_local
                                         if (ios /= 0) stop err // err_inpnn // "element_symfunction_electrostatic type ", words(3), " argument ", nwords-1, " must be a number"
                                     else
-                                        print *, err, err_inpnn, "element_symfunction_electrostatic type ", words(3), " needs ", nwords-1, " arguments"; stop
+                                        print *, err, err_inpnn, "element_symfunction_electrostatic type ", words(3), " needs 6 arguments"; stop
                                     end if
 
                                 case default
@@ -1095,7 +1095,7 @@ module pes_nene_mod
                                         read(words(5),*, iostat=ios) rinpparam%funccutoff_local
                                         if (ios /= 0) stop err // err_inpnn // "symfunction_electrostatic type ", words(3), " argument ", nwords-1, " must be a number"
                                     else
-                                        print *, err, err_inpnn, "symfunction_electrostatic type ", words(3), " needs ", nwords-1, " arguments"; stop
+                                        print *, err, err_inpnn, "symfunction_electrostatic type ", words(3), " needs 4 arguments"; stop
                                     end if
 
                                 case (2)
@@ -1104,7 +1104,7 @@ module pes_nene_mod
                                         read(words(7),*, iostat=ios) rinpparam%funccutoff_local
                                         if (ios /= 0) stop err // err_inpnn // "symfunction_electrostatic type ", words(3), " argument ", nwords-1, " must be a number"
                                     else
-                                        print *, err, err_inpnn, "symfunction_electrostatic type ", words(3), " needs ", nwords-1, " arguments"; stop
+                                        print *, err, err_inpnn, "symfunction_electrostatic type ", words(3), " needs 6 arguments"; stop
                                     end if
 
                                 case (3)
@@ -1114,7 +1114,7 @@ module pes_nene_mod
                                         read(words(9),*, iostat=ios) rinpparam%funccutoff_local
                                         if (ios /= 0) stop err // err_inpnn // "symfunction_electrostatic type ", words(3), " argument ", nwords-1, " must be a number"
                                     else
-                                        print *, err, err_inpnn, "symfunction_electrostatic type ", words(3), " needs ", nwords-1, " arguments"; stop
+                                        print *, err, err_inpnn, "symfunction_electrostatic type ", words(3), " needs 8 arguments"; stop
                                     end if
 
                                 case (4)
@@ -1123,7 +1123,7 @@ module pes_nene_mod
                                         read(words(7),*, iostat=ios) rinpparam%funccutoff_local
                                         if (ios /= 0) stop err // err_inpnn // "symfunction_electrostatic type ", words(3), " argument ", nwords-1, " must be a number"
                                     else
-                                        print *, err, err_inpnn, "symfunction_electrostatic type ", words(3), " needs ", nwords-1, " arguments"; stop
+                                        print *, err, err_inpnn, "symfunction_electrostatic type ", words(3), " needs 6 arguments"; stop
                                     end if
 
                                 case (8)
@@ -1133,7 +1133,7 @@ module pes_nene_mod
                                         read(words(8),*, iostat=ios) rinpparam%funccutoff_local
                                         if (ios /= 0) stop err // err_inpnn // "symfunction_electrostatic type ", words(3), " argument ", nwords-1, " must be a number"
                                     else
-                                        print *, err, err_inpnn, "symfunction_electrostatic type ", words(3), " needs ", nwords-1, " arguments"; stop
+                                        print *, err, err_inpnn, "symfunction_electrostatic type ", words(3), " needs 7 arguments"; stop
                                     end if
 
                                 case (9)
@@ -1143,7 +1143,7 @@ module pes_nene_mod
                                         read(words(9),*, iostat=ios) rinpparam%funccutoff_local
                                         if (ios /= 0) stop err // err_inpnn // "symfunction_electrostatic type ", words(3), " argument ", nwords-1, " must be a number"
                                     else
-                                        print *, err, err_inpnn, "symfunction_electrostatic type ", words(3), " needs ", nwords-1, " arguments"; stop
+                                        print *, err, err_inpnn, "symfunction_electrostatic type ", words(3), " needs 8 arguments"; stop
                                     end if
 
                                 case default
@@ -3208,8 +3208,8 @@ module pes_nene_mod
 
                         case ('symfunction_short') ! allocation of arrays is done in allocatesymfunctions() from module symfunctions.f90 when called in initnn.f90! -> no additional allocation subroutine needed!!
                             if (lshort .and. (nn_type_short == 1)) then
-                                call allocate_readsymfunctionatomic(maxnum_funcvalues_short_atomic, sym_short_atomic_count, function_type_short_atomic, symelement_short_atomic, &
-                                     funccutoff_short_atomic, eta_short_atomic, zeta_short_atomic, rshift_short_atomic, lambda_short_atomic) ! maybe there is a better way to set the dimensions of variables needed for the readout?
+                                !call allocate_readsymfunctionatomic(maxnum_funcvalues_short_atomic, sym_short_atomic_count, function_type_short_atomic, symelement_short_atomic, &
+                                     !funccutoff_short_atomic, eta_short_atomic, zeta_short_atomic, rshift_short_atomic, lambda_short_atomic) ! maybe there is a better way to set the dimensions of variables needed for the readout?
                                 !if (nwords == 5) then
                                 read(words(2),'(A)', iostat=ios) rinpparam%elementtemp1
                                 call checkelement(elementtemp1)
@@ -3226,10 +3226,10 @@ module pes_nene_mod
                                             call checkelement(elementtemp2)
                                             call nuccharge(elementtemp2,ztemp2)
                                             read(words(5),*, iostat=ios) rinpparam%funccutoff_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1))
-                                            if (ios /= 0) stop err // err_inpnn // "symfunction_short type ", words(3), " argument ", nwords-1, " must be a number"
-                                            symelement_short_atomic(symcount_local(elementindex(ztemp1)),1,elementindex(ztemp1))=ztemp2
+                                            if (ios /= 0) stop err // err_inpnn // "symfunction_short type ", words(3), " argument 4 must be a number"
+                                            symelement_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),1,elementindex(ztemp1))=ztemp2
                                         else
-                                            print *, err, err_inpnn, "symfunction_short type ", words(3), " needs ", nwords-1, " arguments"; stop
+                                            print *, err, err_inpnn, "symfunction_short type ", words(3), " needs 4 arguments"; stop
                                         end if
 
                                     case ('2')
@@ -3237,15 +3237,15 @@ module pes_nene_mod
                                             read(words(4),'(A)') rinpparam%elementtemp2
                                             call checkelement(elementtemp2)
                                             call nuccharge(elementtemp2,ztemp2)
-                                            read(words(5),*, iostat=ios) rinpparam%eta_lshort_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1))
-                                            if (ios /= 0) stop err // err_inpnn //" symfunction_short type ", words(3), " argument 4 must be a number"
+                                            read(words(5),*, iostat=ios) rinpparam%eta_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1))
+                                            if (ios /= 0) stop err // err_inpnn // "symfunction_short type ", words(3), " argument 4 must be a number"
                                             read(words(6),*, iostat=ios) rinpparam%rshift_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1))
                                             if (ios /= 0) stop err // err_inpnn // "symfunction_short type ", words(3), " argument 5 must be a number"
                                             read(words(7),*, iostat=ios) rinpparam%funccutoff_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1))
                                             if (ios /= 0) stop err // err_inpnn // "symfunction_short type ", words(3), " argument 6 must be a number"
-                                            symelement_short_atomic(symcount_local(elementindex(ztemp1)),1,elementindex(ztemp1))=ztemp2
+                                            symelement_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),1,elementindex(ztemp1))=ztemp2
                                         else
-                                            print *, err, err_inpnn, "symfunction_short type ", words(3), " needs ", nwords-1, " arguments"; stop
+                                            print *, err, err_inpnn, "symfunction_short type ", words(3), " needs 6 arguments"; stop
                                         end if
 
                                     case ('3')
@@ -3261,18 +3261,18 @@ module pes_nene_mod
                                                 ztemp2 = ztemp3
                                                 ztemp3 = itemp
                                             endif
-                                            read(words(6),*, iostat=ios) rinpparam%eta_lshort_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1))
-                                            if (ios /= 0) stop err // err_inpnn //" symfunction_short type ", words(3), " argument 5 must be a number"
-                                            read(words(7),*, iostat=ios) rinpparam%lambda_lshort_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1))
-                                            if (ios /= 0) stop err // err_inpnn //" symfunction_short type ", words(3), " argument 6 must be a number"
+                                            read(words(6),*, iostat=ios) rinpparam%eta_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1))
+                                            if (ios /= 0) stop err // err_inpnn // "symfunction_short type ", words(3), " argument 5 must be a number"
+                                            read(words(7),*, iostat=ios) rinpparam%lambda_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1))
+                                            if (ios /= 0) stop err // err_inpnn // "symfunction_short type ", words(3), " argument 6 must be a number"
                                             read(words(8),*, iostat=ios) rinpparam%zeta_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1))
                                             if (ios /= 0) stop err // err_inpnn // "symfunction_short type ", words(3), " argument 7 must be a number"
                                             read(words(9),*, iostat=ios) rinpparam%funccutoff_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1))
                                             if (ios /= 0) stop err // err_inpnn // "symfunction_short type ", words(3), " argument 8 must be a number"
-                                            symelement_short_atomic(symcount_local(elementindex(ztemp1)),1,elementindex(ztemp1))=ztemp2
-                                            symelement_short_atomic(symcount_local(elementindex(ztemp1)),2,elementindex(ztemp1))=ztemp3
+                                            symelement_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),1,elementindex(ztemp1))=ztemp2
+                                            symelement_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),2,elementindex(ztemp1))=ztemp3
                                         else
-                                            print *, err, err_inpnn, "symfunction_short type ", words(3), " needs ", nwords-1, " arguments"; stop
+                                            print *, err, err_inpnn, "symfunction_short type ", words(3), " needs 8 arguments"; stop
                                         end if
 
                                     case ('4')
@@ -3280,21 +3280,21 @@ module pes_nene_mod
                                             read(words(4),'(A)') rinpparam%elementtemp2
                                             call checkelement(elementtemp2)
                                             call nuccharge(elementtemp2,ztemp2)
-                                            read(words(5),*, iostat=ios) rinpparam%eta_lshort_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1))
-                                            if (ios /= 0) stop err // err_inpnn //" symfunction_short type ", words(3), " argument 4 must be a number"
+                                            read(words(5),*, iostat=ios) rinpparam%eta_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1))
+                                            if (ios /= 0) stop err // err_inpnn // "symfunction_short type ", words(3), " argument 4 must be a number"
                                             read(words(6),*, iostat=ios) rinpparam%funccutoff_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1))
                                             if (ios /= 0) stop err // err_inpnn // "symfunction_short type ", words(3), " argument 5 must be a number"
-                                            symelement_short_atomic(symcount_local(elementindex(ztemp1)),1,elementindex(ztemp1))=ztemp2
+                                            symelement_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),1,elementindex(ztemp1))=ztemp2
                                         else
-                                            print *, err, err_inpnn, "symfunction_short type ", words(3), " needs ", nwords-1, " arguments"; stop
+                                            print *, err, err_inpnn, "symfunction_short type ", words(3), " needs 5 arguments"; stop
                                         end if
 
                                     case ('5')
                                         if (nwords == 4) then
-                                            read(words(4),*, iostat=ios) rinpparam%eta_lshort_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1))
-                                            if (ios /= 0) stop err // err_inpnn //" symfunction_short type ", words(3), " argument 3 must be a number"
+                                            read(words(4),*, iostat=ios) rinpparam%eta_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1))
+                                            if (ios /= 0) stop err // err_inpnn // "symfunction_short type ", words(3), " argument 3 must be a number"
                                         else
-                                            print *, err, err_inpnn, "symfunction_short type ", words(3), " needs ", nwords-1, " arguments"; stop
+                                            print *, err, err_inpnn, "symfunction_short type ", words(3), " needs 3 arguments"; stop
                                         end if
 
                                     case ('6')
@@ -3304,9 +3304,9 @@ module pes_nene_mod
                                             call nuccharge(elementtemp2,ztemp2)
                                             read(words(5),*, iostat=ios) rinpparam%funccutoff_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1))
                                             if (ios /= 0) stop err // err_inpnn // "symfunction_short type ", words(3), " argument 4 must be a number"
-                                            symelement_short_atomic(symcount_local(elementindex(ztemp1)),1,elementindex(ztemp1))=ztemp2
+                                            symelement_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),1,elementindex(ztemp1))=ztemp2
                                         else
-                                            print *, err, err_inpnn, "symfunction_short type ", words(3), " needs ", nwords-1, " arguments"; stop
+                                            print *, err, err_inpnn, "symfunction_short type ", words(3), " needs 4 arguments"; stop
                                         end if
 
                                     case ('8')
@@ -3322,16 +3322,16 @@ module pes_nene_mod
                                                 ztemp2 = ztemp3
                                                 ztemp3 = itemp
                                             endif
-                                            read(words(6),*, iostat=ios) rinpparam%eta_lshort_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1))
-                                            if (ios /= 0) stop err // err_inpnn //" symfunction_short type ", words(3), " argument 5 must be a number"
-                                            read(words(7),*, iostat=ios) rinpparam%rshift_lshort_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1))
-                                            if (ios /= 0) stop err // err_inpnn //" symfunction_short type ", words(3), " argument 6 must be a number"
+                                            read(words(6),*, iostat=ios) rinpparam%eta_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1))
+                                            if (ios /= 0) stop err // err_inpnn // "symfunction_short type ", words(3), " argument 5 must be a number"
+                                            read(words(7),*, iostat=ios) rinpparam%rshift_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1))
+                                            if (ios /= 0) stop err // err_inpnn // "symfunction_short type ", words(3), " argument 6 must be a number"
                                             read(words(8),*, iostat=ios) rinpparam%funccutoff_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1))
                                             if (ios /= 0) stop err // err_inpnn // "symfunction_short type ", words(3), " argument 7 must be a number"
-                                            symelement_short_atomic(symcount_local(elementindex(ztemp1)),1,elementindex(ztemp1))=ztemp2
-                                            symelement_short_atomic(symcount_local(elementindex(ztemp1)),2,elementindex(ztemp1))=ztemp3
+                                            symelement_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),1,elementindex(ztemp1))=ztemp2
+                                            symelement_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),2,elementindex(ztemp1))=ztemp3
                                         else
-                                            print *, err, err_inpnn, "symfunction_short type ", words(3), " needs ", nwords-1, " arguments"; stop
+                                            print *, err, err_inpnn, "symfunction_short type ", words(3), " needs 7 arguments"; stop
                                         end if
 
                                     case ('9')
@@ -3347,37 +3347,1018 @@ module pes_nene_mod
                                                 ztemp2 = ztemp3
                                                 ztemp3 = itemp
                                             endif
-                                            read(words(6),*, iostat=ios) rinpparam%eta_lshort_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1))
-                                            if (ios /= 0) stop err // err_inpnn //" symfunction_short type ", words(3), " argument 5 must be a number"
-                                            read(words(7),*, iostat=ios) rinpparam%lambda_lshort_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1))
-                                            if (ios /= 0) stop err // err_inpnn //" symfunction_short type ", words(3), " argument 6 must be a number"
+                                            read(words(6),*, iostat=ios) rinpparam%eta_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1))
+                                            if (ios /= 0) stop err // err_inpnn // "symfunction_short type ", words(3), " argument 5 must be a number"
+                                            read(words(7),*, iostat=ios) rinpparam%lambda_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1))
+                                            if (ios /= 0) stop err // err_inpnn // "symfunction_short type ", words(3), " argument 6 must be a number"
                                             read(words(8),*, iostat=ios) rinpparam%zeta_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1))
                                             if (ios /= 0) stop err // err_inpnn // "symfunction_short type ", words(3), " argument 7 must be a number"
                                             read(words(9),*, iostat=ios) rinpparam%funccutoff_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1))
                                             if (ios /= 0) stop err // err_inpnn // "symfunction_short type ", words(3), " argument 8 must be a number"
-                                            symelement_short_atomic(symcount_local(elementindex(ztemp1)),1,elementindex(ztemp1))=ztemp2
-                                            symelement_short_atomic(symcount_local(elementindex(ztemp1)),2,elementindex(ztemp1))=ztemp3
+                                            symelement_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),1,elementindex(ztemp1))=ztemp2
+                                            symelement_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),2,elementindex(ztemp1))=ztemp3
                                         else
-                                            print *, err, err_inpnn, "symfunction_short type ", words(3), " needs ", nwords-1, " arguments"; stop
+                                            print *, err, err_inpnn, "symfunction_short type ", words(3), " needs 8 arguments"; stop
                                         end if
+
+                                    case default
+                                        print *, err, err_inpnn, "Error in symfunction_short key, symfunction type ", words(3), " not implemented"
+                                        stop
 
                                 end select
 
                             end if
 
                         case ('element_symfunction_short')
+                            if (lshort .and. (nn_type_short == 1)) then
+                                read(words(2),'(A)', iostat=ios) elementtemp1
+                                call checkelement(elementtemp1)
+                                call nuccharge(elementtemp1,ztemp1)
+                                read(words(3),'(i1000)', iostat=ios) function_type_temp
+                                if (ios /= 0) stop err // err_inpnn // "element_symfunction_short argument 2 value must be integer"
+
+                                select case(words(3))
+
+                                    case ('1')
+                                        if (nwords == 4) then
+                                            read(words(4),*, iostat=ios) funccutoff_temp
+                                            if (ios /= 0) stop err // err_inpnn // "element_symfunction_short type ", words(3), " argument 3 must be a number"
+                                            do general_counter_1 = 1,nelem
+                                                sym_short_atomic_count(elementindex(ztemp1) = sym_short_atomic_count(elementindex(ztemp1) + 1
+                                                function_type_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1)) = function_type_temp
+                                                funccutoff_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1)) = funccutoff_temp
+                                                symelement_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),1,elementindex(ztemp1)) = nucelem(general_counter_1)
+                                            end do
+                                        else
+                                            print *, err, err_inpnn, "element_symfunction_short type ", words(3), " needs 3 arguments"; stop
+                                        end if
+
+                                    case ('2')
+                                        if (nwords == 6) then
+                                            read(words(4),*, iostat=ios) eta_temp
+                                            if (ios /= 0) stop err // err_inpnn // "element_symfunction_short type ", words(3), " argument 3 must be a number"
+                                            read(words(5),*, iostat=ios) rshift_temp
+                                            if (ios /= 0) stop err // err_inpnn // "element_symfunction_short type ", words(3), " argument 4 must be a number"
+                                            read(words(6),*, iostat=ios) funccutoff_temp
+                                            if (ios /= 0) stop err // err_inpnn // "element_symfunction_short type ", words(3), " argument 5 must be a number"
+                                            do general_counter_1 = 1,nelem
+                                                sym_short_atomic_count(elementindex(ztemp1) = sym_short_atomic_count(elementindex(ztemp1) + 1
+                                                function_type_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1)) = function_type_temp
+                                                eta_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1)) = eta_temp
+                                                rshift_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1)) = rshift_temp
+                                                funccutoff_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1)) = funccutoff_temp
+                                                symelement_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),1,elementindex(ztemp1)) = nucelem(general_counter_1)
+                                            end do
+                                        else
+                                            print *, err, err_inpnn, "element_symfunction_short type ", words(3), " needs 5 arguments"; stop
+                                        end if
+
+                                    case ('3')
+                                        if (nwords == 7) then
+                                            read(words(4),*, iostat=ios) eta_temp
+                                            if (ios /= 0) stop err // err_inpnn // "element_symfunction_short type ", words(3), " argument 3 must be a number"
+                                            read(words(5),*, iostat=ios) lambda_temp
+                                            if (ios /= 0) stop err // err_inpnn // "element_symfunction_short type ", words(3), " argument 4 must be a number"
+                                            read(words(6),*, iostat=ios) zeta_temp
+                                            if (ios /= 0) stop err // err_inpnn // "element_symfunction_short type ", words(3), " argument 5 must be a number"
+                                            read(words(7),*, iostat=ios) funccutoff_temp
+                                            if (ios /= 0) stop err // err_inpnn // "element_symfunction_short type ", words(3), " argument 6 must be a number"
+                                            do general_counter_1 = 1,nelem
+                                                sym_short_atomic_count(elementindex(ztemp1) = sym_short_atomic_count(elementindex(ztemp1) + 1
+                                                function_type_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1)) = function_type_temp
+                                                eta_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1)) = eta_temp
+                                                lambda_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1)) = lambda_temp
+                                                zeta_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1)) = zeta_temp
+                                                funccutoff_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1)) = funccutoff_temp
+                                                symelement_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),1,elementindex(ztemp1)) = nucelem(general_counter_1)
+                                                symelement_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),2,elementindex(ztemp1)) = nucelem(general_counter_1)
+                                            end do
+                                            do general_counter_1 = 1,nelem
+                                                if (nelem .gt. 1) then
+                                                    do general_counter_2 = 1,general_counter_1-1
+                                                        sym_short_atomic_count(elementindex(ztemp1) = sym_short_atomic_count(elementindex(ztemp1) + 1
+                                                        function_type_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1)) = function_type_temp
+                                                        eta_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1)) = eta_temp
+                                                        lambda_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1)) = lambda_temp
+                                                        zeta_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1)) = zeta_temp
+                                                        funccutoff_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1)) = funccutoff_temp
+                                                        symelement_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),1,elementindex(ztemp1)) = nucelem(general_counter_2)
+                                                        symelement_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),2,elementindex(ztemp1)) = nucelem(general_counter_1)
+                                                    end do
+                                                end if
+                                            end do
+                                        else
+                                            print *, err, err_inpnn, "element_symfunction_short type ", words(3), " needs 6 arguments"; stop
+                                        end if
+
+                                    case ('4')
+                                        if (nwords == 5) then
+                                            read(words(4),*, iostat=ios) eta_temp
+                                            if (ios /= 0) stop err // err_inpnn // "element_symfunction_short type ", words(3), " argument 3 must be a number"
+                                            read(words(5),*, iostat=ios) funccutoff_temp
+                                            if (ios /= 0) stop err // err_inpnn // "element_symfunction_short type ", words(3), " argument 4 must be a number"
+                                            do general_counter_1 = 1,nelem
+                                                sym_short_atomic_count(elementindex(ztemp1) = sym_short_atomic_count(elementindex(ztemp1) + 1
+                                                function_type_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1)) = function_type_temp
+                                                eta_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1)) = eta_temp
+                                                funccutoff_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1)) = funccutoff_temp
+                                                symelement_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),1,elementindex(ztemp1)) = nucelem(general_counter_1)
+                                            end do
+                                        else
+                                            print *, err, err_inpnn, "element_symfunction_short type ", words(3), " needs 4 arguments"; stop
+                                        end if
+
+                                    case ('5')
+                                        if (nwords == 4) then
+                                            read(words(4),*, iostat=ios) eta_temp
+                                            if (ios /= 0) stop err // err_inpnn // "element_symfunction_short type ", words(3), " argument 3 must be a number"
+                                            sym_short_atomic_count(elementindex(ztemp1) = sym_short_atomic_count(elementindex(ztemp1) + 1
+                                            function_type_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1)) = function_type_temp
+                                            eta_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1)) = eta_temp
+                                        else
+                                            print *, err, err_inpnn, "element_symfunction_short type ", words(3), " needs 3 arguments"; stop
+                                        end if
+
+                                    case ('6')
+                                        if (nwords == 4) then
+                                            read(words(4),*, iostat=ios) funccutoff_temp
+                                            if (ios /= 0) stop err // err_inpnn // "element_symfunction_short type ", words(3), " argument 3 must be a number"
+                                            sym_short_atomic_count(elementindex(ztemp1) = sym_short_atomic_count(elementindex(ztemp1) + 1
+                                            function_type_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1)) = function_type_temp
+                                        else
+                                            print *, err, err_inpnn, "element_symfunction_short type ", words(3), " needs 3 arguments"; stop
+                                        end if
+
+                                    case ('8')
+                                        if (nwords == 6) then
+                                            read(words(4),*, iostat=ios) eta_temp
+                                            if (ios /= 0) stop err // err_inpnn // "element_symfunction_short type ", words(3), " argument 3 must be a number"
+                                            read(words(5),*, iostat=ios) rshift_temp
+                                            if (ios /= 0) stop err // err_inpnn // "element_symfunction_short type ", words(3), " argument 4 must be a number"
+                                            read(words(6),*, iostat=ios) funccutoff_temp
+                                            if (ios /= 0) stop err // err_inpnn // "element_symfunction_short type ", words(3), " argument 5 must be a number"
+                                            do general_counter_1 = 1,nelem
+                                                sym_short_atomic_count(elementindex(ztemp1) = sym_short_atomic_count(elementindex(ztemp1) + 1
+                                                function_type_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1)) = function_type_temp
+                                                eta_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1)) = eta_temp
+                                                rshift_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1)) = rshift_temp
+                                                funccutoff_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1)) = funccutoff_temp
+                                                symelement_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),1,elementindex(ztemp1)) = nucelem(general_counter_1)
+                                                symelement_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),2,elementindex(ztemp1)) = nucelem(general_counter_1)
+                                            end do
+                                            do general_counter_1 = 1,nelem
+                                                if (nelem .gt. 1) then
+                                                    do general_counter_2 = 1,general_counter_1-1
+                                                        sym_short_atomic_count(elementindex(ztemp1) = sym_short_atomic_count(elementindex(ztemp1) + 1
+                                                        function_type_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1)) = function_type_temp
+                                                        eta_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1)) = eta_temp
+                                                        rshift_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1)) = rshift_temp
+                                                        funccutoff_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1)) = funccutoff_temp
+                                                        symelement_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),1,elementindex(ztemp1)) = nucelem(general_counter_2)
+                                                        symelement_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),2,elementindex(ztemp1)) = nucelem(general_counter_1)
+                                                    end do
+                                                end if
+                                            end do
+                                        else
+                                            print *, err, err_inpnn, "element_symfunction_short type ", words(3), " needs 5 arguments"; stop
+                                        end if
+
+                                    case ('9')
+                                        if (nwords == 7) then
+                                            read(words(4),*, iostat=ios) eta_temp
+                                            if (ios /= 0) stop err // err_inpnn // "element_symfunction_short type ", words(3), " argument 3 must be a number"
+                                            read(words(5),*, iostat=ios) lambda_temp
+                                            if (ios /= 0) stop err // err_inpnn // "element_symfunction_short type ", words(3), " argument 4 must be a number"
+                                            read(words(6),*, iostat=ios) zeta_temp
+                                            if (ios /= 0) stop err // err_inpnn // "element_symfunction_short type ", words(3), " argument 5 must be a number"
+                                            read(words(7),*, iostat=ios) funccutoff_temp
+                                            if (ios /= 0) stop err // err_inpnn // "element_symfunction_short type ", words(3), " argument 6 must be a number"
+                                            do general_counter_1 = 1,nelem
+                                                sym_short_atomic_count(elementindex(ztemp1) = sym_short_atomic_count(elementindex(ztemp1) + 1
+                                                function_type_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1)) = function_type_temp
+                                                eta_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1)) = eta_temp
+                                                lambda_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1)) = lambda_temp
+                                                zeta_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1)) = zeta_temp
+                                                funccutoff_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1)) = funccutoff_temp
+                                                symelement_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),1,elementindex(ztemp1)) = nucelem(general_counter_1)
+                                            end do
+                                            do general_counter_1 = 1,nelem
+                                                if (nelem .gt. 1) then
+                                                    do general_counter_2 = 1,general_counter_1-1
+                                                        sym_short_atomic_count(elementindex(ztemp1) = sym_short_atomic_count(elementindex(ztemp1) + 1
+                                                        function_type_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1)) = function_type_temp
+                                                        eta_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1)) = eta_temp
+                                                        lambda_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1)) = lambda_temp
+                                                        zeta_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1)) = zeta_temp
+                                                        funccutoff_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1)) = funccutoff_temp
+                                                        symelement_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),1,elementindex(ztemp1)) = nucelem(general_counter_2)
+                                                        symelement_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),2,elementindex(ztemp1)) = nucelem(general_counter_1)
+                                                    end do
+                                                end if
+                                            end do
+                                        else
+                                            print *, err, err_inpnn, "element_symfunction_short type ", words(3), " needs 6 arguments"; stop
+                                        end if
+
+                                    case default
+                                        print *, err, err_inpnn, "Error in element_symfunction_short key, symfunction type ", words(3), " not implemented"
+                                        stop
+
+                                end select
+
+                            end if
 
                         case ('global_symfunction_short')
+                            if (lshort .and. (nn_type_short == 1)) then
+                                read(words(2),'(i1000)', iostat=ios) function_type_temp
+                                if (ios /= 0) stop err // err_inpnn // "global_symfunction_short argument 1 value must be integer"
+
+                                select case(words(2))
+
+                                    case ('1')
+                                        if (nwords == 3) then
+                                            read(words(3),*, iostat=ios) funccutoff_temp
+                                            if (ios /= 0) stop err // err_inpnn // "global_symfunction_short type ", words(2), " argument 2 must be a number"
+                                            do general_counter_1 = 1,nelem
+                                                do general_counter_2 = 1,nelem
+                                                    sym_short_atomic_count(general_counter_1) = sym_short_atomic_count(general_counter_1) + 1
+                                                    function_type_short_atomic(sym_short_atomic_count(general_counter_1),general_counter_1) = function_type_temp
+                                                    funccutoff_short_atomic(sym_short_atomic_count(general_counter_1),general_counter_1) = funccutoff_temp
+                                                    symelement_short_atomic(sym_short_atomic_count(general_counter_1),1,general_counter_1) = nucelem(general_counter_2)
+                                                end do
+                                            end do
+                                        else
+                                            print *, err, err_inpnn, "global_symfunction_short type ", words(2), " needs 2 arguments"; stop
+                                        end if
+
+                                    case ('2')
+                                        if (nwords == 5) then
+                                            read(words(3),*, iostat=ios) eta_temp
+                                            if (ios /= 0) stop err // err_inpnn // "global_symfunction_short type ", words(2), " argument 2 must be a number"
+                                            read(words(4),*, iostat=ios) rshift_temp
+                                            if (ios /= 0) stop err // err_inpnn // "global_symfunction_short type ", words(2), " argument 3 must be a number"
+                                            read(words(5),*, iostat=ios) funccutoff_temp
+                                            if (ios /= 0) stop err // err_inpnn // "global_symfunction_short type ", words(2), " argument 4 must be a number"
+                                            do general_counter_1 = 1,nelem
+                                                do general_counter_2 = 1,nelem
+                                                    sym_short_atomic_count(general_counter_1) = sym_short_atomic_count(general_counter_1) + 1
+                                                    function_type_short_atomic(sym_short_atomic_count(general_counter_1),general_counter_1) = function_type_temp
+                                                    eta_short_atomic(sym_short_atomic_count(general_counter_1),general_counter_1) = eta_temp
+                                                    rshift_short_atomic(sym_short_atomic_count(general_counter_1),general_counter_1) = rshift_temp
+                                                    funccutoff_short_atomic(sym_short_atomic_count(general_counter_1),general_counter_1) = funccutoff_temp
+                                                    symelement_short_atomic(sym_short_atomic_count(general_counter_1),1,general_counter_1) = nucelem(general_counter_2)
+                                                end do
+                                            end do
+                                        else
+                                            print *, err, err_inpnn, "global_symfunction_short type ", words(2), " needs 4 arguments"; stop
+                                        end if
+
+                                    case ('3')
+                                        if (nwords == 6) then
+                                            read(words(3),*, iostat=ios) eta_temp
+                                            if (ios /= 0) stop err // err_inpnn // "global_symfunction_short type ", words(2), " argument 2 must be a number"
+                                            read(words(4),*, iostat=ios) lambda_temp
+                                            if (ios /= 0) stop err // err_inpnn // "global_symfunction_short type ", words(2), " argument 3 must be a number"
+                                            read(words(5),*, iostat=ios) zeta_temp
+                                            if (ios /= 0) stop err // err_inpnn // "global_symfunction_short type ", words(2), " argument 4 must be a number"
+                                            read(words(6),*, iostat=ios) funccutoff_temp
+                                            if (ios /= 0) stop err // err_inpnn // "global_symfunction_short type ", words(2), " argument 5 must be a number"
+                                            do general_counter_3 = 1,nelem
+                                                do general_counter_1 = 1,nelem
+                                                    sym_short_atomic_count(general_counter_3) = sym_short_atomic_count(general_counter_3) + 1
+                                                    function_type_short_atomic(sym_short_atomic_count(general_counter_3),general_counter_3) = function_type_temp
+                                                    eta_short_atomic(sym_short_atomic_count(general_counter_3),general_counter_3) = eta_temp
+                                                    lambda_short_atomic(sym_short_atomic_count(general_counter_3),general_counter_3) = lambda_temp
+                                                    zeta_short_atomic(sym_short_atomic_count(general_counter_3),general_counter_3) = zeta_temp
+                                                    funccutoff_short_atomic(sym_short_atomic_count(general_counter_3),general_counter_3) = funccutoff_temp
+                                                    symelement_short_atomic(sym_short_atomic_count(general_counter_3),1,general_counter_3) = nucelem(general_counter_1)
+                                                    symelement_short_atomic(sym_short_atomic_count(general_counter_3),2,general_counter_3) = nucelem(general_counter_1)
+                                                end do
+                                                do general_counter_1 = 1,nelem
+                                                    if (nelem .gt. 1) then
+                                                        do general_counter_2 = 1,general_counter_1-1
+                                                            sym_short_atomic_count(general_counter_3) = sym_short_atomic_count(general_counter_3) + 1
+                                                            function_type_short_atomic(sym_short_atomic_count(general_counter_3),general_counter_3) = function_type_temp
+                                                            eta_short_atomic(sym_short_atomic_count(general_counter_3),general_counter_3) = eta_temp
+                                                            lambda_short_atomic(sym_short_atomic_count(general_counter_3),general_counter_3) = lambda_temp
+                                                            zeta_short_atomic(sym_short_atomic_count(general_counter_3),general_counter_3) = zeta_temp
+                                                            funccutoff_short_atomic(sym_short_atomic_count(general_counter_3),general_counter_3) = funccutoff_temp
+                                                            symelement_short_atomic(sym_short_atomic_count(general_counter_3),1,general_counter_3) = nucelem(general_counter_2)
+                                                            symelement_short_atomic(sym_short_atomic_count(general_counter_3),2,general_counter_3) = nucelem(general_counter_1)
+                                                        end do
+                                                    end if
+                                                end do
+                                            end do
+                                        else
+                                            print *, err, err_inpnn, "global_symfunction_short type ", words(2), " needs 5 arguments"; stop
+                                        end if
+
+                                    case ('4')
+                                        if (nwords == 4) then
+                                            read(words(3),*, iostat=ios) eta_temp
+                                            if (ios /= 0) stop err // err_inpnn // "global_symfunction_short type ", words(2), " argument 2 must be a number"
+                                            read(words(4),*, iostat=ios) funccutoff_temp
+                                            if (ios /= 0) stop err // err_inpnn // "global_symfunction_short type ", words(2), " argument 3 must be a number"
+                                            do general_counter_3 = 1,nelem
+                                                do general_counter_1 = 1,nelem
+                                                    sym_short_atomic_count(general_counter_3) = sym_short_atomic_count(general_counter_3) + 1
+                                                    function_type_short_atomic(sym_short_atomic_count(general_counter_3),general_counter_3) = function_type_temp
+                                                    eta_short_atomic(sym_short_atomic_count(general_counter_3),general_counter_3) = eta_temp
+                                                    funccutoff_short_atomic(sym_short_atomic_count(general_counter_3),general_counter_3) = funccutoff_temp
+                                                    symelement_short_atomic(sym_short_atomic_count(general_counter_3),1,general_counter_3) = nucelem(general_counter_1)
+                                                end do
+                                            end do
+                                        else
+                                            print *, err, err_inpnn, "global_symfunction_short type ", words(2), " needs 3 arguments"; stop
+                                        end if
+
+                                    case ('5')
+                                        if (nwords == 3) then
+                                            read(words(3),*, iostat=ios) eta_temp
+                                            if (ios /= 0) stop err // err_inpnn // "global_symfunction_short type ", words(2), " argument 2 must be a number"
+                                            do general_counter_3 = 1,nelem
+                                                sym_short_atomic_count(general_counter_3) = sym_short_atomic_count(general_counter_3) + 1
+                                                function_type_short_atomic(sym_short_atomic_count(general_counter_3),general_counter_3) = function_type_temp
+                                                eta_short_atomic(sym_short_atomic_count(general_counter_3),general_counter_3) = eta_temp
+                                                symelement_short_atomic(sym_short_atomic_count(general_counter_3),1,general_counter_3) = nucelem(general_counter_3)
+                                            end do
+                                        else
+                                            print *, err, err_inpnn, "global_symfunction_short type ", words(2), " needs 2 arguments"; stop
+                                        end if
+
+                                    case ('6')
+                                        if (nwords == 3) then
+                                            read(words(3),*, iostat=ios) funccutoff_temp
+                                            if (ios /= 0) stop err // err_inpnn // "global_symfunction_short type ", words(2), " argument 2 must be a number"
+                                            do general_counter_3 = 1,nelem
+                                                sym_short_atomic_count(general_counter_3) = sym_short_atomic_count(general_counter_3) + 1
+                                                function_type_short_atomic(sym_short_atomic_count(general_counter_3),general_counter_3) = function_type_temp
+                                                funccutoff_short_atomic(sym_short_atomic_count(general_counter_3),general_counter_3) = funccutoff_temp
+                                                symelement_short_atomic(sym_short_atomic_count(general_counter_3),1,general_counter_3) = nucelem(general_counter_3)
+                                            end do
+                                        else
+                                            print *, err, err_inpnn, "global_symfunction_short type ", words(2), " needs 2 arguments"; stop
+                                        end if
+
+                                    case ('8')
+                                        if (nwords == 5) then
+                                            read(words(3),*, iostat=ios) eta_temp
+                                            if (ios /= 0) stop err // err_inpnn // "global_symfunction_short type ", words(2), " argument 2 must be a number"
+                                            read(words(4),*, iostat=ios) rshift_temp
+                                            if (ios /= 0) stop err // err_inpnn // "global_symfunction_short type ", words(2), " argument 3 must be a number"
+                                            read(words(5),*, iostat=ios) funccutoff_temp
+                                            if (ios /= 0) stop err // err_inpnn // "global_symfunction_short type ", words(2), " argument 4 must be a number"
+                                            do general_counter_3 = 1,nelem
+                                                do general_counter_1 = 1,nelem
+                                                    sym_short_atomic_count(general_counter_3) = sym_short_atomic_count(general_counter_3) + 1
+                                                    function_type_short_atomic(sym_short_atomic_count(general_counter_3),general_counter_3) = function_type_temp
+                                                    eta_short_atomic(sym_short_atomic_count(general_counter_3),general_counter_3) = eta_temp
+                                                    rshift_short_atomic(sym_short_atomic_count(general_counter_3),general_counter_3) = rshift_temp
+                                                    funccutoff_short_atomic(sym_short_atomic_count(general_counter_3),general_counter_3) = funccutoff_temp
+                                                    symelement_short_atomic(sym_short_atomic_count(general_counter_3),1,general_counter_3) = nucelem(general_counter_1)
+                                                    symelement_short_atomic(sym_short_atomic_count(general_counter_3),2,general_counter_3) = nucelem(general_counter_1)
+                                                end do
+                                                do general_counter_1 = 1,nelem
+                                                    if (nelem .gt. 1) then
+                                                        do general_counter_2 = 1,general_counter_1-1
+                                                            sym_short_atomic_count(general_counter_3) = sym_short_atomic_count(general_counter_3) + 1
+                                                            function_type_short_atomic(sym_short_atomic_count(general_counter_3),general_counter_3) = function_type_temp
+                                                            eta_short_atomic(sym_short_atomic_count(general_counter_3),general_counter_3) = eta_temp
+                                                            rshift_short_atomic(sym_short_atomic_count(general_counter_3),general_counter_3) = rshift_temp
+                                                            funccutoff_short_atomic(sym_short_atomic_count(general_counter_3),general_counter_3) = funccutoff_temp
+                                                            symelement_short_atomic(sym_short_atomic_count(general_counter_3),1,general_counter_3) = nucelem(general_counter_2)
+                                                            symelement_short_atomic(sym_short_atomic_count(general_counter_3),2,general_counter_3) = nucelem(general_counter_1)
+                                                        end do
+                                                    end if
+                                                end do
+                                            end do
+                                        else
+                                            print *, err, err_inpnn, "global_symfunction_short type ", words(2), " needs 4 arguments"; stop
+                                        end if
+
+                                    case ('9')
+                                        if (nwords == 6) then
+                                            read(words(3),*, iostat=ios) eta_temp
+                                            if (ios /= 0) stop err // err_inpnn // "global_symfunction_short type ", words(2), " argument 2 must be a number"
+                                            read(words(4),*, iostat=ios) lambda_temp
+                                            if (ios /= 0) stop err // err_inpnn // "global_symfunction_short type ", words(2), " argument 3 must be a number"
+                                            read(words(5),*, iostat=ios) zeta_temp
+                                            if (ios /= 0) stop err // err_inpnn // "global_symfunction_short type ", words(2), " argument 4 must be a number"
+                                            read(words(6),*, iostat=ios) funccutoff_temp
+                                            if (ios /= 0) stop err // err_inpnn // "global_symfunction_short type ", words(2), " argument 5 must be a number"
+                                            do general_counter_3 = 1,nelem
+                                                do general_counter_1 = 1,nelem
+                                                    sym_short_atomic_count(general_counter_3) = sym_short_atomic_count(general_counter_3) + 1
+                                                    function_type_short_atomic(sym_short_atomic_count(general_counter_3),general_counter_3) = function_type_temp
+                                                    eta_short_atomic(sym_short_atomic_count(general_counter_3),general_counter_3) = eta_temp
+                                                    lambda_short_atomic(sym_short_atomic_count(general_counter_3),general_counter_3) = lambda_temp
+                                                    zeta_short_atomic(sym_short_atomic_count(general_counter_3),general_counter_3) = zeta_temp
+                                                    funccutoff_short_atomic(sym_short_atomic_count(general_counter_3),general_counter_3) = funccutoff_temp
+                                                    symelement_short_atomic(sym_short_atomic_count(general_counter_3),1,general_counter_3) = nucelem(general_counter_1)
+                                                    symelement_short_atomic(sym_short_atomic_count(general_counter_3),2,general_counter_3) = nucelem(general_counter_1)
+                                                end do
+                                                do general_counter_1 = 1,nelem
+                                                    if (nelem .gt. 1) then
+                                                        do general_counter_2 = 1,general_counter_1-1
+                                                            sym_short_atomic_count(general_counter_3) = sym_short_atomic_count(general_counter_3) + 1
+                                                            function_type_short_atomic(sym_short_atomic_count(general_counter_3),general_counter_3) = function_type_temp
+                                                            eta_short_atomic(sym_short_atomic_count(general_counter_3),general_counter_3) = eta_temp
+                                                            lambda_short_atomic(sym_short_atomic_count(general_counter_3),general_counter_3) = lambda_temp
+                                                            zeta_short_atomic(sym_short_atomic_count(general_counter_3),general_counter_3) = zeta_temp
+                                                            funccutoff_short_atomic(sym_short_atomic_count(general_counter_3),general_counter_3) = funccutoff_temp
+                                                            symelement_short_atomic(sym_short_atomic_count(general_counter_3),1,general_counter_3) = nucelem(general_counter_2)
+                                                            symelement_short_atomic(sym_short_atomic_count(general_counter_3),2,general_counter_3) = nucelem(general_counter_1)
+                                                        end do
+                                                    end if
+                                                end do
+                                            end do
+                                        else
+                                            print *, err, err_inpnn, "global_symfunction_short type ", words(2), " needs 5 arguments"; stop
+                                        end if
+
+                                    case default
+                                        print *, err, err_inpnn, "Error in global_symfunction_short key, symfunction type ", words(2), " not implemented"
+                                        stop
+
+                                end select
+
+                            end if
+
 
                         case ('symfunction_electrostatic')
                             if (lelec .and. (nn_type_elec == 1)) then
-                                call allocate_readsymfunctionatomic(maxnum_funcvalues_elec, sym_elec_count, function_type_elec, symelement_elec, &
-                                     funccutoff_elec, eta_elec, zeta_elec, rshift_elec, lambda_elec)
+                                read(words(2),'(A)', iostat=ios) rinpparam%elementtemp1
+                                call checkelement(elementtemp1)
+                                call nuccharge(elementtemp1,ztemp1)
+                                sym_elec_count(elementindex(ztemp1)) = sym_elec_count(elementindex(ztemp1)) + 1
+                                read(words(3),'(i1000)', iostat=ios) function_type_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1))
+                                if (ios /= 0) stop err // err_inpnn // "symfunction_electrostatic argument 2 value must be integer"
+
+                                select case(words(3))
+
+                                    case ('1')
+                                        if (nwords == 5) then
+                                            read(words(4),'(A)') rinpparam%elementtemp2
+                                            call checkelement(elementtemp2)
+                                            call nuccharge(elementtemp2,ztemp2)
+                                            read(words(5),*, iostat=ios) rinpparam%funccutoff_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1))
+                                            if (ios /= 0) stop err // err_inpnn // "symfunction_electrostatic type ", words(3), " argument 4 must be a number"
+                                            symelement_elec(sym_elec_count(elementindex(ztemp1)),1,elementindex(ztemp1))=ztemp2
+                                        else
+                                            print *, err, err_inpnn, "symfunction_electrostatic type ", words(3), " needs 4 arguments"; stop
+                                        end if
+
+                                    case ('2')
+                                        if (nwords == 7) then
+                                            read(words(4),'(A)') elementtemp2
+                                            call checkelement(elementtemp2)
+                                            call nuccharge(elementtemp2,ztemp2)
+                                            read(words(5),*, iostat=ios) rinpparam%eta_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1))
+                                            if (ios /= 0) stop err // err_inpnn // "symfunction_electrostatic type ", words(3), " argument 4 must be a number"
+                                            read(words(6),*, iostat=ios) rinpparam%rshift_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1))
+                                            if (ios /= 0) stop err // err_inpnn // "symfunction_electrostatic type ", words(3), " argument 5 must be a number"
+                                            read(words(7),*, iostat=ios) rinpparam%funccutoff_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1))
+                                            if (ios /= 0) stop err // err_inpnn // "symfunction_electrostatic type ", words(3), " argument 6 must be a number"
+                                            symelement_elec(sym_elec_count(elementindex(ztemp1)),1,elementindex(ztemp1))=ztemp2
+                                        else
+                                            print *, err, err_inpnn, "symfunction_electrostatic type ", words(3), " needs 6 arguments"; stop
+                                        end if
+
+                                    case ('3')
+                                        if (nwords == 9) then
+                                            read(words(4),'(A)') rinpparam%elementtemp2
+                                            read(words(5),'(A)') rinpparam%elementtemp3
+                                            call checkelement(elementtemp2)
+                                            call checkelement(elementtemp3)
+                                            call nuccharge(elementtemp2,ztemp2)
+                                            call nuccharge(elementtemp2,ztemp3)
+                                            if (ztemp2 .gt. ztemp3) then
+                                                itemp = ztemp2
+                                                ztemp2 = ztemp3
+                                                ztemp3 = itemp
+                                            endif
+                                            read(words(6),*, iostat=ios) rinpparam%eta_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1))
+                                            if (ios /= 0) stop err // err_inpnn // "symfunction_electrostatic type ", words(3), " argument 5 must be a number"
+                                            read(words(7),*, iostat=ios) rinpparam%lambda_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1))
+                                            if (ios /= 0) stop err // err_inpnn // "symfunction_electrostatic type ", words(3), " argument 6 must be a number"
+                                            read(words(8),*, iostat=ios) rinpparam%zeta_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1))
+                                            if (ios /= 0) stop err // err_inpnn // "symfunction_electrostatic type ", words(3), " argument 7 must be a number"
+                                            read(words(9),*, iostat=ios) rinpparam%funccutoff_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1))
+                                            if (ios /= 0) stop err // err_inpnn // "symfunction_electrostatic type ", words(3), " argument 8 must be a number"
+                                            symelement_elec(sym_elec_count(elementindex(ztemp1)),1,elementindex(ztemp1))=ztemp2
+                                            symelement_elec(sym_elec_count(elementindex(ztemp1)),2,elementindex(ztemp1))=ztemp3
+                                        else
+                                            print *, err, err_inpnn, "symfunction_electrostatic type ", words(3), " needs 8 arguments"; stop
+                                        end if
+
+                                    case ('4')
+                                        if (nwords == 6) then
+                                            read(words(4),'(A)') rinpparam%elementtemp2
+                                            call checkelement(elementtemp2)
+                                            call nuccharge(elementtemp2,ztemp2)
+                                            read(words(5),*, iostat=ios) eta_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1))
+                                            if (ios /= 0) stop err // err_inpnn // "symfunction_electrostatic type ", words(3), " argument 4 must be a number"
+                                            read(words(6),*, iostat=ios) rinpparam%funccutoff_elecc(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1))
+                                            if (ios /= 0) stop err // err_inpnn // "symfunction_electrostatic type ", words(3), " argument 5 must be a number"
+                                            symelement_elec(sym_elec_count(elementindex(ztemp1)),1,elementindex(ztemp1))=ztemp2
+                                        else
+                                            print *, err, err_inpnn, "symfunction_electrostatic type ", words(3), " needs 5 arguments"; stop
+                                        end if
+
+                                    case ('5')
+                                        if (nwords == 4) then
+                                            read(words(4),*, iostat=ios) rinpparam%eta_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1))
+                                            if (ios /= 0) stop err // err_inpnn // "symfunction_electrostatic type ", words(3), " argument 3 must be a number"
+                                        else
+                                            print *, err, err_inpnn, "symfunction_electrostatic type ", words(3), " needs 3 arguments"; stop
+                                        end if
+
+                                    case ('6')
+                                        if (nwords == 5) then
+                                            read(words(4),'(A)') rinpparam%elementtemp2
+                                            call checkelement(elementtemp2)
+                                            call nuccharge(elementtemp2,ztemp2)
+                                            read(words(5),*, iostat=ios) rinpparam%funccutoff_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1))
+                                            if (ios /= 0) stop err // err_inpnn // "symfunction_electrostatic type ", words(3), " argument 4 must be a number"
+                                            symelement_elec(sym_elec_count(elementindex(ztemp1)),1,elementindex(ztemp1))=ztemp2
+                                        else
+                                            print *, err, err_inpnn, "symfunction_electrostatic type ", words(3), " needs 4 arguments"; stop
+                                        end if
+
+                                    case ('8')
+                                        if (nwords == 8) then
+                                            read(words(4),'(A)') rinpparam%elementtemp2
+                                            read(words(5),'(A)') rinpparam%elementtemp3
+                                            call checkelement(elementtemp2)
+                                            call checkelement(elementtemp3)
+                                            call nuccharge(elementtemp2,ztemp2)
+                                            call nuccharge(elementtemp2,ztemp3)
+                                            if (ztemp2 .gt. ztemp3) then
+                                                itemp = ztemp2
+                                                ztemp2 = ztemp3
+                                                ztemp3 = itemp
+                                            endif
+                                            read(words(6),*, iostat=ios) rinpparam%eta_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1))
+                                            if (ios /= 0) stop err // err_inpnn // "symfunction_electrostatic type ", words(3), " argument 5 must be a number"
+                                            read(words(7),*, iostat=ios) rinpparam%rshift_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1))
+                                            if (ios /= 0) stop err // err_inpnn // "symfunction_electrostatic type ", words(3), " argument 6 must be a number"
+                                            read(words(8),*, iostat=ios) rinpparam%funccutoff_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1))
+                                            if (ios /= 0) stop err // err_inpnn // "symfunction_electrostatic type ", words(3), " argument 7 must be a number"
+                                            symelement_elec(sym_elec_count(elementindex(ztemp1)),1,elementindex(ztemp1))=ztemp2
+                                            symelement_elec(sym_elec_count(elementindex(ztemp1)),2,elementindex(ztemp1))=ztemp3
+                                        else
+                                            print *, err, err_inpnn, "symfunction_electrostatic type ", words(3), " needs 7 arguments"; stop
+                                        end if
+
+                                    case ('9')
+                                        if (nwords == 9) then
+                                            read(words(4),'(A)') rinpparam%elementtemp2
+                                            read(words(5),'(A)') rinpparam%elementtemp3
+                                            call checkelement(elementtemp2)
+                                            call checkelement(elementtemp3)
+                                            call nuccharge(elementtemp2,ztemp2)
+                                            call nuccharge(elementtemp2,ztemp3)
+                                            if (ztemp2 .gt. ztemp3) then
+                                                itemp = ztemp2
+                                                ztemp2 = ztemp3
+                                                ztemp3 = itemp
+                                            endif
+                                            read(words(6),*, iostat=ios) rinpparam%eta_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1))
+                                            if (ios /= 0) stop err // err_inpnn // "symfunction_electrostatic type ", words(3), " argument 5 must be a number"
+                                            read(words(7),*, iostat=ios) rinpparam%lambda_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1))
+                                            if (ios /= 0) stop err // err_inpnn // "symfunction_electrostatic type ", words(3), " argument 6 must be a number"
+                                            read(words(8),*, iostat=ios) rinpparam%zeta_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1))
+                                            if (ios /= 0) stop err // err_inpnn // "symfunction_electrostatic type ", words(3), " argument 7 must be a number"
+                                            read(words(9),*, iostat=ios) rinpparam%funccutoff_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1))
+                                            if (ios /= 0) stop err // err_inpnn // "symfunction_electrostatic type ", words(3), " argument 8 must be a number"
+                                            symelement_elec(sym_elec_count(elementindex(ztemp1)),1,elementindex(ztemp1))=ztemp2
+                                            symelement_elec(sym_elec_count(elementindex(ztemp1)),2,elementindex(ztemp1))=ztemp3
+                                        else
+                                            print *, err, err_inpnn, "symfunction_electrostatic type ", words(3), " needs 8 arguments"; stop
+                                        end if
+
+                                    case default
+                                        print *, err, err_inpnn, "Error in symfunction_electrostatict key, symfunction type ", words(3), " not implemented"
+                                        stop
+
+                                end select
+
                             end if
 
                         case ('element_symfunction_electrostatic')
+                            if (lelec .and. (nn_type_elec == 1)) then
+                                read(words(2),'(A)', iostat=ios) elementtemp1
+                                call checkelement(elementtemp1)
+                                call nuccharge(elementtemp1,ztemp1)
+                                read(words(3),'(i1000)', iostat=ios) function_type_temp
+                                if (ios /= 0) stop err // err_inpnn // "element_symfunction_electrostatic argument 2 value must be integer"
+
+                                select case(words(3))
+
+                                    case ('1')
+                                        if (nwords == 4) then
+                                            read(words(4),*, iostat=ios) funccutoff_temp
+                                            if (ios /= 0) stop err // err_inpnn // "element_symfunction_electrostatic type ", words(3), " argument 3 must be a number"
+                                            do general_counter_1 = 1,nelem
+                                                sym_elec_count(elementindex(ztemp1) = sym_elec_count(elementindex(ztemp1) + 1
+                                                function_type_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1)) = function_type_temp
+                                                funccutoff_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1)) = funccutoff_temp
+                                                symelement_elec(sym_elec_count(elementindex(ztemp1)),1,elementindex(ztemp1)) = nucelem(general_counter_1)
+                                            end do
+                                        else
+                                            print *, err, err_inpnn, "element_symfunction_electrostatic type ", words(3), " needs 3 arguments"; stop
+                                        end if
+
+                                    case ('2')
+                                        if (nwords == 6) then
+                                            read(words(4),*, iostat=ios) eta_temp
+                                            if (ios /= 0) stop err // err_inpnn // "element_symfunction_electrostatic type ", words(3), " argument 3 must be a number"
+                                            read(words(5),*, iostat=ios) rshift_temp
+                                            if (ios /= 0) stop err // err_inpnn // "element_symfunction_electrostatic type ", words(3), " argument 4 must be a number"
+                                            read(words(6),*, iostat=ios) funccutoff_temp
+                                            if (ios /= 0) stop err // err_inpnn // "element_symfunction_electrostatic type ", words(3), " argument 5 must be a number"
+                                            do general_counter_1 = 1,nelem
+                                                sym_elec_count(elementindex(ztemp1) = sym_elec_count(elementindex(ztemp1) + 1
+                                                function_type_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1)) = function_type_temp
+                                                eta_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1)) = eta_temp
+                                                rshift_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1)) = rshift_temp
+                                                funccutoff_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1)) = funccutoff_temp
+                                                symelement_elec(sym_elec_count(elementindex(ztemp1)),1,elementindex(ztemp1)) = nucelem(general_counter_1)
+                                            end do
+                                        else
+                                            print *, err, err_inpnn, "element_symfunction_electrostatic type ", words(3), " needs 5 arguments"; stop
+                                        end if
+
+                                    case ('3')
+                                        if (nwords == 7) then
+                                            read(words(4),*, iostat=ios) eta_temp
+                                            if (ios /= 0) stop err // err_inpnn // "element_symfunction_electrostatic type ", words(3), " argument 3 must be a number"
+                                            read(words(5),*, iostat=ios) lambda_temp
+                                            if (ios /= 0) stop err // err_inpnn // "element_symfunction_electrostatic type ", words(3), " argument 4 must be a number"
+                                            read(words(6),*, iostat=ios) zeta_temp
+                                            if (ios /= 0) stop err // err_inpnn // "element_symfunction_electrostatic type ", words(3), " argument 5 must be a number"
+                                            read(words(7),*, iostat=ios) funccutoff_temp
+                                            if (ios /= 0) stop err // err_inpnn // "element_symfunction_electrostatic type ", words(3), " argument 6 must be a number"
+                                            do general_counter_1 = 1,nelem
+                                                sym_elec_count(elementindex(ztemp1) = sym_elec_count(elementindex(ztemp1) + 1
+                                                function_type_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1)) = function_type_temp
+                                                eta_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1)) = eta_temp
+                                                lambda_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1)) = lambda_temp
+                                                zeta_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1)) = zeta_temp
+                                                funccutoff_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1)) = funccutoff_temp
+                                                symelement_elec(sym_elec_count(elementindex(ztemp1)),1,elementindex(ztemp1)) = nucelem(general_counter_1)
+                                                symelement_elec(sym_elec_count(elementindex(ztemp1)),2,elementindex(ztemp1)) = nucelem(general_counter_1)
+                                            end do
+                                            do general_counter_1 = 1,nelem
+                                                if (nelem .gt. 1) then
+                                                    do general_counter_2 = 1,general_counter_1-1
+                                                        sym_elec_count(elementindex(ztemp1) = sym_elec_count(elementindex(ztemp1) + 1
+                                                        function_type_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1)) = function_type_temp
+                                                        eta_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1)) = eta_temp
+                                                        lambda_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1)) = lambda_temp
+                                                        zeta_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1)) = zeta_temp
+                                                        funccutoff_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1)) = funccutoff_temp
+                                                        symelement_elec(sym_elec_count(elementindex(ztemp1)),1,elementindex(ztemp1)) = nucelem(general_counter_2)
+                                                        symelement_elec(sym_elec_count(elementindex(ztemp1)),2,elementindex(ztemp1)) = nucelem(general_counter_1)
+                                                    end do
+                                                end if
+                                            end do
+                                        else
+                                            print *, err, err_inpnn, "element_symfunction_electrostatic type ", words(3), " needs 6 arguments"; stop
+                                        end if
+
+                                    case ('4')
+                                        if (nwords == 5) then
+                                            read(words(4),*, iostat=ios) eta_temp
+                                            if (ios /= 0) stop err // err_inpnn // "element_symfunction_electrostatic type ", words(3), " argument 3 must be a number"
+                                            read(words(5),*, iostat=ios) funccutoff_temp
+                                            if (ios /= 0) stop err // err_inpnn // "element_symfunction_electrostatic type ", words(3), " argument 4 must be a number"
+                                            do general_counter_1 = 1,nelem
+                                                sym_elec_count(elementindex(ztemp1) = sym_elec_count(elementindex(ztemp1) + 1
+                                                function_type_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1)) = function_type_temp
+                                                eta_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1)) = eta_temp
+                                                funccutoff_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1)) = funccutoff_temp
+                                                symelement_elec(sym_elec_count(elementindex(ztemp1)),1,elementindex(ztemp1)) = nucelem(general_counter_1)
+                                            end do
+                                        else
+                                            print *, err, err_inpnn, "element_symfunction_electrostatic type ", words(3), " needs 4 arguments"; stop
+                                        end if
+
+                                    case ('5')
+                                        if (nwords == 4) then
+                                            read(words(4),*, iostat=ios) eta_temp
+                                            if (ios /= 0) stop err // err_inpnn // "element_symfunction_electrostatic type ", words(3), " argument 3 must be a number"
+                                            sym_elec_count(elementindex(ztemp1) = sym_elec_count(elementindex(ztemp1) + 1
+                                            function_type_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1)) = function_type_temp
+                                            eta_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1)) = eta_temp
+                                        else
+                                            print *, err, err_inpnn, "element_symfunction_electrostatic type ", words(3), " needs 3 arguments"; stop
+                                        end if
+
+                                    case ('6')
+                                        if (nwords == 4) then
+                                            read(words(4),*, iostat=ios) funccutoff_temp
+                                            if (ios /= 0) stop err // err_inpnn // "element_symfunction_electrostatic type ", words(3), " argument 3 must be a number"
+                                            sym_elec_count(elementindex(ztemp1) = sym_elec_count(elementindex(ztemp1) + 1
+                                            function_type_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1)) = function_type_temp
+                                        else
+                                            print *, err, err_inpnn, "element_symfunction_electrostatic type ", words(3), " needs 3 arguments"; stop
+                                        end if
+
+                                    case ('8')
+                                        if (nwords == 6) then
+                                            read(words(4),*, iostat=ios) eta_temp
+                                            if (ios /= 0) stop err // err_inpnn // "element_symfunction_electrostatic type ", words(3), " argument 3 must be a number"
+                                            read(words(5),*, iostat=ios) rshift_temp
+                                            if (ios /= 0) stop err // err_inpnn // "element_symfunction_electrostatic type ", words(3), " argument 4 must be a number"
+                                            read(words(6),*, iostat=ios) funccutoff_temp
+                                            if (ios /= 0) stop err // err_inpnn // "element_symfunction_electrostatic type ", words(3), " argument 5 must be a number"
+                                            do general_counter_1 = 1,nelem
+                                                sym_elec_count(elementindex(ztemp1) = sym_elec_count(elementindex(ztemp1) + 1
+                                                function_type_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1)) = function_type_temp
+                                                eta_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1)) = eta_temp
+                                                rshift_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1)) = rshift_temp
+                                                funccutoff_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1)) = funccutoff_temp
+                                                symelement_elec(sym_elec_count(elementindex(ztemp1)),1,elementindex(ztemp1)) = nucelem(general_counter_1)
+                                                symelement_elec(sym_elec_count(elementindex(ztemp1)),2,elementindex(ztemp1)) = nucelem(general_counter_1)
+                                            end do
+                                            do general_counter_1 = 1,nelem
+                                                if (nelem .gt. 1) then
+                                                    do general_counter_2 = 1,general_counter_1-1
+                                                        sym_elec_count(elementindex(ztemp1) = sym_elec_count(elementindex(ztemp1) + 1
+                                                        function_type_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1)) = function_type_temp
+                                                        eta_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1)) = eta_temp
+                                                        rshift_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1)) = rshift_temp
+                                                        funccutoff_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1)) = funccutoff_temp
+                                                        symelement_elec(sym_elec_count(elementindex(ztemp1)),1,elementindex(ztemp1)) = nucelem(general_counter_2)
+                                                        symelement_elec(sym_elec_count(elementindex(ztemp1)),2,elementindex(ztemp1)) = nucelem(general_counter_1)
+                                                    end do
+                                                end if
+                                            end do
+                                        else
+                                            print *, err, err_inpnn, "element_symfunction_electrostatic type ", words(3), " needs 5 arguments"; stop
+                                        end if
+
+                                    case ('9')
+                                        if (nwords == 7) then
+                                            read(words(4),*, iostat=ios) eta_temp
+                                            if (ios /= 0) stop err // err_inpnn // "element_symfunction_electrostatic type ", words(3), " argument 3 must be a number"
+                                            read(words(5),*, iostat=ios) lambda_temp
+                                            if (ios /= 0) stop err // err_inpnn // "element_symfunction_electrostatic type ", words(3), " argument 4 must be a number"
+                                            read(words(6),*, iostat=ios) zeta_temp
+                                            if (ios /= 0) stop err // err_inpnn // "element_symfunction_electrostatic type ", words(3), " argument 5 must be a number"
+                                            read(words(7),*, iostat=ios) funccutoff_temp
+                                            if (ios /= 0) stop err // err_inpnn // "element_symfunction_electrostatic type ", words(3), " argument 6 must be a number"
+                                            do general_counter_1 = 1,nelem
+                                                sym_elec_count(elementindex(ztemp1) = sym_elec_count(elementindex(ztemp1) + 1
+                                                function_type_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1)) = function_type_temp
+                                                eta_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1)) = eta_temp
+                                                lambda_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1)) = lambda_temp
+                                                zeta_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1)) = zeta_temp
+                                                funccutoff_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1)) = funccutoff_temp
+                                                symelement_elec(sym_elec_count(elementindex(ztemp1)),1,elementindex(ztemp1)) = nucelem(general_counter_1)
+                                            end do
+                                            do general_counter_1 = 1,nelem
+                                                if (nelem .gt. 1) then
+                                                    do general_counter_2 = 1,general_counter_1-1
+                                                        sym_elec_count(elementindex(ztemp1) = sym_elec_count(elementindex(ztemp1) + 1
+                                                        function_type_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1)) = function_type_temp
+                                                        eta_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1)) = eta_temp
+                                                        lambda_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1)) = lambda_temp
+                                                        zeta_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1)) = zeta_temp
+                                                        funccutoff_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1)) = funccutoff_temp
+                                                        symelement_elec(sym_elec_count(elementindex(ztemp1)),1,elementindex(ztemp1)) = nucelem(general_counter_2)
+                                                        symelement_elec(sym_elec_count(elementindex(ztemp1)),2,elementindex(ztemp1)) = nucelem(general_counter_1)
+                                                    end do
+                                                end if
+                                            end do
+                                        else
+                                            print *, err, err_inpnn, "element_symfunction_electrostatic type ", words(3), " needs 6 arguments"; stop
+                                        end if
+
+                                    case default
+                                        print *, err, err_inpnn, "Error in element_symfunction_electrostatic key, symfunction type ", words(3), " not implemented"
+                                        stop
+
+                                end select
+
+                            end if
 
                         case ('global_symfunction_electrostatic')
+                            if (lelec .and. (nn_type_elec == 1)) then
+                                read(words(2),'(i1000)', iostat=ios) function_type_temp
+                                if (ios /= 0) stop err // err_inpnn // "global_symfunction_electrostatic argument 1 value must be integer"
+
+                                select case(words(2))
+
+                                    case ('1')
+                                        if (nwords == 3) then
+                                            read(words(3),*, iostat=ios) funccutoff_temp
+                                            if (ios /= 0) stop err // err_inpnn // "global_symfunction_electrostatic type ", words(2), " argument 2 must be a number"
+                                            do general_counter_1 = 1,nelem
+                                                do general_counter_2 = 1,nelem
+                                                    sym_elec_count(general_counter_1) = sym_elec_count(general_counter_1) + 1
+                                                    function_type_elec(sym_elec_count(general_counter_1),general_counter_1) = function_type_temp
+                                                    funccutoff_elec(sym_elec_count(general_counter_1),general_counter_1) = funccutoff_temp
+                                                    symelement_elec(sym_elec_count(general_counter_1),1,general_counter_1) = nucelem(general_counter_2)
+                                                end do
+                                            end do
+                                        else
+                                            print *, err, err_inpnn, "global_symfunction_electrostatic type ", words(2), " needs 2 arguments"; stop
+                                        end if
+
+                                    case ('2')
+                                        if (nwords == 5) then
+                                            read(words(3),*, iostat=ios) eta_temp
+                                            if (ios /= 0) stop err // err_inpnn // "global_symfunction_electrostatic type ", words(2), " argument 2 must be a number"
+                                            read(words(4),*, iostat=ios) rshift_temp
+                                            if (ios /= 0) stop err // err_inpnn // "global_symfunction_electrostatic type ", words(2), " argument 3 must be a number"
+                                            read(words(5),*, iostat=ios) funccutoff_temp
+                                            if (ios /= 0) stop err // err_inpnn // "global_symfunction_electrostatic type ", words(2), " argument 4 must be a number"
+                                            do general_counter_1 = 1,nelem
+                                                do general_counter_2 = 1,nelem
+                                                    sym_elec_count(general_counter_1) = sym_elec_count(general_counter_1) + 1
+                                                    function_type_elec(sym_elec_count(general_counter_1),general_counter_1) = function_type_temp
+                                                    eta_elec(sym_elec_count(general_counter_1),general_counter_1) = eta_temp
+                                                    rshift_elec(sym_elec_count(general_counter_1),general_counter_1) = rshift_temp
+                                                    funccutoff_elec(sym_elec_count(general_counter_1),general_counter_1) = funccutoff_temp
+                                                    symelement_elec(sym_elec_count(general_counter_1),1,general_counter_1) = nucelem(general_counter_2)
+                                                end do
+                                            end do
+                                        else
+                                            print *, err, err_inpnn, "global_symfunction_electrostatic type ", words(2), " needs 4 arguments"; stop
+                                        end if
+
+                                    case ('3')
+                                        if (nwords == 6) then
+                                            read(words(3),*, iostat=ios) eta_temp
+                                            if (ios /= 0) stop err // err_inpnn // "global_symfunction_electrostatic type ", words(2), " argument 2 must be a number"
+                                            read(words(4),*, iostat=ios) lambda_temp
+                                            if (ios /= 0) stop err // err_inpnn // "global_symfunction_electrostatic type ", words(2), " argument 3 must be a number"
+                                            read(words(5),*, iostat=ios) zeta_temp
+                                            if (ios /= 0) stop err // err_inpnn // "global_symfunction_electrostatic type ", words(2), " argument 4 must be a number"
+                                            read(words(6),*, iostat=ios) funccutoff_temp
+                                            if (ios /= 0) stop err // err_inpnn // "global_symfunction_electrostatic type ", words(2), " argument 5 must be a number"
+                                            do general_counter_3 = 1,nelem
+                                                do general_counter_1 = 1,nelem
+                                                    sym_elec_count(general_counter_3) = sym_elec_count(general_counter_3) + 1
+                                                    function_type_elec(sym_elec_count(general_counter_3),general_counter_3) = function_type_temp
+                                                    eta_elec(sym_elec_count(general_counter_3),general_counter_3) = eta_temp
+                                                    lambda_elec(sym_elec_count(general_counter_3),general_counter_3) = lambda_temp
+                                                    zeta_elec(sym_elec_count(general_counter_3),general_counter_3) = zeta_temp
+                                                    funccutoff_elec(sym_elec_count(general_counter_3),general_counter_3) = funccutoff_temp
+                                                    symelement_elec(sym_elec_count(general_counter_3),1,general_counter_3) = nucelem(general_counter_1)
+                                                    symelement_elec(sym_elec_count(general_counter_3),2,general_counter_3) = nucelem(general_counter_1)
+                                                end do
+                                                do general_counter_1 = 1,nelem
+                                                    if (nelem .gt. 1) then
+                                                        do general_counter_2 = 1,general_counter_1-1
+                                                            sym_elec_count(general_counter_3) = sym_elec_count(general_counter_3) + 1
+                                                            function_type_elec(sym_elec_count(general_counter_3),general_counter_3) = function_type_temp
+                                                            eta_elec(sym_elec_count(general_counter_3),general_counter_3) = eta_temp
+                                                            lambda_elec(sym_elec_count(general_counter_3),general_counter_3) = lambda_temp
+                                                            zeta_elec(sym_elec_count(general_counter_3),general_counter_3) = zeta_temp
+                                                            funccutoff_elec(sym_elec_count(general_counter_3),general_counter_3) = funccutoff_temp
+                                                            symelement_elec(sym_elec_count(general_counter_3),1,general_counter_3) = nucelem(general_counter_2)
+                                                            symelement_elec(sym_elec_count(general_counter_3),2,general_counter_3) = nucelem(general_counter_1)
+                                                        end do
+                                                    end if
+                                                end do
+                                            end do
+                                        else
+                                            print *, err, err_inpnn, "global_symfunction_electrostatic type ", words(2), " needs 5 arguments"; stop
+                                        end if
+
+                                    case ('4')
+                                        if (nwords == 4) then
+                                            read(words(3),*, iostat=ios) eta_temp
+                                            if (ios /= 0) stop err // err_inpnn // "global_symfunction_electrostatic type ", words(2), " argument 2 must be a number"
+                                            read(words(4),*, iostat=ios) funccutoff_temp
+                                            if (ios /= 0) stop err // err_inpnn // "global_symfunction_electrostatic type ", words(2), " argument 3 must be a number"
+                                            do general_counter_3 = 1,nelem
+                                                do general_counter_1 = 1,nelem
+                                                    sym_elec_count(general_counter_3) = sym_elec_count(general_counter_3) + 1
+                                                    function_type_elec(sym_elec_count(general_counter_3),general_counter_3) = function_type_temp
+                                                    eta_elec(sym_elec_count(general_counter_3),general_counter_3) = eta_temp
+                                                    funccutoff_elec(sym_elec_count(general_counter_3),general_counter_3) = funccutoff_temp
+                                                    symelement_elec(sym_elec_count(general_counter_3),1,general_counter_3) = nucelem(general_counter_1)
+                                                end do
+                                            end do
+                                        else
+                                            print *, err, err_inpnn, "global_symfunction_electrostatic type ", words(2), " needs 3 arguments"; stop
+                                        end if
+
+                                    case ('5')
+                                        if (nwords == 3) then
+                                            read(words(3),*, iostat=ios) eta_temp
+                                            if (ios /= 0) stop err // err_inpnn // "global_symfunction_electrostatic type ", words(2), " argument 2 must be a number"
+                                            do general_counter_3 = 1,nelem
+                                                sym_elec_count(general_counter_3) = sym_elec_count(general_counter_3) + 1
+                                                function_type_elec(sym_elec_count(general_counter_3),general_counter_3) = function_type_temp
+                                                eta_elec(sym_elec_count(general_counter_3),general_counter_3) = eta_temp
+                                                symelement_elec(sym_elec_count(general_counter_3),1,general_counter_3) = nucelem(general_counter_3)
+                                            end do
+                                        else
+                                            print *, err, err_inpnn, "global_symfunction_electrostatic type ", words(2), " needs 2 arguments"; stop
+                                        end if
+
+                                    case ('6')
+                                        if (nwords == 3) then
+                                            read(words(3),*, iostat=ios) funccutoff_temp
+                                            if (ios /= 0) stop err // err_inpnn // "global_symfunction_electrostatic type ", words(2), " argument 2 must be a number"
+                                            do general_counter_3 = 1,nelem
+                                                sym_elec_count(general_counter_3) = sym_elec_count(general_counter_3) + 1
+                                                function_type_elec(sym_elec_count(general_counter_3),general_counter_3) = function_type_temp
+                                                funccutoff_elec(sym_elec_count(general_counter_3),general_counter_3) = funccutoff_temp
+                                                symelement_elec(sym_elec_count(general_counter_3),1,general_counter_3) = nucelem(general_counter_3)
+                                            end do
+                                        else
+                                            print *, err, err_inpnn, "global_symfunction_electrostatic type ", words(2), " needs 2 arguments"; stop
+                                        end if
+
+                                    case ('8')
+                                        if (nwords == 5) then
+                                            read(words(3),*, iostat=ios) eta_temp
+                                            if (ios /= 0) stop err // err_inpnn // "global_symfunction_electrostatic type ", words(2), " argument 2 must be a number"
+                                            read(words(4),*, iostat=ios) rshift_temp
+                                            if (ios /= 0) stop err // err_inpnn // "global_symfunction_electrostatic type ", words(2), " argument 3 must be a number"
+                                            read(words(5),*, iostat=ios) funccutoff_temp
+                                            if (ios /= 0) stop err // err_inpnn // "global_symfunction_electrostatic type ", words(2), " argument 4 must be a number"
+                                            do general_counter_3 = 1,nelem
+                                                do general_counter_1 = 1,nelem
+                                                    sym_elec_count(general_counter_3) = sym_elec_count(general_counter_3) + 1
+                                                    function_type_elec(sym_elec_count(general_counter_3),general_counter_3) = function_type_temp
+                                                    eta_elec(sym_elec_count(general_counter_3),general_counter_3) = eta_temp
+                                                    rshift_elec(sym_elec_count(general_counter_3),general_counter_3) = rshift_temp
+                                                    funccutoff_elec(sym_elec_count(general_counter_3),general_counter_3) = funccutoff_temp
+                                                    symelement_elec(sym_elec_count(general_counter_3),1,general_counter_3) = nucelem(general_counter_1)
+                                                    symelement_elec(sym_elec_count(general_counter_3),2,general_counter_3) = nucelem(general_counter_1)
+                                                end do
+                                                do general_counter_1 = 1,nelem
+                                                    if (nelem .gt. 1) then
+                                                        do general_counter_2 = 1,general_counter_1-1
+                                                            sym_elec_count(general_counter_3) = sym_elec_count(general_counter_3) + 1
+                                                            function_type_elec(sym_elec_count(general_counter_3),general_counter_3) = function_type_temp
+                                                            eta_elec(sym_elec_count(general_counter_3),general_counter_3) = eta_temp
+                                                            rshift_elec(sym_elec_count(general_counter_3),general_counter_3) = rshift_temp
+                                                            funccutoff_elec(sym_elec_count(general_counter_3),general_counter_3) = funccutoff_temp
+                                                            symelement_elec(sym_elec_count(general_counter_3),1,general_counter_3) = nucelem(general_counter_2)
+                                                            symelement_elec(sym_elec_count(general_counter_3),2,general_counter_3) = nucelem(general_counter_1)
+                                                        end do
+                                                    end if
+                                                end do
+                                            end do
+                                        else
+                                            print *, err, err_inpnn, "global_symfunction_electrostatic type ", words(2), " needs 4 arguments"; stop
+                                        end if
+
+                                    case ('9')
+                                        if (nwords == 6) then
+                                            read(words(3),*, iostat=ios) eta_temp
+                                            if (ios /= 0) stop err // err_inpnn // "global_symfunction_electrostatic type ", words(2), " argument 2 must be a number"
+                                            read(words(4),*, iostat=ios) lambda_temp
+                                            if (ios /= 0) stop err // err_inpnn // "global_symfunction_electrostatic type ", words(2), " argument 3 must be a number"
+                                            read(words(5),*, iostat=ios) zeta_temp
+                                            if (ios /= 0) stop err // err_inpnn // "global_symfunction_electrostatic type ", words(2), " argument 4 must be a number"
+                                            read(words(6),*, iostat=ios) funccutoff_temp
+                                            if (ios /= 0) stop err // err_inpnn // "global_symfunction_electrostatic type ", words(2), " argument 5 must be a number"
+                                            do general_counter_3 = 1,nelem
+                                                do general_counter_1 = 1,nelem
+                                                    sym_elec_count(general_counter_3) = sym_elec_count(general_counter_3) + 1
+                                                    function_type_elec(sym_elec_count(general_counter_3),general_counter_3) = function_type_temp
+                                                    eta_elec(sym_elec_count(general_counter_3),general_counter_3) = eta_temp
+                                                    lambda_elec(sym_elec_count(general_counter_3),general_counter_3) = lambda_temp
+                                                    zeta_elec(sym_elec_count(general_counter_3),general_counter_3) = zeta_temp
+                                                    funccutoff_elec(sym_elec_count(general_counter_3),general_counter_3) = funccutoff_temp
+                                                    symelement_elec(sym_elec_count(general_counter_3),1,general_counter_3) = nucelem(general_counter_1)
+                                                    symelement_elec(sym_elec_count(general_counter_3),2,general_counter_3) = nucelem(general_counter_1)
+                                                end do
+                                                do general_counter_1 = 1,nelem
+                                                    if (nelem .gt. 1) then
+                                                        do general_counter_2 = 1,general_counter_1-1
+                                                            sym_elec_count(general_counter_3) = sym_elec_count(general_counter_3) + 1
+                                                            function_type_elec(sym_elec_count(general_counter_3),general_counter_3) = function_type_temp
+                                                            eta_elec(sym_elec_count(general_counter_3),general_counter_3) = eta_temp
+                                                            lambda_elec(sym_elec_count(general_counter_3),general_counter_3) = lambda_temp
+                                                            zeta_elec(sym_elec_count(general_counter_3),general_counter_3) = zeta_temp
+                                                            funccutoff_elec(sym_elec_count(general_counter_3),general_counter_3) = funccutoff_temp
+                                                            symelement_elec(sym_elec_count(general_counter_3),1,general_counter_3) = nucelem(general_counter_2)
+                                                            symelement_elec(sym_elec_count(general_counter_3),2,general_counter_3) = nucelem(general_counter_1)
+                                                        end do
+                                                    end if
+                                                end do
+                                            end do
+                                        else
+                                            print *, err, err_inpnn, "global_symfunction_electrostatic type ", words(2), " needs 5 arguments"; stop
+                                        end if
+
+                                    case default
+                                        print *, err, err_inpnn, "Error in global_symfunction_electrostatic key, symfunction type ", words(2), " not implemented"
+                                        stop
+
+                                end select
+
+                            end if
 
                         case ('global_pairsymfunction_short')
                             print *, err, err_inpnn, "global_pairsymfunction_short key not supported, Pair NN not implemented"; stop
@@ -3429,12 +4410,14 @@ module pes_nene_mod
                 enddo
             endif
 
-            call checkinputnn() ! reintroduce counter variables so that this subroutine make sense
+            ! call set_runner_counters() ! to avoid unwanted error messages in checkinputnn() subroutine
 
-            call printinputnn(iseed,ielem,&
+            call checkinputnn() ! reintroduce counter variables so that this subroutine make sense, only small amount is needed or make small subroutine to set them and further checking if all input is fine
+
+            call printinputnn(iseed,ielem,& ! makes sense to keep it, but change variable names to pass in
                 nodes_short_atomic_temp,nodes_elec_temp,nodes_short_pair_temp,&
                 kalmanlambda_local,kalmanlambdae_local,&
-                actfunc_short_atomic_dummy,actfunc_elec_dummy,actfunc_short_pair_dummy) ! this subroutine should work by just copy paste
+                actfunc_short_atomic_dummy,actfunc_elec_dummy,actfunc_short_pair_dummy) ! this subroutine should work by just copy paste, ask Sascha/Jorg if we need to write all this informations
 
             write(ounit,'(a15,i4,a30)')' Element pairs: ',npairs,' , shortest distance (Bohr)'
             icount=0
@@ -3448,6 +4431,232 @@ module pes_nene_mod
                 enddo
             enddo
             write(ounit,*)'============================================================='
+
+            if(lshort.and.(nn_type_short.eq.1))then
+                do i1=1,nelem
+                    wcount=0
+                    do i=1,num_layers_short_atomic(i1)
+                        wcount=wcount+1
+                        windex_short_atomic(wcount,i1)=num_weights_short_atomic(i1)+1
+                        num_weights_short_atomic(i1)=num_weights_short_atomic(i1)&
+                          +nodes_short_atomic(i-1,i1)*nodes_short_atomic(i,i1)
+                        wcount=wcount+1
+                        windex_short_atomic(wcount,i1)=num_weights_short_atomic(i1)+1
+                        num_weights_short_atomic(i1)=num_weights_short_atomic(i1)&
+                          +nodes_short_atomic(i,i1) ! bias weights
+                    enddo
+                    if((mode.eq.2).or.(mode.eq.3))then
+                        write(ounit,'(a,a3,i10)')' => short range NN weights type 1                ',&
+                        element(i1),num_weights_short_atomic(i1)
+                    endif
+                    maxnum_weights_short_atomic=max(maxnum_weights_short_atomic,num_weights_short_atomic(i1))
+                enddo
+            endif
+
+            if(lelec.and.(nn_type_elec.eq.1))then
+                do i1=1,nelem
+                    wcount=0
+                    do i=1,num_layers_elec(i1)
+                        wcount=wcount+1
+                        windex_elec(wcount,i1)=num_weights_elec(i1)+1
+                        num_weights_elec(i1)=num_weights_elec(i1)+nodes_elec(i-1,i1)*nodes_elec(i,i1)
+                        wcount=wcount+1
+                        windex_elec(wcount,i1)=num_weights_elec(i1)+1
+                        num_weights_elec(i1)=num_weights_elec(i1)+nodes_elec(i,i1)
+                    enddo
+                    write(ounit,'(a,a3,i10)')' => electrostatic NN weights                     ',element(i1),num_weights_elec(i1)
+                    maxnum_weights_elec=max(maxnum_weights_elec,num_weights_elec(i1))
+                enddo
+            endif
+            write(ounit,*)'-------------------------------------------------------------'
+            if(nn_type_short.eq.1)then
+                maxnum_weights_short_pair=1
+            endif
+            if((.not.lelec).or.(lelec.and.(nn_type_elec.ne.1)))then
+                maxnum_weights_elec=1
+            endif
+            if(lremoveatomenergies)then
+                call readatomenergies() ! instead of this do a further readout of input.nn
+            endif
+
+            if(lshort.and.(nn_type_short.eq.1).and.(mode.ne.1))then
+                do i3=1,nelem
+                    write(ounit,*)'-------------------------------------------------'
+                    write(ounit,*)'Atomic short range NN for element: ',element(i3)
+                    write(ounit,'(a,10i5)')' architecture    ',(nodes_short_atomic(i1,i3),i1=0,num_layers_short_atomic(i3))
+                    write(ounit,*)'-------------------------------------------------'
+                    itemp=0
+                    do i1=0,num_layers_short_atomic(i3)
+                        itemp=max(itemp,nodes_short_atomic(i1,i3))
+                    enddo ! i1
+                    do i1=1,itemp ! loop over all lines with hidden nodes
+                        if(i1.le.nodes_short_atomic(0,i3))then ! still input node to be printed
+                            if(i1.le.maxnodes_short_atomic)then ! still hidden nodes present
+                                write(ounit,'(i4,x,9a3)')i1,'  G',(actfunc_short_atomic(i1,i2,i3),i2=1,num_layers_short_atomic(i3))
+                            else
+                                write(ounit,'(i4,x,a3)')i1,'  G'
+                            endif
+                        else ! no input node in front of hidden nodes
+                            write(ounit,'(i4,4x,8a3)')i1,(actfunc_short_atomic(i1,i2,i3),i2=1,num_layers_short_atomic(i3))
+                        endif
+                    enddo
+                enddo ! i3
+            endif
+
+            if(lelec.and.(nn_type_elec.eq.1).and.(mode.ne.1))then
+                do i3=1,nelem
+                    write(ounit,*)'---------------------------------------------------'
+                    write(ounit,*)'Electrostatic NN for element: ',element(i3)
+                    write(ounit,'(a,10i5)')' architecture    ',(nodes_elec(i1,i3),i1=0,num_layers_elec(i3))
+                    write(ounit,*)'---------------------------------------------------'
+                    itemp=0
+                    do i1=0,num_layers_elec(i3)
+                        itemp=max(itemp,nodes_elec(i1,i3))
+                    enddo ! i1
+                    do i1=1,itemp ! loop over all lines with hidden nodes
+                        if(i1.le.nodes_elec(0,i3))then ! still input node to be printed
+                            if(i1.le.maxnodes_elec)then ! still hidden nodes present
+                                write(ounit,'(i4,x,9a3)')i1,'  G',(actfunc_elec(i1,i2,i3),i2=1,num_layers_elec(i3))
+                            else
+                                write(ounit,'(i4,x,a3)')i1,'  G'
+                            endif
+                        else ! no input node in front of hidden nodes
+                            write(ounit,'(i4,4x,8a3)')i1,(actfunc_elec(i1,i2,i3),i2=1,num_layers_elec(i3))
+                        endif
+                    enddo
+                enddo ! i3
+            endif
+            write(ounit,*)'-------------------------------------------------------------'
+
+            if((nn_type_short.eq.1).and.lshort)then
+                call sortsymfunctions(&
+                  maxnum_funcvalues_short_atomic,num_funcvalues_short_atomic,function_type_short_atomic,symelement_short_atomic,eta_short_atomic,zeta_short_atomic,rshift_short_atomic,lambda_short_atomic,funccutoff_short_atomic)
+            endif
+
+            if(lelec.and.(nn_type_elec.eq.1))then
+                call sortsymfunctions(&
+                  maxnum_funcvalues_elec,num_funcvalues_elec,function_type_elec,symelement_elec,eta_elec,zeta_elec,rshift_elec,lambda_elec,funccutoff_elec)
+            endif
+
+            if(lshort.and.(nn_type_short.eq.1))then
+        do i1=1,nelem
+          write(ounit,*)'-------------------------------------------------------------'
+          write(ounit,*)' short range atomic symmetry &
+                          &functions element ',element(i1),' :'
+          write(ounit,*)'-------------------------------------------------------------'
+          do i2=1,num_funcvalues_short_atomic(i1)
+            if(function_type_short_atomic(i2,i1).eq.1)then
+              write(ounit,'(i5,a3,i3,x,a3,3x,24x,f8.3)')&
+                i2,element(i1),function_type_short_atomic(i2,i1),&
+                element(elementindex(symelement_short_atomic(i2,1,i1))),&
+                funccutoff_short_atomic(i2,i1)
+            elseif(function_type_short_atomic(i2,i1).eq.2)then
+              write(ounit,'(i5,a3,i3,x,a3,3x,8x,3f8.3)')&
+                i2,element(i1),function_type_short_atomic(i2,i1),&
+                element(elementindex(symelement_short_atomic(i2,1,i1))),&
+                eta_short_atomic(i2,i1),rshift_short_atomic(i2,i1),funccutoff_short_atomic(i2,i1)
+            elseif(function_type_short_atomic(i2,i1).eq.3)then
+              write(ounit,'(i5,a3,i3,x,2a3,4f8.3)')&
+                i2,element(i1),function_type_short_atomic(i2,i1),&
+                element(elementindex(symelement_short_atomic(i2,1,i1))),&
+                element(elementindex(symelement_short_atomic(i2,2,i1))),&
+                eta_short_atomic(i2,i1),lambda_short_atomic(i2,i1),&
+                zeta_short_atomic(i2,i1),funccutoff_short_atomic(i2,i1)
+            elseif(function_type_short_atomic(i2,i1).eq.4)then
+              write(ounit,'(i5,a3,i3,x,a3,3x,16x,2f8.3)')&
+                i2,element(i1),function_type_short_atomic(i2,i1),&
+                element(elementindex(symelement_short_atomic(i2,1,i1))),&
+                eta_short_atomic(i2,i1),funccutoff_short_atomic(i2,i1)
+            elseif(function_type_short_atomic(i2,i1).eq.5)then
+              write(ounit,'(i5,a3,i3,4x,27x,f8.3)')&
+                i2,element(i1),function_type_short_atomic(i2,i1),eta_short_atomic(i2,i1)
+            elseif(function_type_short_atomic(i2,i1).eq.6)then
+              write(ounit,'(i5,a3,i3,x,a3,3x,24x,f8.3)')&
+                i2,element(i1),function_type_short_atomic(i2,i1),&
+                element(elementindex(symelement_short_atomic(i2,1,i1))),&
+                funccutoff_short_atomic(i2,i1)
+            elseif(function_type_short_atomic(i2,i1).eq.8)then
+              write(ounit,'(i5,a3,i3,x,2a3,4f8.3)')&
+                i2,element(i1),function_type_short_atomic(i2,i1),&
+                element(elementindex(symelement_short_atomic(i2,1,i1))),&
+                element(elementindex(symelement_short_atomic(i2,2,i1))),&
+                eta_short_atomic(i2,i1),rshift_short_atomic(i2,i1),&
+                funccutoff_short_atomic(i2,i1)
+            elseif(function_type_short_atomic(i2,i1).eq.9)then
+              write(ounit,'(i5,a3,i3,x,2a3,4f8.3)')&
+                i2,element(i1),function_type_short_atomic(i2,i1),&
+                element(elementindex(symelement_short_atomic(i2,1,i1))),&
+                element(elementindex(symelement_short_atomic(i2,2,i1))),&
+                eta_short_atomic(i2,i1),lambda_short_atomic(i2,i1),&
+                zeta_short_atomic(i2,i1),funccutoff_short_atomic(i2,i1)
+            else
+              write(ounit,*)'Error: printing unknown symfunction in readinput '
+              stop
+            endif
+          enddo ! i2
+        enddo ! i1=1,nelem
+      endif ! lshort
+
+          if(lelec.and.(nn_type_elec.eq.1))then
+        do i1=1,nelem
+          write(ounit,*)'-------------------------------------------------------------'
+          write(ounit,*)' electrostatic symmetry functions element ',element(i1),' :'
+          write(ounit,*)'-------------------------------------------------------------'
+          do i2=1,num_funcvalues_elec(i1)
+            if(function_type_elec(i2,i1).eq.1)then
+              write(ounit,'(i5,a3,i3,x,a3,3x,24x,f8.3)')&
+                i2,element(i1),function_type_elec(i2,i1),&
+                element(elementindex(symelement_elec(i2,1,i1))),&
+                funccutoff_elec(i2,i1)
+            elseif(function_type_elec(i2,i1).eq.2)then
+              write(ounit,'(i5,a3,i3,x,a3,3x,8x,3f8.3)')&
+                i2,element(i1),function_type_elec(i2,i1),&
+                element(elementindex(symelement_elec(i2,1,i1))),&
+                eta_elec(i2,i1),rshift_elec(i2,i1),funccutoff_elec(i2,i1)
+            elseif(function_type_elec(i2,i1).eq.3)then
+              write(ounit,'(i5,a3,i3,x,2a3,4f8.3)')&
+                i2,element(i1),function_type_elec(i2,i1),&
+                element(elementindex(symelement_elec(i2,1,i1))),&
+                element(elementindex(symelement_elec(i2,2,i1))),&
+                eta_elec(i2,i1),lambda_elec(i2,i1),&
+                zeta_elec(i2,i1),funccutoff_elec(i2,i1)
+            elseif(function_type_elec(i2,i1).eq.4)then
+              write(ounit,'(i5,a3,i3,x,a3,3x,16x,2f8.3)')&
+                i2,element(i1),function_type_elec(i2,i1),&
+                element(elementindex(symelement_elec(i2,1,i1))),&
+                eta_elec(i2,i1),funccutoff_elec(i2,i1)
+            elseif(function_type_elec(i2,i1).eq.5)then
+              write(ounit,'(i5,a3,i3,4x,27x,f8.3)')&
+                i2,element(i1),function_type_elec(i2,i1),eta_elec(i2,i1)
+            elseif(function_type_elec(i2,i1).eq.6)then
+              write(ounit,'(i5,a3,i3,x,a3,3x,24x,f8.3)')&
+                i2,element(i1),function_type_elec(i2,i1),&
+                element(elementindex(symelement_elec(i2,1,i1))),&
+                funccutoff_elec(i2,i1)
+            elseif(function_type_elec(i2,i1).eq.8)then
+              write(ounit,'(i5,a3,i3,x,2a3,4f8.3)')&
+                i2,element(i1),function_type_elec(i2,i1),&
+                element(elementindex(symelement_elec(i2,1,i1))),&
+                element(elementindex(symelement_elec(i2,2,i1))),&
+                eta_elec(i2,i1),rshift_elec(i2,i1),&
+                funccutoff_elec(i2,i1)
+            elseif(function_type_elec(i2,i1).eq.9)then
+              write(ounit,'(i5,a3,i3,x,2a3,4f8.3)')&
+                i2,element(i1),function_type_elec(i2,i1),&
+                element(elementindex(symelement_elec(i2,1,i1))),&
+                element(elementindex(symelement_elec(i2,2,i1))),&
+                eta_elec(i2,i1),lambda_elec(i2,i1),&
+                zeta_elec(i2,i1),funccutoff_elec(i2,i1)
+            else
+              write(ounit,*)'Error: printing unknown symfunctione in readinput '
+              stop
+            endif
+          enddo ! i2
+        enddo ! i1=1,nelem
+      endif ! lelec
+      write(ounit,*)'-------------------------------------------------------------'
+      ! end of readout according to readinput.f90
+
 
 
 
