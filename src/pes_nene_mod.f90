@@ -193,11 +193,15 @@ module pes_nene_mod
 !       3) readkeywords.f90
 !       4) readinput.f90
 
+        ! according to main.f90
+        call mpi_init(mpierror)
+        call mpi_comm_size(mpi_comm_world,mpisize,mpierror)
+        call mpi_comm_rank(mpi_comm_world,mpirank,mpierror)
+
         ! set all variables to default values -> rethink this subroutine!!
         call set_defaults()
 
-        ! according to initnn.f90 (initialization subroutine in main.f90)
-
+        ! start readout of input.nn according to initnn.f90 (initialization subroutine in main.f90)
         call get_nnconstants() ! in principal included in constants.f90, but due to variable name conflicts, this should stay!!
         ! call writeheader() ! ask if this has to be printed when we use RuNNer!!
 
@@ -5521,7 +5525,7 @@ module pes_nene_mod
             deallocate(sense)
         endif
 
-
+        ! in every md step we had to convert the positions from Angstrom to Bohr, look for the lattice (should only be converted once) and
 
 
         ! return the two following variables only
@@ -5530,67 +5534,58 @@ module pes_nene_mod
 
     end subroutine compute_nene
 
-    ! according to cleanupt.f90 called in main.f90
-!    subroutine cleanup
-
-        ! from RuNNer cleanup.f90
-!        if(rinpparam%lshort .and. (rinpparam%nn_type_short == 1)) then
-!            deallocate(rinpparam%weights_short_atomic)
-!            deallocate(rinpparam%symfunction_short_atomic_list)
-!            deallocate(rinpparam%num_funcvalues_short_atomic)
-!            deallocate(rinpparam%windex_short_atomic)
-!            deallocate(rinpparam%num_layers_short_atomic)
-!            deallocate(rinpparam%actfunc_short_atomic)
-!            deallocate(rinpparam%nodes_short_atomic)
-!            deallocaterinpparam%(num_weights_short_atomic)
-!            deallocate(rinpparam%function_type_short_atomic)
-!            deallocate(rinpparam%symelement_short_atomic)
-!            deallocate(rinpparam%funccutoff_short_atomic)
-!            deallocate(rinpparam%eta_short_atomic)
-!            deallocate(rinpparam%zeta_short_atomic)
-!            deallocate(rinpparam%lambda_short_atomic)
-!            deallocate(rinpparam%rshift_short_atomic)
-!        endif
+    ! according to main.f90
+!   subroutine nene_cleanup() ! in the end add in the source code if pes_id_nene or pes_name_nene
 !
-!        if(rinpparam%lelec .and. (rinpparam%nn_type_elec == 1)) then
-!            deallocate(rinpparam%weights_elec)
-!            deallocate(rinpparam%symfunction_elec_list)
-!            deallocate(rinpparam%num_funcvalues_elec)
-!            deallocate(rinpparam%windex_elec)
-!            deallocate(rinpparam%num_layers_elec)
-!            deallocate(rinpparam%actfunc_elec)
-!            deallocate(rinpparam%nodes_elec)
-!            deallocate(rinpparam%num_weights_elec)
-!            deallocate(rinpparam%function_type_elec)
-!            deallocate(rinpparam%symelement_elec)
-!            deallocate(rinpparam%funccutoff_elec)
-!            deallocate(rinpparam%eta_elec)
-!            deallocate(rinpparam%zeta_elec)
-!            deallocate(rinpparam%lambda_elec)
-!            deallocate(rinpparam%rshift_elec)
-!        endif
-!
-!        ! added by SW related to readsymfunctionatomic.f90, readsymfunctionelementatomic.f90 and readsymfunctionglobalatomic.f90
-!        if(rinpparam%lshort .and. (rinpparam%nn_type_short == 1)) then
+!       ! according to cleanup.f90
+!       if(lshort.and.(nn_type_short.eq.1))then
+!           deallocate(weights_short_atomic)
+!           deallocate(symfunction_short_atomic_list)
+!           deallocate(num_funcvalues_short_atomic)
+!           deallocate(windex_short_atomic)
+!           deallocate(num_layers_short_atomic)
+!           deallocate(actfunc_short_atomic)
+!           deallocate(nodes_short_atomic)
+!           deallocate(num_weights_short_atomic)
 !           deallocate(function_type_short_atomic)
 !           deallocate(symelement_short_atomic)
 !           deallocate(funccutoff_short_atomic)
 !           deallocate(eta_short_atomic)
 !           deallocate(zeta_short_atomic)
-!           deallocate(rshift_short_atomic)
 !           deallocate(lambda_short_atomic)
-!        end if
+!           deallocate(rshift_short_atomic)
+!       endif
 !
-!        if(rinpparam%lelec .and. (rinpparam%nn_type_elec == 1)) then
+!       if(lelec.and.(nn_type_elec.eq.1))then
+!           deallocate(weights_elec)
+!           deallocate(symfunction_elec_list)
+!           deallocate(num_funcvalues_elec)
+!           deallocate(windex_elec)
+!           deallocate(num_layers_elec)
+!           deallocate(actfunc_elec)
+!           deallocate(nodes_elec)
+!           deallocate(num_weights_elec)
 !           deallocate(function_type_elec)
 !           deallocate(symelement_elec)
 !           deallocate(funccutoff_elec)
 !           deallocate(eta_elec)
 !           deallocate(zeta_elec)
-!           deallocate(rshift_elec)
 !           deallocate(lambda_elec)
-!        end if
+!           deallocate(rshift_elec)
+!       endif
 !
-!    end subroutine cleanup_nene
+!       deallocate(nucelem)
+!       deallocate(element)
+!       deallocate(dmin_element)
+!       if(allocated(atomrefenergies))deallocate(atomrefenergies)
+!       if(allocated(fixedcharge))deallocate(fixedcharge)
+!       if(allocated(elempair))deallocate(elempair)
+!
+!       call mpi_barrier(mpi_comm_world,mpierror)
+!
+!       ! according to main.f90
+!       call mpi_finalize(mpierror)
+!
+!   end subroutine nene_cleanup
 
 end module pes_nene_mod
