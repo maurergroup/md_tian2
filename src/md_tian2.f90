@@ -45,11 +45,11 @@ program md_tian2
     real(dp) :: vec(3)
 
 
-    call write_info()
+    call write_info() ! write header
 
-    call simbox_init(atoms)
+    call simbox_init(atoms) ! set up the simulation box
 
-    select case (simparams%run)
+    select case (simparams%run) ! maybe change it here to just call read_input() and afterwards call md_simulation()
 
         case ('min')
 
@@ -98,7 +98,7 @@ program md_tian2
 
                 if (any(simparams%output_type == output_id_scatter)) call output(atoms, itraj, istep, "scatter_final")
 
-                if (itraj < simparams%start+simparams%ntrajs-1) then
+                if (itraj < simparams%start+simparams%ntrajs-1) then ! couldn't we just use itraj as seed for the RNG??
                     call random_seed(put=randseed)  ! Seed random number generator
                     do i = 1, 100*(itraj+1)
                         call random_number(tmp)   ! rotate it according to trajectory number
