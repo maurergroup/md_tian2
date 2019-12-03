@@ -26,8 +26,11 @@ module pes_nene_mod
     !use constants, only : max_string_length, pes_id_nene, default_string, default_int, default_real, default_bool, inpnn_unit, scaling_unit, weight_unit,
     !use constants, disabled1 => pi, disabled2 => rad2deg ! with as the opposite of "use module, only :"
     use universe_mod
+    use get_defaults
 
     implicit none
+
+    contains
 
     !type runner_input_parameters
 
@@ -46,6 +49,7 @@ module pes_nene_mod
 !   change how the seeed for the random number generator will be (add new variable?)
 !   variable declarations concerning RuNNer in the corresponding modules, but set to (our) default values has to be done before reading out keywords (own subroutine called in compute_nene)
 !   move RuNNer related files to folder and change the makefile
+!   check how many mpi routines has to stay in the code, at least set the few default values so that no error will occur due to wrong default mpi settings, therefore the mpi_dummy_routines.f90 file makes sense
 
 
     ! Here all necessary files and keywords are read in for the high-dimensional neural network potentials (HDNNPs)
@@ -55,6 +59,7 @@ module pes_nene_mod
         use open_file, only : lower_case, open_for_read, split_string
         !use run_config, only : simparams
         use useful_things, only : file_exists
+        use get_defaults
 
 
         type(universe), intent(inout) :: atoms
@@ -183,17 +188,17 @@ module pes_nene_mod
             filename_weights(weight_counter)  = trim(inp_path) // trim(weights_path(weight_counter))
         end do
 
-        ! in case of the HDNNPs several iadditional input files have to be read
+        ! in case of the HDNNPs several additional input files have to be read
 
         ! read all input keywords from input.nn several times to respect dependencies
 
 !       read in keywords related to input.nn according to the following files from RuNNer (chronologically)
 !       1) getdimensions.f90
-!       2) paircount.f90; not all, but have a further look
+!       2) paircount.f90
 !       3) readkeywords.f90
 !       4) readinput.f90
 
-        ! according to main.f90
+        ! start readout according to main.f90
         call mpi_init(mpierror)
         call mpi_comm_size(mpi_comm_world,mpisize,mpierror)
         call mpi_comm_rank(mpi_comm_world,mpirank,mpierror)
@@ -201,12 +206,15 @@ module pes_nene_mod
         ! set all variables to default values -> rethink this subroutine!!
         call set_defaults()
 
-        ! start readout of input.nn according to initnn.f90 (initialization subroutine in main.f90)
-        call get_nnconstants() ! in principal included in constants.f90, but due to variable name conflicts, this should stay!!
-        ! call writeheader() ! ask if this has to be printed when we use RuNNer!!
+        !call initnn(iseed)
 
-        ! call initialization(ielem,lelement) -> here only getdimensions, paircount and checkstructures are needed
+        ! start readout of input.nn according to initnn.f90
+        call get_nnconstants()
+        !call writeheader()
 
+        !call initialization(ielem,lelement) -> here only getdimensions, paircount and checkstructures are needed
+
+        ! start readout according to initialization.f90
 
         ! start readout according to getdimensions.f90
 
@@ -235,11 +243,11 @@ module pes_nene_mod
                                     ! Gandalf says: you shall pass
 
                                 case (2)
-                                    print *, err // err_inpnn // "nn_type_short 2 not supported, Pair NN not implemented!"
+                                    print *, err, err_inpnn, "nn_type_short 2 not supported, Pair NN not implemented!"
                                     stop
 
                                 case default
-                                    print *, err // err_inpnn // "Error in nn_type_short key value, ", words(2), " not implemented"
+                                    print *, err, err_inpnn, "Error in nn_type_short key value, ", words(2), " not implemented"
                                     stop
 
                             end select
@@ -1187,8 +1195,8 @@ module pes_nene_mod
         !call checkonestructure(i1,lelement)
 
         ! according to checkonestructure.f90
-        atoms%simbox(3,3) -> read(dataunit,*,err=90)keyword,(lattice(nlattice,i),i=1,3) (nlattice = 1)
-        atoms%r(:,:,:) ->
+        atoms%simbox(3,3) -> read(dataunit,*,err=90)keyword,(lattice(nlattice,i),i=1,3) (nlattice = 1) ! don't forget to convert
+        atoms%r(:,:,:) -> ! don't forget to convert
 
         if(keyword.eq.'lattice') then
             nlattice=nlattice+1
@@ -1221,9 +1229,9 @@ module pes_nene_mod
         enddo
         ! end checkstructures.f90
 
-        ! further according to initnn.f90
+        ! further readout according to initnn.f90
 
-        !call distribute_nnflags() ! -> not really needed, only mpi functions (add as dummy?)
+        call distribute_nnflags() ! check if this is really needed
 
         if(rinpparam%lshort.and.(rinpparam%nn_type_short.eq.1))then
         allocate (rinpparam%num_funcvalues_short_atomic(rinpparam%nelem))
@@ -1261,12 +1269,12 @@ module pes_nene_mod
 
         call allocatesymfunctions()
 
-        call readinput(ielem,iseed,lelement) !ielem iseed defined in main.f90/initnn.f90
+        !call readinput(ielem,iseed,lelement) !ielem iseed defined in main.f90/initnn.f90 -> I defined it in get_defaults.f90
 
         ! start readout of input.nn according to readinput.f90
 
 
-            call initializecounters() ! initializecounters.f90 -> not needed, since we use default values to check for multiple use of keywords -> reintroduce again!!
+            call initializecounters() ! even if we use default values, this should stay!!
 
             if(rinpparam%lshort.and.(rinpparam%nn_type_short.eq.1))then
                 rinpparam%nodes_short_atomic_temp(:)   =0
@@ -1281,7 +1289,7 @@ module pes_nene_mod
             rinpparam%kalmanlambdae_local=0.98000d0
             rinpparam%iseed=200
 
-            call inputnndefaults() ! inputnndefaults.f90; look up which default values are needed for mode 3 and cross check with our default values
+            call inputnndefaults() ! own subroutine in pes_nene_mod_supply.f90
 
             if(rinpparam%lshort.and.(rinpparam%nn_type_short.eq.1))then
                 rinpparam%windex_short_atomic(:,:)    =0
@@ -1835,6 +1843,18 @@ module pes_nene_mod
                             if (nwords == 2) then
                                 read(words(2),'(i1000)', iostat=ios) rinpparam%fitmode
                                 if (ios /= 0) stop err // err_inpnn // "fitmode value must be integer"
+
+                                select case (words(2))
+
+                                    case (1, 2)
+                                        ! Just let it pass
+
+                                    case default
+                                        print *, err, err_inpnn, "Error in fitmode key value, only 1 and 2 possible"
+                                        stop
+
+                                end select
+
                             else
                                 print *, err, err_inpnn, "fitmode key needs a single argument"; stop
                             end if
@@ -1904,7 +1924,7 @@ module pes_nene_mod
                                 print *, err, err_inpnn, "random_seed key needs a single argument"; stop
                             end if
 
-                        case ('points_in_memory', 'nblock')
+                        case ('points_in_memory', 'nblock') ! think about to set it according to number of atoms from structure file
                             if (rinpparam%nblock /= default_int) stop err // err_inpnn // 'Multiple use of the points_in_memory/nblock key'
                             if (nwords == 2) then
                                 read(words(2),'(i1000)', iostat=ios) rinpparam%nblock
@@ -2857,7 +2877,7 @@ module pes_nene_mod
             ! end of readout according to readkeywords.f90
 
             ! further readout according to readinput.f90
-            if(rinpparam%lshort.and.(rinpparam%nn_type_short.eq.1))then
+            if (lshort .and. (nn_type_short == 1)) then
                 do general_counter=1,rinpparam%nelem
                     rinpparam%nodes_short_atomic(rinpparam%maxnum_layers_short_atomic,general_counter)=1
                     if(rinpparam%lelec.and.(rinpparam%nn_type_elec.eq.2))then
@@ -2891,7 +2911,7 @@ module pes_nene_mod
                                 do general_counter_1 = 1,maxnum_layers_short_atomic
                                     do general_counter_3 = 1,nelem
                                         do general_counter_2 = 1,nodes_short_atomic
-                                            read(words(general_counter_1+1),'(A)', iostat=ios) rinpparam%actfunc_short_atomic_dummy(general_counter_1)
+                                            read(words(general_counter_1+1),'(A)', iostat=ios) actfunc_short_atomic_dummy(general_counter_1)
                                             actfunc_short_atomic(general_counter_2, general_counter_1, general_counter_3) = actfunc_short_atomic_dummy(general_counter_1)
                                             !actfunc_short_atomic(general_counter_2, general_counter_1, general_counter_3) = words(general_counter_1+1)
                                         end do
@@ -2911,7 +2931,7 @@ module pes_nene_mod
                                 do general_counter_1 = 1,maxnum_layers_elec
                                     do general_counter_3 = 1,nelem
                                         do general_counter_2 = 1,nodes_elec
-                                            read(words(general_counter_1+1),'(A)', iostat=ios) rinpparam%actfunc_elec_dummy(general_counter_1)
+                                            read(words(general_counter_1+1),'(A)', iostat=ios) actfunc_elec_dummy(general_counter_1)
                                             actfunc_elec(general_counter_2, general_counter_1, general_counter_3) = actfunc_elec_dummy(general_counter_1)
                                             !actfunc_elec(general_counter_2, general_counter_1, general_counter_3) = words(general_counter_1+1)
                                         end do
@@ -2960,8 +2980,8 @@ module pes_nene_mod
                             case ('fixed_charge')
                                 !if ((rinpparam%elementtemp /= default_string) .and. (rinpparam%chargetemp /= default_real)) stop err // err_inpnn // 'Multiple use of the fixed_charge key'
                                 if (nwords == 3) then
-                                    read(words(2),'(A)', iostat=ios) rinpparam%elementtemp
-                                    read(words(3),*, iostat=ios) rinpparam%chargetemp
+                                    read(words(2),'(A)', iostat=ios) elementtemp
+                                    read(words(3),*, iostat=ios) chargetemp
                                     if (ios /= 0) stop err // err_inpnn // "fixed_charge second argument value must be a number"
                                     call nuccharge(elementtemp,ztemp)
                                     fixedcharge(elementindex(ztemp))=chargetemp
@@ -3065,12 +3085,12 @@ module pes_nene_mod
 
                         case ('element_nodes_short')
                             if (nwords == 4) then
-                                read(words(2),'(A)', iostat=ios) rinpparam%elementtemp
+                                read(words(2),'(A)', iostat=ios) elementtemp
                                 call checkelement(elementtemp)
                                 call nuccharge(elementtemp,ztemp)
-                                read(words(3),'(i1000)', iostat=ios) rinpparam%layer
+                                read(words(3),'(i1000)', iostat=ios) layer
                                 if (ios /= 0) stop err // err_inpnn // "element_nodes_short second argument value for element ", element(elementindex(ztemp)), " must be integer"
-                                read(words(4),'(i1000)', iostat=ios) rinpparam%node
+                                read(words(4),'(i1000)', iostat=ios) node
                                 if (ios /= 0) stop err // err_inpnn // "element_nodes_short third argument value for element ", element(elementindex(ztemp)), " must be integer"
                                 if (layer .eq. num_layers_short_atomic(elementindex(ztemp))) then
                                     print *, err, err_inpnn, "Error when reading element_nodes_short: do not modifiy the number of output nodes for element ", element(elementindex(ztemp)); stop
@@ -3088,12 +3108,12 @@ module pes_nene_mod
 
                         case ('element_nodes_electrostatic')
                             if (nwords == 4) then
-                                read(words(2),'(A)', iostat=ios) rinpparam%elementtemp
+                                read(words(2),'(A)', iostat=ios) elementtemp
                                 call checkelement(elementtemp)
                                 call nuccharge(elementtemp,ztemp)
-                                read(words(3),'(i1000)', iostat=ios) rinpparam%layer
+                                read(words(3),'(i1000)', iostat=ios) layer
                                 if (ios /= 0) stop err // err_inpnn // "element_nodes_electrostatic second argument value for element ", element(elementindex(ztemp)), " must be integer"
-                                read(words(4),'(i1000)', iostat=ios) rinpparam%node
+                                read(words(4),'(i1000)', iostat=ios) node
                                 if (ios /= 0) stop err // err_inpnn // "element_nodes_electrostatic third argument value for element ", element(elementindex(ztemp)), " must be integer"
                                 if (layer .eq. num_layers_elec(elementindex(ztemp))) then
                                     print *, err, err_inpnn, "Error when reading element_nodes_electrostatic: do not modifiy the number of output nodes for element ", element(elementindex(ztemp)); stop
@@ -4416,14 +4436,14 @@ module pes_nene_mod
 
             ! call set_runner_counters() ! to avoid unwanted error messages in checkinputnn() subroutine
 
-            call checkinputnn() ! reintroduce counter variables so that this subroutine make sense, only small amount is needed or make small subroutine to set them and further checking if all input is fine
+            call checkinputnn(err, err_inpnn) ! own subroutine in pes_nene_mod_supply.f90
 
             call printinputnn(iseed,ielem,& ! makes sense to keep it, but change variable names to pass in
                 nodes_short_atomic_temp,nodes_elec_temp,nodes_short_pair_temp,&
                 kalmanlambda_local,kalmanlambdae_local,&
                 actfunc_short_atomic_dummy,actfunc_elec_dummy,actfunc_short_pair_dummy) ! this subroutine should work by just copy paste, ask Sascha/Jorg if we need to write all this informations
 
-            write(ounit,'(a15,i4,a30)')' Element pairs: ',npairs,' , shortest distance (Bohr)'
+            print *, '(a15,i4,a30)')' Element pairs: ',npairs,' , shortest distance (Bohr)'
             icount=0
             do i=1,nelem
                 do j=i,nelem
@@ -4434,7 +4454,7 @@ module pes_nene_mod
                     endif
                 enddo
             enddo
-            write(ounit,*)'============================================================='
+            print *, '============================================================='
 
             if(lshort.and.(nn_type_short.eq.1))then
                 do i1=1,nelem
@@ -5537,6 +5557,22 @@ module pes_nene_mod
     ! according to main.f90
 !   subroutine nene_cleanup() ! in the end add in the source code if pes_id_nene or pes_name_nene
 !
+!       use mpi_mod
+!       use fileunits
+!       use timings
+!       use nnshort_atomic
+!       use nnewald
+!       use nnshort_pair
+!       use symfunctions
+!       use fittingoptions
+!       use nnflags
+!       use globaloptions
+!
+!       implicit none
+!
+!
+!       ! according to main.f90
+!       !call cleanup()
 !       ! according to cleanup.f90
 !       if(lshort.and.(nn_type_short.eq.1))then
 !           deallocate(weights_short_atomic)
