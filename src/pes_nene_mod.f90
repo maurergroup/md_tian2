@@ -4441,7 +4441,7 @@ module pes_nene_mod
             call printinputnn(iseed,ielem,& ! makes sense to keep it, but change variable names to pass in
                 nodes_short_atomic_temp,nodes_elec_temp,nodes_short_pair_temp,&
                 kalmanlambda_local,kalmanlambdae_local,&
-                actfunc_short_atomic_dummy,actfunc_elec_dummy,actfunc_short_pair_dummy) ! this subroutine should work by just copy paste, ask Sascha/Jorg if we need to write all this informations
+                actfunc_short_atomic_dummy,actfunc_elec_dummy,actfunc_short_pair_dummy) ! this subroutine should work by just copy paste, ask Sascha/Jorg if we need to write all this information
 
             print *, '(a15,i4,a30)')' Element pairs: ',npairs,' , shortest distance (Bohr)'
             icount=0
@@ -4500,7 +4500,66 @@ module pes_nene_mod
                 maxnum_weights_elec=1
             endif
             if(lremoveatomenergies)then
-                call readatomenergies() ! instead of this do a further readout of input.nn
+                !call readatomenergies()
+
+                call open_for_read(inpnn_unit, filename_inpnn); ios = 0
+
+                do while (ios == 0)
+                    read(inpnn_unit, '(A)', iostat=ios) buffer
+                    if (ios == 0) then
+                        call split_string(buffer, words, nwords)
+
+                        select case (words(1))
+
+                            case ('')
+                                if (rinpparam% /= default_int) stop err // err_inpnn // 'Multiple use of the  key'
+                                if (nwords == 2) then
+                                    read(words(2),'(i1000)', iostat=ios) rinpparam%
+                                    if (ios /= 0) stop err // err_inpnn // " value must be integer"
+                                else
+                                    print *, err, err_inpnn, " key needs a single argument"; stop
+                                end if
+
+                    case ('')
+                        if (rinpparam% /= default_real) stop err // err_inpnn // 'Multiple use of the  key'
+                        if (nwords == 2) then
+                            read(words(2),*, iostat=ios) rinpparam%
+                            if (ios /= 0) stop err // err_inpnn // " value must be a number"
+                        else
+                            print *, err, err_inpnn, " key needs a single argument"; stop
+                        end if
+
+                    case ('')
+                        if (rinpparam% /= default_bool) stop err // err_inpnn // 'Multiple use of the  key'
+                        if (nwords == 1) then
+                            rinpparam% = .true.
+                        else
+                            print *, err, err_inpnn, " key needs no argument(s)"; stop
+                        end if
+
+                    case ('')
+                        if (rinpparam% /= default_string) stop err // err_inpnn // 'Multiple use of the  key'
+                        if (nwords == 2) then
+                            read(words(2),'(A)', iostat=ios) rinpparam%
+                        else
+                            print *, err, err_inpnn, " key needs a single argument"; stop
+                        end if
+
+                    case ('')
+                            print *, err, err_inpnn, " key is obsolete, please remove it"; stop
+
+                            case default
+                                ! just let it pass
+
+                end select
+
+            else
+                write(*,*) err // err_inpnn // 'iostat = ', ios
+                stop
+            end if
+        end do
+
+        close(inpnn_unit)
             endif
 
             if(lshort.and.(nn_type_short.eq.1).and.(mode.ne.1))then
@@ -4717,7 +4776,7 @@ module pes_nene_mod
 
 
 
-        ! in the following the dummy readout
+        ! the dummy readout
         call open_for_read(inpnn_unit, filename_inpnn); ios = 0
 
         do while (ios == 0)
