@@ -266,11 +266,7 @@ module pes_nene_mod_supply
         endif
       endif
 
-      if(lelec.and.(nn_type_elec.eq.2).and.lshort.and.(nn_type_short.eq.2))then
-        write(ounit,*)'ERROR: charges can be derived from second output node'
-        write(ounit,*)'of short range NN in atomic case only!'
-        stop
-      endif
+
 
       if(lfixweights.and.lshuffle_weights_short_atomic)then
         write(ounit,*)'ERROR: shuffle_weights_short_atomic cannot be combined with fixed weights'
@@ -292,10 +288,7 @@ module pes_nene_mod_supply
         endif
       endif
 
-      if((cutoff_type.ne.1).and.(nn_type_short.ne.1))then
-        write(ounit,*)'ERROR: cutoff_type .ne.1 can be used only for nn_type_short 1'
-        stop
-      endif
+
 
       if(noisee.lt.0.0d0)then
         write(ounit,*)'ERROR: noise_energy must not be negative ',noisee
