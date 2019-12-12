@@ -234,11 +234,10 @@ module pes_nene_mod_supply
         character(len=*), parameter, intent(in) :: err_main, err_file
         character(len=*), parameter,            :: err_check = "Error in checkinputnn: "
 
+
         if (nran .neq. 5) then
             print *, err_main, err_file, err_check, "random_number_type not implemented, only 5 available"
         end if
-
-
 
       if(lfindcontradictions)then
         if(deltagthres.gt.0.0d0)then
@@ -266,8 +265,6 @@ module pes_nene_mod_supply
         endif
       endif
 
-
-
       if(lfixweights.and.lshuffle_weights_short_atomic)then
         write(ounit,*)'ERROR: shuffle_weights_short_atomic cannot be combined with fixed weights'
         stop
@@ -287,8 +284,6 @@ module pes_nene_mod_supply
           stop
         endif
       endif
-
-
 
       if(noisee.lt.0.0d0)then
         write(ounit,*)'ERROR: noise_energy must not be negative ',noisee
