@@ -26,7 +26,7 @@ module pes_nene_mod
     !use constants, only : max_string_length, pes_id_nene, default_string, default_int, default_real, default_bool, inpnn_unit, scaling_unit, weight_unit,
     !use constants, disabled1 => pi, disabled2 => rad2deg ! with as the opposite of "use module, only :"
     use universe_mod
-    use get_defaults
+    use pes_nene_mod_supply
 
     implicit none
 
@@ -60,7 +60,12 @@ module pes_nene_mod
         use open_file, only : lower_case, open_for_read, split_string
         !use run_config, only : simparams
         use useful_things, only : file_exists
-        use get_defaults
+
+        ! needed in initnn.f90 and readinput.f90
+        use fittingoptions
+        use inputnncounters
+        use mode1options
+        use nnconstants
 
 
         type(universe), intent(inout) :: atoms
@@ -1196,24 +1201,36 @@ module pes_nene_mod
         !call checkonestructure(i1,lelement)
 
         ! according to checkonestructure.f90
-        atoms%simbox(3,3) -> read(dataunit,*,err=90)keyword,(lattice(nlattice,i),i=1,3) (nlattice = 1) ! don't forget to convert
-        atoms%r(:,:,:) -> ! don't forget to convert
 
-        if(keyword.eq.'lattice') then
-            nlattice=nlattice+1
-            backspace(dataunit)
-            read(dataunit,*,err=90)keyword,(lattice(nlattice,i),i=1,3)
-        endif
+        !if(keyword.eq.'lattice') then
+        !    nlattice=nlattice+1
+        !    backspace(dataunit)
+        !    read(dataunit,*,err=90)keyword,(lattice(nlattice,i),i=1,3)
+        !endif
 
-        if(keyword.eq.'atom') then
-            num_atoms=num_atoms+1
-            backspace(dataunit)
-            read(dataunit,*,err=91)keyword,(xyzstruct(i,num_atoms),i=1,3),&
-                elementsymbol(num_atoms),atomcharge(num_atoms),&
-                atomenergy(num_atoms),(totalforce(i,num_atoms),i=1,3)
-            call nuccharge(elementsymbol(num_atoms),zelem(num_atoms))
-            lelement(zelem(num_atoms))=.true. ! element found
-        endif
+        do k = 1,3
+            lattice(k,:) = atoms%simbox(:,k) * ang2bohr ! check if this is right!
+        end do
+
+        !if(keyword.eq.'atom') then
+        !    num_atoms=num_atoms+1
+        !    backspace(dataunit)
+        !    read(dataunit,*,err=91)keyword,(xyzstruct(i,num_atoms),i=1,3),&
+        !        elementsymbol(num_atoms),atomcharge(num_atoms),&
+        !        atomenergy(num_atoms),(totalforce(i,num_atoms),i=1,3)
+        !    call nuccharge(elementsymbol(num_atoms),zelem(num_atoms))
+        !    lelement(zelem(num_atoms))=.true. ! element found
+        !endif
+
+        do j = 1,atoms%natoms
+            xyzstruct(:,j) = atoms%r(:,:,j) * ang2bohr
+            elementsymbol(j) = atoms%name(atoms%idx(j))
+            call nuccharge(elementsymbol(j),zelem(j))
+            lelement(zelem(j)) = .true.
+        end do
+
+        ! a periodic structure is assumed
+        call translate(atoms%natoms,lattice,xyzstruct)
 
         !! check if lattice vectors make sense
         if(lperiodic)then
@@ -1223,6 +1240,7 @@ module pes_nene_mod
                 stop
             endif
         endif
+        ! end checkonestructure.f90
 
         ielem=0
         do i1=1,102
@@ -5295,64 +5313,6 @@ module pes_nene_mod
 
         end do ! weights loop
 
-!       ! from RuNNer main.f90
-!       ! start mpi routines
-!        call mpi_init(mpierror)
-!            if(mpierror.ne.0)then
-!                print *, 'Error in mpi_init ',mpierror
-!                stop
-!            endif
-!       ! get number of processes mpisize
-!        call mpi_comm_size(mpi_comm_world,mpisize,mpierror)
-        ! get process id mpirank
-!        call mpi_comm_rank(mpi_comm_world,mpirank,mpierror)
-
-!       from predict.f90
-!       allocate(sens(nelem,maxnum_funcvalues_short_atomic))
-
-
-!       from initmode3.f90
-!      maxcutoff_short_atomic       =0.0d0
-!! get maxcutoff_short_atomic
-!     if(lshort.and.(nn_type_short.eq.1))then
-!       do i2=1,nelem
-!        do i1=1,num_funcvalues_short_atomic(i2)
-!          maxcutoff_short_atomic=max(maxcutoff_short_atomic,funccutoff_short_atomic(i1,i2))
-!        enddo ! i1
-!      enddo
-!     endif ! lshort
-
-!     minvalue_short_atomic(:,:)   =0.0d0
-!     maxvalue_short_atomic(:,:)   =0.0d0
-!     avvalue_short_atomic(:,:)    =0.0d0
-!     minvalue_short_pair(:,:)     =0.0d0
-!     maxvalue_short_pair(:,:)     =0.0d0
-!     avvalue_short_pair(:,:)      =0.0d0
-!     minvalue_elec(:,:) =0.0d0
-!     maxvalue_elec(:,:) =0.0d0
-!     avvalue_elec(:,:)  =0.0d0
-!     chargemin(:)       =0.0d0
-!     chargemax(:)       =0.0d0
-!     if(mpirank.eq.0)then
-!       if(lshort.and.(nn_type_short.eq.1))then
-!         call readscale(nelem,1,&
-!           maxnum_funcvalues_short_atomic,num_funcvalues_short_atomic,&
-!           minvalue_short_atomic,maxvalue_short_atomic,avvalue_short_atomic,&
-!           eshortmin,eshortmax,rdummy,rdummy)
-!       endif ! lshort
-!     endif ! mpirank.eq.0
-
-!     if(lshort.and.(nn_type_short.eq.1))then
-!       call
-!     mpi_bcast(minvalue_short_atomic,nelem*maxnum_funcvalues_short_atomic,mpi_real8,0,mpi_comm_world,mpierror)
-!       call
-!     mpi_bcast(maxvalue_short_atomic,nelem*maxnum_funcvalues_short_atomic,mpi_real8,0,mpi_comm_world,mpierror)
-!       call
-!     mpi_bcast(avvalue_short_atomic,nelem*maxnum_funcvalues_short_atomic,mpi_real8,0,mpi_comm_world,mpierror)
-!       call mpi_bcast(eshortmin,1,mpi_real8,0,mpi_comm_world,mpierror)
-!       call mpi_bcast(eshortmax,1,mpi_real8,0,mpi_comm_world,mpierror)
-!     endif
-
     end subroutine read_nene
 
 
@@ -5363,23 +5323,7 @@ module pes_nene_mod
         ! md_tian2 related modules
         use constants, only : habohr2evang, timestep_ha2ev => ha2ev ! think about better way to realize that here we need our more precise ha2ev variable!!; conflict due to ha2ev from nnconstants.f90 and constants.f90
 
-        ! RuNNer related modules (needed for and in predictionshortatomic.f90)
-        use fileunits
-        use globaloptions
-        use mpi_mod
-        use nnflags
-        use nnshort_atomic
-        use predictionoptions
-        use saturation
-        use structures
-        use symfunctions
-        use timings
 
-        ! RuNNer related modules (needed for and in initnn.f90)
-        !use fittingoptions
-        !use mode1options
-        !use nnewald
-        !use nnconstants
 
 
         type(universe), intent(inout)   :: atoms
@@ -5390,25 +5334,18 @@ module pes_nene_mod
 
         ! the elements have to be sorted according to RuNNer before calling the prediction -> better way than calling sortelements in every MD step -> do that when reading the structure file in md_tian2!!
 
-        ! according to predict.f90
-
-        ! move allocation/deallocation to read_nene() and before closing program like with the cleanup subroutine??
-        if(lshort.and.(nn_type_short.eq.1))then
-          allocate(sens(nelem,maxnum_funcvalues_short_atomic))
-        !elseif(lshort.and.(nn_type_short.eq.2))then
-        !  allocate(sens(npairs,maxnum_funcvalues_short_pair))
+        ! start according to predict.f90
+        if(lshort.and.(nn_type_short.eq.1))then ! -> ask if this could move to read_nene!!
+            allocate(sens(nelem,maxnum_funcvalues_short_atomic))
         endif
 
         if(lelec.and.(nn_type_elec.eq.1).or.(nn_type_elec.eq.3).or.(nn_type_elec.eq.4))then
           allocate(sense(nelem,maxnum_funcvalues_elec))
         endif
 
-        !call getstructure_mode3(i4,num_atoms,num_pairs,zelem,&
-        !  num_atoms_element,lattice,xyzstruct,&
-        !  totalenergy,totalcharge,totalforce,atomenergy,atomcharge,&
-        !  elementsymbol,lperiodic)
+        !call getstructure_mode3(i4,num_atoms,num_pairs,zelem,num_atoms_element,lattice,xyzstruct,totalenergy,totalcharge,totalforce,atomenergy,atomcharge,elementsymbol,lperiodic)
 
-        ! from getstructure_mode3.f90
+        ! start according to getstructure_mode3.f90
         if(mpirank.eq.0)then
             if(npoints.eq.1)then
                 open(dataunit,file='input.data',form='formatted',status='old')
@@ -5423,14 +5360,30 @@ module pes_nene_mod
             endif
         endif
 
-        !call initmode3(i4,&
-        !  minvalue_short_atomic,maxvalue_short_atomic,avvalue_short_atomic,&
-        !  minvalue_short_pair,maxvalue_short_pair,avvalue_short_pair,&
-        !  minvalue_elec,maxvalue_elec,avvalue_elec,&
-        !  eshortmin,eshortmax,chargemin,chargemax)
+        ! convert lattice units and set corresponding RuNNer variables
+        do k = 1,3
+            lattice(k,:) = atoms%simbox(:,k) * ang2bohr
+        end do
+
+        ! convert position units and set corresponding RuNNer variables
+        ! commit element symbols and set corresponding RuNNer variables
+        do j = 1,atoms%natoms
+            xyzstruct(:,j) = atoms%r(:,:,j) * ang2bohr
+            elementsymbol(j) = atoms%name(atoms%idx(j))
+            call nuccharge(elementsymbol(j),zelem(j))
+            lelement(zelem(j)) = .true.
+        end do
+        ! end according to getstructure_mode3.f90
+
+
+
+        ! start according to initmode3.f90
+
+        !call initmode3(i4,minvalue_short_atomic,maxvalue_short_atomic,avvalue_short_atomic,minvalue_short_pair,maxvalue_short_pair,avvalue_short_pair,minvalue_elec,maxvalue_elec,avvalue_elec,eshortmin,eshortmax,chargemin,chargemax)
+
+        ! end according to initmode3.f90
 
         if(lshort .and. nn_type_short == 1) then
-          !if(nn_type_short.eq.1)then
             call predictionshortatomic(&
               num_atoms,num_atoms_element,zelem,&
               lattice,xyzstruct,&
@@ -5439,20 +5392,9 @@ module pes_nene_mod
               nntotalenergy,nnshortforce,&
               nnatomenergy,nnshortenergy,nnstress_short,&
               atomenergysum,sens,lperiodic)
-          !elseif(nn_type_short.eq.2)then
-            !call predictionshortpair(&
-              !num_atoms,num_atoms_element,zelem,&
-              !lattice,xyzstruct,&
-              !minvalue_short_pair,maxvalue_short_pair,avvalue_short_pair,&
-              !eshortmin,eshortmax,&
-              !nntotalenergy,nnshortforce,&
-              !nnatomenergy,nnpairenergy,nnshortenergy,&
-              !nnstress_short,pairs_charge,&
-              !atomenergysum,sens,lperiodic)
-          !endif
         endif
 
-        if(lelec .and. ((nn_type_elec == 1) .or. (nn_type_elec == 3) .or. (nn_type_elec == 4))) then ! will probably be implemented later, leave in comments or make dummy subroutine!
+        if(lelec .and. ((nn_type_elec == 1) .or. (nn_type_elec == 3) .or. (nn_type_elec == 4))) then
           call predictionelectrostatic(&
             num_atoms,zelem,&
             minvalue_elec,maxvalue_elec,avvalue_elec,&
@@ -5475,11 +5417,17 @@ module pes_nene_mod
           nntotalenergy=nntotalenergy+atomenergysum
         endif
 
+        ! convert calculated energy from RuNNer to MDT2
+        atoms%epot = nntotalenergy * ha2ev
+
 
         ! combination of short-range and electrostatic forces
         if(ldoforces)then
           nntotalforce(:,:)=nnshortforce(:,:)+nnelecforce(:,:)
         endif
+
+        ! convert calculated forces from RuNNer to MDT2
+        atoms%f(:,:,:) = nntotalforce(:,:) * habohr2evang
 
         ! calculate the volume, needed also for stress
         if(lperiodic)then
@@ -5501,36 +5449,28 @@ module pes_nene_mod
         if(lcheckf)then
             forcesum(:)=0.0d0
             do i3=1,num_atoms
-              do i2=1,3
-                forcesum(i2)=forcesum(i2)+nntotalforce(i2,i3)
-              enddo ! i2
+                do i2=1,3
+                    forcesum(i2)=forcesum(i2)+nntotalforce(i2,i3)
+                enddo ! i2
             enddo ! i3
             write(ounit,'(A10,3A25)')'Conf.','Sum of Fx(Ha/Bohr)', 'Sum of Fy(Ha/Bohr)','Sum of Fz(Ha/Bohr)'
             write(ounit,'(I10,3f25.8)')i1,forcesum(1),forcesum(2),forcesum(3)
             do i2=1,3
-              if(abs(forcesum(i2)).gt.0.000001d0)then
-                write(ounit,'(I10,A31,I10,f25.8)')i4,'Error in forces of component: ',&
-                  i2,forcesum(i2)
-                stop
-              endif
+                if(abs(forcesum(i2)).gt.0.000001d0)then
+                    write(ounit,'(I10,A31,I10,f25.8)')i4,'Error in forces of component: ',&
+                        i2,forcesum(i2)
+                    stop
+                endif
             enddo ! i2
-          endif
+        endif
 
         if(lshort.and.(nn_type_short.eq.1))then
-            deallocate(sens)
-        elseif(lshort.and.(nn_type_short.eq.2))then
             deallocate(sens)
         endif
         if(lelec.and.(nn_type_elec.eq.1).or.(nn_type_elec.eq.3).or.(nn_type_elec.eq.4))then
             deallocate(sense)
         endif
-
-        ! in every md step we had to convert the positions from Angstrom to Bohr, look for the lattice (should only be converted once) and
-
-
-        ! return the two following variables only
-        atoms%epot = nntotalenergy * Ha2eV
-        atoms%f(:,:,:) = nntotalforce * habohr2evang ! check if dimensions match
+        ! end according to predict.f90
 
     end subroutine compute_nene
 
@@ -5551,8 +5491,6 @@ module pes_nene_mod
 !       implicit none
 !
 !
-!       ! according to main.f90
-!       !call cleanup()
 !       ! according to cleanup.f90
 !       if(lshort.and.(nn_type_short.eq.1))then
 !           deallocate(weights_short_atomic)

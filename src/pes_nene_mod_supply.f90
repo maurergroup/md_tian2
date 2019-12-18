@@ -27,22 +27,18 @@ module pes_nene_mod_supply
 
     use constants, only : default_int, default_real, default_string, default_bool
 
-    ! RuNNer related modules (predictionshortatomic.f90)
+    ! RuNNer related modules (predict.f90)
     use fileunits
     use globaloptions
     use mpi_mod
+    use nnewald
     use nnflags
     use nnshort_atomic
+    !use nnshort_pair ! this module is not needed, Pair NN not implemented!!
     use predictionoptions
-    use saturation
+    !use saturation
     use symfunctions
     use timings
-
-    ! RuNNer related modules (initnn.f90)
-    use fittingoptions
-    use mode1options
-    use nnewald
-    use nnconstants
 
     implicit none
 
