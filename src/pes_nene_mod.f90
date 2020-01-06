@@ -45,12 +45,13 @@ module pes_nene_mod
 
 
 !   2do:
-!   use RuNNer modules if necessary, otherwise make own ones
-!   change how the seeed for the random number generator will be (add new variable?)
+!   seed for the random number generator should be the trajectory number, not a sum of start number and total number of trajectories
 !   variable declarations concerning RuNNer in the corresponding modules, but set to (our) default values has to be done before reading out keywords (own subroutine called in compute_nene)
 !   move RuNNer related files to folder and change the makefile
-!   check how many mpi routines has to stay in the code, at least set the few default values so that no error will occur due to wrong default mpi settings, therefore the mpi_dummy_routines.f90 file makes sense
+!   check how many mpi routines have to stay in the code, at least set the few default values so that no error will occur due to wrong default mpi settings, therefore the mpi_dummy_routines.f90 file makes sense
 !   don't explicitly give weight file names, use RuNNer routine instead
+!   remove rinpparam%
+!   declare all needed variables which are not declared in modules (especially look at main, initnn, predict)
 
 
     ! Here all necessary files and keywords are read in for the high-dimensional neural network potentials (HDNNPs)
@@ -76,14 +77,16 @@ module pes_nene_mod
         character(len=max_string_length) :: words(100)
         character(len=max_string_length) :: inp_path
 
-        character(len=max_string_length)                :: filename_inpnn, filename_scaling
-        character(len=max_string_length), allocatable   :: weights_path(:), filename_weights(:)
+        character(len=max_string_length)                :: filename_inpnn, filename_scaling, filename_scalinge
+        character(len=max_string_length), allocatable   :: weights_path(:), filename_weights(:), weightse_path(:), filename_weightse(:)
 
         integer, parameter  :: inpnn_unit       = 61
         integer, parameter  :: scaling_unit     = 62
-        integer, parameter  :: weight_unit      = 63
+        integer, parameter  :: scalinge_unit    = 63
+        integer, parameter  :: weight_unit      = 64
+        integer, parameter  :: weighte_unit     = 65
 
-        integer  :: idx1, idx2, weight_counter
+        integer  :: idx1, idx2, weight_counter, weighte_counter
         integer  :: npairs_counter_1, npairs_counter_2, element_counter, nodes_counter
         integer  :: general_counter_1, general_counter_2, general_counter_3
 
@@ -92,7 +95,9 @@ module pes_nene_mod
 
         character(len=*), parameter :: err_inpnn = "Error when reading input.nn: "
         character(len=*), parameter :: err_scaling = "Error when reading scaling.data: "
+        character(len=*), parameter :: err_scalinge = "Error when reading scalinge.data: "
         character(len=*), parameter :: err_weight = "Error when reading the following weight file: "
+        character(len=*), parameter :: err_weighte = "Error when reading the following weighte file: "
         character(len=*), parameter :: warn_inpnn = "Warning when reading input.nn: "
 
         ! first read the pes file:
@@ -176,6 +181,15 @@ module pes_nene_mod
 
                     end do
 
+                case ('weightse')
+
+                    if (weightse_path /= default_string) stop err // err_pes // 'Multiple use of the weightse key'
+                    do weighte_counter = 1,atoms%ntypes
+
+                        read(words(weighte_counter+1), '(A)') weightse_path(weighte_counter)
+
+                    end do
+
                 case default
 
                     print *, err // err_pes // "unknown nene parameter ", words(1)
@@ -186,12 +200,18 @@ module pes_nene_mod
         end do
 
         ! set name strings for RuNNer related files
-        filename_inpnn   = trim(inp_path) // "input.nn"
-        filename_scaling = trim(inp_path) // "scaling.data"
+        filename_inpnn      = trim(inp_path) // "input.nn"
+        filename_scaling    = trim(inp_path) // "scaling.data"
+        filename_scalinge   = trim(inp_path) // "scalinge.data"
 
         ! loop over weight file names
         do weight_counter = 1,atoms%ntypes
             filename_weights(weight_counter)  = trim(inp_path) // trim(weights_path(weight_counter))
+        end do
+
+        ! loop over weighte file names
+        do weighte_counter = 1,atoms%ntypes
+            filename_weightse(weighte_counter)  = trim(inp_path) // trim(weightse_path(weighte_counter))
         end do
 
         ! in case of the HDNNPs several additional input files have to be read
@@ -317,7 +337,7 @@ module pes_nene_mod
         do while (ios == 0)
             read(inpnn_unit, '(A)', iostat=ios) buffer
             if (ios == 0) then
-                line = line + 1
+                !line = line + 1
                 call split_string(buffer, words, nwords)
 
                 select case (words(1))
@@ -4829,8 +4849,8 @@ module pes_nene_mod
 
         !call distribute_globaloptions() only mpi
 
-        if(rinpparam%lshort.and.(rinpparam%nn_type_short.eq.1))then
-            allocate (rinpparam%weights_short_atomic(rinpparam%maxnum_weights_short_atomic,rinpparam%nelem))
+        if (lshort .and. (nn_type_short.eq.1)) then
+            allocate (weights_short_atomic(rinpparam%maxnum_weights_short_atomic,rinpparam%nelem))
             rinpparam%weights_short_atomic(:,:)=0.0d0
             allocate (rinpparam%symfunction_short_atomic_list(rinpparam%maxnum_funcvalues_short_atomic,rinpparam%max_num_atoms,rinpparam%nblock))
             rinpparam%symfunction_short_atomic_list(:,:,:)=0.0d0
@@ -5231,43 +5251,19 @@ module pes_nene_mod
 
 
 
-        ! check existance of scaling.data
-        if (.not. file_exists(filename_scaling)) stop err // err_scaling // 'file does not exist'
+        if(lshort.and.(nn_type_short.eq.1))then
+            ! check existance of scaling.data
+            if (.not. file_exists(filename_scaling)) stop err // err_scaling // 'file does not exist'
+            ! read in all data from scaling.data
+            call readscale(filename_scaling,scaling_unit,err_scaling,nelem,1,maxnum_funcvalues_short_atomic,num_funcvalues_short_atomic,minvalue_short_atomic,maxvalue_short_atomic,avvalue_short_atomic,eshortmin,eshortmax,rdummy,rdummy)
+        end if
 
-        ! read in all data from scaling.data
-        call open_for_read(scaling_unit, filename_scaling); ios = 0
-
-        do while (ios == 0) ! ios loop
-            read(scaling_unit, '(A)', iostat=ios) buffer
-            if (ios == 0) then
-
-                ! readscale.f90
-                ! do i1=1,ndim
-                !     do i2=1,num_funcvalues_local(i1)
-                !         read(scaleunit,*)i3,i3,minvalue_local(i1,i2),maxvalue_local(i1,i2),avvalue_local(i1,i2)
-                !     enddo ! i2
-                ! enddo ! i1
-
-                ! read(scaleunit,*)eshortmin,eshortmax
-
-                        ! initmode3.f90
-                        ! call readscale(nelem,1,&  --> ndim = nelem!
-!                           maxnum_funcvalues_short_atomic,num_funcvalues_short_atomic,&
-!                           minvalue_short_atomic,maxvalue_short_atomic,avvalue_short_atomic,&
-!                           eshortmin,eshortmax,rdummy,rdummy)
-
-
-
-
-
-            else
-                    write(*,*) err // err_scaling // 'iostat = ', ios
-                    stop
-            end if
-        end do ! ios loop
-
-        close(scaling_unit)
-
+        if(lelec.and.(nn_type_elec.eq.1))then
+            ! check existance of scalinge.data
+            if (.not. file_exists(filename_scalinge)) stop err // err_scalinge // 'file does not exist'
+            ! read in all data from scalinge.data
+            call readscale(filename_scalinge,scalinge_unit,err_scalinge,nelem,3,maxnum_funcvalues_elec,num_funcvalues_elec,minvalue_elec,maxvalue_elec,avvalue_elec,dummy,dummy,chargemin,chargemax)
+        end if
 
         ! loop over weight.XXX.data files and read in all data
         do weight_counter = 1,atoms%ntypes ! weights loop
@@ -5335,11 +5331,11 @@ module pes_nene_mod
         ! the elements have to be sorted according to RuNNer before calling the prediction -> better way than calling sortelements in every MD step -> do that when reading the structure file in md_tian2!!
 
         ! start according to predict.f90
-        if(lshort.and.(nn_type_short.eq.1))then ! -> ask if this could move to read_nene!!
+        if(lshort.and.(nn_type_short.eq.1))then ! -> this should move to read_nene!!
             allocate(sens(nelem,maxnum_funcvalues_short_atomic))
         endif
 
-        if(lelec.and.(nn_type_elec.eq.1).or.(nn_type_elec.eq.3).or.(nn_type_elec.eq.4))then
+        if(lelec.and.(nn_type_elec.eq.1).or.(nn_type_elec.eq.3).or.(nn_type_elec.eq.4))then ! -> this should move to read_nene!!
           allocate(sense(nelem,maxnum_funcvalues_elec))
         endif
 
@@ -5376,7 +5372,7 @@ module pes_nene_mod
         ! end according to getstructure_mode3.f90
 
 
-
+        ! the initialization of mode3 will be done in read_nene
         ! start according to initmode3.f90
 
         !call initmode3(i4,minvalue_short_atomic,maxvalue_short_atomic,avvalue_short_atomic,minvalue_short_pair,maxvalue_short_pair,avvalue_short_pair,minvalue_elec,maxvalue_elec,avvalue_elec,eshortmin,eshortmax,chargemin,chargemax)

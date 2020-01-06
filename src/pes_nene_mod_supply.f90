@@ -25,7 +25,7 @@
 ! maybe move the subroutines back into pes_nene_mod.f90?
 module pes_nene_mod_supply
 
-    use constants, only : default_int, default_real, default_string, default_bool
+    use constants, only : default_int, default_real, default_string, default_bool, max_string_length, dp
 
     ! RuNNer related modules (predict.f90)
     use fileunits
@@ -780,5 +780,245 @@ module pes_nene_mod_supply
       endif
 
     end subroutine checkinputnn
+
+    subroutine readscale(filename,filename_unit,filename_error,ndim,iswitch,maxnum_funcvalues_local,num_funcvalues_local,minvalue_local,maxvalue_local,avvalue_local,eshortmin,eshortmax,chargemin,chargemax)
+
+        use fileunits
+        use globaloptions
+
+        implicit none
+
+        integer             :: filename_unit
+        integer             :: ndim
+        integer             :: maxnum_funcvalues_local
+        integer             :: num_funcvalues_local(ndim)
+        integer             :: counter_1, counter_2, counter_3
+        integer             :: iswitch
+
+        real(dp)            :: avvalue_local(ndim,maxnum_funcvalues_local)
+        real(dp)            :: maxvalue_local(ndim,maxnum_funcvalues_local)
+        real(dp)            :: minvalue_local(ndim,maxnum_funcvalues_local)
+        real(dp)            :: thres
+        real(dp)            :: eshortmin
+        real(dp)            :: eshortmax
+        real(dp)            :: chargemin(nelem)
+        real(dp)            :: chargemax(nelem)
+
+        logical             :: lexist
+
+        character(len=*)                    :: err = "Error in readscale: "
+
+        character(len=max_string_length)    :: filename
+        character(len=*)                    :: filename_error
+
+
+
+        thres=0.00001d0
+
+        call open_for_read(filename_unit, filename); ios = 0
+
+        do counter_1 = 1,ndim
+            do counter_2 = 1,num_funcvalues_local(counter_1)
+                read(filename_unit, '(A)', iostat=ios) buffer
+                line = line + 1
+
+                if (ios == 0) then
+                    call split_string(buffer, words, nwords)
+
+                    if (nwords == 5) then
+                        read(words(1),'(i1000)', iostat=ios) counter_3
+                        if (ios /= 0) stop err // err_inpnn // "Error in line ", line, ", first argument value must be integer"
+                        read(words(2),'(i1000)', iostat=ios) counter_3
+                        if (ios /= 0) stop err // err_inpnn // "Error in line ", line, ", second argument value must be integer"
+                        read(words(3),*, iostat=ios) minvalue_local(counter_1,counter_2)
+                        if (ios /= 0) stop err // err_inpnn // "Error in line ", line, ", third argument value must be a number"
+                        read(words(4),*, iostat=ios) maxvalue_local(counter_1,counter_2)
+                        if (ios /= 0) stop err // err_inpnn // "Error in line ", line, ", fourth argument value must be a number"
+                        read(words(5),*, iostat=ios) avvalue_local(counter_1,counter_2)
+                        if (ios /= 0) stop err // err_inpnn // "Error in line ", line, ", fifth argument value must be a number"
+                    else
+                        print *, err, filename_error, "Error in line: ", line, "; need exactly 5 arguments"
+                        stop
+                    end if
+                else
+                    print *, err // filename_error // 'iostat = ', ios
+                    stop
+                end if
+
+            end do
+        end do
+
+        read(filename_unit, '(A)', iostat=ios) buffer
+
+        if (ios == 0) then
+            call split_string(buffer, words, nwords)
+
+            if (iswitch == 1) then
+                if (nwords == 2) then
+                    read(words(1),*, iostat=ios) eshortmin
+                    if (ios /= 0) stop err // err_inpnn // "Error in last line: " // "first argument value must be a number"
+                    read(words(2),*, iostat=ios) eshortmax
+                    if (ios /= 0) stop err // err_inpnn // "Error in last line: " // "second argument value must be a number"
+                else
+                    print *, err, filename_error, "Error in last line: need exactly 2 arguments"
+                    stop
+                end if
+            else if (iswitch == 3)
+                do counter_2 = 1,nelem
+                    line = line + 1
+                    if (nwords == 2) then
+                        read(words(1),*, iostat=ios) chargemin(counter_2)
+                        if (ios /= 0) stop err // err_inpnn // "Error in line: " // line // ", first argument value must be a number"
+                        read(words(2),*, iostat=ios) chargemax(counter_2)
+                        if (ios /= 0) stop err // err_inpnn // "Error in line: " // line // ", second argument value must be a number"
+                    else
+                        print *, err, filename_error, "Error in line: ", line, " need exactly 2 arguments"
+                        stop
+                    end if
+                end do
+            end if
+        else
+            write(*,*) err // filename_error // 'iostat = ', ios
+            stop
+        end if
+
+        close(filename_unit)
+
+        do counter_1 = 1,ndim
+            do counter_3 = 1,num_funcvalues_local(counter_1)
+                if (minvalue_local(counter_1,counter_3) .gt. maxvalue_local(counter_1,counter_3)) then
+                    print *, err // filename_error // 'No pairs of this type have been present in training set'
+                else
+                    if (abs(minvalue_local(counter_1,counter_3) - maxvalue_local(counter_1,counter_3)) .lt. thres) then
+                        if (iswitch == 1) then
+                            print *, err // filename_error // '### WARNING ###: minvalue=maxvalue ',counter_1,counter_3,nucelem(counter_1)
+                        else if (iswitch == 3) then
+                            print *, err // filename_error // '### WARNING ###: minvalue_elec=maxvalue_elec ',counter_1,counter_3,nucelem(counter_1)
+                        end if
+                        if (lscalesym) then
+                            if (iswitch == 1) then
+                                print *, err // filename_error // 'scaling symmetry functions cannot be used with minvalue=maxvalue'
+                                stop
+                            else if (iswitch == 3) then
+                                print *, err // filename_error // 'scaling symmetry functions cannot be used with minvalue_elec=maxvalue_elec'
+                                stop
+                            end if
+                        end if
+                    end if
+                end if
+            end do
+        end do
+
+    end subroutine readscale
+
+    subroutine readweights(directory,iswitch,ndim,maxnum_weights_local,num_weights_local,weights_local)
+
+        use fileunits
+        use globaloptions
+        use nnflags
+
+        implicit none
+
+        integer             :: filename_unit
+        integer             :: ndim
+        integer             :: iswitch
+        integer             :: icount
+        integer             :: maxnum_weights_local
+        integer             :: num_weights_local(ndim)
+        integer             :: counter_1, counter_2, counter_3, counter_4
+
+        real(dp)            :: weights_local(maxnum_weights_local,ndim)
+
+        logical             :: lexist
+
+        character(len=*)                    :: err = "Error in readweights: "
+        character(len=*)                    :: err_weight = "Error when reading the following weight file: "
+        character(len=*)                    :: err_weighte = "Error when reading the following weighte file: "
+
+        character(len=max_string_length)    :: directory, filename_weight, filename_weighte
+        character*40                        :: filename
+
+        if (iswitch == 0) then
+            do counter_1 = 1,ndim
+                filename = 'weights.000.data'
+                if (nucelem(counter_1) .gt. 99) then
+                    write(filename(9:11),'(i3)') nucelem(counter_1)
+                else if (nucelem(counter_1) .gt. 9) then
+                    write(filename(10:11),'(i2)') nucelem(counter_1)
+                else
+                    write(filename(11:11),'(i1)') nucelem(counter_1)
+                end if
+                filename_weight = trim(directory) // trim(filename)
+                if (.not. file_exists(filename_weight)) stop err // err_weight // trim(filename) // 'file does not exist'
+
+                call open_for_read(weight_unit, filename_weight); ios = 0
+
+                do counter_2 = 1,num_weights_local(counter_1)
+                    read(weight_unit, '(A)', iostat=ios) buffer
+                    line = line + 1
+
+                    if (ios == 0) then
+                        call split_string(buffer, words, nwords)
+
+                        if (nwords == 1) then
+                            read(words(1),*, iostat=ios) weights_local(counter_2,counter_1)
+                            if (ios /= 0) stop err // err_weight // trim(filename) // "Error in line ", line, ", first argument value must be a number"
+                        else
+                            print *, err, err_weight, trim(filename), "Error in line ", line, "need exactly 1 argument"
+                            stop
+                        end if
+                    else
+                         write(*,*) err // err_weight // trim(filename) // 'iostat = ', ios
+                         stop
+                    end if
+                end do
+
+                close(weight_unit)
+
+            end do
+        else if (iswitch == 1) then
+            do counter_1 = 1,ndim
+                filename = 'weightse.000.data'
+                if (nucelem(counter_1) .gt. 99) then
+                    write(filename(9:11),'(i3)') nucelem(counter_1)
+                else if (nucelem(counter_1) .gt. 9) then
+                    write(filename(10:11),'(i2)') nucelem(counter_1)
+                else
+                    write(filename(11:11),'(i1)') nucelem(counter_1)
+                end if
+                filename_weighte = trim(directory) // trim(filename)
+                if (.not. file_exists(filename_weighte)) stop err // err_weighte // trim(filename) // 'file does not exist'
+
+                call open_for_read(weighte_unit, filename_weighte); ios = 0
+
+                do counter_2 = 1,num_weights_local(counter_1)
+                    read(weighte_unit, '(A)', iostat=ios) buffer
+                    line = line + 1
+
+                    if (ios == 0) then
+                        call split_string(buffer, words, nwords)
+
+                        if (nwords == 1) then
+                            read(words(1),*, iostat=ios) weights_local(counter_2,counter_1)
+                            if (ios /= 0) stop err // err_weighte // trim(filename) // "Error in line ", line, ", first argument value must be a number"
+                        else
+                            print *, err, err_weighte, trim(filename), "Error in line ", line, "need exactly 1 argument"
+                            stop
+                        end if
+                    else
+                         write(*,*) err // err_weighte // trim(filename) // 'iostat = ', ios
+                         stop
+                    end if
+                end do
+
+                close(weighte_unit)
+
+            end do
+        else
+            write(*,*) err // "Error: unknown iswitch value ", iswitch
+            stop
+        end if
+
+    end subroutine readweights
 
 end module pes_nene_mod_supply
