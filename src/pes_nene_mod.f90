@@ -78,15 +78,12 @@ module pes_nene_mod
         character(len=max_string_length) :: inp_path
 
         character(len=max_string_length)                :: filename_inpnn, filename_scaling, filename_scalinge
-        character(len=max_string_length), allocatable   :: weights_path(:), filename_weights(:), weightse_path(:), filename_weightse(:)
 
         integer, parameter  :: inpnn_unit       = 61
         integer, parameter  :: scaling_unit     = 62
         integer, parameter  :: scalinge_unit    = 63
-        integer, parameter  :: weight_unit      = 64
-        integer, parameter  :: weighte_unit     = 65
 
-        integer  :: idx1, idx2, weight_counter, weighte_counter
+        integer  :: idx1, idx2, weight_counter
         integer  :: npairs_counter_1, npairs_counter_2, element_counter, nodes_counter
         integer  :: general_counter_1, general_counter_2, general_counter_3
 
@@ -172,23 +169,23 @@ module pes_nene_mod
                     if (inp_path /= default_string) stop err // err_pes // 'Multiple use of the inp_dir key'
                     read(words(2), '(A)') inp_path
 
-                case ('weights')
+                !case ('weights')
 
-                    if (weights_path /= default_string) stop err // err_pes // 'Multiple use of the weights key'
-                    do weight_counter = 1,atoms%ntypes ! check if ntypes = number of elements in proj AND latt (elements per structure NOT latt/proj types)!!
+                    !if (weights_path /= default_string) stop err // err_pes // 'Multiple use of the weights key'
+                    !do weight_counter = 1,atoms%ntypes ! check if ntypes = number of elements in proj AND latt (elements per structure NOT latt/proj types)!!
 
-                        read(words(weight_counter+1), '(A)') weights_path(weight_counter)
+                        !read(words(weight_counter+1), '(A)') weights_path(weight_counter)
 
-                    end do
+                    !end do
 
-                case ('weightse')
+                !case ('weightse')
 
-                    if (weightse_path /= default_string) stop err // err_pes // 'Multiple use of the weightse key'
-                    do weighte_counter = 1,atoms%ntypes
+                    !if (weightse_path /= default_string) stop err // err_pes // 'Multiple use of the weightse key'
+                    !do weighte_counter = 1,atoms%ntypes
 
-                        read(words(weighte_counter+1), '(A)') weightse_path(weighte_counter)
+                        !read(words(weighte_counter+1), '(A)') weightse_path(weighte_counter)
 
-                    end do
+                    !end do
 
                 case default
 
@@ -5250,64 +5247,25 @@ module pes_nene_mod
                         if (rinpparam% /= default_) stop err // err_inpnn // 'Multiple use of the use_systematic_weights_short key'
 
 
-
+        ! read in biases and weights for short part
         if(lshort.and.(nn_type_short.eq.1))then
             ! check existance of scaling.data
             if (.not. file_exists(filename_scaling)) stop err // err_scaling // 'file does not exist'
             ! read in all data from scaling.data
             call readscale(filename_scaling,scaling_unit,err_scaling,nelem,1,maxnum_funcvalues_short_atomic,num_funcvalues_short_atomic,minvalue_short_atomic,maxvalue_short_atomic,avvalue_short_atomic,eshortmin,eshortmax,rdummy,rdummy)
+            ! read in all data from all weight files
+            call readweights(inp_path,0,nelem,maxnum_weights_short_atomic,num_weights_short_atomic,weights_short_atomic)
         end if
 
+        ! read in biases and weights for electrostatic part
         if(lelec.and.(nn_type_elec.eq.1))then
             ! check existance of scalinge.data
             if (.not. file_exists(filename_scalinge)) stop err // err_scalinge // 'file does not exist'
             ! read in all data from scalinge.data
             call readscale(filename_scalinge,scalinge_unit,err_scalinge,nelem,3,maxnum_funcvalues_elec,num_funcvalues_elec,minvalue_elec,maxvalue_elec,avvalue_elec,dummy,dummy,chargemin,chargemax)
+            ! read in all data from all weighte files
+            call readweights(inp_path,1,nelem,maxnum_weights_elec,num_weights_elec,weights_elec)
         end if
-
-        ! loop over weight.XXX.data files and read in all data
-        do weight_counter = 1,atoms%ntypes ! weights loop
-
-            ! check existance of each weight file before reading
-            if (.not. file_exists(weight_names_list(weight_counter))) stop err // err_weights // weight_names_list(weight_counter), ' file does not exist!'
-
-            call open_for_read(weight_unit, weight_names_list(weight_counter)); ios = 0
-
-            do while (ios == 0) ! ios loop
-                read(weight_unit, '(A)', iostat=ios) buffer
-                if (ios == 0) then
-
-                        ! readweights.f90
-                        ! do i1=1,ndim
-                        !     do i2=1,num_weights_local(i1)
-                        !         read(wunit,*)weights_local(i2,i1)
-                        !     end do
-                        ! end do
-
-      !initmode3.f90
-      !if(mpirank.eq.0)then
-      !   if(lshort.and.(nn_type_short.eq.1))then
-      !     call readweights(0,nelem,&
-      !       maxnum_weights_short_atomic,num_weights_short_atomic,&
-      !       weights_short_atomic)
-      !   endif ! lshort
-      !endif ! mpirank.eq.0
-
-
-
-
-
-                else
-
-                        write(*,*) err // err_weight // weight_names_list(weight_counter),', iostat = ', ios
-                        stop
-
-                end if
-            end do ! ios loop
-
-            close(weight_unit)
-
-        end do ! weights loop
 
     end subroutine read_nene
 

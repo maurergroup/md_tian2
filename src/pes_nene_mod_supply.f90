@@ -162,18 +162,28 @@ module pes_nene_mod_supply
         analyze_error_force_step = 0.01d0
         analyze_error_charge_step = 0.001d0
         paramode      =1
+        ewaldalpha=0.0d0
+        ewaldcutoff=0.0d0
+        ewaldkmax=0
         nenergygroup=1
         nforcegroup=1
         nchargegroup=1
         energyrnd=1.0d0
         forcernd=1.0d0
         chargernd=1.0d0
+        !fitethres=0.0d0
+        !fitfthres=0.0d0
         rmin=0.5d0
         optmodee=1
         optmodef=1
         optmodeq=1
         nblock=200
+        !nepochs=0
         iwriteweight=1
+        kalmanthreshold=0.0d0
+        kalmanthresholdf=0.0d0
+        kalmanthresholde=0.0d0
+        kalmanthresholdc=0.0d0
         kalman_dampe=1.0d0
         kalman_dampf=1.0d0
         kalman_dampq=1.0d0
@@ -181,7 +191,10 @@ module pes_nene_mod_supply
         steepeststepf=0.01d0
         steepeststepq=0.01d0
         scalefactorf=1.d0
-        growthstep=1
+        !ngrowth=0
+        !growthstep=1
+        dampw=0.0d0
+        atomrefenergies(:)=0.0d0
         weights_min=-1.d0
         weights_max=1.d0
         biasweights_min=-1.d0
@@ -195,19 +208,32 @@ module pes_nene_mod_supply
         maxforce=10000.d0
         maxenergy=10000.d0
         restrictw=-100000.d0
-        fitmode=1
+        !fitmode=1
+        scmin_short_atomic=0.0d0
         scmax_short_atomic=1.0d0
-        scmax_short_pair=1.0d0
+        !scmin_short_pair=0.0d0
+        !scmax_short_pair=1.0d0
+        scmin_elec=0.0d0
         scmax_elec=1.0d0
+        noisee=0.0d0
+        noisef=0.0d0
+        noiseq=0.0d0
         cutoff_type=1
+        cutoff_alpha = 0.0d0
+        rscreen_cut=0.0d0
+        rscreen_onset=0.0d0
         dynforcegroup_start=20
         dynforcegroup_step=2
         nshuffle_weights_short_atomic=10
         shuffle_weights_short_atomic=0.1d0
         saturation_threshold=0.99d0
         dataclusteringthreshold1=1.0d0
+        dataclusteringthreshold2=0.0d0
         inputforcethreshold=0.001d0
         kalman_epsilon = 1.0d0
+        kalman_q0 = 0.0d0
+        kalman_qtau = 0.0d0
+        kalman_qmin = 0.0d0
 
     end subroutine inputnndefaults
 
@@ -937,6 +963,9 @@ module pes_nene_mod_supply
 
         character(len=max_string_length)    :: directory, filename_weight, filename_weighte
         character*40                        :: filename
+
+        integer, parameter  :: weight_unit      = 64
+        integer, parameter  :: weighte_unit     = 65
 
         if (iswitch == 0) then
             do counter_1 = 1,ndim

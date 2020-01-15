@@ -49,6 +49,7 @@ module constants
     !integer, parameter  :: scaling_unit     = 62
     !integer, parameter  :: scalinge_unit     = 63
     !integer, parameter  :: weight_unit      = 64
+    !integer, parameter  :: weighte_unit      = 65
 
 
     ! PES-related constants
