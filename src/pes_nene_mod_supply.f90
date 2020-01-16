@@ -1,7 +1,7 @@
 !############################################################################
 ! This routine is part of
 ! md_tian2 (Molecular Dynamics Tian Xia 2)
-! (c) 2014-2019 Dan J. Auerbach, Svenja M. Janke, Marvin Kammler,
+! (c) 2014-2020 Dan J. Auerbach, Svenja M. Janke, Marvin Kammler,
 !               Sascha Kandratsenka, Sebastian Wille
 ! Dynamics at Surfaces Department
 ! MPI for Biophysical Chemistry Goettingen, Germany
@@ -807,14 +807,14 @@ module pes_nene_mod_supply
 
     end subroutine checkinputnn
 
-    subroutine readscale(filename,filename_unit,filename_error,ndim,iswitch,maxnum_funcvalues_local,num_funcvalues_local,minvalue_local,maxvalue_local,avvalue_local,eshortmin,eshortmax,chargemin,chargemax)
+    subroutine readscale(filename,filename_error,ndim,iswitch,maxnum_funcvalues_local,num_funcvalues_local,minvalue_local,maxvalue_local,avvalue_local,eshortmin,eshortmax,chargemin,chargemax)
 
         use fileunits
         use globaloptions
 
         implicit none
 
-        integer             :: filename_unit
+        integer             :: scaling_unit
         integer             :: ndim
         integer             :: maxnum_funcvalues_local
         integer             :: num_funcvalues_local(ndim)
@@ -837,15 +837,17 @@ module pes_nene_mod_supply
         character(len=max_string_length)    :: filename
         character(len=*)                    :: filename_error
 
+        integer, parameter  :: scaling_unit = 62 ! for scling.data and scalinge.data
+
 
 
         thres=0.00001d0
 
-        call open_for_read(filename_unit, filename); ios = 0
+        call open_for_read(scaling_unit, filename); ios = 0
 
         do counter_1 = 1,ndim
             do counter_2 = 1,num_funcvalues_local(counter_1)
-                read(filename_unit, '(A)', iostat=ios) buffer
+                read(scaling_unit, '(A)', iostat=ios) buffer
                 line = line + 1
 
                 if (ios == 0) then
@@ -874,7 +876,7 @@ module pes_nene_mod_supply
             end do
         end do
 
-        read(filename_unit, '(A)', iostat=ios) buffer
+        read(scaling_unit, '(A)', iostat=ios) buffer
 
         if (ios == 0) then
             call split_string(buffer, words, nwords)
@@ -908,7 +910,7 @@ module pes_nene_mod_supply
             stop
         end if
 
-        close(filename_unit)
+        close(scaling_unit)
 
         do counter_1 = 1,ndim
             do counter_3 = 1,num_funcvalues_local(counter_1)
@@ -945,7 +947,6 @@ module pes_nene_mod_supply
 
         implicit none
 
-        integer             :: filename_unit
         integer             :: ndim
         integer             :: iswitch
         integer             :: icount
@@ -964,8 +965,8 @@ module pes_nene_mod_supply
         character(len=max_string_length)    :: directory, filename_weight, filename_weighte
         character*40                        :: filename
 
-        integer, parameter  :: weight_unit      = 64
-        integer, parameter  :: weighte_unit     = 65
+        integer, parameter  :: weight_unit  = 64
+        integer, parameter  :: weighte_unit = 65
 
         if (iswitch == 0) then
             do counter_1 = 1,ndim

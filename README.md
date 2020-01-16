@@ -18,13 +18,14 @@ force.f90               : get the energies/forces in molecular dynamics simulati
 geometry_opt.f90        : relax structure
 md_algo.f90             : contains propagation algorithms for molecular dynamics simulation
 md_init.f90             : initialize molecular dynamics simulation
-md_tian.f90             : main program
+md_tian2.f90            : main program
 open_file.f90           : input/output routines
 output_mod.f90          : output format routines
 pes_emt_mod.f90         : contains the EMT potential
 pes_ho_mod.f90          : contains the
 pes_lj_mod.f90          : contains the Lennard-Jones potential
 pes_nene_mod.f90        : contains the high-dimensional neural network potential
+pes_nene_mod_supply.f90 : contains subroutines concerning the high-dimensional neural network potential
 pes_non_mod.f90         : contains the non-interaction potential
 pes_rebo_mod.f90        : contains the empirical reactive bond order potential
 rpmd.f90                : contains the ring-polymer molecular dynamics simulation routine
@@ -39,11 +40,11 @@ useful_things.f90       : useful math routines
 Input files: -> maybe also here, but put in manual!
 
 md_tian.inp	        :control parameters defining the simulation conditions
-<potential>.pes     :control parameters for the specific potential used
-structure file      :starting structure, poscar or mxt format possible
+<potential>.pes         :control parameters for the specific potential used
+structure_file          :starting structure, poscar or mxt format possible
 input.nn	        :control parameters for the high-dimensional neural network potential
-scaling.data	    :contains the bias weights for the high-dimensional neural network potential
-weights.XXX.data    :contains the weights for this element (XXX is the element number in the periodic table; e.g. 001 for H)
+scaling.data	        :contains the bias weights for the high-dimensional neural network potential
+weights.XXX.data        :contains the weights for this element (XXX is the element number in the periodic table; e.g. 001 for H)
 
 
 Compilation and linking (Intel fortran compiler and mkl library): -> maybe also here, but put in manual!

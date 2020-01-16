@@ -15,6 +15,7 @@ md_tian_path=sys.argv[2]
 # change to list? -> give entry number+file list?
 file_list = \
        'abstime.f90 \
+        addatoms.f90 \
         atomsymfunction1.f90 \
         atomsymfunction2.f90 \
         atomsymfunction3Andi.f90 \
@@ -53,8 +54,11 @@ file_list = \
         printinputnn.f90 \
         saturation.f90 \
         sortelements.f90 \
+        sortsymfunctions.f90
+        structures.f90
         symfunctions.f90 \
-        timings.f90'
+        timings.f90 \
+        translate.f90'
 # RuNNer source files in alphabetical order, add additional files if needed
 
 runner_dir=os.chdir(runner_path) # change to RuNNer directory
