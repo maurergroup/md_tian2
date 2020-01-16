@@ -158,82 +158,216 @@ module pes_nene_mod_supply
             nodes_elec(:,:)=0
         endif
 
-        analyze_error_energy_step = 0.01d0
-        analyze_error_force_step = 0.01d0
-        analyze_error_charge_step = 0.001d0
-        paramode      =1
-        ewaldalpha=0.0d0
-        ewaldcutoff=0.0d0
-        ewaldkmax=0
-        nenergygroup=1
-        nforcegroup=1
-        nchargegroup=1
-        energyrnd=1.0d0
-        forcernd=1.0d0
+        if (analyze_error_energy_step == default_real) then
+            analyze_error_energy_step = 0.01d0
+        end if
+        if (analyze_error_force_step == default_real) then
+            analyze_error_force_step = 0.01d0
+        end if
+        if (analyze_error_charge_step == default_real) then
+            analyze_error_charge_step = 0.001d0
+        end if
+        if (paramode == default_int) then
+            paramode = 1
+        end if
+        if (ewaldalpha == default_real) then
+            ewaldalpha=0.0d0
+        end if
+        if (ewaldcutoff == default_real) then
+            ewaldcutoff=0.0d0
+        end if
+        if (ewaldkmax == default_int) then
+            ewaldkmax=0
+        end if
+        if (nenergygroup == default_int) then
+            nenergygroup=1
+        end if
+        if ( == default_) then
+            nforcegroup=1
+        end if
+        if ( == default_) then
+            nchargegroup=1
+        end if
+        if ( == default_) then
+            energyrnd=1.0d0
+        end if
+        if ( == default_) then
+            forcernd=1.0d0
+        end if
+        if ( == default_) then
         chargernd=1.0d0
+        end if
         !fitethres=0.0d0
         !fitfthres=0.0d0
+        if ( == default_) then
         rmin=0.5d0
+        end if
+        if ( == default_) then
         optmodee=1
+        end if
+        if ( == default_) then
         optmodef=1
+        end if
+        if ( == default_) then
         optmodeq=1
+        end if
+        if ( == default_) then
         nblock=200
+        end if
         !nepochs=0
+        if ( == default_) then
         iwriteweight=1
+        end if
+        if ( == default_) then
         kalmanthreshold=0.0d0
+        end if
+        if ( == default_) then
         kalmanthresholdf=0.0d0
+        end if
+        if ( == default_) then
         kalmanthresholde=0.0d0
+        end if
+        if ( == default_) then
         kalmanthresholdc=0.0d0
+        end if
+        if ( == default_) then
         kalman_dampe=1.0d0
+        end if
+        if ( == default_) then
         kalman_dampf=1.0d0
+        end if
+        if ( == default_) then
         kalman_dampq=1.0d0
+        end if
+        if ( == default_) then
         steepeststepe=0.01d0
+        end if
+        if ( == default_) then
         steepeststepf=0.01d0
+        end if
+        if ( == default_) then
         steepeststepq=0.01d0
+        end if
+        if ( == default_) then
         scalefactorf=1.d0
+        end if
         !ngrowth=0
         !growthstep=1
+        if ( == default_) then
         dampw=0.0d0
+        end if
+        if ( == default_) then
         atomrefenergies(:)=0.0d0
+        end if
+        if ( == default_) then
         weights_min=-1.d0
+        end if
+        if ( == default_) then
         weights_max=1.d0
+        end if
+        if ( == default_) then
         biasweights_min=-1.d0
+        end if
+        if ( == default_) then
         biasweights_max=1.d0
+        end if
+        if ( == default_) then
         weightse_min=-1.d0
+        end if
+        if ( == default_) then
         weightse_max=1.d0
+        end if
+        if ( == default_) then
         fitting_unit=1
+        end if
+        if ( == default_) then
         pstring='00000000000000000000'
+        end if
+        if ( == default_) then
         nran    =5
+        end if
+        if ( == default_) then
         fixedcharge(:)=99.0d0
+        end if
+        if ( == default_) then
         maxforce=10000.d0
+        end if
+        if ( == default_) then
         maxenergy=10000.d0
+        end if
+        if ( == default_) then
         restrictw=-100000.d0
+        end if
         !fitmode=1
+        if ( == default_) then
         scmin_short_atomic=0.0d0
+        end if
+        if ( == default_) then
         scmax_short_atomic=1.0d0
-        !scmin_short_pair=0.0d0
-        !scmax_short_pair=1.0d0
+        end if
+        if ( == default_) then
         scmin_elec=0.0d0
+        end if
+        if ( == default_) then
         scmax_elec=1.0d0
+        end if
+        if ( == default_) then
         noisee=0.0d0
+        end if
+        if ( == default_) then
         noisef=0.0d0
+        end if
+        if ( == default_) then
         noiseq=0.0d0
+        end if
+        if ( == default_) then
         cutoff_type=1
+        end if
+        if ( == default_) then
         cutoff_alpha = 0.0d0
+        end if
+        if ( == default_) then
         rscreen_cut=0.0d0
+        end if
+        if ( == default_) then
         rscreen_onset=0.0d0
+        end if
+        if ( == default_) then
         dynforcegroup_start=20
+        end if
+        if ( == default_) then
         dynforcegroup_step=2
+        end if
+        if ( == default_) then
         nshuffle_weights_short_atomic=10
+        end if
+        if ( == default_) then
         shuffle_weights_short_atomic=0.1d0
+        end if
+        if ( == default_) then
         saturation_threshold=0.99d0
+        end if
+        if ( == default_) then
         dataclusteringthreshold1=1.0d0
+        end if
+        if ( == default_) then
         dataclusteringthreshold2=0.0d0
+        end if
+        if ( == default_) then
         inputforcethreshold=0.001d0
+        end if
+        if ( == default_) then
         kalman_epsilon = 1.0d0
+        end if
+        if ( == default_) then
         kalman_q0 = 0.0d0
+        end if
+        if ( == default_) then
         kalman_qtau = 0.0d0
+        end if
+        if ( == default_) then
         kalman_qmin = 0.0d0
+        end if
 
     end subroutine inputnndefaults
 

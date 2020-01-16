@@ -77,11 +77,11 @@ module pes_nene_mod
         character(len=max_string_length) :: words(100)
         character(len=max_string_length) :: inp_path
 
-        character(len=max_string_length)                :: filename_inpnn, filename_scaling, filename_scalinge
+        character(len=max_string_length) :: filename_inpnn, filename_scaling, filename_scalinge
 
-        integer, parameter  :: inpnn_unit       = 61
+        integer, parameter  :: inpnn_unit = 61
 
-        integer  :: idx1, idx2, weight_counter
+        integer  :: idx1, idx2
         integer  :: npairs_counter_1, npairs_counter_2, element_counter, nodes_counter
         integer  :: general_counter_1, general_counter_2, general_counter_3
 
@@ -91,9 +91,11 @@ module pes_nene_mod
         character(len=*), parameter :: err_inpnn = "Error when reading input.nn: "
         character(len=*), parameter :: err_scaling = "Error when reading scaling.data: "
         character(len=*), parameter :: err_scalinge = "Error when reading scalinge.data: "
-        character(len=*), parameter :: err_weight = "Error when reading the following weight file: "
-        character(len=*), parameter :: err_weighte = "Error when reading the following weighte file: "
+
         character(len=*), parameter :: warn_inpnn = "Warning when reading input.nn: "
+
+        ! initialize RuNNer related readout variable
+        inp_path                    = default_string
 
         ! first read the pes file:
         ! line should read something like "H   H   proj    proj"
@@ -124,18 +126,6 @@ module pes_nene_mod
         atoms%pes(idx1,idx2) = pes_id_nene
         atoms%pes(idx2,idx1) = pes_id_nene
 
-        ! initialize readout variables
-        if (.not. allocated(weights_path)) then
-
-            allocate(weights_path(atoms%ntypes))
-            allocate(filename_weights(atoms%ntypes))
-
-            weights_path        = default_string
-            filename_weights    = default_string
-            inp_path            = default_string
-
-        end if
-
 
         do
             read(inp_unit, '(A)', iostat=ios) buffer
@@ -146,14 +136,8 @@ module pes_nene_mod
                 exit
 
             ! something went wrong
-            else if (nwords /= 2 .and. words(1) /= "weights") then
-                print *,  err // err_pes // "PES parameters must &
-                        consist of key value pairs. A parameter block must be terminated by a blank line."
-                stop
-
-            ! maybe add comparison of element type and number in weight filename?
-            else if (words(1) == "weights" .and. nwords /= atoms%ntypes+1) then ! check for valid number of weight file names given
-                print *,  err // "Number of weight files given and number of elements in the structure file do not match!"
+            else if (nwords /= 2) then
+                print *,  err // err_pes // "PES parameters must consist of key value pairs. A parameter block must be terminated by a blank line."
                 stop
             end if
 
@@ -199,15 +183,6 @@ module pes_nene_mod
         filename_scaling    = trim(inp_path) // "scaling.data"
         filename_scalinge   = trim(inp_path) // "scalinge.data"
 
-        ! loop over weight file names
-        do weight_counter = 1,atoms%ntypes
-            filename_weights(weight_counter)  = trim(inp_path) // trim(weights_path(weight_counter))
-        end do
-
-        ! loop over weighte file names
-        do weighte_counter = 1,atoms%ntypes
-            filename_weightse(weighte_counter)  = trim(inp_path) // trim(weightse_path(weighte_counter))
-        end do
 
         ! in case of the HDNNPs several additional input files have to be read
 
@@ -1323,7 +1298,7 @@ module pes_nene_mod
             kalmanlambdae_local=0.98000d0
             iseed=200
 
-            call inputnndefaults() ! own subroutine in pes_nene_mod_supply.f90
+            call inputnndefaults() ! own subroutine in pes_nene_mod_supply.f90, remove after readout of every keyword!
 
             if(lshort.and.(nn_type_short.eq.1))then
                 windex_short_atomic(:,:)    =0
@@ -5250,7 +5225,7 @@ module pes_nene_mod
             ! check existance of scaling.data
             if (.not. file_exists(filename_scaling)) stop err // err_scaling // 'file does not exist'
             ! read in all data from scaling.data
-            call readscale(filename_scaling,scaling_unit,err_scaling,nelem,1,maxnum_funcvalues_short_atomic,num_funcvalues_short_atomic,minvalue_short_atomic,maxvalue_short_atomic,avvalue_short_atomic,eshortmin,eshortmax,rdummy,rdummy)
+            call readscale(filename_scaling,err_scaling,nelem,1,maxnum_funcvalues_short_atomic,num_funcvalues_short_atomic,minvalue_short_atomic,maxvalue_short_atomic,avvalue_short_atomic,eshortmin,eshortmax,rdummy,rdummy)
             ! read in all data from all weight files
             call readweights(inp_path,0,nelem,maxnum_weights_short_atomic,num_weights_short_atomic,weights_short_atomic)
         end if
@@ -5260,7 +5235,7 @@ module pes_nene_mod
             ! check existance of scalinge.data
             if (.not. file_exists(filename_scalinge)) stop err // err_scalinge // 'file does not exist'
             ! read in all data from scalinge.data
-            call readscale(filename_scalinge,scalinge_unit,err_scalinge,nelem,3,maxnum_funcvalues_elec,num_funcvalues_elec,minvalue_elec,maxvalue_elec,avvalue_elec,dummy,dummy,chargemin,chargemax)
+            call readscale(filename_scalinge,err_scalinge,nelem,3,maxnum_funcvalues_elec,num_funcvalues_elec,minvalue_elec,maxvalue_elec,avvalue_elec,dummy,dummy,chargemin,chargemax)
             ! read in all data from all weighte files
             call readweights(inp_path,1,nelem,maxnum_weights_elec,num_weights_elec,weights_elec)
         end if

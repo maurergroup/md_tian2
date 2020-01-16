@@ -7,4 +7,3 @@ C	C	latt	latt
 pes nene
 H	H	proj	proj
  inp_dir 'RuNNer_input/'
- weights 'weights.001.data' 'weights.006.data'
