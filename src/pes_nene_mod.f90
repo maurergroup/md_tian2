@@ -49,8 +49,6 @@ module pes_nene_mod
 !   variable declarations concerning RuNNer in the corresponding modules, but set to (our) default values has to be done before reading out keywords (own subroutine called in compute_nene)
 !   move RuNNer related files to folder and change the makefile
 !   check how many mpi routines have to stay in the code, at least set the few default values so that no error will occur due to wrong default mpi settings, therefore the mpi_dummy_routines.f90 file makes sense
-!   don't explicitly give weight file names, use RuNNer routine instead
-!   remove
 !   declare all needed variables which are not declared in modules (especially look at main, initnn, predict)
 
 
@@ -61,13 +59,6 @@ module pes_nene_mod
         use open_file, only : lower_case, open_for_read, split_string
         !use run_config, only : simparams
         use useful_things, only : file_exists
-
-        ! needed in initnn.f90 and readinput.f90
-        use fittingoptions
-        use inputnncounters
-        use mode1options
-        use nnconstants
-
 
         type(universe), intent(inout) :: atoms
         integer, intent(in) :: inp_unit
@@ -83,6 +74,7 @@ module pes_nene_mod
 
         integer  :: idx1, idx2
         integer  :: npairs_counter_1, npairs_counter_2, element_counter, nodes_counter
+        integer  :: nuc_counter
         integer  :: general_counter_1, general_counter_2, general_counter_3
 
         character(len=*), parameter :: err = "Error in read_nene: "
@@ -205,6 +197,8 @@ module pes_nene_mod
         !call initnn(iseed)
 
         ! start readout of input.nn according to initnn.f90
+        listdim    =100000
+
         call get_nnconstants()
         !call writeheader()
 
@@ -473,10 +467,6 @@ module pes_nene_mod
             allocate(nodes_ewald_local(0:maxnum_layers_elec))
             nodes_ewald_local(:) = default_int ! = 0 in getdimensions.f90
         end if
-        if (maxnum_layers_short_pair .gt. 0) then ! not needed
-            allocate(nodes_pair_local(0:maxnum_layers_short_pair))
-            nodes_pair_local(:) = default_int ! = 0 in getdimensions.f90
-        end if
 
 
         call open_for_read(inpnn_unit, filename_inpnn); ios = 0
@@ -510,17 +500,6 @@ module pes_nene_mod
                         else
                             print *, err, err_inpnn, "global_nodes_electrostatic argument number ", nwords, " does not match with global_hidden_layers_electrostatic value ", maxnum_layers_elec-1; stop
                         end if
-
-!                   case ('global_nodes_pair') ! not needed - make dummy
-!                       if (nodes_pair_local /= default_int) stop err // err_inpnn // 'Multiple use of the global_nodes_pair key'
-!                       if (nwords == maxnum_layers_short_pair+1) then
-!                           do nodes_counter = 1,maxnum_layers_short_pair-1
-!                               read(words(nodes_counter+1),'(i1000)', iostat=ios) nodes_pair_local(nodes_counter)
-!                               if (ios /= 0) stop err // err_inpnn // "global_nodes_pair value", nodes_counter, " must be integer"
-!                           end do
-!                       else
-!                           print *, err, err_inpnn, "global_nodes_pair argument number does not match with global_hidden_layers_pair value"; stop
-!                       end if
 
                     case ('global_nodes_pair')
                         print *, err, err_inpnn, "global_nodes_pair key not supported, Pair NN not implemented"; stop
@@ -675,16 +654,16 @@ module pes_nene_mod
                         call nuccharge(elementtemp, ztemp)
                         num_funcvaluese_local(ztemp) = num_funcvaluese_local(ztemp) + 1
 
-                    case ('pairsymfunction_short') ! not needed
+                    case ('pairsymfunction_short')
                         print *, err, err_inpnn, "pairsymfunction_short key is not supported, Pair NN not implemented"
 
-                    case ('element_pairsymfunction_short') ! not needed
+                    case ('element_pairsymfunction_short')
                         print *, err, err_inpnn, "element_pairsymfunction_short key is not supported, Pair NN not implemented"
 
-                    case ('global_pairsymfunction_short') ! not needed
+                    case ('global_pairsymfunction_short')
                         print *, err, err_inpnn, "global_pairsymfunction_short key is not supported, Pair NN not implemented"
 
-                    case ('global_symfunction_short_pair') ! not needed
+                    case ('global_symfunction_short_pair')
                         print *, err, err_inpnn, "global_symfunction_short_pair key is not supported, Pair NN not implemented"
 
                     case default
@@ -1297,8 +1276,6 @@ module pes_nene_mod
             kalmanlambda_local =0.98000d0
             kalmanlambdae_local=0.98000d0
             iseed=200
-
-            call inputnndefaults() ! own subroutine in pes_nene_mod_supply.f90, remove after readout of every keyword!
 
             if(lshort.and.(nn_type_short.eq.1))then
                 windex_short_atomic(:,:)    =0
@@ -2883,6 +2860,9 @@ module pes_nene_mod
             end do
 
             close(inpnn_unit)
+
+            call inputnndefaults() ! this has to be done AFTER the readout of ALL keywords, because variables are set to (our) default before, now values are assigned when there was no keyword found!!
+
             ! end of readout according to readkeywords.f90
 
             ! further readout according to readinput.f90

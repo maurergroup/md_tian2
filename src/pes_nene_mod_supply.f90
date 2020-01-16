@@ -29,8 +29,12 @@ module pes_nene_mod_supply
 
     ! RuNNer related modules (predict.f90)
     use fileunits
+    use fittingoptions
     use globaloptions
+    use inputnncounters
+    use mode1options
     use mpi_mod
+    use nnconstants
     use nnewald
     use nnflags
     use nnshort_atomic
@@ -45,7 +49,9 @@ module pes_nene_mod_supply
     integer :: ielem
     integer :: iseed
 
+    ! following all needed variable declarations not listed in any RuNNer related module
     logical :: lelement(102)
+    integer :: ztemp
 
     contains
 
@@ -77,11 +83,10 @@ module pes_nene_mod_supply
         element                             = default_string
         nucelem                             = default_int
         dmin_element                        = default_real
-        nodes_short_local                   = default_int
-        nodes_ewald_local                   = default_int
+        !nodes_short_local                   = default_int
+        !nodes_ewald_local                   = default_int
         num_funcvalues_local                = default_int
         num_funcvaluese_local               = default_int
-        num_funcvaluesp_local               = default_int
         elementtemp                         = default_string
         ztemp                               = default_int
         maxnum_funcvalues_short_atomic      = default_int
@@ -128,7 +133,7 @@ module pes_nene_mod_supply
 
 
 
-
+        pstring = default_string
 
         ldebug = default_bool
         !maxnum_layers_short_atomic = default_int
@@ -139,14 +144,6 @@ module pes_nene_mod_supply
     end subroutine set_defaults
 
     subroutine inputnndefaults()
-
-        use nnflags
-        use globaloptions
-        use mode1options
-        use predictionoptions
-        use fittingoptions
-        use nnshort_atomic
-        use nnewald
 
         implicit none
 
@@ -171,217 +168,219 @@ module pes_nene_mod_supply
             paramode = 1
         end if
         if (ewaldalpha == default_real) then
-            ewaldalpha=0.0d0
+            ewaldalpha = 0.0d0
         end if
         if (ewaldcutoff == default_real) then
-            ewaldcutoff=0.0d0
+            ewaldcutoff = 0.0d0
         end if
         if (ewaldkmax == default_int) then
-            ewaldkmax=0
+            ewaldkmax = 0
         end if
         if (nenergygroup == default_int) then
-            nenergygroup=1
+            nenergygroup = 1
         end if
-        if ( == default_) then
-            nforcegroup=1
+        if (nforcegroup == default_int) then
+            nforcegroup = 1
         end if
-        if ( == default_) then
-            nchargegroup=1
+        if (nchargegroup == default_int) then
+            nchargegroup = 1
         end if
-        if ( == default_) then
-            energyrnd=1.0d0
+        if (energyrnd == default_real) then
+            energyrnd = 1.0d0
         end if
-        if ( == default_) then
-            forcernd=1.0d0
+        if (forcernd == default_real) then
+            forcernd = 1.0d0
         end if
-        if ( == default_) then
-        chargernd=1.0d0
+        if (chargernd == default_real) then
+            chargernd = 1.0d0
         end if
-        !fitethres=0.0d0
-        !fitfthres=0.0d0
-        if ( == default_) then
-        rmin=0.5d0
+        if (fitethres == default_real) then
+            fitethres = 0.0d0
         end if
-        if ( == default_) then
-        optmodee=1
+        if (fitfthres == default_real) then
+            fitfthres = 0.0d0
         end if
-        if ( == default_) then
-        optmodef=1
+        if (rmin == default_real) then
+            rmin = 0.5d0
         end if
-        if ( == default_) then
-        optmodeq=1
+        if (optmodee == default_int) then
+            optmodee = 1
         end if
-        if ( == default_) then
-        nblock=200
+        if (optmodef == default_int) then
+            optmodef = 1
         end if
-        !nepochs=0
-        if ( == default_) then
-        iwriteweight=1
+        if (optmodeq == default_int) then
+            optmodeq = 1
         end if
-        if ( == default_) then
-        kalmanthreshold=0.0d0
+        if (nblock == default_int) then
+            nblock = 200
         end if
-        if ( == default_) then
-        kalmanthresholdf=0.0d0
+        if (nepochs == default_int) then
+            nepochs = 0
         end if
-        if ( == default_) then
-        kalmanthresholde=0.0d0
+        if (iwriteweight == default_int) then
+            iwriteweight = 1
         end if
-        if ( == default_) then
-        kalmanthresholdc=0.0d0
+        if (kalmanthreshold == default_real) then
+            kalmanthreshold = 0.0d0
         end if
-        if ( == default_) then
-        kalman_dampe=1.0d0
+        if (kalmanthresholdf == default_real) then
+            kalmanthresholdf = 0.0d0
         end if
-        if ( == default_) then
-        kalman_dampf=1.0d0
+        if (kalmanthresholde == default_real) then
+            kalmanthresholde = 0.0d0
         end if
-        if ( == default_) then
-        kalman_dampq=1.0d0
+        if (kalmanthresholdc == default_real) then
+            kalmanthresholdc = 0.0d0
         end if
-        if ( == default_) then
-        steepeststepe=0.01d0
+        if (kalman_dampe == default_real) then
+            kalman_dampe = 1.0d0
         end if
-        if ( == default_) then
-        steepeststepf=0.01d0
+        if (kalman_dampf == default_real) then
+            kalman_dampf = 1.0d0
         end if
-        if ( == default_) then
-        steepeststepq=0.01d0
+        if (kalman_dampq == default_real) then
+            kalman_dampq = 1.0d0
         end if
-        if ( == default_) then
-        scalefactorf=1.d0
+        if (steepeststepe == default_real) then
+            steepeststepe = 0.01d0
         end if
-        !ngrowth=0
-        !growthstep=1
-        if ( == default_) then
-        dampw=0.0d0
+        if (steepeststepf == default_real) then
+            steepeststepf = 0.01d0
         end if
-        if ( == default_) then
-        atomrefenergies(:)=0.0d0
+        if (steepeststepq == default_real) then
+            steepeststepq = 0.01d0
         end if
-        if ( == default_) then
-        weights_min=-1.d0
+        if (scalefactorf == default_real) then
+            scalefactorf = 1.d0
         end if
-        if ( == default_) then
-        weights_max=1.d0
+        if (ngrowth == default_int) then
+            ngrowth = 0
         end if
-        if ( == default_) then
-        biasweights_min=-1.d0
+        if (growthstep == default_int) then
+            growthstep = 1
         end if
-        if ( == default_) then
-        biasweights_max=1.d0
+        if (dampw == default_real) then
+            dampw = 0.0d0
         end if
-        if ( == default_) then
-        weightse_min=-1.d0
+        if (all(atomrefenergies == default_real)) then
+            atomrefenergies(:) = 0.0d0
         end if
-        if ( == default_) then
-        weightse_max=1.d0
+        if (weights_min == default_real) then
+            weights_min = -1.d0
         end if
-        if ( == default_) then
-        fitting_unit=1
+        if (weights_max == default_real) then
+            weights_max = 1.d0
         end if
-        if ( == default_) then
-        pstring='00000000000000000000'
+        if (biasweights_min == default_real) then
+            biasweights_min = -1.d0
         end if
-        if ( == default_) then
-        nran    =5
+        if (biasweights_max == default_real) then
+            biasweights_max = 1.d0
         end if
-        if ( == default_) then
-        fixedcharge(:)=99.0d0
+        if (weightse_min == default_real) then
+            weightse_min = -1.d0
         end if
-        if ( == default_) then
-        maxforce=10000.d0
+        if (weightse_max == default_real) then
+            weightse_max = 1.d0
         end if
-        if ( == default_) then
-        maxenergy=10000.d0
+        if (fitting_unit == default_int) then
+            fitting_unit = 1
         end if
-        if ( == default_) then
-        restrictw=-100000.d0
+        if (pstring == default_string) then
+            pstring = '00000000000000000000'
         end if
-        !fitmode=1
-        if ( == default_) then
-        scmin_short_atomic=0.0d0
+        if (nran == default_int) then
+            nran = 5
         end if
-        if ( == default_) then
-        scmax_short_atomic=1.0d0
+        if (all(fixedcharge == default_real)) then
+            fixedcharge(:) = 99.0d0
         end if
-        if ( == default_) then
-        scmin_elec=0.0d0
+        if (maxforce == default_real) then
+            maxforce = 10000.d0
         end if
-        if ( == default_) then
-        scmax_elec=1.0d0
+        if (maxenergy == default_real) then
+            maxenergy = 10000.d0
         end if
-        if ( == default_) then
-        noisee=0.0d0
+        if (restrictw == default_real) then
+            restrictw = -100000.d0
         end if
-        if ( == default_) then
-        noisef=0.0d0
+        if (fitmode == default_int) then
+            fitmode = 1
         end if
-        if ( == default_) then
-        noiseq=0.0d0
+        if (scmin_short_atomic == default_real) then
+            scmin_short_atomic = 0.0d0
         end if
-        if ( == default_) then
-        cutoff_type=1
+        if (scmax_short_atomic == default_real) then
+            scmax_short_atomic = 1.0d0
         end if
-        if ( == default_) then
-        cutoff_alpha = 0.0d0
+        if (scmin_elec == default_real) then
+            scmin_elec = 0.0d0
         end if
-        if ( == default_) then
-        rscreen_cut=0.0d0
+        if (scmax_elec == default_real) then
+            scmax_elec = 1.0d0
         end if
-        if ( == default_) then
-        rscreen_onset=0.0d0
+        if (noisee == default_real) then
+            noisee = 0.0d0
         end if
-        if ( == default_) then
-        dynforcegroup_start=20
+        if (noisef == default_real) then
+            noisef = 0.0d0
         end if
-        if ( == default_) then
-        dynforcegroup_step=2
+        if (noiseq == default_real) then
+            noiseq = 0.0d0
         end if
-        if ( == default_) then
-        nshuffle_weights_short_atomic=10
+        if (cutoff_type == default_int) then
+            cutoff_type = 1
         end if
-        if ( == default_) then
-        shuffle_weights_short_atomic=0.1d0
+        if (cutoff_alpha == default_real) then
+            cutoff_alpha = 0.0d0
         end if
-        if ( == default_) then
-        saturation_threshold=0.99d0
+        if (rscreen_cut == default_real) then
+            rscreen_cut = 0.0d0
         end if
-        if ( == default_) then
-        dataclusteringthreshold1=1.0d0
+        if (rscreen_onset == default_real) then
+            rscreen_onset = 0.0d0
         end if
-        if ( == default_) then
-        dataclusteringthreshold2=0.0d0
+        if (dynforcegroup_start == default_int) then
+            dynforcegroup_start = 20
         end if
-        if ( == default_) then
-        inputforcethreshold=0.001d0
+        if (dynforcegroup_step == default_int) then
+            dynforcegroup_step = 2
         end if
-        if ( == default_) then
-        kalman_epsilon = 1.0d0
+        if (nshuffle_weights_short_atomic == default_int) then
+            nshuffle_weights_short_atomic = 10
         end if
-        if ( == default_) then
-        kalman_q0 = 0.0d0
+        if (shuffle_weights_short_atomic == default_real) then
+            shuffle_weights_short_atomic = 0.1d0
         end if
-        if ( == default_) then
-        kalman_qtau = 0.0d0
+        if (saturation_threshold == default_real) then
+            saturation_threshold = 0.99d0
         end if
-        if ( == default_) then
-        kalman_qmin = 0.0d0
+        if (dataclusteringthreshold1 == default_real) then
+            dataclusteringthreshold1 = 1.0d0
+        end if
+        if (dataclusteringthreshold2 == default_real) then
+            dataclusteringthreshold2 = 0.0d0
+        end if
+        if (inputforcethreshold == default_real) then
+            inputforcethreshold = 0.001d0
+        end if
+        if (kalman_epsilon == default_real) then
+            kalman_epsilon = 1.0d0
+        end if
+        if (kalman_q0 == default_real) then
+            kalman_q0 = 0.0d0
+        end if
+        if (kalman_qtau == default_real) then
+            kalman_qtau = 0.0d0
+        end if
+        if (kalman_qmin == default_real) then
+            kalman_qmin = 0.0d0
         end if
 
     end subroutine inputnndefaults
 
     subroutine checkinputnn(err_main,err_file)
-
-        use nnflags
-        use globaloptions
-        use inputnncounters
-        use fittingoptions
-        use predictionoptions
-        use mode1options
-        use nnshort_atomic
-        use nnewald
-        use fileunits
 
         implicit none
 
@@ -943,9 +942,6 @@ module pes_nene_mod_supply
 
     subroutine readscale(filename,filename_error,ndim,iswitch,maxnum_funcvalues_local,num_funcvalues_local,minvalue_local,maxvalue_local,avvalue_local,eshortmin,eshortmax,chargemin,chargemax)
 
-        use fileunits
-        use globaloptions
-
         implicit none
 
         integer             :: scaling_unit
@@ -1074,10 +1070,6 @@ module pes_nene_mod_supply
     end subroutine readscale
 
     subroutine readweights(directory,iswitch,ndim,maxnum_weights_local,num_weights_local,weights_local)
-
-        use fileunits
-        use globaloptions
-        use nnflags
 
         implicit none
 
