@@ -41,6 +41,7 @@ module pes_nene_mod_supply
     !use nnshort_pair ! this module is not needed, Pair NN not implemented!!
     use predictionoptions
     !use saturation
+    !use structures
     use symfunctions
     use timings
 
@@ -52,6 +53,34 @@ module pes_nene_mod_supply
     ! following all needed variable declarations not listed in any RuNNer related module
     logical :: lelement(102)
     integer :: ztemp
+
+    integer, dimension(:)  , allocatable :: nodes_short_local
+    integer, dimension(:)  , allocatable :: nodes_ewald_local
+    integer, dimension(:)  , allocatable :: num_funcvalues_local
+    integer, dimension(:)  , allocatable :: num_funcvaluese_local
+
+    character*2 :: elementtemp
+    character*2 :: elementtemp1
+    character*2 :: elementtemp2
+    character*2 :: elementtemp3
+
+    logical :: lfounddebug
+    logical :: lfound_num_layersshort
+    logical :: lfound_num_layersewald
+    logical :: lfound_num_layerspair
+    logical :: lfound_luseatomenergies
+    logical :: lfound_luseatomcharges
+    logical :: lfound_nelem
+    integer :: function_type_temp
+    real(dp) :: funccutoff_local
+    real(dp) :: maxcutoff_local
+
+    integer num_atoms
+    real*8  lattice(3,3)
+    real*8  xyzstruct(3,max_num_atoms)
+    integer zelem(max_num_atoms)
+    integer num_pairs
+
 
     contains
 
@@ -85,20 +114,22 @@ module pes_nene_mod_supply
         dmin_element                        = default_real
         !nodes_short_local                   = default_int
         !nodes_ewald_local                   = default_int
-        num_funcvalues_local                = default_int
-        num_funcvaluese_local               = default_int
+        !num_funcvalues_local                = 0 ! needed so that the max function will work
+        !num_funcvaluese_local               = 0 ! needed so that the max function will work
         elementtemp                         = default_string
         ztemp                               = default_int
-        maxnum_funcvalues_short_atomic      = default_int
-        maxnum_funcvalues_elec              = default_int
+        maxnum_funcvalues_short_atomic      = 0 ! needed so that the max function will work
+        maxnum_funcvalues_elec              = 0 ! needed so that the max function will work
         function_type_local                 = default_int
         function_type_temp                  = default_int
-        funccutoff_local                    = default_real
-        maxcutoff_local                     = default_real
+        funccutoff_local                    = 0.0d0 ! needed so that the max function will work
+        maxcutoff_local                     = 0.0d0 ! needed so that the max function will work
         elementtemp1                        = default_string
         elementtemp2                        = default_string
         elementtemp3                        = default_string
 
+        maxnodes_short_atomic               = 0 ! needed so that the max function will work
+        maxnodes_elec                       = 0 ! needed so that the max function will work
 
 
 

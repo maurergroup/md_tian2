@@ -32,18 +32,6 @@ module pes_nene_mod
 
     contains
 
-    !type runner_input_parameters
-
-        !private
-        !character(len=max_string_length)                :: filename_inpnn, filename_scaling
-        !character(len=max_string_length), allocatable   :: filename_weights(:)
-
-    !end type
-
-    !type(runner_input_parameters) :: rinpparam
-
-
-
 !   2do:
 !   seed for the random number generator should be the trajectory number, not a sum of start number and total number of trajectories
 !   variable declarations concerning RuNNer in the corresponding modules, but set to (our) default values has to be done before reading out keywords (own subroutine called in compute_nene)
@@ -441,15 +429,13 @@ module pes_nene_mod
 
         call sortelements()
 
-        if (maxnum_layers_short_atomic == default_int) then
+        if (.not. lfound_num_layersshort) then
             maxnum_layers_short_atomic = 0
         end if
-        if (maxnum_layers_elec == default_int) then
+        if (.not. lfound_num_layersewald) then
             maxnum_layers_elec = 0
         end if
-        !if (maxnum_layers_short_pair == default_int) then ! not needed
-        !    maxnum_layers_short_pair = 0
-        !end if
+
         if (lfound_nelem == default_bool) stop err // err_inpnn // "number_of_elements key not found"
 
         allocate(num_funcvalues_local(102))
@@ -511,11 +497,11 @@ module pes_nene_mod
                         read(words(3),'(i1000)', iostat=ios) function_type_local
                         if (ios /= 0) stop err // err_inpnn // "element_symfunction_short second argument value must be integer"
                         call nuccharge(elementtemp, ztemp)
-                        if (num_funcvalues_local(ztemp) /= default_int) then
-                            print *, err // err_inpnn // 'Error in element_symfunction_short: Element with atomic number ', num_funcvalues_local(ztemp), 'already set, check for multiple use of key'
-                            stop
-                        end if
-                        num_funcvalues_local(ztemp) = 0
+                        !if (num_funcvalues_local(ztemp) /= 0) then
+                            !print *, err // err_inpnn // 'Error in element_symfunction_short: Element with atomic number ', num_funcvalues_local(ztemp), 'already set, check for multiple use of key'
+                            !stop
+                        !end if
+                        !num_funcvalues_local(ztemp) = 0
                         call lower_case(words(3))
 
                         select case (words(3))
@@ -526,12 +512,12 @@ module pes_nene_mod
                             case (3,8,9)
                                 num_funcvalues_local(ztemp) = num_funcvalues_local(ztemp) + nelem
                                 if (nelem .gt. 1) then
-                                    do general_counter_1 = 1,rinpparam$nelem-1
+                                    do general_counter_1 = 1,nelem-1
                                         num_funcvalues_local(ztemp) = num_funcvalues_local(ztemp) + general_counter_1
                                     end do
                                 end if
 
-                            case (5,6) ! only for Pair NN!
+                            case (5,6) ! debug functions
                                 num_funcvalues_local(ztemp) = num_funcvalues_local(ztemp) + 1
 
                             case default
@@ -563,7 +549,7 @@ module pes_nene_mod
                                     end do
                                 end if
 
-                            case (5,6) ! only for Pair NN!
+                            case (5,6) ! debug functions
                                 num_funcvalues_local(ztemp) = num_funcvalues_local(ztemp) + 1
 
                             case default
@@ -573,8 +559,8 @@ module pes_nene_mod
                         end select
 
                     case ('global_symfunction_short')
-                        read(words(2),'(i1000)', iostat=ios) function_type_local !!check if it will read only the function type and not the symbol!!
-                        if (ios /= 0) stop err // err_inpnn // "global_symfunction_short (second?) argument value must be integer"
+                        read(words(2),'(i1000)', iostat=ios) function_type_local
+                        if (ios /= 0) stop err // err_inpnn // "global_symfunction_short second argument value must be integer"
                         !call nuccharge(elementtemp, ztemp)
                         call lower_case(words(2))
 
@@ -597,7 +583,7 @@ module pes_nene_mod
                                     end if
                                 end do
 
-                            case (5,6) ! only for Pair NN!
+                            case (5,6) ! debug functions
                                 do general_counter_1 = 1,nelem
                                     num_funcvalues_local(nucelem(general_counter_1)) = num_funcvalues_local(nucelem(general_counter_1)) + 1
                                 end do
@@ -609,8 +595,8 @@ module pes_nene_mod
                         end select
 
                     case ('global_symfunction_electrostatic')
-                        read(words(2),'(i1000)', iostat=ios) function_type_local !!check if it will read only the function type and not the symbol!!
-                        if (ios /= 0) stop err // err_inpnn // "global_symfunction_electrostatic (second?) argument value must be integer"
+                        read(words(2),'(i1000)', iostat=ios) function_type_local
+                        if (ios /= 0) stop err // err_inpnn // "global_symfunction_electrostatic second argument value must be integer"
                         !call nuccharge(elementtemp, ztemp)
                         call lower_case(words(2))
 
@@ -693,16 +679,14 @@ module pes_nene_mod
 
         if (allocated(nodes_ewald_local)) deallocate(nodes_ewald_local)
         if (allocated(nodes_short_local)) deallocate(nodes_short_local)
-        !if (allocated(nodes_pair_local)) deallocate(nodes_pair_local)
 
         do general_counter_1 = 1,102
             maxnum_funcvalues_short_atomic = max(maxnum_funcvalues_short_atomic, num_funcvalues_local(general_counter_1))
-            maxnum_funcvalues_elec = max(maxnum_funcvalues_elec, num_funcvaluese_local(i))
+            maxnum_funcvalues_elec = max(maxnum_funcvalues_elec, num_funcvaluese_local(general_counter_1))
         end do
 
         deallocate(num_funcvalues_local)
         deallocate(num_funcvaluese_local)
-        !deallocate(num_funcvaluesp_local) ! not needed
 
         deallocate(nucelem)
         deallocate(element)
@@ -758,6 +742,12 @@ module pes_nene_mod
                                     else
                                         print *, err, err_inpnn, "global_symfunction_short type ", words(2), " needs 3 arguments"; stop
                                     end if
+
+                                case (5)
+                                    ! just let the debug function pass
+
+                                case (6)
+                                    ! just let the debug function pass
 
                                 case (8)
                                     if (nwords == 5)
@@ -820,6 +810,12 @@ module pes_nene_mod
                                     else
                                         print *, err, err_inpnn, "element_symfunction_short type ", words(3), " needs 4 arguments"; stop
                                     end if
+
+                                case (5)
+                                    ! just let the debug function pass
+
+                                case (6)
+                                    ! just let the debug function pass
 
                                 case (8)
                                     if (nwords == 6)
@@ -887,6 +883,12 @@ module pes_nene_mod
                                     else
                                         print *, err, err_inpnn, "symfunction_short type ", words(3), " needs 5 arguments"; stop
                                     end if
+
+                                case (5)
+                                    ! just let the debug function pass
+
+                                case (6)
+                                    ! just let the debug function pass
 
                                 case (8)
                                     if (nwords == 8)
@@ -1157,7 +1159,7 @@ module pes_nene_mod
 
         end if
 
-        if (maxcutoff_local == default_real) then
+        if (maxcutoff_local == 0.0d0) then
             print *, err, err_inpnn, "maxcutoff_local is not set, specify symmetry functions"
             stop
         end if
