@@ -38,15 +38,17 @@ module pes_nene_mod
 !   move RuNNer related files to folder and change the makefile
 !   check how many mpi routines have to stay in the code, at least set the few default values so that no error will occur due to wrong default mpi settings, therefore the mpi_dummy_routines.f90 file makes sense
 !   declare all needed variables which are not declared in modules (especially look at main, initnn, predict)
+!   replace all non-characters in case scenarios with proper string (e.g 1 into '1')
+!   remove when read out any data file the else in the while ios = 0 loop!
 
 
     ! Here all necessary files and keywords are read in for the high-dimensional neural network potentials (HDNNPs)
     subroutine read_nene(atoms, inp_unit)
 
         use constants, only : max_string_length, pes_id_nene, default_string, default_int, default_real, default_bool
-        use open_file, only : lower_case, open_for_read, split_string
+        use open_file, only : open_for_read
         !use run_config, only : simparams
-        use useful_things, only : file_exists
+        use useful_things, only : lower_case, split_string, file_exists
 
         type(universe), intent(inout) :: atoms
         integer, intent(in) :: inp_unit
@@ -217,10 +219,10 @@ module pes_nene_mod
 
                             select case (words(2))
 
-                                case (1)
+                                case ('1')
                                     ! Gandalf says: you shall pass
 
-                                case (2)
+                                case ('2')
                                     print *, err, err_inpnn, "nn_type_short 2 not supported, Pair NN not implemented!"
                                     stop
 
@@ -506,10 +508,10 @@ module pes_nene_mod
 
                         select case (words(3))
 
-                            case (1,2,4)
+                            case ('1','2','4')
                                 num_funcvalues_local(ztemp) = num_funcvalues_local(ztemp) + nelem
 
-                            case (3,8,9)
+                            case ('3','8','9')
                                 num_funcvalues_local(ztemp) = num_funcvalues_local(ztemp) + nelem
                                 if (nelem .gt. 1) then
                                     do general_counter_1 = 1,nelem-1
@@ -517,7 +519,7 @@ module pes_nene_mod
                                     end do
                                 end if
 
-                            case (5,6) ! debug functions
+                            case ('5','6') ! debug functions
                                 num_funcvalues_local(ztemp) = num_funcvalues_local(ztemp) + 1
 
                             case default
@@ -538,10 +540,10 @@ module pes_nene_mod
 
                         select case (words(3))
 
-                            case (1,2,4)
+                            case ('1','2','4')
                                 num_funcvaluese_local(ztemp) = num_funcvaluese_local(ztemp) + nelem
 
-                            case (3,8,9)
+                            case ('3','8','9')
                                 num_funcvaluese_local(ztemp) = num_funcvaluese_local(ztemp) + nelem
                                 if (nelem .gt. 1) then
                                     do general_counter_1 = 1,nelem-1
@@ -549,7 +551,7 @@ module pes_nene_mod
                                     end do
                                 end if
 
-                            case (5,6) ! debug functions
+                            case ('5','6') ! debug functions
                                 num_funcvalues_local(ztemp) = num_funcvalues_local(ztemp) + 1
 
                             case default
@@ -566,12 +568,12 @@ module pes_nene_mod
 
                         select case (words(2))
 
-                            case (1,2,4)
+                            case ('1','2','4')
                                 do general_counter_1 = 1,nelem
                                     num_funcvalues_local(nucelem(general_counter_1)) = num_funcvalues_local(nucelem(general_counter_1)) + nelem
                                 end do
 
-                            case (3,8,9)
+                            case ('3','8','9')
                                 do general_counter_1 = 1,nelem
                                     num_funcvalues_local(nucelem(general_counter_1)) = num_funcvalues_local(nucelem(general_counter_1)) + nelem
                                 end do
