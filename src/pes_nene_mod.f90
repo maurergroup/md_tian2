@@ -5271,7 +5271,7 @@ module pes_nene_mod
             endif
         endif
 
-        ! convert lattice units and set corresponding RuNNer variables
+        ! convert lattice units and set corresponding RuNNer variables -> move to read_nene subroutine
         do k = 1,3
             lattice(k,:) = atoms%simbox(:,k) * ang2bohr
         end do
