@@ -72,9 +72,13 @@ program md_tian2
                     call output(atoms, itraj, -1, "scatter_initial")
                 end if
 
-                print *, "Eref", atoms%epot
+                print *, "Traj ", itraj, " with Eref:", atoms%epot
 
                 do istep = 1, simparams%nsteps
+
+                    !if (print_step == .true. )
+                    !    print *, "MD step ", istep
+                    !end if
 
                     ! core propagation
                     call propagate_1(atoms)
