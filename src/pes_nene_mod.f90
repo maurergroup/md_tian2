@@ -32,7 +32,7 @@ module pes_nene_mod
 
     contains
 
-!   2do:
+!   2do in the whole module:
 !   seed for the random number generator should be the trajectory number, not a sum of start number and total number of trajectories
 !   variable declarations concerning RuNNer in the corresponding modules, but set to (our) default values has to be done before reading out keywords (own subroutine called in compute_nene)
 !   move RuNNer related files to folder and change the makefile
@@ -40,6 +40,7 @@ module pes_nene_mod
 !   declare all needed variables which are not declared in modules (especially look at main, initnn, predict)
 !   replace all non-characters in case scenarios with proper string (e.g 1 into '1')
 !   remove when read out any data file the else in the while ios = 0 loop!
+!   add things concerning extrapolation warnings like in the RuNNer-LAMMPS interface
 
 
     ! Here all necessary files and keywords are read in for the high-dimensional neural network potentials (HDNNPs)
@@ -1209,7 +1210,7 @@ module pes_nene_mod
         if(lperiodic)then
             call getvolume(lattice,volume)
             if(volume.lt.0.0000001d0)then
-                write(ounit,*)'ERROR: volume of a periodic structure is very small ',volume
+                write(*,*)'ERROR: volume of a periodic structure is very small ',volume
                 stop
             endif
         endif
@@ -4431,18 +4432,18 @@ module pes_nene_mod
 
             call checkinputnn(err, err_inpnn) ! own subroutine in pes_nene_mod_supply.f90
 
-            !call printinputnn(iseed,ielem,& ! should be skipped completely, but ask Jorg/Sascha if anything might be useful
-            !    nodes_short_atomic_temp,nodes_elec_temp,nodes_short_pair_temp,&
-            !    kalmanlambda_local,kalmanlambdae_local,&
-            !    actfunc_short_atomic_dummy,actfunc_elec_dummy,actfunc_short_pair_dummy)
+            call printinputnn(iseed,ielem,&
+                nodes_short_atomic_temp,nodes_elec_temp,nodes_short_pair_temp,&
+                kalmanlambda_local,kalmanlambdae_local,&
+                actfunc_short_atomic_dummy,actfunc_elec_dummy,actfunc_short_pair_dummy)
 
-            write(ounit,'(a15,i4,a30)')' Element pairs: ',npairs,' , shortest distance (Bohr)'
+            write(*,'(a15,i4,a30)')' Element pairs: ',npairs,' , shortest distance (Bohr)'
             icount=0
             do i=1,nelem
                 do j=i,nelem
                     icount=icount+1
                     if(dmin_element(icount).lt.9999.d0)then
-                        write(ounit,'(a6,i4,2a3,1x,f10.3)')' pair ',&
+                        write(*,'(a6,i4,2a3,1x,f10.3)')' pair ',&
                         icount,element(i),element(j),dmin_element(icount)
                     endif
                 enddo
@@ -4463,7 +4464,7 @@ module pes_nene_mod
                           +nodes_short_atomic(i,i1) ! bias weights
                     enddo
                     if((mode.eq.2).or.(mode.eq.3))then
-                        write(ounit,'(a,a3,i10)')' => short range NN weights type 1                ',&
+                        write(*,'(a,a3,i10)')' => short range NN weights type 1                ',&
                         element(i1),num_weights_short_atomic(i1)
                     endif
                     maxnum_weights_short_atomic=max(maxnum_weights_short_atomic,num_weights_short_atomic(i1))
@@ -4481,11 +4482,11 @@ module pes_nene_mod
                         windex_elec(wcount,i1)=num_weights_elec(i1)+1
                         num_weights_elec(i1)=num_weights_elec(i1)+nodes_elec(i,i1)
                     enddo
-                    write(ounit,'(a,a3,i10)')' => electrostatic NN weights                     ',element(i1),num_weights_elec(i1)
+                    write(*,'(a,a3,i10)')' => electrostatic NN weights                     ',element(i1),num_weights_elec(i1)
                     maxnum_weights_elec=max(maxnum_weights_elec,num_weights_elec(i1))
                 enddo
             endif
-            write(ounit,*)'-------------------------------------------------------------'
+            write(*,*)'-------------------------------------------------------------'
 
             if(nn_type_short.eq.1)then
                 maxnum_weights_short_pair=1
@@ -4576,7 +4577,7 @@ module pes_nene_mod
                 print *, 'atomic reference energies read from input.nn:'
 
                 do atom_energy_counter=1,nelem
-                    write(ounit,'(a1,a2,x,f18.8)')' ',elementsymbol(atom_energy_counter),atomrefenergies(atom_energy_counter)
+                    write(*,'(a1,a2,x,f18.8)')' ',elementsymbol(atom_energy_counter),atomrefenergies(atom_energy_counter)
                 enddo
                 ! end readout of input.nn according to readatomenergies.f90
 
@@ -4611,10 +4612,10 @@ module pes_nene_mod
 
             if(lshort.and.(nn_type_short.eq.1).and.(mode.ne.1))then
                 do i3=1,nelem
-                    write(ounit,*)'-------------------------------------------------'
-                    write(ounit,*)'Atomic short range NN for element: ',element(i3)
-                    write(ounit,'(a,10i5)')' architecture    ',(nodes_short_atomic(i1,i3),i1=0,num_layers_short_atomic(i3))
-                    write(ounit,*)'-------------------------------------------------'
+                    write(*,*)'-------------------------------------------------'
+                    write(*,*)'Atomic short range NN for element: ',element(i3)
+                    write(*,'(a,10i5)')' architecture    ',(nodes_short_atomic(i1,i3),i1=0,num_layers_short_atomic(i3))
+                    write(*,*)'-------------------------------------------------'
                     itemp=0
                     do i1=0,num_layers_short_atomic(i3)
                         itemp=max(itemp,nodes_short_atomic(i1,i3))
@@ -4622,12 +4623,12 @@ module pes_nene_mod
                     do i1=1,itemp ! loop over all lines with hidden nodes
                         if(i1.le.nodes_short_atomic(0,i3))then ! still input node to be printed
                             if(i1.le.maxnodes_short_atomic)then ! still hidden nodes present
-                                write(ounit,'(i4,x,9a3)')i1,'  G',(actfunc_short_atomic(i1,i2,i3),i2=1,num_layers_short_atomic(i3))
+                                write(*,'(i4,x,9a3)')i1,'  G',(actfunc_short_atomic(i1,i2,i3),i2=1,num_layers_short_atomic(i3))
                             else
-                                write(ounit,'(i4,x,a3)')i1,'  G'
+                                write(*,'(i4,x,a3)')i1,'  G'
                             endif
                         else ! no input node in front of hidden nodes
-                            write(ounit,'(i4,4x,8a3)')i1,(actfunc_short_atomic(i1,i2,i3),i2=1,num_layers_short_atomic(i3))
+                            write(*,'(i4,4x,8a3)')i1,(actfunc_short_atomic(i1,i2,i3),i2=1,num_layers_short_atomic(i3))
                         endif
                     enddo
                 enddo ! i3
@@ -4635,10 +4636,10 @@ module pes_nene_mod
 
             if(lelec.and.(nn_type_elec.eq.1).and.(mode.ne.1))then
                 do i3=1,nelem
-                    write(ounit,*)'---------------------------------------------------'
-                    write(ounit,*)'Electrostatic NN for element: ',element(i3)
-                    write(ounit,'(a,10i5)')' architecture    ',(nodes_elec(i1,i3),i1=0,num_layers_elec(i3))
-                    write(ounit,*)'---------------------------------------------------'
+                    write(*,*)'---------------------------------------------------'
+                    write(*,*)'Electrostatic NN for element: ',element(i3)
+                    write(*,'(a,10i5)')' architecture    ',(nodes_elec(i1,i3),i1=0,num_layers_elec(i3))
+                    write(*,*)'---------------------------------------------------'
                     itemp=0
                     do i1=0,num_layers_elec(i3)
                         itemp=max(itemp,nodes_elec(i1,i3))
@@ -4646,17 +4647,17 @@ module pes_nene_mod
                     do i1=1,itemp ! loop over all lines with hidden nodes
                         if(i1.le.nodes_elec(0,i3))then ! still input node to be printed
                             if(i1.le.maxnodes_elec)then ! still hidden nodes present
-                                write(ounit,'(i4,x,9a3)')i1,'  G',(actfunc_elec(i1,i2,i3),i2=1,num_layers_elec(i3))
+                                write(*,'(i4,x,9a3)')i1,'  G',(actfunc_elec(i1,i2,i3),i2=1,num_layers_elec(i3))
                             else
-                                write(ounit,'(i4,x,a3)')i1,'  G'
+                                write(*,'(i4,x,a3)')i1,'  G'
                             endif
                         else ! no input node in front of hidden nodes
-                            write(ounit,'(i4,4x,8a3)')i1,(actfunc_elec(i1,i2,i3),i2=1,num_layers_elec(i3))
+                            write(*,'(i4,4x,8a3)')i1,(actfunc_elec(i1,i2,i3),i2=1,num_layers_elec(i3))
                         endif
                     enddo
                 enddo ! i3
             endif
-            write(ounit,*)'-------------------------------------------------------------'
+            write(*,*)'-------------------------------------------------------------'
 
             if((nn_type_short.eq.1).and.lshort)then
                 call sortsymfunctions(&
@@ -4670,57 +4671,57 @@ module pes_nene_mod
 
             if(lshort.and.(nn_type_short.eq.1))then
         do i1=1,nelem
-          write(ounit,*)'-------------------------------------------------------------'
-          write(ounit,*)' short range atomic symmetry &
+          write(*,*)'-------------------------------------------------------------'
+          write(*,*)' short range atomic symmetry &
                           &functions element ',element(i1),' :'
-          write(ounit,*)'-------------------------------------------------------------'
+          write(*,*)'-------------------------------------------------------------'
           do i2=1,num_funcvalues_short_atomic(i1)
             if(function_type_short_atomic(i2,i1).eq.1)then
-              write(ounit,'(i5,a3,i3,x,a3,3x,24x,f8.3)')&
+              write(*,'(i5,a3,i3,x,a3,3x,24x,f8.3)')&
                 i2,element(i1),function_type_short_atomic(i2,i1),&
                 element(elementindex(symelement_short_atomic(i2,1,i1))),&
                 funccutoff_short_atomic(i2,i1)
             elseif(function_type_short_atomic(i2,i1).eq.2)then
-              write(ounit,'(i5,a3,i3,x,a3,3x,8x,3f8.3)')&
+              write(*,'(i5,a3,i3,x,a3,3x,8x,3f8.3)')&
                 i2,element(i1),function_type_short_atomic(i2,i1),&
                 element(elementindex(symelement_short_atomic(i2,1,i1))),&
                 eta_short_atomic(i2,i1),rshift_short_atomic(i2,i1),funccutoff_short_atomic(i2,i1)
             elseif(function_type_short_atomic(i2,i1).eq.3)then
-              write(ounit,'(i5,a3,i3,x,2a3,4f8.3)')&
+              write(*,'(i5,a3,i3,x,2a3,4f8.3)')&
                 i2,element(i1),function_type_short_atomic(i2,i1),&
                 element(elementindex(symelement_short_atomic(i2,1,i1))),&
                 element(elementindex(symelement_short_atomic(i2,2,i1))),&
                 eta_short_atomic(i2,i1),lambda_short_atomic(i2,i1),&
                 zeta_short_atomic(i2,i1),funccutoff_short_atomic(i2,i1)
             elseif(function_type_short_atomic(i2,i1).eq.4)then
-              write(ounit,'(i5,a3,i3,x,a3,3x,16x,2f8.3)')&
+              write(*,'(i5,a3,i3,x,a3,3x,16x,2f8.3)')&
                 i2,element(i1),function_type_short_atomic(i2,i1),&
                 element(elementindex(symelement_short_atomic(i2,1,i1))),&
                 eta_short_atomic(i2,i1),funccutoff_short_atomic(i2,i1)
             elseif(function_type_short_atomic(i2,i1).eq.5)then
-              write(ounit,'(i5,a3,i3,4x,27x,f8.3)')&
+              write(*,'(i5,a3,i3,4x,27x,f8.3)')&
                 i2,element(i1),function_type_short_atomic(i2,i1),eta_short_atomic(i2,i1)
             elseif(function_type_short_atomic(i2,i1).eq.6)then
-              write(ounit,'(i5,a3,i3,x,a3,3x,24x,f8.3)')&
+              write(*,'(i5,a3,i3,x,a3,3x,24x,f8.3)')&
                 i2,element(i1),function_type_short_atomic(i2,i1),&
                 element(elementindex(symelement_short_atomic(i2,1,i1))),&
                 funccutoff_short_atomic(i2,i1)
             elseif(function_type_short_atomic(i2,i1).eq.8)then
-              write(ounit,'(i5,a3,i3,x,2a3,4f8.3)')&
+              write(*,'(i5,a3,i3,x,2a3,4f8.3)')&
                 i2,element(i1),function_type_short_atomic(i2,i1),&
                 element(elementindex(symelement_short_atomic(i2,1,i1))),&
                 element(elementindex(symelement_short_atomic(i2,2,i1))),&
                 eta_short_atomic(i2,i1),rshift_short_atomic(i2,i1),&
                 funccutoff_short_atomic(i2,i1)
             elseif(function_type_short_atomic(i2,i1).eq.9)then
-              write(ounit,'(i5,a3,i3,x,2a3,4f8.3)')&
+              write(*,'(i5,a3,i3,x,2a3,4f8.3)')&
                 i2,element(i1),function_type_short_atomic(i2,i1),&
                 element(elementindex(symelement_short_atomic(i2,1,i1))),&
                 element(elementindex(symelement_short_atomic(i2,2,i1))),&
                 eta_short_atomic(i2,i1),lambda_short_atomic(i2,i1),&
                 zeta_short_atomic(i2,i1),funccutoff_short_atomic(i2,i1)
             else
-              write(ounit,*)'Error: printing unknown symfunction in readinput '
+              write(*,*)'Error: printing unknown symfunction in readinput '
               stop
             endif
           enddo ! i2
@@ -4729,62 +4730,62 @@ module pes_nene_mod
 
           if(lelec.and.(nn_type_elec.eq.1))then
         do i1=1,nelem
-          write(ounit,*)'-------------------------------------------------------------'
-          write(ounit,*)' electrostatic symmetry functions element ',element(i1),' :'
-          write(ounit,*)'-------------------------------------------------------------'
+          write(*,*)'-------------------------------------------------------------'
+          write(*,*)' electrostatic symmetry functions element ',element(i1),' :'
+          write(*,*)'-------------------------------------------------------------'
           do i2=1,num_funcvalues_elec(i1)
             if(function_type_elec(i2,i1).eq.1)then
-              write(ounit,'(i5,a3,i3,x,a3,3x,24x,f8.3)')&
+              write(*,'(i5,a3,i3,x,a3,3x,24x,f8.3)')&
                 i2,element(i1),function_type_elec(i2,i1),&
                 element(elementindex(symelement_elec(i2,1,i1))),&
                 funccutoff_elec(i2,i1)
             elseif(function_type_elec(i2,i1).eq.2)then
-              write(ounit,'(i5,a3,i3,x,a3,3x,8x,3f8.3)')&
+              write(*,'(i5,a3,i3,x,a3,3x,8x,3f8.3)')&
                 i2,element(i1),function_type_elec(i2,i1),&
                 element(elementindex(symelement_elec(i2,1,i1))),&
                 eta_elec(i2,i1),rshift_elec(i2,i1),funccutoff_elec(i2,i1)
             elseif(function_type_elec(i2,i1).eq.3)then
-              write(ounit,'(i5,a3,i3,x,2a3,4f8.3)')&
+              write(*,'(i5,a3,i3,x,2a3,4f8.3)')&
                 i2,element(i1),function_type_elec(i2,i1),&
                 element(elementindex(symelement_elec(i2,1,i1))),&
                 element(elementindex(symelement_elec(i2,2,i1))),&
                 eta_elec(i2,i1),lambda_elec(i2,i1),&
                 zeta_elec(i2,i1),funccutoff_elec(i2,i1)
             elseif(function_type_elec(i2,i1).eq.4)then
-              write(ounit,'(i5,a3,i3,x,a3,3x,16x,2f8.3)')&
+              write(*,'(i5,a3,i3,x,a3,3x,16x,2f8.3)')&
                 i2,element(i1),function_type_elec(i2,i1),&
                 element(elementindex(symelement_elec(i2,1,i1))),&
                 eta_elec(i2,i1),funccutoff_elec(i2,i1)
             elseif(function_type_elec(i2,i1).eq.5)then
-              write(ounit,'(i5,a3,i3,4x,27x,f8.3)')&
+              write(*,'(i5,a3,i3,4x,27x,f8.3)')&
                 i2,element(i1),function_type_elec(i2,i1),eta_elec(i2,i1)
             elseif(function_type_elec(i2,i1).eq.6)then
-              write(ounit,'(i5,a3,i3,x,a3,3x,24x,f8.3)')&
+              write(*,'(i5,a3,i3,x,a3,3x,24x,f8.3)')&
                 i2,element(i1),function_type_elec(i2,i1),&
                 element(elementindex(symelement_elec(i2,1,i1))),&
                 funccutoff_elec(i2,i1)
             elseif(function_type_elec(i2,i1).eq.8)then
-              write(ounit,'(i5,a3,i3,x,2a3,4f8.3)')&
+              write(*,'(i5,a3,i3,x,2a3,4f8.3)')&
                 i2,element(i1),function_type_elec(i2,i1),&
                 element(elementindex(symelement_elec(i2,1,i1))),&
                 element(elementindex(symelement_elec(i2,2,i1))),&
                 eta_elec(i2,i1),rshift_elec(i2,i1),&
                 funccutoff_elec(i2,i1)
             elseif(function_type_elec(i2,i1).eq.9)then
-              write(ounit,'(i5,a3,i3,x,2a3,4f8.3)')&
+              write(*,'(i5,a3,i3,x,2a3,4f8.3)')&
                 i2,element(i1),function_type_elec(i2,i1),&
                 element(elementindex(symelement_elec(i2,1,i1))),&
                 element(elementindex(symelement_elec(i2,2,i1))),&
                 eta_elec(i2,i1),lambda_elec(i2,i1),&
                 zeta_elec(i2,i1),funccutoff_elec(i2,i1)
             else
-              write(ounit,*)'Error: printing unknown symfunctione in readinput '
+              write(*,*)'Error: printing unknown symfunctione in readinput '
               stop
             endif
           enddo ! i2
         enddo ! i1=1,nelem
       endif ! lelec
-      write(ounit,*)'-------------------------------------------------------------'
+      write(*,*)'-------------------------------------------------------------'
       ! end of readout according to readinput.f90
 
 
@@ -5232,8 +5233,10 @@ module pes_nene_mod
 
         character(len=*), parameter :: err = "Error in compute_nene: "
 
-
-        ! the elements have to be sorted according to RuNNer before calling the prediction -> better way than calling sortelements in every MD step -> do that when reading the structure file in md_tian2!!
+        ! 2do in compute_nene:
+        ! the elements have to be sorted according to RuNNer before calling the prediction -> better way than calling sortelements in every MD step -> do that once in read_nene subroutine
+        ! convert the lattice just once in read_nene and not in every MD step
+        ! print symmetry function values, volume, NN sum, atomic energies, atomic forces only if keyword is given (true, detailed_information or so) every MD step, default is false and only warnings should be printed!
 
         ! start according to predict.f90
         if(lshort.and.(nn_type_short.eq.1))then ! -> this should move to read_nene!!
@@ -5335,8 +5338,8 @@ module pes_nene_mod
           volume=0.0d0
           call getvolume(lattice,volume)
           if((mpirank.eq.0).and.(.not.lmd))then
-            write(ounit,*)'-------------------------------------------------------------'
-            write(ounit,*)'volume ',volume,' Bohr^3 for configuration ', i4
+            write(*,*)'-------------------------------------------------------------'
+            write(*,*)'volume ',volume,' Bohr^3 for configuration ', i4
           endif
         endif
 
@@ -5354,21 +5357,21 @@ module pes_nene_mod
                     forcesum(i2)=forcesum(i2)+nntotalforce(i2,i3)
                 enddo ! i2
             enddo ! i3
-            write(ounit,'(A10,3A25)')'Conf.','Sum of Fx(Ha/Bohr)', 'Sum of Fy(Ha/Bohr)','Sum of Fz(Ha/Bohr)'
-            write(ounit,'(I10,3f25.8)')i1,forcesum(1),forcesum(2),forcesum(3)
+            write(*,'(A10,3A25)')'Conf.','Sum of Fx(Ha/Bohr)', 'Sum of Fy(Ha/Bohr)','Sum of Fz(Ha/Bohr)'
+            write(*,'(I10,3f25.8)')i1,forcesum(1),forcesum(2),forcesum(3)
             do i2=1,3
                 if(abs(forcesum(i2)).gt.0.000001d0)then
-                    write(ounit,'(I10,A31,I10,f25.8)')i4,'Error in forces of component: ',&
+                    write(*,'(I10,A31,I10,f25.8)')i4,'Error in forces of component: ',&
                         i2,forcesum(i2)
                     stop
                 endif
             enddo ! i2
         endif
 
-        if(lshort.and.(nn_type_short.eq.1))then
+        if(lshort.and.(nn_type_short.eq.1))then ! -> this should move to cleanup subroutine
             deallocate(sens)
         endif
-        if(lelec.and.(nn_type_elec.eq.1).or.(nn_type_elec.eq.3).or.(nn_type_elec.eq.4))then
+        if(lelec.and.(nn_type_elec.eq.1).or.(nn_type_elec.eq.3).or.(nn_type_elec.eq.4))then ! -> this should move to cleanup subroutine
             deallocate(sense)
         endif
         ! end according to predict.f90
