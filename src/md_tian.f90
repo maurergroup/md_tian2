@@ -1,27 +1,16 @@
-!############################################################################
-! This routine is part of
-! md_tian2 (Molecular Dynamics Tian Xia 2)
-! (c) 2014-2020 Dan J. Auerbach, Svenja M. Janke, Marvin Kammler,
-!               Sascha Kandratsenka, Sebastian Wille
-! Dynamics at Surfaces Department
-! MPI for Biophysical Chemistry Goettingen, Germany
-! Georg-August-Universitaet Goettingen, Germany
-!
-! This program is free software: you can redistribute it and/or modify it
-! under the terms of the GNU General Public License as published by the
-! Free Software Foundation, either version 3 of the License, or
-! (at your option) any later version.
-!
-! This program is distributed in the hope that it will be useful, but
-! WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-! or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
-! for more details.
-!
-! You should have received a copy of the GNU General Public License along
-! with this program. If not, see http://www.gnu.org/licenses.
-!############################################################################
-
-program md_tian2
+program md_tian
+        ! Purpose:
+        !       Do molecular dynamics, Langevin dynamics, Ring Polymer dynamics
+        !
+        ! Date          	Author          	    History of Revison
+        ! ====          	======          	    ==================
+        ! 30.03.2017    	Marvin Kammler		    new data structure
+        !                   Sascha Kandratsenka     and propagation methods
+        !
+        ! 18.02.2014    	Svenja M. Janke		    Original
+        !			        Sascha Kandratsenka
+        !			        Dan J. Auerbach
+        !
 
     use force
     use md_algo
@@ -45,11 +34,8 @@ program md_tian2
     real(dp) :: vec(3)
 
 
-    call write_info() ! write header
-
-    call simbox_init(atoms) ! set up the simulation box
-
-    select case (simparams%run) ! maybe change it here to just call read_input() and afterwards call md_simulation()
+    call simbox_init(atoms)
+    select case (simparams%run)
 
         case ('min')
 
@@ -61,31 +47,21 @@ program md_tian2
             call perform_fit(atoms)
 
         case ('md')
-
             do itraj = simparams%start, simparams%start+simparams%ntrajs-1
-
-
                 call calc_force(atoms, energy_and_force)
                 if (.not. allocated(cents)) allocate(cents(3, atoms%natoms))
-
                 if (any(simparams%output_type == output_id_scatter)) then
                     call output(atoms, itraj, -1, "scatter_initial")
                 end if
 
-                print *, "Traj ", itraj, " with Eref:", atoms%epot
+                print *, "Eref", atoms%epot
 
                 do istep = 1, simparams%nsteps
 
-                    !if (print_step == .true. )
-                    !    print *, "MD step ", istep
-                    !end if
-
                     ! core propagation
                     call propagate_1(atoms)
-                    if (atoms%nbeads > 1) call do_ring_polymer_step(atoms)
                     call calc_force(atoms, energy_and_force)
                     call propagate_2(atoms)
-
                     ! output and exit conditionns
                     if (any(mod(istep, simparams%output_interval) == 0)) call output(atoms, itraj, istep)
 
@@ -93,16 +69,15 @@ program md_tian2
                         .and. any(simparams%output_type == output_id_scatter)) exit
 
                     ! record bounces, lowest position, etc.
-                    call collect_trajectory_characteristics(atoms, istep)
+                    call collect_trajectory_characteristics(atoms, itraj, istep)
 
-                    !if (mod(istep, 10)) print *, sum(sum(atoms%r(:,:,:), dim=2), dim=2)/atoms%natoms/atoms%nbeads
 
                 end do
                 close(78)
 
                 if (any(simparams%output_type == output_id_scatter)) call output(atoms, itraj, istep, "scatter_final")
 
-                if (itraj < simparams%start+simparams%ntrajs-1) then ! couldn't we just use itraj as seed for the RNG??
+                if (itraj < simparams%start+simparams%ntrajs-1) then
                     call random_seed(put=randseed)  ! Seed random number generator
                     do i = 1, 100*(itraj+1)
                         call random_number(tmp)   ! rotate it according to trajectory number
@@ -119,4 +94,4 @@ program md_tian2
     end select
 
 
-end program md_tian2
+end program md_tian

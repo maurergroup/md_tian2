@@ -1,28 +1,12 @@
-!############################################################################
-! This routine is part of
-! md_tian2 (Molecular Dynamics Tian Xia 2)
-! (c) 2014-2020 Dan J. Auerbach, Svenja M. Janke, Marvin Kammler,
-!               Sascha Kandratsenka, Sebastian Wille
-! Dynamics at Surfaces Department
-! MPI for Biophysical Chemistry Goettingen, Germany
-! Georg-August-Universitaet Goettingen, Germany
-!
-! This program is free software: you can redistribute it and/or modify it
-! under the terms of the GNU General Public License as published by the
-! Free Software Foundation, either version 3 of the License, or
-! (at your option) any later version.
-!
-! This program is distributed in the hope that it will be useful, but
-! WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-! or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
-! for more details.
-!
-! You should have received a copy of the GNU General Public License along
-! with this program. If not, see http://www.gnu.org/licenses.
-!############################################################################
-
-! Initialize simulation parameters
 module run_config
+        !
+        ! Purpose:
+        !    Initialize simulation parameters
+        !
+        ! Date          	Author          	History of Revison
+        ! ====          	======          	==================
+        ! 31.03.2017    	Marvin Kammler		    original
+        !                   Sascha Kandratsenka
 
     use constants
     use universe_mod, only : universe
@@ -73,6 +57,7 @@ module run_config
         real(dp) :: evasp                                           ! reference energy for fit
         integer  :: maxit                                           ! maximum number of iteration during fit
         integer  :: nthreads                                        ! number of threads used for fitting
+        real(dp) :: adsorption_start, adsorption_end                ! define adsorption start and end. it starts when below 'start' and ends when above 'end'
 
     end type
 
@@ -121,6 +106,8 @@ contains
         new_simulation_parameters%evasp = default_real
         new_simulation_parameters%maxit = 30
         new_simulation_parameters%nthreads = 1
+        new_simulation_parameters%adsorption_start = default_real
+        new_simulation_parameters%adsorption_end = default_real
 
     end function
 
@@ -261,6 +248,11 @@ contains
                                             simparams%md_algo_l(i) = prop_id_langevin
                                         !                                        case ('sla')                ! langevin (series)
                                         !                                            simparams%md_algo_l(i) = prop_id_langevin_series
+                                        
+                                        case ('idf')
+                                            simparams%md_algo_l(i) = prop_id_odf_iso
+                                        case ('odf')
+                                            simparams%md_algo_l(i) = prop_id_odf
                                         case ('and')
                                             simparams%md_algo_l(i) = prop_id_andersen
                                         case ('pil')
@@ -304,6 +296,10 @@ contains
                                             simparams%md_algo_p(i) = prop_id_langevin
                                         !                                        case ('sla')                ! langevin (series)
                                         !                                            simparams%md_algo_p(i) = prop_id_langevin_series
+                                        case ('idf')
+                                            simparams%md_algo_p(i) = prop_id_odf_iso
+                                        case ('odf')
+                                            simparams%md_algo_p(i) = prop_id_odf
                                         case ('and')
                                             simparams%md_algo_p(i) = prop_id_andersen
                                         case ('pil')
@@ -442,7 +438,7 @@ contains
                                 case ('merge')
                                     ! conf mergewith <mxt_folder> <n>: randomly select mxt files 1<=x<=n from folder
                                     if (nwords /= 6) stop err // "conf merge needs projectile mxt folder, # of projectile configurations therein &
-                                        lattice mxt folder and # of lattice configurations therein"
+                                        lattice mxt folder and # of lattice configurations therein"                                    
                                     ! projectile
                                     read(words(3),'(A)') simparams%merge_proj_file
                                     read(words(4),'(i1000)',iostat=ios) simparams%merge_proj_nconfs
@@ -483,12 +479,12 @@ contains
                                     simparams%output_type(i) = output_id_energy
                                 case (output_key_poscar)
                                     simparams%output_type(i) = output_id_poscar
-                                case (output_key_vasp)
-                                    simparams%output_type(i) = output_id_vasp
                                 case (output_key_mxt)
                                     simparams%output_type(i) = output_id_mxt
                                 case (output_key_scatter)
                                     simparams%output_type(i) = output_id_scatter
+                                case (output_key_is_adsorbed)
+                                    simparams%output_type(i) = output_id_is_adsorbed
                                 case default
                                     print *, 'Error in the input file: output format ', trim(words(2*i)), ' unknown'
                                     stop
@@ -579,6 +575,12 @@ contains
                         read(words(2), *, iostat=ios) simparams%nthreads
                         if (ios /= 0) stop err // "Error reading number of threads"
 
+                    case ('adsorption_distance')
+
+                        if (nwords /= 3) stop err // "adsorption_distance key needs 2 arguments"
+                        read(words(2), *, iostat=ios) simparams%adsorption_start
+                        read(words(3), *, iostat=ios) simparams%adsorption_end
+                        if (ios /= 0) stop err // "Error reading the adsorption distance"
 
                     case default
                         if (trim(words(1)) /= '' .and. words(1)(1:1) /= '!') &

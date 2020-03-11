@@ -1,28 +1,15 @@
-!############################################################################
-! This routine is part of
-! md_tian2 (Molecular Dynamics Tian Xia 2)
-! (c) 2014-2020 Dan J. Auerbach, Svenja M. Janke, Marvin Kammler,
-!               Sascha Kandratsenka, Sebastian Wille
-! Dynamics at Surfaces Department
-! MPI for Biophysical Chemistry Goettingen, Germany
-! Georg-August-Universitaet Goettingen, Germany
-!
-! This program is free software: you can redistribute it and/or modify it
-! under the terms of the GNU General Public License as published by the
-! Free Software Foundation, either version 3 of the License, or
-! (at your option) any later version.
-!
-! This program is distributed in the hope that it will be useful, but
-! WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-! or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
-! for more details.
-!
-! You should have received a copy of the GNU General Public License along
-! with this program. If not, see http://www.gnu.org/licenses.
-!############################################################################
-
-! This module contains definitions of user types and all constants
 module universe_mod
+    !
+    ! Purpose:
+    !           This module contains definitions of user types and all constants
+    !
+    ! Date          	Author          	    History of Revison
+    ! ====          	======          	    ==================
+    ! 30.03.2017    	Marvin Kammler		    new data structure
+    !                   Sascha Kandratsenka
+    ! 18.02.2014    	Svenja M. Janke		    Original
+    !			        Sascha Kandratsenka
+    !			        Dan J. Auerbach
 
     use constants
 
@@ -376,9 +363,9 @@ contains
             end if
         end do
 
-        if (idx == default_int) stop "Error in get_idx_from_name(): make sure you &
+        if (idx == default_int) stop "Error in get_idx_from_name(): make sure you & 
                         correctly assign element names to projectile and slab in both &
-                        *.inp and *.pes files."
+                        *.inp and *.pes files."        
 
     end function get_idx_from_name
 
@@ -479,8 +466,6 @@ contains
                 name = pes_name_simple_lj
             case(pes_id_no_interaction)
                 name = pes_name_no_interaction
-            case(pes_id_nene)
-                name = pes_name_nene
             case default
                 print *, err // "unknown id", id
                 stop

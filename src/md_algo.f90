@@ -1,26 +1,3 @@
-!############################################################################
-! This routine is part of
-! md_tian2 (Molecular Dynamics Tian Xia 2)
-! (c) 2014-2020 Dan J. Auerbach, Svenja M. Janke, Marvin Kammler,
-!               Sascha Kandratsenka, Sebastian Wille
-! Dynamics at Surfaces Department
-! MPI for Biophysical Chemistry Goettingen, Germany
-! Georg-August-Universitaet Goettingen, Germany
-!
-! This program is free software: you can redistribute it and/or modify it
-! under the terms of the GNU General Public License as published by the
-! Free Software Foundation, either version 3 of the License, or
-! (at your option) any later version.
-!
-! This program is distributed in the hope that it will be useful, but
-! WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-! or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
-! for more details.
-!
-! You should have received a copy of the GNU General Public License along
-! with this program. If not, see http://www.gnu.org/licenses.
-!############################################################################
-
 module md_algo
 
     use universe_mod
@@ -30,12 +7,33 @@ module md_algo
 
     implicit none
 
+    real(dp), allocatable :: randy(:,:,:)
+
 contains
 
     subroutine propagate_1(atoms)
 
         type(universe), intent(inout) :: atoms
         integer :: i
+
+        ! draw random numbers if langevin dynamics selected 
+        ! now also does this for odf and odf_iso - Paul S.
+        if (any(atoms%algo == prop_id_langevin) .or. &
+           &any(atoms%algo == prop_id_odf_iso) .or. &
+           &any(atoms%algo == prop_id_odf)  &
+) then
+            if (.not. allocated(randy)) then
+                allocate(randy(dimensionality, atoms%nbeads, atoms%natoms))
+            end if
+            call normal_deviate(0.0_dp, 1.0_dp, randy)
+        end if
+
+        !equations of motion are coupled so all momenta updates should be
+        !performed at the same time for atoms which use odf propagation Paul S.
+        if (any(atoms%algo == prop_id_odf)) then
+            call tensor_langevin_1(atoms)
+        end if
+
 
         do i = 1, atoms%natoms
             select case(atoms%algo(atoms%idx(i)))
@@ -47,12 +45,15 @@ contains
                     call andersen(atoms, i)
 
                 case (prop_id_pile)
+                    call pile_thermostat(atoms, i)
                     call verlet_1(atoms, i)
-                    call pile_thermo(atoms, i)
 
                 case (prop_id_langevin)
                     call langevin_1(atoms, i)
-
+                case (prop_id_odf_iso)
+                    call langevin_1(atoms, i)
+                case (prop_id_odf)
+                    stop "tensorial odf propagator not yet implemented"
                 case default
                     stop "Error in propagate_1(): Unknown propagation algorithm"
 
@@ -72,6 +73,13 @@ contains
         type(universe), intent(inout) :: atoms
         integer :: i
 
+        !equations of motion are coupled so all momenta updates should be
+        !!performed at the same time for atoms which use odf propagation Paul S.
+        if (any(atoms%algo == prop_id_odf)) then
+            call tensor_langevin_2(atoms)
+        end if
+        
+
         do i = 1, atoms%natoms
             select case(atoms%algo(atoms%idx(i)))
                 case (prop_id_verlet)
@@ -86,16 +94,16 @@ contains
                 case (prop_id_langevin)
                     call ldfa(atoms, i)
                     call langevin_2(atoms, i)
-
+                case (prop_id_odf_iso)
+                    call odf_iso(atoms, i)
+                    call langevin_2(atoms, i)
+                case (prop_id_odf)
+                    stop "tensorial odf propagator not yet implemented"
                 case default
                     stop "Error in propagate_2(): Unknown propagation algorithm"
 
             end select
         end do
-
-!        if (any(atoms%algo == prop_id_andersen) .or. any(atoms%algo == prop_id_pile)) then
-!            call remove_com_velocity(atoms)
-!        end if
 
     end subroutine propagate_2
 
@@ -153,7 +161,7 @@ contains
         real(dp)                             :: temp
         real(dp), dimension(atoms%nbeads)    :: c0, c1, c2, xidt, xidt2, ixidt, &
             sigma_r, sigma_v, c_rv
-        real(dp), dimension(3, atoms%nbeads) :: randy
+
         integer :: b
 
         if (atoms%is_proj(atoms%idx(i))) then
@@ -191,38 +199,36 @@ contains
 
         end if
 
-        call normal_deviate(0.0_dp, 1.0_dp, randy)
-
         ! no rpmd: propagate positions and partially propagate velocities
-        if (atoms%nbeads == 1) then
+        ! if (atoms%nbeads == 1) then
 
-            where (.not. atoms%is_fixed(:,1,i))
-                atoms%r(:,1,i) = atoms%r(:,1,i) + c1(1)*atoms%v(:,1,i) + &
-                    c2(1)*simparams%step*atoms%a(:,1,i) + sigma_r(1)*randy(:,1)
-                atoms%v(:,1,i) = c0(1)*atoms%v(:,1,i) + &
-                    (c1(1)-c2(1))*atoms%a(:,1,i) + sigma_v(1)*c_rv(1)*randy(:,1)
+        do b = 1, atoms%nbeads
+            where (.not. atoms%is_fixed(:,b,i))
+                atoms%r(:,b,i) = atoms%r(:,b,i) + c1(b)*atoms%v(:,b,i) + &
+                    c2(b)*simparams%step*atoms%a(:,b,i) + sigma_r(b)*randy(:,b,i)
+                atoms%v(:,b,i) = c0(b)*atoms%v(:,b,i) + &
+                    (c1(b)-c2(b))*atoms%a(:,b,i) + sigma_v(b)*c_rv(b)*randy(:,b,i)
             elsewhere
-                atoms%v(:,1,i) = 0.0_dp
+                atoms%v(:,b,i) = 0.0_dp
             end where
+        end do
 
 
-        ! rpmd: partially propagate velocities
-        else
-
-            do b = 1, atoms%nbeads
-
-                where (.not. atoms%is_fixed(:,b,i))
-                    atoms%v(:,b,i) = c0(b)*atoms%v(:,b,i) + &
-                    (c1(b)-c2(b))*atoms%a(:,b,i) + sigma_v(b)*c_rv(b)*randy(:,b)
-                elsewhere
-                    atoms%v(:,b,i) = 0.0_dp
-                end where
-
-            end do
-
-        end if
-
-
+!        ! rpmd: partially propagate velocities
+!        else
+!
+!            do b = 1, atoms%nbeads
+!
+!                where (.not. atoms%is_fixed(:,b,i))
+!                    atoms%v(:,b,i) = c0(b)*atoms%v(:,b,i) + &
+!                    (c1(b)-c2(b))*atoms%a(:,b,i) + sigma_v(b)*c_rv(b)*randy(:,b,i)
+!                elsewhere
+!                    atoms%v(:,b,i) = 0.0_dp
+!                end where
+!
+!            end do
+!
+!        end if
 
 
     end subroutine langevin_1
@@ -244,7 +250,6 @@ contains
         real(dp)                             :: temp
         real(dp), dimension(atoms%nbeads)    :: c0, c1, c2, xidt, xidt2, ixidt, &
                                                     sigma_r, sigma_v, c_rv
-        real(dp), dimension(3, atoms%nbeads) :: randy
         integer :: b
 
         if (atoms%is_proj(atoms%idx(i))) then
@@ -281,15 +286,13 @@ contains
 
         end if
 
-        call normal_deviate(0.0_dp, 1.0_dp, randy)
-
         ! partially propagate velocities
 
         do b = 1, atoms%nbeads
 
             where (.not. atoms%is_fixed(:,b,i))
                 atoms%v(:,b,i) = atoms%v(:,b,i) + c2(b)*atoms%a(:,b,i) + &
-                    sigma_v(b)*sqrt(1-c_rv(b)*c_rv(b))*randy(:,b)
+                    sigma_v(b)*sqrt(1-c_rv(b)*c_rv(b))*randy(:,b,i)
             elsewhere
                 atoms%v(:,b,i) = 0.0_dp
             end where
@@ -297,6 +300,187 @@ contains
         end do
 
     end subroutine langevin_2
+
+
+    !this subroutine takes the atoms object and propagator_id to determine a
+    !mapping between all atoms and DoF only using this propagator. counter
+    !contains the number of such DoF. idx is assumed to already be allocated
+    !with at least 3*number of all atoms, to ensure enough place is available in
+    !all cases.
+    subroutine get_propagator_idx(atoms,propagator_id,idx,counter)
+        type(universe), intent(in) :: atoms
+        integer, intent(in)        :: propagator_id
+        integer, intent(inout)     :: idx(3*atoms%natoms)
+        integer, intent(out)       :: counter 
+        integer                    :: i
+  
+        counter=0
+
+        do i=1,atoms%natoms
+            if (atoms%algo(i)==propagator_id) then
+              idx(counter*3+1:counter*3+3)=i
+              counter=counter+3
+            end if
+        end do
+        
+    end subroutine get_propagator_idx
+
+
+    subroutine tensor_langevin_1(atoms)
+
+        type(universe), intent(inout) :: atoms
+
+        integer                       :: idx(3*atoms%natoms)
+        integer                       :: n_tensor_DoF,workspace,inf,b
+        real(dp), allocatable         :: eta(:,:,:), eig_val(:,:), eig_vec(:,:,:), work(:)
+        
+
+        PRINT *, "entering tensor_langevin_1"
+
+        call get_propagator_idx(atoms,prop_id_odf,idx,n_tensor_DoF)
+
+
+        PRINT *, "idx"
+        !alocate subroutine variables
+        if (.not. allocated(eta)) allocate(eta(n_tensor_DoF, &
+             n_tensor_DoF,atoms%nbeads))
+        if (.not. allocated(eig_vec)) allocate(eig_vec(n_tensor_DoF, &
+             n_tensor_DoF,atoms%nbeads))
+        if (.not. allocated(eig_val)) allocate(eig_val(n_tensor_DoF, &
+             atoms%nbeads))
+        if (.not. allocated(work)) allocate(work(n_tensor_DoF*(3+n_tensor_DoF/2)))
+
+        PRINT *, "allocs"
+
+        !compute odf tensor
+        call odf(atoms,idx,n_tensor_DoF,eta)
+ 
+        PRINT *, "odf"
+        !copy tensor for diagonalisation (lapack does this in place, this way we
+        !can keep the friction tensor
+        eig_vec=eta 
+        workspace=n_tensor_DoF*(3+n_tensor_DoF/2)
+        do b=1,atoms%nbeads
+            work=0
+            inf=0
+            call dsyev('V','U',n_tensor_DoF,eig_vec(:,:,b),n_tensor_DoF,eig_val(:,b),work,workspace,inf)       
+          
+            PRINT *, "--eta---"
+            PRINT *, eta(:,:,b)
+            PRINT *, "--eig_vec---"        
+            PRINT *, eig_vec(:,:,b)
+            PRINT *, "--eig_val---"
+            PRINT *, eig_val(:,b)
+            PRINT *, "-----"
+            STOP
+        end do
+    end subroutine tensor_langevin_1
+
+
+    subroutine tensor_langevin_2(atoms)       
+                                                                                                                                                                                               
+        type(universe), intent(inout) :: atoms
+
+
+    end subroutine tensor_langevin_2
+
+
+
+
+    subroutine langevin_rpmd(atoms, i)
+
+        use rpmd,        only : cjk, build_cjk
+        use pes_emt_mod, only : dens
+
+        type(universe), intent(inout) :: atoms
+        integer       , intent(in)    :: i
+
+        integer :: b, k
+        real(dp) :: wk, wn, betaN
+        real(dp), dimension(atoms%nbeads)    :: c1, c2, gammak
+        real(dp), dimension(3, atoms%nbeads) :: zeta, newP, atomP
+
+        if (.not. allocated(cjk)) call build_cjk(atoms%nbeads)
+
+        if (atoms%is_proj(atoms%idx(i))) then
+            betaN = 1.0_dp / (kB * simparams%Tproj * atoms%nbeads)
+        else
+            betaN = 1.0_dp / (kB * simparams%Tsurf * atoms%nbeads)
+        end if
+
+        ! Transform to normal mode space
+        newP = 0.0_dp
+        atomP = calc_momentum_one(atoms, i)
+
+        do b = 1, atoms%nbeads
+            do k = 1, atoms%nBeads
+                newP(:,b) = newP(:,b) + atomP(:,k)*cjk(k,b)
+            end do
+        end do
+
+        ! other ideas
+        !   apply gamma coeff to all but the centroid mode
+        !   use gamma coeff of centroid mode for all modes
+        !   somehow mix densities of involved atoms in each normal mode
+
+        ! IDEA: generate gamma coefficients for all beads
+        ! RESULT: eloss too high (2_AdaptionFromPILE)
+!        do k = 0, atoms%nbeads-1
+!            if (k .eq. 0) then  ! centroid mode
+!                gammak(k+1) = dens(k+1,i)
+!            else
+!                wn = 1 / betaN / hbar
+!                wk = 2 * wn * sin(k*pi/atoms%nbeads)
+!                gammak(k+1) = 2 * wk
+!            end if
+!        end do
+
+        ! IDEA: only apply gamma coeff to centroid mode
+        ! RESULT: better, but eloss still too high (3_Centroid_Forces)
+        ! gammak(1)  = sum(dens(:,i)) / atoms%nbeads   ! use average bead density
+        ! gammak(2:) = 0.0_dp
+        ! c1 = exp(-0.5 * simparams%step*gammak)
+        ! c2 = sqrt(1 - c1*c1)
+
+        ! IDEA: only apply gamma coeff to centroid mode, draw randy each invocation
+        ! RESULT: looks very similar to 3 (4_Centroid_Force_2xRandy)
+        ! gammak(1)  = sum(dens(:,i)) / atoms%nbeads   ! use average bead density
+        ! gammak(2:) = 0.0_dp
+        ! c1 = exp(-0.5 * simparams%step*gammak)
+        ! c2 = sqrt(1 - c1*c1)
+
+        ! IDEA: just like in langevin, set c1 = exp(-dens(:,i) * simparams%step)
+        !       c2 = (1-c0)/dens
+        ! RESULT: worst. idea. ever. (5_C0C1_mod)
+        ! gammak(1)  = sum(dens(:,i)) / atoms%nbeads   ! use average bead density
+        ! gammak(2:) = 0.0_dp
+        ! c1 = exp(-simparams%step*gammak)
+        ! c2 = (1 - c1)/max(gammak(1), 0.0001)
+
+        ! IDEA: copy 4, but remove velocity update in rpmd step
+        ! RESULT: everything sticks (6_wo_r_change_in_rpmdstep)
+        gammak(1)  = sum(dens(:,i)) / atoms%nbeads   ! use average bead density
+        gammak(2:) = 0.0_dp
+        c1 = exp(-0.5 * simparams%step*gammak)
+        c2 = sqrt(1 - c1*c1)
+
+        do b = 1, atoms%nbeads
+            newP(:,b) = c1(b)*newP(:,b) + sqrt(atoms%m(i)/betaN)*c2(b)*randy(:,b,i)
+        end do
+
+        ! Transform back to Cartesian space
+        atomP = 0.0_dp
+        do b = 1, atoms%nbeads
+            do k = 1, atoms%nbeads
+                where (.not. atoms%is_fixed(:,b,i))
+                    atomP(:,b) = atomP(:,b) + newP(:,k)*cjk(b,k)
+                end where
+            end do
+        end do
+        atoms%v(:,:,i) = atomP/atoms%m(i)
+
+    end subroutine langevin_rpmd
+
 
 
 
@@ -326,16 +510,20 @@ contains
         andersen_threshold = simparams%step / simparams%andersen_time
 
         do b = 1, atoms%nbeads
-            if (choose(b) < andersen_threshold .and. .not. atoms%is_fixed(1,b,i)) then
-                atoms%v(:,b,i) = new_v(:,b)
+            if (choose(b) < andersen_threshold) then
+                where (.not. atoms%is_fixed(:,b,i)) atoms%v(:,b,i) = new_v(:,b)
             end if
         end do
-
 
     end subroutine andersen
 
 
-    subroutine pile_thermo(atoms, i)
+
+    ! From Michele Ceriotti, Michele Parrinello, Thomas E. Markland and David E. Manolopoulos,
+    ! Efficient stochastic thermostatting of path integral molecular dynamics,
+    ! J. Chem. Phys., 133, 124104 (2010), doi: 10.1063/1.3489925
+    ! This subroutine implements Eqns. 27-29
+    subroutine pile_thermostat(atoms, i)
 
         use rpmd, only : cjk, build_cjk
 
@@ -343,9 +531,9 @@ contains
         integer       , intent(in)    :: i
 
         integer :: b, k
-        real(8) :: wk, wn, betaN
-        real(8), dimension(atoms%nbeads)    :: c1, c2, gammak
-        real(8), dimension(3, atoms%nbeads) :: zeta, newP, atomP
+        real(dp) :: wk, wn, betaN
+        real(dp), dimension(atoms%nbeads)    :: c1, c2, gammak
+        real(dp), dimension(3, atoms%nbeads) :: zeta, newP, atomP
 
         if (.not. allocated(cjk)) call build_cjk(atoms%nbeads)
 
@@ -397,9 +585,46 @@ contains
         end do
         atoms%v(:,:,i) = atomP/atoms%m(i)
 
-    end subroutine pile_thermo
+    end subroutine pile_thermostat
 
 
+    subroutine odf(atoms,idx,n_tensor_DoF,eta)
+
+        use pes_emt_mod, only : dens
+
+        type(universe), intent(in) :: atoms
+        integer, intent(in)        :: n_tensor_DoF
+        integer, intent(in)        :: idx(n_tensor_DoF)
+        real(dp), intent(inout)    :: eta(n_tensor_DoF,n_tensor_DoF,atoms%nbeads)
+        integer                    :: b,i
+        do b = 1, atoms%nbeads
+            do i = 1, n_tensor_DoF
+!here we actually compute ldfa 3x per atom, once per DoF, but this is easier for
+!now 
+                call ldfa(atoms,idx(i)) 
+                eta(i,i,b)=dens(b,i)
+            end do
+        end do
+
+    end subroutine odf
+
+
+
+    subroutine odf_iso(atoms,i)
+        use pes_emt_mod, only : dens
+        use  ODFriction, only : GetFriction
+        type(universe), intent(in) :: atoms
+        integer, intent(in) :: i
+        integer :: b
+        real(dp) :: temp_fric_tensor(3,3)
+
+        do b = 1, atoms%nbeads
+            CALL GetFriction(atoms%r(1,b,i),atoms%r(2,b,i),atoms%r(3,b,i),temp_fric_tensor)
+            dens(b,i)=1.0/3.0*(temp_fric_tensor(1,1)+temp_fric_tensor(2,2)+temp_fric_tensor(3,3))
+        end do
+
+
+    end subroutine odf_iso
 
     subroutine ldfa(atoms, i)
         !
@@ -408,7 +633,6 @@ contains
         !
 
         use pes_emt_mod, only : dens
-
         type(universe), intent(in) :: atoms
         integer, intent(in) :: i
         integer :: j, b
@@ -425,6 +649,7 @@ contains
             2.10064_dp, -843.419_dp, 8.85354e3_dp, -4.89023e4_dp, 1.6741e5_dp, &
             -3.67098e5_dp, 5.03476e5_dp, -3.9426e5_dp, 1.34763e5_dp]
 
+
         !   12th order cubic spline fit interpolated from DFT data points of friction
         !   coefficient vs. electron density (calculated from DFT with VASP)
 
@@ -432,6 +657,7 @@ contains
             print *, err, "EMT density array not allocated. Cannot compute friction."
             stop
         end if
+
 
         !print *, "pre", dens(:,i)
         fric = dens(:,i)
@@ -453,7 +679,8 @@ contains
             end if
             dens(b,i) = fric(b)
         end do
-        dens(:,i) = dens(:,i) * convert / hbar / atoms%m(i) / atoms%nbeads
+        
+        dens(:,i) = dens(:,i) * convert / hbar / atoms%m(i)
         !print *, "post", dens(:,i)
         ! xi in 1/fs
 

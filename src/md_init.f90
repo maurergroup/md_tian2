@@ -1,28 +1,18 @@
-!############################################################################
-! This routine is part of
-! md_tian2 (Molecular Dynamics Tian Xia 2)
-! (c) 2014-2020 Dan J. Auerbach, Svenja M. Janke, Marvin Kammler,
-!               Sascha Kandratsenka, Sebastian Wille
-! Dynamics at Surfaces Department
-! MPI for Biophysical Chemistry Goettingen, Germany
-! Georg-August-Universitaet Goettingen, Germany
-!
-! This program is free software: you can redistribute it and/or modify it
-! under the terms of the GNU General Public License as published by the
-! Free Software Foundation, either version 3 of the License, or
-! (at your option) any later version.
-!
-! This program is distributed in the hope that it will be useful, but
-! WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-! or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
-! for more details.
-!
-! You should have received a copy of the GNU General Public License along
-! with this program. If not, see http://www.gnu.org/licenses.
-!############################################################################
-
-! Initialize molecular dynamics simulation
 module md_init
+    !
+    ! Purpose:
+    !    Initialize simulations.
+    !    Should be able to do the following things:
+    !      1.
+    !
+    ! Date          	Author          	History of Revison
+    ! ====          	======          	==================
+    ! 30.03.2017    	Marvin Kammler		    new data structure
+    !                   Sascha Kandratsenka     and propagation mathods
+    !
+    ! 18.02.2014    	Svenja M. Janke		    Original
+    !			        Sascha Kandratsenka
+    !			        Dan J. Auerbach
 
     use universe_mod
     use useful_things
@@ -35,7 +25,6 @@ module md_init
     use pes_emt_mod,  only : read_emt
     use pes_non_mod,  only : read_non_interacting
     use pes_rebo_mod, only : read_rebo
-    use pes_nene_mod, only : read_nene
 
     implicit none
 
@@ -54,7 +43,6 @@ contains
 
         ! Read in name of input file
         if (command_argument_count() == 0) stop " I need an input file"
-        if (command_argument_count() .gt. 1) stop "Only one input file is allowed"
 
         call get_command(length=input_file_length)
         allocate(character(input_file_length) :: input_file)
@@ -73,12 +61,17 @@ contains
         !call remove_com_velocity(atoms)
         call post_process(atoms)
 
-
+        call read_ODFriction() ! -Paul S.
 
     end subroutine simbox_init
 
 
+    subroutine read_ODFriction() ! -paul S.
+      use  ODFriction, only : SetFriction
+      
+      call SetFriction(1.0d0,1) !sets lattice constant to 1 angstrom and uses model 1
 
+    end subroutine read_ODFriction
 
     subroutine read_pes(atoms)
 
@@ -114,12 +107,12 @@ contains
                         case (pes_name_simple_lj)
                             call read_simple_lj(atoms, pes_unit)
 
-                        !case ('morse')
-                        !    call read_morse(pes_unit)
+                        !                        case ('morse')
+                        !                            call read_morse(pes_unit)
 
                         case (pes_name_emt)
                             call read_emt(atoms, pes_unit)
-
+                        !
                         case (pes_name_rebo)
                             call read_rebo(atoms, pes_unit)
 
@@ -128,9 +121,6 @@ contains
 
                         case (pes_name_ho)
                             call read_ho(atoms, pes_unit)
-
-                        case (pes_name_nene)
-                            call read_nene(atoms, pes_unit)
 
                         case default
                             print *, err // "unknown potential in PES file:", words(2)
@@ -297,7 +287,7 @@ contains
 
         else
             print *,  err // "cannot read initial atom velocities. Did you specify &
-            all species in the *.inp file?"
+            all species in the *.inp file?"            
             stop
         end if
 
@@ -414,8 +404,8 @@ contains
 !            if (.not. allocated(simparams%output_type) .or. .not. allocated(simparams%output_interval)) &
 !                stop err // "output options not set."
             if (any(simparams%output_interval > simparams%nsteps)) print *, warn // "one or more outputs will not show, &
-                since the output interval is larger than the total number of simulation steps."
-
+                since the output interval is larger than the total number of simulation steps."            
+        
             ! If one of them is set, the others must be set as well.
             if (any([simparams%einc, simparams%polar] == default_real) .and.  &
                 .not. all([simparams%einc, simparams%polar] == default_real)) &
@@ -435,6 +425,13 @@ contains
                 simparams%Tsurf == default_real .and. simparams%Tproj == default_real) &
                 stop err // "projectile and/or slab temperature required for rpmd"
 
+            if (simparams%nprojectiles > 0) then
+                if( any(simparams%md_algo_p == prop_id_andersen) .and. simparams%Tproj == default_real) stop err // "Projectile temperature not set"
+            end if
+
+            if (any(simparams%output_type == output_id_is_adsorbed) .and. &
+                any([simparams%adsorption_start, simparams%adsorption_end] == default_real)) &
+                stop err // "cannot output adsorption status when adsorption distance is not provided"
 
                 ! TODO: to be completed
 
@@ -444,7 +441,7 @@ contains
                 "either lattice and/or projectile key must be present."
             if (simparams%nprojectiles == default_int) simparams%nprojectiles = 0
             if (simparams%nlattices == default_int) simparams%nlattices = 0
-            if (simparams%nthreads /= 1) print *, warn, "only one thread is supported for minimization"
+            if (simparams%nthreads /= 1) print *, warn, "only one threads supported for minimization"
 
 
 

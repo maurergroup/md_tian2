@@ -1,26 +1,3 @@
-!############################################################################
-! This routine is part of
-! md_tian2 (Molecular Dynamics Tian Xia 2)
-! (c) 2014-2020 Dan J. Auerbach, Svenja M. Janke, Marvin Kammler,
-!               Sascha Kandratsenka, Sebastian Wille
-! Dynamics at Surfaces Department
-! MPI for Biophysical Chemistry Goettingen, Germany
-! Georg-August-Universitaet Goettingen, Germany
-!
-! This program is free software: you can redistribute it and/or modify it
-! under the terms of the GNU General Public License as published by the
-! Free Software Foundation, either version 3 of the License, or
-! (at your option) any later version.
-!
-! This program is distributed in the hope that it will be useful, but
-! WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-! or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
-! for more details.
-!
-! You should have received a copy of the GNU General Public License along
-! with this program. If not, see http://www.gnu.org/licenses.
-!############################################################################
-
 module output_mod
 
     use universe_mod
@@ -29,16 +6,14 @@ module output_mod
     use constants
     use trajectory_info
     use run_config, only : simparams
-    use rpmd, only : calc_centroid_positions
 
     implicit none
 
-    logical :: overwrite_xyz       = .true.
-    logical :: overwrite_nrg       = .true.
+    logical :: overwrite_nrg = .true.
+    logical :: overwrite_ads = .true.
     integer, parameter :: out_unit = 86
-    integer :: out_id_poscar       = 0
-    integer :: out_id_vasp         = 0
-    integer :: out_id_mxt          = 0
+    integer :: out_id_poscar = 0
+    integer :: out_id_mxt    = 0
 
 
 contains
@@ -63,7 +38,7 @@ contains
                 select case (simparams%output_type(i))
 
                     case (output_id_xyz)
-                        call output_xyz(atoms, itraj)
+                        call output_xyz(atoms, itraj, istep)
 
                     case (output_id_energy)
                         call output_nrg(atoms, itraj, istep)
@@ -72,16 +47,15 @@ contains
                         call output_poscar(atoms)
                         out_id_poscar = out_id_poscar + 1
 
-                    case (output_id_vasp)
-                        call output_vasp(atoms, itraj, istep)
-                        out_id_vasp = out_id_vasp + 1
-
                     case (output_id_mxt)
                         call output_mxt(atoms)
                         out_id_mxt = out_id_mxt + 1
 
                     case (output_id_scatter)
                         ! pass
+
+                    case (output_id_is_adsorbed)
+                        call output_adsorption_status(atoms, itraj, istep)
 
                     case default
                         print *, err // "unknown output format", simparams%output_type(i)
@@ -95,10 +69,10 @@ contains
 
 
 
-    subroutine output_xyz(atoms, itraj)
+    subroutine output_xyz(atoms, itraj, istep)
 
         type(universe), intent(in) :: atoms
-        integer, intent(in) :: itraj
+        integer, intent(in) :: itraj, istep
 
         character(len=*), parameter :: xyz_format = '(a, 3e18.8e3)'
 
@@ -114,13 +88,20 @@ contains
         forall (i = 1 : atoms%natoms) dir_coords(:,:,i) = matmul(atoms%isimbox, atoms%r(:,:,i))
         dir_coords = dir_coords - anint(dir_coords-0.5)
         forall (i = 1 : atoms%natoms) cart_coords(:,:,i) = matmul(atoms%simbox, dir_coords(:,:,i))
+        where (cart_coords(3,:,:) > 0.5*atoms%simbox(3,3)) &
+            cart_coords(3,:,:) = cart_coords(3,:,:) - atoms%simbox(3,3)
 
         write(traj_id,'(i8.8)') itraj
         fname = 'conf/mxt_conf'//traj_id//'.xyz'
 
-        if (overwrite_xyz) then
+        ! if this is the first call to this subroutine during a trajectory, find ID index
+        ! super ugly, but the findloc intrinsic is not implement in ifort 2013
+        do i=1, size(simparams%output_type)
+            if (simparams%output_type(i) == output_id_xyz) j = i
+        end do
+
+        if (simparams%output_interval(j) == istep) then
             call open_for_write(out_unit, fname)
-            overwrite_xyz = .false.
         else
             call open_for_append(out_unit,fname)
         end if
@@ -202,7 +183,7 @@ contains
 
 
 
-    !2DO: call calc_centroid_positions (rpmd.f90) to write center of masses for higher beads to create a proper file
+
     subroutine output_poscar(atoms)
 
         type(universe), intent(in) :: atoms
@@ -251,75 +232,6 @@ contains
 
     end subroutine output_poscar
 
-
-    !New output format to generate readable POSCAR file, which can be also feeded to VASP directly
-    subroutine output_vasp(atoms, itraj, istep)
-
-        type(universe), intent(in)          :: atoms
-        integer, intent(in)                 :: itraj, istep
-
-        integer :: zero_step
-
-        character(len=max_string_length)    :: fname
-        !character(len=8)                    :: fid
-        character(len=8)                    :: traj_id_vasp
-        character(len=8)                    :: step_id_vasp
-
-        integer                             :: time_vals(8), noccurrences(atoms%ntypes), i, j
-        real(dp)                            :: cents(3, atoms%natoms) ! for the beads to get center of mass
-
-        zero_step = 0
-
-        ! XXX: change system() to execute_command_line() when new compiler is available
-        if (.not. dir_exists('conf')) call system('mkdir conf')
-
-        ! prepare arrays
-        noccurrences = 0
-        do i = 1, atoms%natoms
-            noccurrences(atoms%idx(i)) = noccurrences(atoms%idx(i)) + 1
-        end do
-
-        ! open file conf/poscar_%08d.dat
-        if (istep == -1) then
-             write(step_id_vasp,'(i8.8)') zero_step
-        else
-             write(step_id_vasp,'(i8.8)') istep ! should this be the md step or an ongoing number??
-        end if
-        !write(fid,'(i8.8)') out_id_vasp+simparams%start
-        write(traj_id_vasp,'(i8.8)') itraj
-        !write(step_id_vasp,'(i8.8)') istep
-        !fname = 'conf/poscar_'//fid//'.POSCAR'
-        fname = 'conf/poscar_trj_'//traj_id_vasp//'_step_'//step_id_vasp//'.POSCAR'
-        call open_for_write(out_unit, fname)
-
-        ! write date and time as comment line
-        call date_and_time(values=time_vals)
-        write(out_unit, '(i4, a, i2.2, a, i2.2, a, i2.2, a, i2.2)') &
-            time_vals(1), "-", time_vals(2), "-",time_vals(3), " - ",time_vals(5), ".",time_vals(6)
-
-        write(out_unit, '(a)')       '1.0'                    ! scaling constant
-        write(out_unit, '(3f23.15)') atoms%simbox
-        write(out_unit, *)           atoms%name
-        write(out_unit, '(100i6)') (noccurrences(i), i=1,atoms%ntypes)
-
-        if (atoms%is_cart) then
-            write(out_unit, '(a)') "Cartesian"
-        else
-            write(out_unit, '(a)') "Direct"
-        end if
-
-
-        cents = calc_centroid_positions(atoms)
-
-        ! positions and velocities
-        write(out_unit, '(3f23.15, 3l)') ((cents(:,i), &
-            .not.atoms%is_fixed(:,j,i), j=1,atoms%nbeads), i=1,atoms%natoms)
-        write(out_unit, '(a)') ""
-        write(out_unit, '(3f23.15)') atoms%v
-
-        close(out_unit)
-
-    end subroutine output_vasp
 
 
 
@@ -373,6 +285,7 @@ contains
         proj_v = sum(atoms%v(:,:,1), dim=2)/atoms%nbeads
         bead_epot = calc_bead_epot(atoms)
         call bead_ekin(atoms, b_ekin_p, b_ekin_l)
+        call finalize_bounces()
 
         if (flag == "scatter_initial") then
 
@@ -400,9 +313,10 @@ contains
             write(out_unit, '(a11, f14.7)') "azi_f    = ", atan2(proj_v(2), proj_v(1))*rad2deg
             write(out_unit, '(a)') ""
             write(out_unit, '(a11, f14.7)') "time     = ", (istep-1) * simparams%step
-            write(out_unit, '(a11, i)')     "turn_pnts = ", nturning_points
+            write(out_unit, '(a11, i)')     "bounces  = ",  bounces
             write(out_unit, '(a11, f14.7)') "cl_appr  = ", closest_approach
             write(out_unit, '(a11, 3f14.7)')"r_min_p  = ", lowest_z
+            write(out_unit, '(a11, f14.7)') "time_int = ", interaction_time
 
         else
             print *, err, "unknown flag", flag
@@ -456,8 +370,6 @@ contains
                     !            name = pes_name_ho
                     !        case(pes_id_simple_lj)
                     !            name = pes_name_simple_lj
-                    !	     case(pes_id_nene)
-                    !		 name = pes_name_nene
                     case default
                         print *, err, "pes output not implemented for ", pes
                         stop
@@ -472,5 +384,37 @@ contains
         close(out_unit)
 
     end subroutine output_pes
+
+
+
+    subroutine output_adsorption_status(atoms, itraj, istep)
+
+        type(universe), intent(in) :: atoms
+        integer, intent(in)        :: itraj, istep
+
+        character(len=max_string_length) :: fname
+        character(len=8)                 :: traj_id
+        integer                          :: ads_output_step
+
+        ! XXX: change system() to execute_command_line() when new compiler is available
+        if (.not. dir_exists('conf')) call system('mkdir conf')
+
+        ! open file conf/ads_%08d.dat
+        write(traj_id,'(i8.8)') itraj
+        fname = 'conf/ads_'//traj_id//'.dat'
+
+        ! overwrite file on first write
+        if (overwrite_ads) then
+            call open_for_write(out_unit, fname)
+            overwrite_ads = .false.
+        else
+            call open_for_append(out_unit, fname)
+        end if
+
+        write(out_unit, '(e13.6e2, L)') (istep-1)*simparams%step, is_adsorbed
+
+        close(out_unit)
+
+    end subroutine output_adsorption_status
 
 end module output_mod

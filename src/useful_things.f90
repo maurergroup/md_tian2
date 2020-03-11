@@ -1,28 +1,13 @@
-!############################################################################
-! This routine is part of
-! md_tian2 (Molecular Dynamics Tian Xia 2)
-! (c) 2014-2020 Dan J. Auerbach, Svenja M. Janke, Marvin Kammler,
-!               Sascha Kandratsenka, Sebastian Wille
-! Dynamics at Surfaces Department
-! MPI for Biophysical Chemistry Goettingen, Germany
-! Georg-August-Universitaet Goettingen, Germany
-!
-! This program is free software: you can redistribute it and/or modify it
-! under the terms of the GNU General Public License as published by the
-! Free Software Foundation, either version 3 of the License, or
-! (at your option) any later version.
-!
-! This program is distributed in the hope that it will be useful, but
-! WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-! or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
-! for more details.
-!
-! You should have received a copy of the GNU General Public License along
-! with this program. If not, see http://www.gnu.org/licenses.
-!############################################################################
-
-! Contains useful math routine
 module useful_things
+        !
+        ! Purpose :
+        !           Contains useful math routines
+        !
+        ! Date          	Author          	History of Revison
+        ! ====          	======          	==================
+        ! 18.02.2014    	Svenja M. Janke		Original
+        !			Sascha Kandratsenka
+        !			Dan J. Auerbach
 
     use constants
 
@@ -201,7 +186,6 @@ contains
 
         real(8), dimension(3) :: r3temp
 
-
         ! Applying PBCs
         r3temp = b - a   ! distance vector from a to b
         r3temp = matmul(cimat, r3temp)   ! transform to direct coordinates
@@ -335,5 +319,17 @@ contains
         write(out_unit, fstring) "[", val(1), "-", val(2), "-",val(3), " - ",val(5), ".",val(6), ":", val(7), "] "
 
     end subroutine timestamp
+
+
+
+    subroutine normalize(vec)
+
+        real(dp), intent(inout) :: vec(3)
+
+        real(dp) :: length
+
+        if (any(vec /= 0)) vec = vec / sqrt(sum(vec*vec))
+
+    end subroutine normalize
 
 end module useful_things
