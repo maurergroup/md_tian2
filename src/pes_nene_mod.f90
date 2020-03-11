@@ -41,6 +41,7 @@ module pes_nene_mod
 !   replace all non-characters in case scenarios with proper string (e.g 1 into '1')
 !   remove when read out any data file the else in the while ios = 0 loop!
 !   add things concerning extrapolation warnings like in the RuNNer-LAMMPS interface
+!   sort elements when reading in the structure from poscar, mxt, xyz files!!
 
 
     ! Here all necessary files and keywords are read in for the high-dimensional neural network potentials (HDNNPs)
