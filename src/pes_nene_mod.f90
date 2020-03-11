@@ -205,7 +205,7 @@ module pes_nene_mod
 
                 close(unit=22)
 
-                atoms%f(:,:,:) = atoms%f(:,:,:) * forceconv
+                atoms%f(:,:,:) = atoms%f(:,:,:) * habohr2evang
 
                 !Read out Epot from energy.out calculated by RuNNer
                 !open(unit=23,file=outenergy_string,status='old',action='read',form='formatted',iostat=ios)

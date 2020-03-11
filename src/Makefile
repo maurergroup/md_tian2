@@ -22,28 +22,28 @@ LIB    =
 ###############################################
 
 SUBROUTINES = md_tian2.o \
+	      write_info.o \
 
 
-MODULES      = constants.o \
-        open_file.o \
-        useful_things.o \
-        universe_mod.o \
-        run_config.o \
-        pes_non_mod.o \
-        pes_ho_mod.o \
-        pes_lj_mod.o \
-        pes_emt_mod.o \
-        pes_rebo_mod.o \
-        pes_nene_mod.o \
-        force.o \
-        rpmd.o \
-        md_init.o \
-        md_algo.o \
-        trajectory_info.o \
-        output_mod.o \
-        fit.o \
-        geometry_opt.o \
-	write_info.o \
+MODULES = constants.o \
+          open_file.o \
+          useful_things.o \
+          universe_mod.o \
+          run_config.o \
+          pes_non_mod.o \
+          pes_ho_mod.o \
+          pes_lj_mod.o \
+          pes_emt_mod.o \
+          pes_rebo_mod.o \
+          pes_nene_mod.o \
+          force.o \
+          rpmd.o \
+          md_init.o \
+          md_algo.o \
+          trajectory_info.o \
+          output_mod.o \
+          fit.o \
+          geometry_opt.o \
 
 
 # begin make
@@ -128,16 +128,15 @@ geometry_opt.o: geometry_opt.f90
 	rm geometry_opt.mod ; \
         $(FC)  -c geometry_opt.f90
 
-write_info.o: write_info.f90
-	rm write_info.mod ; \
-	$(FC)  -c write_info.f90
 
 
-
-# compile subroutines
+# compile subroutines in alphabetic order
 
 md_tian2.o: md_tian2.f90
-	$(FC) $(FFLAGS) -c md_tian.f90
+	$(FC) $(FFLAGS) -c md_tian2.f90
+
+write_info.o: write_info.f90
+	$(FC) $(FFLAGS) -c write_info.f90
 
 
 serial: ./md_tian2.serial.x
