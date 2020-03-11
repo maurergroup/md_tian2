@@ -131,7 +131,7 @@ ODFriction_mod.o: ODFriction_mod.f90
 
 # compile subroutines
 
-md_tian.o: md_tian.f90 force.o md_algo.o fit.o trajectory_info.o
+md_tian.o: md_tian.f90 force.o md_algo.o fit.o trajectory_info.o geometry_opt.o
 	$(FC) $(FFLAGS) -c md_tian.f90
 
 

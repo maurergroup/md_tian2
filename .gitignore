@@ -22,3 +22,4 @@ RuNNer_input/*
 *.toc
 # General
 *.swp
+*example*

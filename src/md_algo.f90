@@ -317,7 +317,7 @@ contains
         counter=0
 
         do i=1,atoms%natoms
-            if (atoms%algo(i)==propagator_id) then
+            if (atoms%algo(atoms%idx(i))==propagator_id) then
               idx(counter*3+1:counter*3+3)=i
               counter=counter+3
             end if
@@ -332,49 +332,146 @@ contains
 
         integer                       :: idx(3*atoms%natoms)
         integer                       :: n_tensor_DoF,workspace,inf,b
-        real(dp), allocatable         :: eta(:,:,:), eig_val(:,:), eig_vec(:,:,:), work(:)
-        
 
-        PRINT *, "entering tensor_langevin_1"
-
+        !setup idx first so we also know the size of the tensor and do not need
+        !to allocate all variables on the fly
         call get_propagator_idx(atoms,prop_id_odf,idx,n_tensor_DoF)
 
+        call tensor_langevin_prop_1(atoms,n_tensor_DoF,idx)
 
-        PRINT *, "idx"
-        !alocate subroutine variables
-        if (.not. allocated(eta)) allocate(eta(n_tensor_DoF, &
-             n_tensor_DoF,atoms%nbeads))
-        if (.not. allocated(eig_vec)) allocate(eig_vec(n_tensor_DoF, &
-             n_tensor_DoF,atoms%nbeads))
-        if (.not. allocated(eig_val)) allocate(eig_val(n_tensor_DoF, &
-             atoms%nbeads))
-        if (.not. allocated(work)) allocate(work(n_tensor_DoF*(3+n_tensor_DoF/2)))
+    end subroutine tensor_langevin_1
 
-        PRINT *, "allocs"
+    subroutine tensor_langevin_prop_1(atoms,n_tensor_DoF,idx)
 
-        !compute odf tensor
+        type(universe), intent(inout) :: atoms
+        integer, intent(in)           :: n_tensor_DoF
+        integer, intent(in)           :: idx(3*atoms%natoms)
+        integer                       :: inf, b, i, j, l, workspace, &
+                                         i_atom,i_cart
+
+        real(dp), dimension(n_tensor_DoF,n_tensor_DoF,atoms%nbeads) &
+                                    :: eta, eig_vec, mass, c0m, c1m, c2m, &
+                                  sigma_rm, sigma_vm, c_rvm
+
+        real(dp), dimension(n_tensor_DoF,atoms%nbeads)    :: c0, c1, c2, xidt, &
+                                  xidt2, ixidt, sigma_r, sigma_v, c_rv, eig_val&
+                                  ,randy_odf, dr, dv, r, v, a
+
+        real(dp), dimension(n_tensor_DoF*(3+n_tensor_DoF/2)) :: work
+
+        real(dp), dimension(n_tensor_DoF,atoms%nbeads)          :: temp
+
+
+
+
+
         call odf(atoms,idx,n_tensor_DoF,eta)
- 
-        PRINT *, "odf"
+
         !copy tensor for diagonalisation (lapack does this in place, this way we
         !can keep the friction tensor
         eig_vec=eta 
-        workspace=n_tensor_DoF*(3+n_tensor_DoF/2)
         do b=1,atoms%nbeads
             work=0
             inf=0
             call dsyev('V','U',n_tensor_DoF,eig_vec(:,:,b),n_tensor_DoF,eig_val(:,b),work,workspace,inf)       
-          
-            PRINT *, "--eta---"
-            PRINT *, eta(:,:,b)
-            PRINT *, "--eig_vec---"        
-            PRINT *, eig_vec(:,:,b)
-            PRINT *, "--eig_val---"
-            PRINT *, eig_val(:,b)
-            PRINT *, "-----"
-            STOP
         end do
-    end subroutine tensor_langevin_1
+
+!!!!!!adapted from lagevin_1
+        do i=1,n_tensor_DoF
+            mass(i,i,:)  =  atoms%m(idx(i))
+            if (atoms%is_proj(atoms%idx(idx(i)))) then
+                temp(i,:)    =  kB * atoms%nbeads * simparams%Tproj
+            else
+                temp(i,:)    =  kB * atoms%nbeads * simparams%Tsurf
+            end if
+        end do
+!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+
+!!!!!from langevin_1
+        xidt = eig_val * simparams%step
+        xidt2 = xidt * xidt
+        ixidt = simparams%step/xidt   ! 1/friction eigenvalues
+
+        ! Preventing problems due to precision issues
+        if (all(xidt > 1e-2) .and. all(temp > tolerance)) then
+
+            c0 = exp(-xidt)
+            c1 = (1 - c0) * ixidt
+            c2 = (1 - c1/simparams%step)*ixidt
+
+            sigma_r = ixidt * sqrt(temp*(2*xidt - 3 + 4*c0 - c0*c0))
+            sigma_v = sqrt(temp * (1 - c0*c0))
+
+            c_rv    = ixidt*temp*(1 - c0)**2/(sigma_r*sigma_v)
+
+        else ! use series up to 2nd order in xi*dt
+
+            c0 = 1 - xidt + 0.5*xidt2
+            c1 = (1 - 0.5*xidt + 2*twelfth*xidt2)*simparams%step
+            c2 = (0.5 - 2*twelfth*xidt + 0.5*twelfth*xidt2)*simparams%step
+
+            sigma_r = simparams%step * sqrt(temp*(8*twelfth*xidt - 0.5*xidt2))
+            sigma_v = sqrt(2 * temp * xidt * (1 - xidt))
+
+            c_rv    = 0.5 * sqrt3 * (1 - 0.125*xidt)
+
+        end if
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+        !convert back to cartesian coordinates
+        do i = 1, n_tensor_DoF
+            do l = 1, n_tensor_DoF
+                c0m(i,l,:)=0.0d0
+                do j = 1, n_tensor_DoF
+                 c0m(i,l,:)=eig_vec(j,i,:)*c0(j,:)*eig_vec(j,l,:)+c0m(i,l,:)
+                 c1m(i,l,:)=eig_vec(j,i,:)*c1(j,:)*eig_vec(j,l,:)+c1m(i,l,:)
+                 c2m(i,l,:)=eig_vec(j,i,:)*c2(j,:)*eig_vec(j,l,:)+c2m(i,l,:)
+                 sigma_rm(i,l,:)=eig_vec(j,i,:)*sigma_r(j,:)*eig_vec(j,l,:)+sigma_rm(i,l,:)
+                 sigma_vm(i,l,:)=eig_vec(j,i,:)*sigma_v(j,:)*eig_vec(j,l,:)+sigma_vm(i,l,:)
+                 c_rvm(i,l,:)=eig_vec(j,i,:)*c_rv(j,:)*eig_vec(j,l,:)+c_rvm(i,l,:)
+                end do
+            end do
+        end do
+
+
+        !create the vectors corresponding to the tensor DoF:
+        do i= 1, n_tensor_DoF
+            !get the atom number and cartesian coordinate corresponding to this
+            !DoF
+            i_atom=idx(i)
+            i_cart=mod((i_atom-1),3) + 1
+            randy_odf(i,:)=randy(i_cart,:,i_atom)
+            r=atoms%r(i_cart,b,i_atom)
+            v=atoms%v(i_cart,b,i_atom)  
+            a=atoms%a(i_cart,b,i_atom)
+        end do
+
+
+        do b = 1, atoms%nbeads
+
+            dr(:,b)=matmul(c1m(:,:,b),v(:,b)) + simparams%step*matmul(c2m(:,:,b),a(:,b)) + &
+                                        matmul(sigma_rm(:,:,b),randy_odf(:,b))
+            dv(:,b)=matmul(c0m(:,:,b),v(:,b)) + matmul(c1m(:,:,b)-c2m(:,:,b),a(:,b) ) + &
+                         matmul( sigma_vm(:,:,b) ,matmul(c_rvm(:,:,b),randy_odf(:,b))) 
+
+            do i = 1, n_tensor_DoF
+            !get the atom number and cartesian coordinate corresponding to this
+            !DoF
+                i_atom=idx(i)
+                i_cart=mod((i_atom-1),3) + 1
+                if (.not. atoms%is_fixed(i_cart,b,i_atom)) then
+                  atoms%r(i_cart,b,i_atom)=atoms%r(i_cart,b,i_atom)+dr(i,b)
+                  atoms%v(i_cart,b,i_atom)=atoms%v(i_cart,b,i_atom)+dv(i,b)
+                else
+                  atoms%v(i_cart,b,i_atom)=0.0d0
+                end if
+             end do
+        end do
+       
+
+
+    end subroutine tensor_langevin_prop_1
 
 
     subroutine tensor_langevin_2(atoms)       
