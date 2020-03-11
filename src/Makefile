@@ -21,7 +21,7 @@ LIB    =
 # Changes below this line developers only
 ###############################################
 
-SUBROUTINES = md_tian.o \
+SUBROUTINES = md_tian2.o \
 
 
 MODULES      = constants.o \
@@ -43,6 +43,7 @@ MODULES      = constants.o \
         output_mod.o \
         fit.o \
         geometry_opt.o \
+	write_info.o \
 
 
 # begin make
@@ -127,16 +128,20 @@ geometry_opt.o: geometry_opt.f90
 	rm geometry_opt.mod ; \
         $(FC)  -c geometry_opt.f90
 
+write_info.o: write_info.f90
+	rm write_info.mod ; \
+	$(FC)  -c write_info.f90
+
 
 
 # compile subroutines
 
-md_tian.o: md_tian.f90
+md_tian2.o: md_tian2.f90
 	$(FC) $(FFLAGS) -c md_tian.f90
 
 
-serial: ./md_tian2.x
-./md_tian2.x: $(MODULES) $(SUBROUTINES)	
+serial: ./md_tian2.serial.x
+./md_tian2.serial.x: $(MODULES) $(SUBROUTINES)	
 	$(FC) $(FFLAGS) -o $@ \
                $(SUBROUTINES) $(MODULES) $(LIB)
 

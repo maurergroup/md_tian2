@@ -143,4 +143,10 @@ module constants
     real(dp), parameter :: ha2ev            = 27.21138602_dp ! convert Ha to eV
     real(dp), parameter :: habohr2evang     = ha2ev*ang2bohr !51.4220670398_dp; convert Ha/bohr to eV/ang
 
+    !arrays used in pes_nene_mod.f90
+    character(len=93)   :: atom_format = '(A4, X, F16.9, X, F16.9, X, F16.9, X, A3, X, F11.8, X, F11.8, X, F11.8, X, F11.8, X, F11.8)'
+    character(len=20)   :: ce_format = '(A6 ,X , F11.8)'
+    character(len=36)   :: lattice_format = '(A7, X, F11.8, X, F11.8, X, F11.8)'
+    character(len=29)   :: forces_string = '(F11.8, X, F11.8, X, F11.8)'
+
 end module constants
