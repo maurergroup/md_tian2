@@ -408,7 +408,7 @@ module pes_nene_mod
                             !do element_counter = 1,nelem
                                 read(words(element_counter+1),'(A)') element(element_counter) !! check for valid name will be done later!
                             end do
-                            if (any(element /= atoms%name)) stop err // err_inpnn // "element names in input.nn and in structure file differ"
+                            if (any(element /= atoms%name)) stop err // err_inpnn // "element names in input.nn and in input structure file differ"
                         else
                             print *, err, err_inpnn, "elements key does not match with number of element types"; stop
                         end if
@@ -427,7 +427,7 @@ module pes_nene_mod
         close(inpnn_unit)
 
         do nuc_counter=1,atoms%ntypes
-            call nuccharge(element(i),nucelem(i))
+            call nuccharge(element(nuc_counter),nucelem(nuc_counter))
         end do
 
         call sortelements()

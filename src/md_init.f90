@@ -444,7 +444,7 @@ contains
                 "either lattice and/or projectile key must be present."
             if (simparams%nprojectiles == default_int) simparams%nprojectiles = 0
             if (simparams%nlattices == default_int) simparams%nlattices = 0
-            if (simparams%nthreads /= 1) print *, warn, "only one threads supported for minimization"
+            if (simparams%nthreads /= 1) print *, warn, "only one thread is supported for minimization"
 
 
 
