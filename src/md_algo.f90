@@ -398,7 +398,7 @@ contains
         ixidt = simparams%step/xidt   ! 1/friction eigenvalues
 
         ! Preventing problems due to precision issues
-        if (all(xidt > 1e-2) .and. all(temp > tolerance)) then
+        if (all(xidt > 1e-2) .and. all(temp*mass**2 > tolerance)) then
 
             c0 = exp(-xidt)
             c1 = (1 - c0) * ixidt
@@ -465,7 +465,7 @@ contains
             dr(:,b)=matmul(c1m(:,:,b),v(:,b)) + simparams%step*matmul(c2m(:,:,b),a(:,b)) + &
                                         matmul(mass(:,:,b),matmul(sigma_rm(:,:,b),randy_odf(:,b)))
             new_v(:,b)=matmul(c0m(:,:,b),v(:,b)) + matmul(c1m(:,:,b)-c2m(:,:,b),a(:,b) ) + &
-                         matmul( sigma_vm(:,:,b) , matmul(mass(:,:,b),matmul(c_rvm(:,:,b),randy_odf(:,b))) )
+                         matmul(mass(:,:,b) , matmul(sigma_vm(:,:,b),matmul(c_rvm(:,:,b),randy_odf(:,b))) )
             do i = 1, n_tensor_DoF
             !get the atom number and cartesian coordinate corresponding to this
             !DoF
@@ -554,7 +554,7 @@ contains
         ixidt = simparams%step/xidt   ! 1/friction eigenvalues
 
         ! Preventing problems due to precision issues
-        if (all(xidt > 1e-2) .and. all(temp > tolerance)) then
+        if (all(xidt > 1e-2) .and. all(temp*mass**2 > tolerance)) then
 
             c0 = exp(-xidt)
             c1 = (1 - c0) * ixidt
