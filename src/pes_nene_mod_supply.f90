@@ -164,6 +164,7 @@ module pes_nene_mod_supply
 
 
 
+
         pstring = default_string
 
         ldebug = default_bool
@@ -1853,7 +1854,7 @@ module pes_nene_mod_supply
                     print *, err, filename_error, "Error in last line: need exactly 2 arguments"
                     stop
                 end if
-            else if (iswitch == 3)
+            else if (iswitch == 3) ! 3 to be comparable to RuNNer
                 do counter_2 = 1,nelem
                     line = line + 1
                     if (nwords == 2) then

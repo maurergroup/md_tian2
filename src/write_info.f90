@@ -53,4 +53,4 @@ subroutine write_info()
       !2do: maybe add further machine specific details, papers to cite and further things to mention
       !2do: add RuNNer/REBO etc. related papers also in here?
 
-end subroutine write_info()
+end subroutine write_info

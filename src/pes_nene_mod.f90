@@ -66,8 +66,9 @@ module pes_nene_mod
 
         integer  :: idx1, idx2
         integer  :: npairs_counter_1, npairs_counter_2, element_counter, nodes_counter
-        integer  :: nuc_counter
+        integer  :: nuc_counter, ielem_counter
         integer  :: general_counter_1, general_counter_2, general_counter_3
+        integer  :: k, j
 
         character(len=*), parameter :: err = "Error in read_nene: "
         character(len=*), parameter :: err_pes = "Error in the PES file: "
@@ -189,7 +190,7 @@ module pes_nene_mod
         !call initnn(iseed)
 
         ! start readout of input.nn according to initnn.f90
-        listdim    =100000
+        listdim    = 100000
 
         call get_nnconstants()
         !call writeheader()
@@ -444,10 +445,8 @@ module pes_nene_mod
 
         allocate(num_funcvalues_local(102))
         allocate(num_funcvaluese_local(102))
-        !allocate(num_funcvaluesp_local(102,102)) ! not needed
         num_funcvalues_local(:) = 0
         num_funcvaluese_local(:) = 0
-        !num_funcvaluesp_local(:) = 0 ! not needed
 
         if (maxnum_layers_short_atomic .gt. 0) then
             allocate(nodes_short_local(0:maxnum_layers_short_atomic))
@@ -1171,11 +1170,11 @@ module pes_nene_mod
         max_num_pairs = 0
         ! end readout according to paircount.f90
 
-        ! start checkstructures.f90
+        ! start readout according to checkstructures.f90
 
         !call checkonestructure(i1,lelement)
 
-        ! according to checkonestructure.f90
+        ! start readout according to checkonestructure.f90
 
         !if(keyword.eq.'lattice') then
         !    nlattice=nlattice+1
@@ -1215,17 +1214,17 @@ module pes_nene_mod
                 stop
             endif
         endif
-        ! end checkonestructure.f90
+        ! end readout according to checkonestructure.f90
 
         ielem=0
-        do i1=1,102
-            if(lelement(i1)) ielem=ielem+1
+        do ielem_counter=1,102
+            if(lelement(ielem_counter)) ielem=ielem+1
         enddo
-        ! end checkstructures.f90
+        ! end readout according to checkstructures.f90
 
         ! further readout according to initnn.f90
 
-        call distribute_nnflags() ! check if this is really needed
+        !call distribute_nnflags() ! only mpi dummy routines
 
         if(lshort.and.(nn_type_short.eq.1))then
         allocate (num_funcvalues_short_atomic(nelem))
@@ -4799,11 +4798,11 @@ module pes_nene_mod
         ! further readout according to initnn.f90
         call getlistdim()
 
-        !call distribute_predictionoptions() only mpi
+        !call distribute_predictionoptions() ! only mpi dummy routines
 
-        !call distribute_symfunctions() in symfunctions.f90, only mpi
+        !call distribute_symfunctions() ! in symfunctions.f90, only mpi dummy routines
 
-        !call distribute_globaloptions() only mpi
+        !call distribute_globaloptions() ! only mpi dummy routines
 
         if (lshort .and. (nn_type_short.eq.1)) then
             allocate (weights_short_atomic(maxnum_weights_short_atomic,nelem))
@@ -4819,381 +4818,6 @@ module pes_nene_mod
             symfunction_elec_list(:,:,:)=0.0d0
         end if
         ! end of readout according to initnn.f90, all things have been read and set up, ready for compute_nene()!!
-
-
-
-
-
-
-        ! the dummy readout
-        call open_for_read(inpnn_unit, filename_inpnn); ios = 0
-
-        do while (ios == 0)
-            read(inpnn_unit, '(A)', iostat=ios) buffer
-            if (ios == 0) then
-                line = line + 1
-                call split_string(buffer, words, nwords)
-
-                select case (words(1))
-
-                    case ('')
-                        if ( /= default_int) stop err // err_inpnn // 'Multiple use of the  key'
-                        if (nwords == 2) then
-                            read(words(2),'(i1000)', iostat=ios)
-                            if (ios /= 0) stop err // err_inpnn // " value must be integer"
-                        else
-                            print *, err, err_inpnn, " key needs a single argument"; stop
-                        end if
-
-                    case ('')
-                        if ( /= default_real) stop err // err_inpnn // 'Multiple use of the  key'
-                        if (nwords == 2) then
-                            read(words(2),*, iostat=ios)
-                            if (ios /= 0) stop err // err_inpnn // " value must be a number"
-                        else
-                            print *, err, err_inpnn, " key needs a single argument"; stop
-                        end if
-
-                    case ('')
-                        if ( /= default_bool) stop err // err_inpnn // 'Multiple use of the  key'
-                        if (nwords == 1) then
-                             = .true.
-                        else
-                            print *, err, err_inpnn, " key needs no argument(s)"; stop
-                        end if
-
-                    case ('')
-                        if ( /= default_string) stop err // err_inpnn // 'Multiple use of the  key'
-                        if (nwords == 2) then
-                            read(words(2),'(A)', iostat=ios)
-                        else
-                            print *, err, err_inpnn, " key needs a single argument"; stop
-                        end if
-
-                    case ('')
-                            print *, err, err_inpnn, " key is obsolete, please remove it"; stop
-
-                    case default
-                        if (trim(words(1)) /= '' .and. words(1)(1:1) /= '#') & ! check for empty and comment lines
-                            print *, warn_inpnn, 'Skipping invalid label ', trim(words(1)),' in line ', line
-
-                end select
-
-            else
-                write(*,*) err // err_inpnn // 'iostat = ', ios
-                stop
-            end if
-        end do
-
-        close(inpnn_unit)
-
-
-
-
-
-        ! here the full list of keywords, remove after implementing according to readkeywords.f90!!
-
-
-
-                    case ('force_grouping_by_structure')
-                        if ( /= default_) stop err // err_inpnn // 'Multiple use of the force_grouping_by_structure key'
-
-                    case ('force_threshold')
-                        if ( /= default_) stop err // err_inpnn // 'Multiple use of the force_threshold key'
-
-                    case ('force_update_scaling')
-                        if ( /= default_) stop err // err_inpnn // 'Multiple use of the force_update_scaling key'
-
-                    case ('global_activation_electrostatic')
-                        if ( /= default_) stop err // err_inpnn // 'Multiple use of the global_activation_electrostatic key'
-
-                    case ('global_activation_pair')
-                        if ( /= default_) stop err // err_inpnn // 'Multiple use of the global_activation_pair key'
-
-                    case ('global_activation_short')
-                        if ( /= default_) stop err // err_inpnn // 'Multiple use of the global_activation_short key'
-
-                    case ('global_hidden_layers_electrostatic')
-                        if ( /= default_) stop err // err_inpnn // 'Multiple use of the global_hidden_layers_electrostatic key'
-
-                    case ('global_hidden_layers_pair')
-                        if ( /= default_) stop err // err_inpnn // 'Multiple use of the global_hidden_layers_pair key'
-
-                    case ('global_hidden_layers_short')
-                        if ( /= default_) stop err // err_inpnn // 'Multiple use of the global_hidden_layers_short key'
-
-                    case ('global_nodes_electrostatic')
-                        if ( /= default_) stop err // err_inpnn // 'Multiple use of the global_nodes_electrostatic key'
-
-                    case ('global_nodes_pair' .or. 'global_nodes_short_pair')
-                        if ( /= default_) stop err // err_inpnn // 'Multiple use of the global_nodes_pair/global_nodes_short_pair key'
-
-                    case ('global_nodes_short' .or. 'global_nodes_short_atomic')
-                        if ( /= default_) stop err // err_inpnn // 'Multiple use of the global_nodes_short/global_nodes_short_atomic key'
-
-                    case ('global_pairsymfunction_short' .or. 'global_symfunction_short_pair')
-                        if ( /= default_) stop err // err_inpnn // 'Multiple use of the global_pairsymfunction_short/global_symfunction_short_pair key'
-
-                    case ('global_symfunction_electrostatic' .or. 'global_symfunction_elec')
-                        if ( /= default_) stop err // err_inpnn // 'Multiple use of the global_symfunction_electrostatic/global_symfunction_elec key'
-
-                    case ('global_symfunction_short' .or. 'global_symfunction_short_atomic')
-                        if ( /= default_) stop err // err_inpnn // 'Multiple use of the global_symfunction_short/global_symfunction_short_atomic key'
-
-                    case ('growth_mode')
-                        if ( /= default_) stop err // err_inpnn // 'Multiple use of the growth_mode key'
-
-                    case ('initialization_only')
-                        if ( /= default_) stop err // err_inpnn // 'Multiple use of the initialization_only key'
-
-                    case ('ion_forces_only')
-                        if ( /= default_) stop err // err_inpnn // 'Multiple use of the ion_forces_only key'
-
-                    case ('joint_energy_force_update')
-                        if ( /= default_) stop err // err_inpnn // 'Multiple use of the joint_energy_force_update key'
-
-                    case ('kalman_damp_charge')
-                        if ( /= default_) stop err // err_inpnn // 'Multiple use of the kalman_damp_charge key'
-
-                    case ('kalman_damp_force')
-                        if ( /= default_) stop err // err_inpnn // 'Multiple use of the kalman_damp_force key'
-
-                    case ('kalman_damp_short')
-                        if ( /= default_) stop err // err_inpnn // 'Multiple use of the kalman_damp_short key'
-
-                    case ('kalman_epsilon')
-                        if ( /= default_) stop err // err_inpnn // 'Multiple use of the kalman_epsilon key'
-
-                    case ('kalman_lambda_charge')
-                        if ( /= default_) stop err // err_inpnn // 'Multiple use of the kalman_lambda_charge key'
-
-                    case ('kalman_lambda_charge_constraint')
-                        if ( /= default_) stop err // err_inpnn // 'Multiple use of the kalman_lambda_charge_constraint key'
-
-                    case ('kalman_lambda_short')
-                        if ( /= default_) stop err // err_inpnn // 'Multiple use of the kalman_lambda_short key'
-
-                    case ('kalman_nue_charge')
-                        if ( /= default_) stop err // err_inpnn // 'Multiple use of the kalman_nue_charge key'
-
-                    case ('kalman_nue_charge_constraint')
-                        if ( /= default_) stop err // err_inpnn // 'Multiple use of the kalman_nue_charge_constraint key'
-
-                    case ('kalman_nue_short')
-                        if ( /= default_) stop err // err_inpnn // 'Multiple use of the kalman_nue_short key'
-
-                    case ('kalman_q0')
-                        if ( /= default_) stop err // err_inpnn // 'Multiple use of the kalman_q0 key'
-
-                    case ('kalman_qtau')
-                        if ( /= default_) stop err // err_inpnn // 'Multiple use of the kalman_qtau key'
-
-                    case ('kalman_qmin')
-                        if ( /= default_) stop err // err_inpnn // 'Multiple use of the kalman_qmin key'
-
-                    case ('max_energy')
-                        if ( /= default_) stop err // err_inpnn // 'Multiple use of the max_energy key'
-
-                    case ('max_force')
-                        if ( /= default_) stop err // err_inpnn // 'Multiple use of the max_force key'
-
-                    case ('md_mode')
-                        if ( /= default_) stop err // err_inpnn // 'Multiple use of the md_mode key'
-
-                    case ('mix_all_points')
-                        if ( /= default_) stop err // err_inpnn // 'Multiple use of the mix_all_points key'
-
-                    case ('nguyen_widrow_weights_ewald')
-                        if ( /= default_) stop err // err_inpnn // 'Multiple use of the nguyen_widrow_weights_ewald key'
-
-                    case ('nguyen_widrow_weights_short')
-                        if ( /= default_) stop err // err_inpnn // 'Multiple use of the nguyen_widrow_weights_short key'
-
-                    case ('noise_charge')
-                        if ( /= default_) stop err // err_inpnn // 'Multiple use of the noise_charge key'
-
-                    case ('noise_energy')
-                        if ( /= default_) stop err // err_inpnn // 'Multiple use of the noise_energy key'
-
-                    case ('noise_force')
-                        if ( /= default_) stop err // err_inpnn // 'Multiple use of the noise_force key'
-
-                    case ('normalize_nodes')
-                        if ( /= default_) stop err // err_inpnn // 'Multiple use of the normalize_nodes key'
-
-                    case ('optmode_charge')
-                        if ( /= default_) stop err // err_inpnn // 'Multiple use of the optmode_charge key'
-
-                    case ('optmode_short_energy')
-                        if ( /= default_) stop err // err_inpnn // 'Multiple use of the optmode_short_energy key'
-
-                    case ('optmode_short_force')
-                        if ( /= default_) stop err // err_inpnn // 'Multiple use of the optmode_short_force key'
-
-                    case ('pairsymfunction_short')
-                        if ( /= default_) stop err // err_inpnn // 'Multiple use of the pairsymfunction_short key'
-
-                    case ('points_in_memory' .or. 'nblock')
-                        if ( /= default_) stop err // err_inpnn // 'Multiple use of the points_in_memory/nblock key'
-
-                    case ('precondition_weights')
-                        if ( /= default_) stop err // err_inpnn // 'Multiple use of the precondition_weights key'
-
-                    case ('prepare_md')
-                        if ( /= default_) stop err // err_inpnn // 'Multiple use of the prepare_md key'
-
-                    case ('print_date_and_time')
-                        if ( /= default_) stop err // err_inpnn // 'Multiple use of the print_date_and_time key'
-
-                    case ('print_force_components')
-                        if ( /= default_) stop err // err_inpnn // 'Multiple use of the print_force_components key'
-
-                    case ('read_kalman_matrices')
-                        if ( /= default_) stop err // err_inpnn // 'Multiple use of the read_kalman_matrices key'
-
-                    case ('read_unformatted')
-                        if ( /= default_) stop err // err_inpnn // 'Multiple use of the read_unformatted key'
-
-                    case ('remove_atom_energies')
-                        if ( /= default_) stop err // err_inpnn // 'Multiple use of the remove_atom_energies key'
-
-                    case ('repeated_energy_update')
-                        if ( /= default_) stop err // err_inpnn // 'Multiple use of the repeated_energy_update key'
-
-                    case ('reset_kalman')
-                        if ( /= default_) stop err // err_inpnn // 'Multiple use of the reset_kalman key'
-
-                    case ('restrict_weights')
-                        if ( /= default_) stop err // err_inpnn // 'Multiple use of the restrict_weights key'
-
-                    case ('save_kalman_matrices')
-                        if ( /= default_) stop err // err_inpnn // 'Multiple use of the save_kalman_matrices key'
-
-                    case ('scale_max_elec')
-                        if ( /= default_) stop err // err_inpnn // 'Multiple use of the scale_max_elec key'
-
-                    case ('scale_max_short')
-                        if ( /= default_) stop err // err_inpnn // 'Multiple use of the scale_max_short key'
-
-                    case ('scale_max_short_atomic')
-                        if ( /= default_) stop err // err_inpnn // 'Multiple use of the scale_max_short_atomic key'
-
-                    case ('scale_max_short_pair')
-                        if ( /= default_) stop err // err_inpnn // 'Multiple use of the scale_max_short_pair key'
-
-                    case ('scale_min_elec')
-                        if ( /= default_) stop err // err_inpnn // 'Multiple use of the scale_min_elec key'
-
-                    case ('scale_min_short')
-                        if ( /= default_) stop err // err_inpnn // 'Multiple use of the scale_min_short key'
-
-                    case ('scale_min_short_atomic')
-                        if ( /= default_) stop err // err_inpnn // 'Multiple use of the scale_min_short_atomic key'
-
-                    case ('scale_min_short_pair')
-                        if ( /= default_) stop err // err_inpnn // 'Multiple use of the scale_min_short_pair key'
-
-                    case ('scale_symmetry_functions')
-                        if ( /= default_) stop err // err_inpnn // 'Multiple use of the scale_symmetry_functions key'
-
-                    case ('screen_electrostatics')
-                        if ( /= default_) stop err // err_inpnn // 'Multiple use of the screen_electrostatics key'
-
-                    case ('separate_bias_ini_short')
-                        if ( /= default_) stop err // err_inpnn // 'Multiple use of the separate_bias_ini_short key'
-
-                    case ('separate_kalman_short')
-                        if ( /= default_) stop err // err_inpnn // 'Multiple use of the separate_kalman_short key'
-
-                    case ('short_energy_error_threshold')
-                        if ( /= default_) stop err // err_inpnn // 'Multiple use of the short_energy_error_threshold key'
-
-                    case ('short_energy_fraction')
-                        if ( /= default_) stop err // err_inpnn // 'Multiple use of the short_energy_fraction key'
-
-                    case ('short_energy_group')
-                        if ( /= default_) stop err // err_inpnn // 'Multiple use of the short_energy_group key'
-
-                    case ('short_force_error_threshold')
-                        if ( /= default_) stop err // err_inpnn // 'Multiple use of the short_force_error_threshold key'
-
-                    case ('short_force_fraction')
-                        if ( /= default_) stop err // err_inpnn // 'Multiple use of the short_force_fraction key'
-
-                    case ('short_force_group')
-                        if ( /= default_) stop err // err_inpnn // 'Multiple use of the short_force_group key'
-
-                    case ('shuffle_weights_short_atomic')
-                        if ( /= default_) stop err // err_inpnn // 'Multiple use of the shuffle_weights_short_atomic key'
-
-                    case ('silent_mode')
-                        if ( /= default_) stop err // err_inpnn // 'Multiple use of the silent_mode key'
-
-                    case ('steepest_descent_step_charge')
-                        if ( /= default_) stop err // err_inpnn // 'Multiple use of the steepest_descent_step_charge key'
-
-                    case ('steepest_descent_step_energy_short')
-                        if ( /= default_) stop err // err_inpnn // 'Multiple use of the steepest_descent_step_energy_short key'
-
-                    case ('steepest_descent_step_force_short')
-                        if ( /= default_) stop err // err_inpnn // 'Multiple use of the steepest_descent_step_force_short key'
-
-                    case ('symfunction_correlation')
-                        if ( /= default_) stop err // err_inpnn // 'Multiple use of the symfunction_correlation key'
-
-                    case ('symfunction_electrostatic')
-                        if ( /= default_) stop err // err_inpnn // 'Multiple use of the symfunction_electrostatic key'
-
-                    case ('symfunction_short')
-                        if ( /= default_) stop err // err_inpnn // 'Multiple use of the symfunction_short key'
-
-                    case ('update_single_element')
-                        if ( /= default_) stop err // err_inpnn // 'Multiple use of the update_single_element key'
-
-                    case ('update_worst_charges')
-                        if ( /= default_) stop err // err_inpnn // 'Multiple use of the update_worst_charges key'
-
-                    case ('update_worst_short_energies')
-                        if ( /= default_) stop err // err_inpnn // 'Multiple use of the update_worst_short_energies key'
-
-                    case ('update_worst_short_forces')
-                        if ( /= default_) stop err // err_inpnn // 'Multiple use of the update_worst_short_forces key'
-
-                    case ('use_atom_charges')
-                        if ( /= default_) stop err // err_inpnn // 'Multiple use of the use_atom_charges key'
-
-                    case ('use_atom_energies')
-                        if ( /= default_) stop err // err_inpnn // 'Multiple use of the use_atom_energies key'
-
-                    case ('use_charge_constraint')
-                        if ( /= default_) stop err // err_inpnn // 'Multiple use of the use_charge_constraint key'
-
-                    case ('use_damping')
-                        if ( /= default_) stop err // err_inpnn // 'Multiple use of the use_damping key'
-
-                    case ('use_electrostatic_nn')
-                        if ( /= default_) stop err // err_inpnn // 'Multiple use of the use_electrostatic_nn key'
-
-                    case ('use_noisematrix')
-                        if ( /= default_) stop err // err_inpnn // 'Multiple use of the use_noisematrix key'
-
-                    case ('use_old_scaling')
-                        if ( /= default_) stop err // err_inpnn // 'Multiple use of the use_old_scaling key'
-
-                    case ('use_old_weights_charge')
-                        if ( /= default_) stop err // err_inpnn // 'Multiple use of the use_old_weights_charge key'
-
-                    case ('use_old_weights_short')
-                        if ( /= default_) stop err // err_inpnn // 'Multiple use of the use_old_weights_short key'
-
-                    case ('use_short_forces')
-                        if ( /= default_) stop err // err_inpnn // 'Multiple use of the use_short_forces key'
-
-                    case ('use_systematic_weights_electrostatic')
-                        if ( /= default_) stop err // err_inpnn // 'Multiple use of the use_systematic_weights_electrostatic key'
-
-                    case ('use_systematic_weights_short')
-                        if ( /= default_) stop err // err_inpnn // 'Multiple use of the use_systematic_weights_short key'
 
 
         ! read in biases and weights for short part
