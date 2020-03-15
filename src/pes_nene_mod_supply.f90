@@ -21,8 +21,8 @@
 ! with this program. If not, see http://www.gnu.org/licenses.
 !############################################################################
 
-! maybe use this module for more stuff related to RuNNer which has to be present in the pes_nen_mod module
-! maybe move the subroutines back into pes_nene_mod.f90?
+! maybe use this module for more stuff related to RuNNer which has to be present in the pes_nene_mod module
+! move the subroutines back into pes_nene_mod.f90, so that only one file is needed!
 module pes_nene_mod_supply
 
     use constants, only : default_int, default_real, default_string, default_bool, max_string_length, dp
