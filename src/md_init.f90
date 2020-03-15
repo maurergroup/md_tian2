@@ -69,7 +69,7 @@ contains
     subroutine read_ODFriction() ! -paul S.
       use  ODFriction, only : SetFriction
       
-      call SetFriction(1.0d0,1) !sets lattice constant to 1 angstrom and uses model 1
+      call SetFriction(4.2d0*sqrt(2.0d0),1) !sets lattice constant to 1 angstrom and uses model 1
 
     end subroutine read_ODFriction
 
