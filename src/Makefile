@@ -21,6 +21,8 @@ LIB    =
 # Changes below this line developers only
 ###############################################
 
+DEBUG  = -fpe0 -traceback -O0 -g -check all -check bounds -check uninit -ftrapuv -debug all -gen-interfaces -warn interfaces -mkl
+
 SUBROUTINES = md_tian2.o \
 	      write_info.o \
 
@@ -143,6 +145,11 @@ serial: ./md_tian2.serial.x
 ./md_tian2.serial.x: $(MODULES) $(SUBROUTINES)	
 	$(FC) $(FFLAGS) -o $@ \
                $(SUBROUTINES) $(MODULES) $(LIB)
+
+debug: ./md_tian2_debug.x
+./md_tian2_debug.x: $(MODULES) $(SUBROUTINES)
+	$(FC) $(DEBUG) -o $@ \
+		$(SUBROUTINES) $(MODULES) $(LIB)
 
 clean:
 	rm -f *.o *.mod *.x
