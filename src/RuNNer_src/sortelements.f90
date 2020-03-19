@@ -33,7 +33,7 @@
 !!
       integer counter                          ! internal
       integer ztemp                            ! internal
-      integer i1,i2,i3                         ! internal
+      integer i1,i2                            ! internal
 !!
       character*2 elementtemp                  ! internal
 !!

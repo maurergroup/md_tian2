@@ -72,6 +72,12 @@
         write(ounit,*)'Electrostatic NN is off'        
       endif
 !!
+      if(lvdw.and.(nn_type_vdw.eq.1))then
+        write(ounit,*)'vdW corrections switched on'        
+      else
+        write(ounit,*)'vdW corrections switched off'        
+      endif
+!!
       if((mode.eq.1).and.lcheckinputforces)then
       write(ounit,'(a,f10.6,a)')&
         ' checking input forces, threshold for force vector is  '&
@@ -133,7 +139,7 @@
 !!
       write(ounit,'(a,i10)')' seed for random number generator                ',iseed
 !!
-      if((nran.lt.0).or.(nran.gt.5))then
+      if((nran.lt.0).or.(nran.gt.6))then
         write(ounit,*)'ERROR: Unknown random number generator ',nran
         stop
       endif
@@ -200,7 +206,7 @@
       endif
 !!
       if(lelec)then
-        write(ounit,'(a,i5)')' electrostatic_type                                   ',nn_type_elec
+        write(ounit,'(a,i5)')' electrostatic_type (nn_type_elec)                    ',nn_type_elec
         if(nn_type_elec.eq.1)then
           write(ounit,'(a)')' Using separate set of atomic NNs for atomic charges'
         elseif(nn_type_elec.eq.2)then
@@ -256,7 +262,18 @@
       endif
 !!
 !!
-
+      if(lvdw)then
+        write(ounit,*)'-------------------------------------------------------------'
+        write(ounit,*)'vdW specifications:'
+        write(ounit,*)'-------------------------------------------------------------'
+      endif
+!!
+      if(lvdw)then
+        write(ounit,'(a,i4)')' vdW type                                            ',nn_type_vdw
+      endif
+      if(lvdw.and.(nn_type_vdw.eq.1))then
+        write(ounit,'(a,2f14.6)')' vdw screening                                       ',vdw_screening(1),vdw_screening(2)
+      endif
 
 
 
@@ -443,6 +460,10 @@
           write(ounit,*)'Currently restrictw must be larger than 2.0'
           stop
         endif
+      endif
+!!
+      if((mode.eq.2).and.lbindingenergyonly.and.(.not.lwritetrainpoints))then
+        write(ounit,*)'WARNING: write_binding_energy_only specified without write_trainpoints'
       endif
 !!
       if((mode.eq.2).and.lanalyzeerror)then
@@ -765,6 +786,7 @@
       if(mode.eq.2)write(ounit,'(a,l)')' write temporary weights each epoch                      ',lwritetmpweights
 !!
       if(mode.eq.2)write(ounit,'(a,l)')' write trainpoints.out and testpoints.out                ',lwritetrainpoints
+      if(mode.eq.2)write(ounit,'(a,l)')' write binding energies only                             ',lbindingenergyonly
 !!
       if((mode.eq.2).and.lelec)write(ounit,'(a,l)')&
         ' write traincharges.out and testcharges.out              ',lwritetraincharges

@@ -112,6 +112,7 @@
       logical lenforcemaxnumneighborsatomic
       logical lmd
       logical lusenoisematrix
+      logical lbindingenergyonly
 !! calculate correlation of symmetry functions
       logical lpearson_correlation
 

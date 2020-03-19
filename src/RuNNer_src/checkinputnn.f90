@@ -62,6 +62,28 @@
         endif
       endif
 
+      if(lvdw)then
+        if(nn_type_vdw.eq.1)then
+        else
+          write(ounit,*)'ERROR: illegal value for vdw_type ',nn_type_vdw
+          stop
+        endif
+      endif
+
+      if(lvdw)then
+        if(nn_type_vdw.eq.1)then
+          if(count_vdwscreening.eq.0)then
+            write(ounit,*)'ERROR: please specify keyword vdw_screening'
+            stop
+          endif
+          if((abs(vdw_screening(1)).lt.0.00000001d0).and.(abs(vdw_screening(2)).lt.0.000000001d0))then
+            write(ounit,*)'ERROR: illegal value for vdw_type ',nn_type_vdw
+            stop
+          endif
+!! Todo: catch strange input values here and stop
+        endif
+      endif
+
       if((cutoff_alpha.gt.1.00000001d0).or.(cutoff_alpha.lt.0.0d0))then
         write(ounit,*)'ERROR: please use cutoff_alpha within 0 and 1 ',cutoff_alpha
         stop

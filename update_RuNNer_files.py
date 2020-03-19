@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/python
 
 # intention: update RuNNer related files in a separate folder in the src folder of md_tian2
 
@@ -55,7 +55,7 @@ file_list = \
         printinputnn.f90 \
         saturation.f90 \
         sortelements.f90 \
-        sortsymfunctions.f90
+        sortsymfunctions.f90 \
         structures.f90 \
         symfunctions.f90 \
         timings.f90 \
@@ -64,14 +64,15 @@ file_list = \
 
 runner_dir=os.chdir(runner_path) # change to RuNNer directory
 
-print("Copying the following files")
+print("Copying the following files:")
 
 for i,name in enumerate(file_list.split()):
     #print(name)
     #print("Copying the following files")
     #copy_files_command = "cp "+str(name)+" "+md_tian_path # set up copy command
     copy_files_command = "cp "+str(name)+" "+md_tian_path
-    print(copy_files_command)
+    print(name)
+    #print(copy_files_command)
     os.system(copy_files_command) # copy files
 
-print("done")
+print("done!")

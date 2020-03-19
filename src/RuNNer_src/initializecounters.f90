@@ -30,11 +30,14 @@
       count_analyze_error_force_step   =0
       count_analyze_error_charge_step   =0
       count_mode    =0
+      count_vdwscreening   =0
       count_nn_type_elec   =0
+      count_nn_type_vdw    =0
       count_ldebug  =0
       count_paramode=0
       count_lshort  =0
-      count_lelec  =0
+      count_lelec   =0
+      count_lvdw    =0
       count_num_layers_short_atomic=0
       count_num_layers_elec=0
       count_num_layers_short_pair=0
@@ -112,6 +115,7 @@
       count_lfinetime=0
       count_lfinetimeepoch=0
       count_lwritetrainpoints=0
+      count_lbindingenergyonly=0
       count_lwritetrainforces=0
       count_lwritetraincharges=0
       count_wconstraint=0

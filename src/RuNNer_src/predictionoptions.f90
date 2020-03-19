@@ -22,12 +22,17 @@
       implicit none
 
       integer enforcetotcharge
+      integer nn_type_vdw 
+
+      real*8 vdw_screening(2)
+      real*8, dimension(:,:) , allocatable :: vdw_coefficients
 
       logical ldoforces
       logical ldohessian
       logical lpreparemd
       logical lprintforcecomponents
       logical lwritesymfunctions
+      logical lvdw
 
       end module predictionoptions 
 

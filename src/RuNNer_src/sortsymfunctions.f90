@@ -39,7 +39,10 @@
       integer function_type_local(maxnum_funcvalues_local,nelem)    ! in/out
       integer symelement_local(maxnum_funcvalues_local,2,nelem)     ! in/out
       integer symelement_local_temp(2)                        ! internal
-      integer counter(9,nelem)                          ! internal
+      integer counter(9,nelem)                                ! internal
+      integer num_type5                                       ! internal
+      integer num_type6                                       ! internal
+      integer num_others                                      ! internal
 !!
       real*8 funccutoff_local(maxnum_funcvalues_local,nelem)        ! in/out
       real*8 eta_loca(maxnum_funcvalues_local,nelem)               ! in/out
@@ -427,6 +430,35 @@
             stop
           endif
         enddo ! i2
+      enddo ! i1
+!!
+!! JB 2019: check if function types 5 or 6 are wrongly used for PES construction
+!!          for this we count symmetry functions of each type, types 5 and 6 must only be used alone!
+      do i1=1,nelem
+        num_type5=0
+        num_type6=0
+        num_others=0
+        do i2=1,num_funcvalues_local(i1)
+           if(function_type_local(i2,i1).eq.5)then
+             num_type5=num_type5+1
+           elseif(function_type_local(i2,i1).eq.6)then
+             num_type6=num_type6+1
+           else
+             num_others=num_others+1
+           endif
+        enddo ! i2
+        if(num_type5.gt.0)then
+          if((num_type6.gt.0).or.(num_others.gt.0))then
+            write(ounit,*)'ERROR: symmetry function type 5 must not be combined with other types!'
+            stop
+          endif
+        endif
+        if(num_type6.gt.0)then
+          if((num_type5.gt.0).or.(num_others.gt.0))then
+            write(ounit,*)'ERROR: symmetry function type 6 must not be combined with other types!'
+            stop
+          endif
+        endif
       enddo ! i1
 !!
       return

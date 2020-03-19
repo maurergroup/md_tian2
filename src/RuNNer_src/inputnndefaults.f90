@@ -45,6 +45,8 @@
       analyze_error_energy_step = 0.01d0
       analyze_error_force_step = 0.01d0
       analyze_error_charge_step = 0.001d0
+      vdw_screening(1)=0.0d0
+      vdw_screening(2)=0.0d0
       ldebug        =.false.
       paramode      =1
       ewaldalpha=0.0d0
@@ -71,6 +73,8 @@
       optmodeq=1
       nblock=200
       nepochs=0
+      nn_type_vdw=1
+      vdw_coefficients(:,:)=0.0d0
       iwriteweight=1
       lwritetmpweights=.false.
       lwritesymfunctions=.false.
@@ -97,6 +101,7 @@
       luseworstf=.false.
       luseworstq=.false.
       lgrowth=.false.
+      lvdw=.false.
       ngrowth=0
       growthstep=1
       ldampw=.false.
@@ -110,6 +115,7 @@
       lwritetrainpoints=.false.
       lwritetrainforces=.false.
       lwritetraincharges=.false.
+      lbindingenergyonly=.false.
       atomrefenergies(:)=0.0d0
       weights_min=-1.d0
       weights_max=1.d0

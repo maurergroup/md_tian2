@@ -115,45 +115,6 @@
 !!
       end subroutine allocatesymfunctions
  
-      subroutine deallocatesymfunctions()
-!!
-      use nnflags 
-      use globaloptions
-!!
-      implicit none
-
-      if(lshort.and.(nn_type_short.eq.1))then
-        deallocate(function_type_short_atomic)
-        deallocate(symelement_short_atomic)
-        deallocate(funccutoff_short_atomic)
-        deallocate(eta_short_atomic)
-        deallocate(zeta_short_atomic)
-        deallocate(lambda_short_atomic)
-        deallocate(rshift_short_atomic)
-      endif
-!!
-      if(lshort.and.(nn_type_short.eq.2))then
-        deallocate(function_type_short_pair)
-        deallocate(symelement_short_pair)
-        deallocate(funccutoff_short_pair)
-        deallocate(eta_short_pair)
-        deallocate(zeta_short_pair)
-        deallocate(lambda_short_pair)
-        deallocate(rshift_short_pair)
-      endif
-
-      if(lelec.and.(nn_type_elec.eq.1))then
-        deallocate(function_type_elec)
-        deallocate(symelement_elec)
-        deallocate(funccutoff_elec)
-        deallocate(eta_elec)
-        deallocate(zeta_elec)
-        deallocate(lambda_elec)
-        deallocate(rshift_elec)
-      endif
-!!
-      end subroutine deallocatesymfunctions
-
       subroutine distribute_symfunctions()
 !!
       use mpi_mod
