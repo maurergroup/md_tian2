@@ -23,7 +23,7 @@ LIB    =
 
 DEBUG  = -fpe0 -traceback -O0 -g -check all -check bounds -check uninit -ftrapuv -debug all -gen-interfaces -warn interfaces -mkl
 
-RUNNER_SRC_DIR = RuNNer_src
+RUNNER_SRC_DIR = RuNNer_src/
 
 SUBROUTINES = md_tian.o \
 	      abstime.o \
@@ -117,13 +117,13 @@ pes_rebo_mod.o: pes_rebo_mod.f90
 	rm pes_rebo_mod.mod ; \
         $(FC)  -c pes_rebo_mod.f90
 
-fileunits.o: $(RUNNER_SRC_DIR)/fileunits.f90
-	rm fileunits.mod ; \
-        $(FC) $(FFLAGS_MPI) -c fileunits.f90
+fileunits.o: $(RUNNER_SRC_DIR)fileunits.f90
+	rm $(RUNNER_SRC_DIR)fileunits.mod ; \
+        $(FC) $(FFLAGS_MPI) -c $(RUNNER_SRC_DIR)fileunits.f90
 
-fittingoptions.o: fittingoptions.f90
-	rm fittingoptions.mod ; \
-        $(FC) $(FFLAGS_MPI) -c fittingoptions.f90
+fittingoptions.o: $(RUNNER_SRC_DIR)fittingoptions.f90
+	rm $(RUNNER_SRC_DIR)fittingoptions.mod ; \
+        $(FC) $(FFLAGS_MPI) -c $(RUNNER_SRC_DIR)fittingoptions.f90
 
 nnflags.o: nnflags.f90
 	rm nnflags.mod ; \

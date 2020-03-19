@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
-# intention: update RuNNer related files in the src folder of md_tian2
+# intention: update RuNNer related files in a separate folder in the src folder of md_tian2
 
-# use: python update_RuNNer_files.py <path/to/RuNNer/src/dir> <path/to/md_tian2/src/dir>
+# use: python update_RuNNer_files.py <path/to/RuNNer/src/dir> <path/to/md_tian2/RuNNer/src/dir>
 
 # 2do: add options and show help like in RuNNerUC.py
 
@@ -36,6 +36,7 @@ file_list = \
         getneighboridxatomic_para.f90 \
         getneighborsatomic_para.f90 \
         getshortatomic.f90 \
+        getvolume.f90 \
         globaloptions.f90 \
         initializecounters.f90 \
         inputnndefaults.f90 \
@@ -55,7 +56,7 @@ file_list = \
         saturation.f90 \
         sortelements.f90 \
         sortsymfunctions.f90
-        structures.f90
+        structures.f90 \
         symfunctions.f90 \
         timings.f90 \
         translate.f90'
@@ -69,6 +70,8 @@ for i,name in enumerate(file_list.split()):
     #print(name)
     #print("Copying the following files")
     #copy_files_command = "cp "+str(name)+" "+md_tian_path # set up copy command
-    copy_files_command = "cp "+str(name)+" "+md_tian_path+"RuNNer_"+str(name)
+    copy_files_command = "cp "+str(name)+" "+md_tian_path
     print(copy_files_command)
     os.system(copy_files_command) # copy files
+
+print("done")
