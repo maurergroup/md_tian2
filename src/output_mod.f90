@@ -283,7 +283,8 @@ contains
         if (istep == -1) then
              write(step_id_vasp,'(i8.8)') zero_step
         else
-             write(step_id_vasp,'(i8.8)') istep ! should this be the md step or an ongoing number??
+             !write(step_id_vasp,'(i8.8)') istep ! should this be the md step or an ongoing number??
+             write(step_id_vasp,'(i8.8)') out_id_vasp
         end if
         !write(fid,'(i8.8)') out_id_vasp+simparams%start
         write(traj_id_vasp,'(i8.8)') itraj

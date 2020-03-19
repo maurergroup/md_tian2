@@ -7,4 +7,4 @@ C	C	latt	latt
 pes nene
 H	H	proj	proj
  inp_dir 'RuNNer_input/'
- prog-dir '~/RuNNer/RuNNer.serial.x'
+ prog_dir '~/md_tian2/RuNNer_input/RuNNer.serial.x'

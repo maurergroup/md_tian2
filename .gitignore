@@ -10,6 +10,9 @@ bin/
 *.x
 # RuNNer input files
 RuNNer_input/*
+# conf folder
+pos* 
+mxt*
 # Manual
 *.aux
 *.bbl

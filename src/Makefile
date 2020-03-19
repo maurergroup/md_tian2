@@ -146,8 +146,8 @@ serial: ./md_tian2.serial.x
 	$(FC) $(FFLAGS) -o $@ \
                $(SUBROUTINES) $(MODULES) $(LIB)
 
-debug: ./md_tian2_debug.x
-./md_tian2_debug.x: $(MODULES) $(SUBROUTINES)
+debug: ./md_tian2.debug.serial.x
+./md_tian2.debug.serial.x: $(MODULES) $(SUBROUTINES)
 	$(FC) $(DEBUG) -o $@ \
 		$(SUBROUTINES) $(MODULES) $(LIB)
 
