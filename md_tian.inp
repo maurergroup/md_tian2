@@ -1,8 +1,8 @@
 run md
 
 start 1
-ntrajs 1
-nsteps 2
+ntrajs 2
+nsteps 10
 step 0.1
 
 projectile 1  H 1.0 ver
@@ -26,8 +26,8 @@ Tsurf 300
 Tproj 300
 !annealing 1000 25 5
 
-conf poscar 'conf/example.POSCAR'
-!conf merge 'conf/proj/' 1 'conf/latt/' 1000
+!conf poscar 'conf/example.POSCAR'
+conf merge 'conf/proj/' 1 'conf/latt/' 1000
 
 
 !pes definition

@@ -282,6 +282,7 @@ contains
         ! open file conf/poscar_%08d.dat
         if (istep == -1) then
              write(step_id_vasp,'(i8.8)') zero_step
+             out_id_vasp = 0
         else
              !write(step_id_vasp,'(i8.8)') istep ! should this be the md step or an ongoing number??
              write(step_id_vasp,'(i8.8)') out_id_vasp
