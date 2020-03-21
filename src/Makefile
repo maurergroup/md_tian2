@@ -25,9 +25,40 @@ DEBUG  = -fpe0 -traceback -O0 -g -check all -check bounds -check uninit -ftrapuv
 
 RUNNER_SRC_DIR = RuNNer_src/
 
-SUBROUTINES = md_tian.o \
-	      abstime.o \
-	      write_info.o \
+SUBROUTINES = 	md_tian.o \
+		abstime.o \
+	      	addatoms.o \
+	      	atomsymfunction1.o \
+		atomsymfunction2.o \
+		atomsymfunction3Andi.o \
+		atomsymfunction3.o \
+		atomsymfunction4.o \
+		atomsymfunction5.o \
+		atomsymfunction6.o \
+		atomsymfunction8.o \
+		atomsymfunction9.o \
+		calconenn.o \
+		checkinputnn.o \
+		getatomsymfunctions.o \
+		getcutoff.o \
+		getdnodes_values.o \
+		getlistdim.o \
+		getneighboridxatomic_para.o \
+		getneighborsatomic_para.o \
+		getshortatomic.o \
+		getvolume.o \
+		initializecounters.o \
+		inputnndefaults.o \
+		mpi_dummy_routines.o \
+		mpifitdistribution.o \
+		neighbor_para_short.o \
+		nuccharge.o \
+		predictionshortatomic.o \
+		printinputnn.o \
+		sortelements.o \
+		sortsymfunctions.o \
+		translate.o \
+	      	write_info.o \
 
 
 MPI_DUMMY_SUBROUTINES = mpi_dummy_routines.o \
@@ -47,11 +78,9 @@ MODULES      =  constants.o \
 	       	nnflags.o \
                	nnconstants.o \
                	globaloptions.o \
-               	inputnncounters.o \
 	       	mode1options.o \
 	       	nnshort_atomic.o \
 	       	nnewald.o \
-	       	nnshort_pair.o \
 		saturation.o \
 		structures.o \
 		symfunctions.o \
@@ -125,65 +154,53 @@ fittingoptions.o: $(RUNNER_SRC_DIR)fittingoptions.f90
 	rm $(RUNNER_SRC_DIR)fittingoptions.mod ; \
         $(FC) $(FFLAGS_MPI) -c $(RUNNER_SRC_DIR)fittingoptions.f90
 
-nnflags.o: nnflags.f90
-	rm nnflags.mod ; \
-        $(FC) $(FFLAGS_MPI) -c nnflags.f90
+nnflags.o: $(RUNNER_SRC_DIR)nnflags.f90
+	rm $(RUNNER_SRC_DIR)nnflags.mod ; \
+        $(FC) $(FFLAGS_MPI) -c $(RUNNER_SRC_DIR)nnflags.f90
 
-nnconstants.o: nnconstants.f90
-        rm nnconstants.mod ; \
-        $(FC) $(FFLAGS_MPI) -c nnconstants.f90
+nnconstants.o: $(RUNNER_SRC_DIR)nnconstants.f90
+	rm $(RUNNER_SRC_DIR)nnconstants.mod ; \
+        $(FC) $(FFLAGS_MPI) -c $(RUNNER_SRC_DIR)nnconstants.f90
 
-globaloptions.o: globaloptions.f90
-        rm globaloptions.mod ; \
-        $(FC) $(FFLAGS_MPI) -c globaloptions.f90
+globaloptions.o: $(RUNNER_SRC_DIR)globaloptions.f90
+	rm $(RUNNER_SRC_DIR)globaloptions.mod ; \
+        $(FC) $(FFLAGS_MPI) -c $(RUNNER_SRC_DIR)globaloptions.f90
 
-inputnncounters.o: inputnncounters.f90
-        rm inputnncounters.mod ; \
-        $(FC) $(FFLAGS_MPI) -c inputnncounters.f90
+mode1options.o: $(RUNNER_SRC_DIR)mode1options.f90
+	rm $(RUNNER_SRC_DIR)mode1options.mod ; \
+        $(FC) $(FFLAGS_MPI) -c $(RUNNER_SRC_DIR)mode1options.f90
 
-mode1options.o: mode1options.f90
-        rm mode1options.mod ; \
-        $(FC) $(FFLAGS_MPI) -c mode1options.f90
+nnshort_atomic.o: $(RUNNER_SRC_DIR)nnshort_atomic.f90
+	rm $(RUNNER_SRC_DIR)nnshort_atomic.mod ; \
+        $(FC) $(FFLAGS_MPI) -c $(RUNNER_SRC_DIR)nnshort_atomic.f90
 
-nnshort_atomic.o: nnshort_atomic.f90
-        rm nnshort_atomic.mod ; \
-        $(FC) $(FFLAGS_MPI) -c nnshort_atomic.f90
+nnewald.o: $(RUNNER_SRC_DIR)nnewald.f90
+	rm $(RUNNER_SRC_DIR)nnewald.mod ; \
+        $(FC) $(FFLAGS_MPI) -c $(RUNNER_SRC_DIR)nnewald.f90
 
-nnewald.o: nnewald.f90
-        rm nnewald.mod ; \
-        $(FC) $(FFLAGS_MPI) -c nnewald.f90
+saturation.o: $(RUNNER_SRC_DIR)saturation.f90
+	rm $(RUNNER_SRC_DIR)saturation.mod ; \
+        $(FC) $(FFLAGS_MPI) -c $(RUNNER_SRC_DIR)saturation.f90
 
-nnshort_pair.o: nnshort_pair.f90
-        rm nnshort_pair.mod ; \
-        $(FC) $(FFLAGS_MPI) -c nnshort_pair.f90
+structures.o: $(RUNNER_SRC_DIR)structures.f90
+	rm $(RUNNER_SRC_DIR)structures.mod ; \
+        $(FC) $(FFLAGS_MPI) -c $(RUNNER_SRC_DIR)structures.f90
 
-saturation.o: saturation.f90
-        rm saturation.mod ; \
-        $(FC) $(FFLAGS_MPI) -c saturation.f90
+symfunctions.o: $(RUNNER_SRC_DIR)symfunctions.f90
+	rm $(RUNNER_SRC_DIR)symfunctions.mod ; \
+        $(FC) $(FFLAGS_MPI) -c $(RUNNER_SRC_DIR)symfunctions.f90
 
-structures.o: structures.f90
-        rm structures.mod ; \
-        $(FC) $(FFLAGS_MPI) -c structures.f90
-
-mpi_module.o: mpi_module.f90
-        rm mpi_module.mod ; \
-        $(MPIFC) $(FFLAGS_MPI) -c mpi_module.f90
-
-symfunctions.o: symfunctions.f90
-        rm symfunctions.mod ; \
-        $(FC) $(FFLAGS_MPI) -c symfunctions.f90
-
-timings.o: timings.f90
-	rm timings.mod ; \
+timings.o: $(RUNNER_SRC_DIR)timings.f90
+	rm $(RUNNER_SRC_DIR)timings.mod ; \
         $(FC) $(FFLAGS_MPI) -c timings.f90
 
-predictionoptions.o: predictionoptions.f90
-	rm predicitonoptions.mod ; \
-        $(FC) $(FFLAGS_MPI) -c predictionoptions.f90
+predictionoptions.o: $(RUNNER_SRC_DIR)predictionoptions.f90
+	rm $(RUNNER_SRC_DIR)predicitonoptions.mod ; \
+        $(FC) $(FFLAGS_MPI) -c $(RUNNER_SRC_DIR)predictionoptions.f90
 
-mpi_dummy.o: mpi_dummy.f90
-	rm mpi_dummy.mod ; \
-        $(FC) $(FFLAGS) -c mpi_dummy.f90
+mpi_dummy.o: $(RUNNER_SRC_DIR)mpi_dummy.f90
+	rm $(RUNNER_SRC_DIR)mpi_dummy.mod ; \
+        $(FC) $(FFLAGS) -c $(RUNNER_SRC_DIR)mpi_dummy.f90
 
 pes_nene_mod.o: pes_nene_mod.f90
 	rm pes_nene_mod.mod ; \
@@ -223,23 +240,122 @@ geometry_opt.o: geometry_opt.f90
 
 
 
-# compile subroutines
+# compile subroutines in alphabetic order
 
-md_tian.o: md_tian.f90
-	$(FC) $(FFLAGS) -c md_tian.f90
+md_tian2.o: md_tian2.f90
+	$(FC) $(FFLAGS) -c md_tian2.f90
+
+abstime.o: $(RUNNER_SRC_DIR)abstime.f90
+	$(FC) $(FFLAGS) -c $(RUNNER_SRC_DIR)abstime.f90
+
+addatoms.o: $(RUNNER_SRC_DIR)addatoms.f90
+	$(FC) $(FFLAGS) -c $(RUNNER_SRC_DIR)addatoms.f90
+
+atomsymfunction1.o: $(RUNNER_SRC_DIR)atomsymfunction1.f90
+	$(FC) $(FFLAGS) -c $(RUNNER_SRC_DIR)atomsymfunction1.f90
+
+atomsymfunction2.o: $(RUNNER_SRC_DIR)atomsymfunction2.f90
+	$(FC) $(FFLAGS) -c $(RUNNER_SRC_DIR)atomsymfunction2.f90
+
+atomsymfunction3Andi.o: $(RUNNER_SRC_DIR)atomsymfunction3Andi.f90
+	$(FC) $(FFLAGS) -c $(RUNNER_SRC_DIR)atomsymfunction3Andi.f90
+
+atomsymfunction3.o: $(RUNNER_SRC_DIR)atomsymfunction3.f90
+	$(FC) $(FFLAGS) -c $(RUNNER_SRC_DIR)atomsymfunction3.f90
+
+atomsymfunction4.o: $(RUNNER_SRC_DIR)atomsymfunction4.f90
+	$(FC) $(FFLAGS) -c $(RUNNER_SRC_DIR)atomsymfunction4.f90
+
+atomsymfunction5.o: $(RUNNER_SRC_DIR)atomsymfunction5.f90
+	$(FC) $(FFLAGS) -c $(RUNNER_SRC_DIR)atomsymfunction5.f90
+
+atomsymfunction6.o: $(RUNNER_SRC_DIR)atomsymfunction6.f90
+	$(FC) $(FFLAGS) -c $(RUNNER_SRC_DIR)atomsymfunction6.f90
+
+atomsymfunction8.o: $(RUNNER_SRC_DIR)atomsymfunction8.f90
+	$(FC) $(FFLAGS) -c $(RUNNER_SRC_DIR)atomsymfunction8.f90
+
+atomsymfunction9.o: $(RUNNER_SRC_DIR)atomsymfunction9.f90
+	$(FC) $(FFLAGS) -c $(RUNNER_SRC_DIR)atomsymfunction9.f90
+
+calconenn.o: $(RUNNER_SRC_DIR)calconenn.f90
+	$(FC) $(FFLAGS) -c $(RUNNER_SRC_DIR)calconenn.f90
+
+checkinputnn.o: $(RUNNER_SRC_DIR)checkinputnn.f90
+	$(FC) $(FFLAGS) -c $(RUNNER_SRC_DIR)checkinputnn.f90
+
+getatomsymfunctions.o: $(RUNNER_SRC_DIR)getatomsymfunctions.f90
+	$(FC) $(FFLAGS) -c $(RUNNER_SRC_DIR)getatomsymfunctions.f90
+
+getcutoff.o: $(RUNNER_SRC_DIR)getcutoff.f90
+	$(FC) $(FFLAGS) -c $(RUNNER_SRC_DIR)getcutoff.f90
+
+getdnodes_values.o: $(RUNNER_SRC_DIR)getdnodes_values.f90
+	$(FC) $(FFLAGS) -c $(RUNNER_SRC_DIR)getdnodes_values.f90
+
+getlistdim.o: $(RUNNER_SRC_DIR)getlistdim.f90
+	$(FC) $(FFLAGS) -c $(RUNNER_SRC_DIR)getlistdim.f90
+
+getneighboridxatomic_para.o: $(RUNNER_SRC_DIR)getneighboridxatomic_para.f90
+	$(FC) $(FFLAGS) -c $(RUNNER_SRC_DIR)getneighboridxatomic_para.f90
+
+getneighborsatomic_para.o: $(RUNNER_SRC_DIR)getneighborsatomic_para.f90
+	$(FC) $(FFLAGS) -c $(RUNNER_SRC_DIR)getneighborsatomic_para.f90
+
+getshortatomic.o: $(RUNNER_SRC_DIR)getshortatomic.f90
+	$(FC) $(FFLAGS) -c $(RUNNER_SRC_DIR)getshortatomic.f90
+
+getvolume.o: $(RUNNER_SRC_DIR)getvolume.f90
+	$(FC) $(FFLAGS) -c $(RUNNER_SRC_DIR)getvolume.f90
+
+initializecounters.o: $(RUNNER_SRC_DIR)initializecounters.f90
+	$(FC) $(FFLAGS) -c $(RUNNER_SRC_DIR)initializecounters.f90
+
+inputnndefaults.o: $(RUNNER_SRC_DIR)inputnndefaults.f90
+	$(FC) $(FFLAGS) -c $(RUNNER_SRC_DIR)inputnndefaults.f90
+
+mpi_dummy_routines.o: $(RUNNER_SRC_DIR)mpi_dummy_routines.f90
+	$(FC) $(FFLAGS) -c $(RUNNER_SRC_DIR)mpi_dummy_routines.f90
+
+mpifitdistribution.o: $(RUNNER_SRC_DIR)mpifitdistribution.f90
+	$(FC) $(FFLAGS) -c $(RUNNER_SRC_DIR)mpifitdistribution.f90
+
+neighbor_para_short.o: $(RUNNER_SRC_DIR)neighbor_para_short.f90
+	$(FC) $(FFLAGS) -c $(RUNNER_SRC_DIR)neighbor_para_short.f90
+
+nuccharge.o: $(RUNNER_SRC_DIR)nuccharge.f90
+	$(FC) $(FFLAGS) -c $(RUNNER_SRC_DIR)nuccharge.f90
+
+predictionshortatomic.o: $(RUNNER_SRC_DIR)predictionshortatomic.f90
+	$(FC) $(FFLAGS) -c $(RUNNER_SRC_DIR)predictionshortatomic.f90
+
+printinputnn.o: $(RUNNER_SRC_DIR)printinputnn.f90
+	$(FC) $(FFLAGS) -c $(RUNNER_SRC_DIR)printinputnn.f90
+
+sortelements.o: $(RUNNER_SRC_DIR)sortelements.f90
+	$(FC) $(FFLAGS) -c $(RUNNER_SRC_DIR)sortelements.f90
+
+sortsymfunctions.o: $(RUNNER_SRC_DIR)sortsymfunctions.f90
+	$(FC) $(FFLAGS) -c $(RUNNER_SRC_DIR)sortsymfunctions.f90
+
+translate.o: $(RUNNER_SRC_DIR)translate.f90
+	$(FC) $(FFLAGS) -c $(RUNNER_SRC_DIR)translate.f90
+
+write_info.o: write_info.f90
+	$(FC) $(FFLAGS) -c write_info.f90
 
 
 
 
-serial: ./md_tian2.x
-./md_tian2.x: $(MODULES_MPI_DUMMY) $(MODULES) $(SUBROUTINES) $(MPI_DUMMY_SUBROUTINES)
+serial: ./md_tian2.serial.x
+./md_tian2.serial.x: $(MODULES_MPI_DUMMY) $(MODULES) $(SUBROUTINES) $(MPI_DUMMY_SUBROUTINES)
 	$(FC) $(FFLAGS) -o $@ \
-               $(SUBROUTINES) $(MODULES_MPI_DUMMY) $(MODULES) $(MPI_DUMMY_SUBROUTINES) $(LIB)
+        	$(SUBROUTINES) $(MODULES_MPI_DUMMY) $(MODULES) $(MPI_DUMMY_SUBROUTINES) $(LIB)
 
-debug: ./md_tian2_debug.x
-./md_tian2_debug.x: $(MODULES) $(SUBROUTINES)
+debug: ./md_tian2.debug.serial.x
+./md_tian2_debug.x: $(MODULES_MPI_DUMMY) $(MODULES) $(SUBROUTINES) $(MPI_DUMMY_SUBROUTINES)
 	$(FC) $(DEBUG) -o $@ \
-		$(SUBROUTINES) $(MODULES) $(LIB)
+		$(SUBROUTINES) $(MODULES_MPI_DUMMY) $(MODULES) $(MPI_DUMMY_SUBROUTINES) $(LIB)
 
 clean:
 	rm -f *.o *.mod *.x
