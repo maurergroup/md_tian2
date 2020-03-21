@@ -26,7 +26,6 @@ file_list = \
         atomsymfunction8.f90 \
         atomsymfunction9.f90 \
         calconenn.f90 \
-        checkinputnn.f90 \
         fileunits.f90 \
         fittingoptions.f90 \
         getatomsymfunctions.f90 \
@@ -51,7 +50,6 @@ file_list = \
         nuccharge.f90 \
         predictionoptions.f90 \
         predictionshortatomic.f90 \
-        printinputnn.f90 \
         saturation.f90 \
         sortelements.f90 \
         sortsymfunctions.f90 \

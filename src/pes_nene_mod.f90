@@ -42,6 +42,7 @@ module pes_nene_mod
 !   remove when read out any data file the else in the while ios = 0 loop!
 !   add things concerning extrapolation warnings like in the RuNNer-LAMMPS interface
 !   sort elements when reading in the structure from poscar, mxt, xyz files!!
+!   ask Sascha about writing 2 (1) additional files per trajectory (wanted?)
 
 
     ! Here all necessary files and keywords are read in for the high-dimensional neural network potentials (HDNNPs)
