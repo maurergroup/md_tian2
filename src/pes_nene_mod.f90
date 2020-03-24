@@ -920,8 +920,8 @@ module pes_nene_mod
 
                             end select
 
-                        ! for every other keyword pass here, check for unrecognized keywords later
                         case default
+                            ! for every other keyword pass here, check for unrecognized keywords later
                             !if (trim(words(1)) /= '' .and. words(1)(1:1) /= '#') & ! check for empty and comment lines
                                 !print *, warn_inpnn, 'Skipping invalid label ', trim(words(1)),' in line ', line
 
@@ -1144,8 +1144,8 @@ module pes_nene_mod
 
                             end select
 
-                        ! for every other keyword pass here, check for unrecognized keywords later
                         case default
+                            ! for every other keyword pass here, check for unrecognized keywords later
                             !if (trim(words(1)) /= '' .and. words(1)(1:1) /= '#') & ! check for empty and comment lines
                                 !print *, warn_inpnn, 'Skipping invalid label ', trim(words(1)),' in line ', line
 
@@ -1268,7 +1268,7 @@ module pes_nene_mod
         ! start readout of input.nn according to readinput.f90
 
 
-            call initializecounters() ! even if we use default values, this should stay!!
+            !call initializecounters() ! we use default values, but compare with 
 
             if(lshort.and.(nn_type_short.eq.1))then
                 nodes_short_atomic_temp(:)   =0
@@ -2867,7 +2867,7 @@ module pes_nene_mod
 
             close(inpnn_unit)
 
-            call inputnndefaults() ! this has to be done AFTER the readout of ALL keywords, because variables are set to (our) default before, now values are assigned when there was no keyword found!!
+            call inputnndefaults()
 
             ! end of readout according to readkeywords.f90
 
@@ -4433,10 +4433,7 @@ module pes_nene_mod
 
             call checkinputnn(err, err_inpnn) ! own subroutine in pes_nene_mod_supply.f90
 
-            call printinputnn(iseed,ielem,&
-                nodes_short_atomic_temp,nodes_elec_temp,nodes_short_pair_temp,&
-                kalmanlambda_local,kalmanlambdae_local,&
-                actfunc_short_atomic_dummy,actfunc_elec_dummy,actfunc_short_pair_dummy)
+            call printinputnn(iseed,ielem,nodes_short_atomic_temp,nodes_elec_temp,nodes_short_pair_temp,kalmanlambda_local,kalmanlambdae_local,actfunc_short_atomic_dummy,actfunc_elec_dummy,actfunc_short_pair_dummy)
 
             write(*,'(a15,i4,a30)')' Element pairs: ',npairs,' , shortest distance (Bohr)'
             icount=0
@@ -4841,6 +4838,16 @@ module pes_nene_mod
             call readweights(inp_path,1,nelem,maxnum_weights_elec,num_weights_elec,weights_elec)
         end if
 
+        ! start according to predict.f90
+        if(lshort.and.(nn_type_short.eq.1))then ! -> this should move to read_nene!!
+            allocate(sens(nelem,maxnum_funcvalues_short_atomic))
+        endif
+
+        if(lelec.and.(nn_type_elec.eq.1).or.(nn_type_elec.eq.3).or.(nn_type_elec.eq.4))then ! -> this should move to read_nene!!
+          allocate(sense(nelem,maxnum_funcvalues_elec))
+        endif
+        ! end according to predict.f90
+
     end subroutine read_nene
 
 
@@ -4863,15 +4870,9 @@ module pes_nene_mod
         ! the elements have to be sorted according to RuNNer before calling the prediction -> better way than calling sortelements in every MD step -> do that once in read_nene subroutine
         ! convert the lattice just once in read_nene and not in every MD step
         ! print symmetry function values, volume, NN sum, atomic energies, atomic forces only if keyword is given (true, detailed_information or so) every MD step, default is false and only warnings should be printed!
+        ! introduce logic variable for writing information like volume etc.
+        ! include the cleanup function in pes_nene_mod_supply.f90 in the md_tian2 source code after the loop over trajectories
 
-        ! start according to predict.f90
-        if(lshort.and.(nn_type_short.eq.1))then ! -> this should move to read_nene!!
-            allocate(sens(nelem,maxnum_funcvalues_short_atomic))
-        endif
-
-        if(lelec.and.(nn_type_elec.eq.1).or.(nn_type_elec.eq.3).or.(nn_type_elec.eq.4))then ! -> this should move to read_nene!!
-          allocate(sense(nelem,maxnum_funcvalues_elec))
-        endif
 
         !call getstructure_mode3(i4,num_atoms,num_pairs,zelem,num_atoms_element,lattice,xyzstruct,totalenergy,totalcharge,totalforce,atomenergy,atomcharge,elementsymbol,lperiodic)
 
@@ -4891,9 +4892,9 @@ module pes_nene_mod
         endif
 
         ! convert lattice units and set corresponding RuNNer variables -> move to read_nene subroutine
-        do k = 1,3
-            lattice(k,:) = atoms%simbox(:,k) * ang2bohr
-        end do
+        !do k = 1,3 -> already done in read_nene subroutine
+        !    lattice(k,:) = atoms%simbox(:,k) * ang2bohr
+        !end do
 
         ! convert position units and set corresponding RuNNer variables
         ! commit element symbols and set corresponding RuNNer variables
@@ -4912,6 +4913,8 @@ module pes_nene_mod
         !call initmode3(i4,minvalue_short_atomic,maxvalue_short_atomic,avvalue_short_atomic,minvalue_short_pair,maxvalue_short_pair,avvalue_short_pair,minvalue_elec,maxvalue_elec,avvalue_elec,eshortmin,eshortmax,chargemin,chargemax)
 
         ! end according to initmode3.f90
+
+        ! further according to predict.f90
 
         if(lshort .and. nn_type_short == 1) then
             call predictionshortatomic(&
@@ -4994,82 +4997,14 @@ module pes_nene_mod
             enddo ! i2
         endif
 
-        if(lshort.and.(nn_type_short.eq.1))then ! -> this should move to cleanup subroutine
-            deallocate(sens)
-        endif
-        if(lelec.and.(nn_type_elec.eq.1).or.(nn_type_elec.eq.3).or.(nn_type_elec.eq.4))then ! -> this should move to cleanup subroutine
-            deallocate(sense)
-        endif
+        !if(lshort.and.(nn_type_short.eq.1))then ! -> this should move to cleanup subroutine
+        !    deallocate(sens)
+        !endif
+        !if(lelec.and.(nn_type_elec.eq.1).or.(nn_type_elec.eq.3).or.(nn_type_elec.eq.4))then ! -> this should move to cleanup subroutine
+        !    deallocate(sense)
+        !endif
         ! end according to predict.f90
 
     end subroutine compute_nene
-
-    ! according to main.f90
-!   subroutine pes_nene_cleanup() ! in the end add in the source code if pes_id_nene or pes_name_nene => move to pes_nene_mod_supply.f90 and call it with use module, only: pes_nene_cleanup
-!
-!       use mpi_mod
-!       use fileunits
-!       use timings
-!       use nnshort_atomic
-!       use nnewald
-!       use nnshort_pair
-!       use symfunctions
-!       use fittingoptions
-!       use nnflags
-!       use globaloptions
-!
-!       implicit none
-!
-!
-!       ! according to cleanup.f90
-!       if(lshort.and.(nn_type_short.eq.1))then
-!           deallocate(weights_short_atomic)
-!           deallocate(symfunction_short_atomic_list)
-!           deallocate(num_funcvalues_short_atomic)
-!           deallocate(windex_short_atomic)
-!           deallocate(num_layers_short_atomic)
-!           deallocate(actfunc_short_atomic)
-!           deallocate(nodes_short_atomic)
-!           deallocate(num_weights_short_atomic)
-!           deallocate(function_type_short_atomic)
-!           deallocate(symelement_short_atomic)
-!           deallocate(funccutoff_short_atomic)
-!           deallocate(eta_short_atomic)
-!           deallocate(zeta_short_atomic)
-!           deallocate(lambda_short_atomic)
-!           deallocate(rshift_short_atomic)
-!       endif
-!
-!       if(lelec.and.(nn_type_elec.eq.1))then
-!           deallocate(weights_elec)
-!           deallocate(symfunction_elec_list)
-!           deallocate(num_funcvalues_elec)
-!           deallocate(windex_elec)
-!           deallocate(num_layers_elec)
-!           deallocate(actfunc_elec)
-!           deallocate(nodes_elec)
-!           deallocate(num_weights_elec)
-!           deallocate(function_type_elec)
-!           deallocate(symelement_elec)
-!           deallocate(funccutoff_elec)
-!           deallocate(eta_elec)
-!           deallocate(zeta_elec)
-!           deallocate(lambda_elec)
-!           deallocate(rshift_elec)
-!       endif
-!
-!       deallocate(nucelem)
-!       deallocate(element)
-!       deallocate(dmin_element)
-!       if(allocated(atomrefenergies))deallocate(atomrefenergies)
-!       if(allocated(fixedcharge))deallocate(fixedcharge)
-!       if(allocated(elempair))deallocate(elempair)
-!
-!       call mpi_barrier(mpi_comm_world,mpierror)
-!
-!       ! according to main.f90
-!       call mpi_finalize(mpierror)
-!
-!   end subroutine pes_nene_cleanup
 
 end module pes_nene_mod

@@ -37,7 +37,6 @@ file_list = \
         getshortatomic.f90 \
         getvolume.f90 \
         globaloptions.f90 \
-        initializecounters.f90 \
         mode1options.f90 \
         mpi_dummy.f90 \
         mpi_dummy_routines.f90 \

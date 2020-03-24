@@ -31,7 +31,7 @@ module pes_nene_mod_supply
     use fileunits
     use fittingoptions
     use globaloptions
-    use inputnncounters
+    !use inputnncounters
     use mode1options
     use mpi_mod
     use nnconstants
@@ -41,7 +41,7 @@ module pes_nene_mod_supply
     !use nnshort_pair ! this module is not needed, Pair NN not implemented!!
     use predictionoptions
     !use saturation
-    !use structures
+    !use structures -> maybe needed?
     use symfunctions
     use timings
 
@@ -80,6 +80,16 @@ module pes_nene_mod_supply
     real*8  xyzstruct(3,max_num_atoms)
     integer zelem(max_num_atoms)
     integer num_pairs
+    integer num_atoms_element(nelem)
+    real*8 minvalue_short_atomic(nelem,maxnum_funcvalues_short_atomic)
+    real*8 maxvalue_short_atomic(nelem,maxnum_funcvalues_short_atomic)
+    real*8 avvalue_short_atomic(nelem,maxnum_funcvalues_short_atomic)
+    real*8 minvalue_elec(nelem,maxnum_funcvalues_elec)
+    real*8 maxvalue_elec(nelem,maxnum_funcvalues_elec)
+    real*8 avvalue_elec(nelem,maxnum_funcvalues_elec)
+
+    real*8, dimension(:,:)  , allocatable :: sens
+    real*8, dimension(:,:)  , allocatable :: sense
 
 
     contains
@@ -130,6 +140,7 @@ module pes_nene_mod_supply
 
         maxnodes_short_atomic               = 0 ! needed so that the max function will work
         maxnodes_elec                       = 0 ! needed so that the max function will work
+
 
 
 
@@ -851,27 +862,27 @@ module pes_nene_mod_supply
       endif
 !!
       if((count_wconstraint.gt.0).and.(.not.lfixweights))then
-        write(*,*)'Error: weight constraints are specified without fix_weights keyword'
+        write(*,*)'ERROR: weight constraints are specified without fix_weights keyword'
         stop
       endif
 
       if((count_wconstraint.eq.0).and.(lfixweights))then
-        write(*,*)'Error: no weights constrained but keyword fix_weights has been selected'
+        write(*,*)'ERROR: no weights constrained but keyword fix_weights has been selected'
         stop
       endif
 !!
       if(weights_min.ge.weights_max)then
-        write(*,*)'Error: weights_min > weights_max'
+        write(*,*)'ERROR: weights_min > weights_max'
         stop
       endif
 !!
       if(biasweights_min.ge.biasweights_max)then
-        write(*,*)'Error: biasweights_min > biasweights_max'
+        write(*,*)'ERROR: biasweights_min > biasweights_max'
         stop
       endif
 !!
       if(weightse_min.ge.weightse_max)then
-        write(*,*)'Error: weightse_min > weightse_max'
+        write(*,*)'ERROR: weightse_min > weightse_max'
         stop
       endif
 !!
@@ -897,12 +908,12 @@ module pes_nene_mod_supply
 !!
       if(ljointefupdate)then
         if(optmodee.ne.optmodef)then
-          write(*,*)'Error: joint_energy_force_update requires to use the'
+          write(*,*)'ERROR: joint_energy_force_update requires to use the'
           write(*,*)'same optimization algorithm for energy and forces'
           stop
         endif
         if(.not.luseforces)then
-          write(*,*)'Error: switch on use_short_forces for joint_energy_force_update'
+          write(*,*)'ERROR: switch on use_short_forces for joint_energy_force_update'
           stop
         endif
         if(lrepeate)then
@@ -936,14 +947,14 @@ module pes_nene_mod_supply
       endif
 !!
       if(maxforce.le.0.0d0)then
-        write(*,*)'Error: max_force must not be negative ',maxforce
+        write(*,*)'ERROR: max_force must not be negative ',maxforce
         stop
       endif
 !!
       if(lshort.and.(nn_type_short.eq.1))then
         do i1=1,nelem
           if(num_funcvalues_short_atomic(i1).ne.nodes_short_atomic(0,i1))then
-            write(*,*)'Error: num_funcvalues_short_atomic .ne. nodes_short_atomic(0)'
+            write(*,*)'ERROR: num_funcvalues_short_atomic .ne. nodes_short_atomic(0)'
             write(*,*)i1,num_funcvalues_short_atomic(i1),nodes_short_atomic(0,i1)
             stop
           endif
@@ -953,7 +964,7 @@ module pes_nene_mod_supply
       if(lelec.and.(nn_type_elec.eq.1))then
         do i1=1,nelem
           if(num_funcvalues_elec(i1).ne.nodes_elec(0,i1))then
-            write(*,*)'Error: num_funcvalues_elec .ne. nodes_elec(0)'
+            write(*,*)'ERROR: num_funcvalues_elec .ne. nodes_elec(0)'
             write(*,*)i1,num_funcvalues_elec(i1),nodes_elec(0,i1)
             stop
           endif
@@ -1045,7 +1056,7 @@ module pes_nene_mod_supply
         elseif(mode.eq.3)then
             write(*,*)'RuNNer is started in mode for prediction (3)'
         else
-            write(*,*)'Error: Unknown runner_mode: ',mode
+            write(*,*)'ERROR: Unknown runner_mode: ',mode
             stop
         endif
 
@@ -1066,7 +1077,7 @@ module pes_nene_mod_supply
         endif
 
       if(nelem.lt.ielem)then
-        write(*,*)'Error: number of elements in structure(s) is larger than '
+        write(*,*)'ERROR: number of elements in structure(s) is larger than '
         write(*,*)'number of elements in input.nn ',ielem,nelem
         stop
       else
@@ -1345,7 +1356,7 @@ module pes_nene_mod_supply
         elseif(fitting_unit.eq.2)then
           write(*,'(a,a2)')' error unit for fitting                                  ','Ha'
         else
-          write(*,*)'Error: add new energy unit in output of readinput.f90!!!'
+          write(*,*)'ERROR: add new energy unit in output of readinput.f90!!!'
           stop
         endif
       endif
@@ -2009,5 +2020,69 @@ module pes_nene_mod_supply
         end if
 
     end subroutine readweights
+
+    subroutine cleanup()
+
+            implicit none
+
+            ! according to compute_nene (based on predict.f90)
+            if(lshort.and.(nn_type_short.eq.1))then
+                    deallocate(sens)
+            end if
+
+            if(lelec.and.(nn_type_elec.eq.1).or.(nn_type_elec.eq.3).or.(nn_type_elec.eq.4))then
+                    deallocate(sense)
+            end if
+
+            ! according to cleanup.f90
+            if(lshort.and.(nn_type_short.eq.1))then
+                    deallocate(weights_short_atomic)
+                    deallocate(symfunction_short_atomic_list)
+                    deallocate(num_funcvalues_short_atomic)
+                    deallocate(windex_short_atomic)
+                    deallocate(num_layers_short_atomic)
+                    deallocate(actfunc_short_atomic)
+                    deallocate(nodes_short_atomic)
+                    deallocate(num_weights_short_atomic)
+                    deallocate(function_type_short_atomic)
+                    deallocate(symelement_short_atomic)
+                    deallocate(funccutoff_short_atomic)
+                    deallocate(eta_short_atomic)
+                    deallocate(zeta_short_atomic)
+                    deallocate(lambda_short_atomic)
+                    deallocate(rshift_short_atomic)
+            endif
+
+            if(lelec.and.(nn_type_elec.eq.1))then
+                    deallocate(weights_elec)
+                    deallocate(symfunction_elec_list)
+                    deallocate(num_funcvalues_elec)
+                    deallocate(windex_elec)
+                    deallocate(num_layers_elec)
+                    deallocate(actfunc_elec)
+                    deallocate(nodes_elec)
+                    deallocate(num_weights_elec)
+                    deallocate(function_type_elec)
+                    deallocate(symelement_elec)
+                    deallocate(funccutoff_elec)
+                    deallocate(eta_elec)
+                    deallocate(zeta_elec)
+                    deallocate(lambda_elec)
+                    deallocate(rshift_elec)
+            endif
+
+            deallocate(nucelem)
+            deallocate(element)
+            deallocate(dmin_element)
+            if(allocated(atomrefenergies))deallocate(atomrefenergies)
+            if(allocated(fixedcharge))deallocate(fixedcharge)
+            if(allocated(elempair))deallocate(elempair)
+
+            call mpi_barrier(mpi_comm_world,mpierror)
+
+            ! according to main.f90
+            call mpi_finalize(mpierror)
+
+    end subroutine cleanup
 
 end module pes_nene_mod_supply

@@ -74,7 +74,6 @@ contains
 
                     case (output_id_vasp)
                         call output_vasp(atoms, itraj, istep)
-                        out_id_vasp = out_id_vasp + 1
 
                     case (output_id_mxt)
                         call output_mxt(atoms)
@@ -261,7 +260,6 @@ contains
         integer :: zero_step
 
         character(len=max_string_length)    :: fname
-        !character(len=8)                    :: fid
         character(len=8)                    :: traj_id_vasp
         character(len=8)                    :: step_id_vasp
 
@@ -283,13 +281,9 @@ contains
         if (istep == -1) then
              write(step_id_vasp,'(i8.8)') zero_step
         else
-             !write(step_id_vasp,'(i8.8)') istep ! should this be the md step or an ongoing number??
-             write(step_id_vasp,'(i8.8)') out_id_vasp
+             write(step_id_vasp,'(i8.8)') istep
         end if
-        !write(fid,'(i8.8)') out_id_vasp+simparams%start
         write(traj_id_vasp,'(i8.8)') itraj
-        !write(step_id_vasp,'(i8.8)') istep
-        !fname = 'conf/poscar_'//fid//'.POSCAR'
         fname = 'conf/poscar_trj_'//traj_id_vasp//'_step_'//step_id_vasp//'.POSCAR'
         call open_for_write(out_unit, fname)
 
