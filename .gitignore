@@ -11,8 +11,10 @@ bin/
 # RuNNer input files
 RuNNer_input/*
 # conf folder
-pos* 
-mxt*
+conf/pos* 
+conf/mxt*
+!conf/proj
+!conf/latt
 # Manual
 *.aux
 *.bbl

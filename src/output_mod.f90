@@ -74,7 +74,6 @@ contains
 
                     case (output_id_vasp)
                         call output_vasp(atoms, itraj, istep)
-                        out_id_vasp = out_id_vasp + 1
 
                     case (output_id_mxt)
                         call output_mxt(atoms)
@@ -261,14 +260,13 @@ contains
         integer :: zero_step
 
         character(len=max_string_length)    :: fname
-        !character(len=8)                    :: fid
         character(len=8)                    :: traj_id_vasp
         character(len=8)                    :: step_id_vasp
 
         integer                             :: time_vals(8), noccurrences(atoms%ntypes), i, j
         real(dp)                            :: cents(3, atoms%natoms) ! for the beads to get center of mass
 
-        zero_step = 0
+        zero_step = 0 ! write the initial structure to step 0 file
 
         ! XXX: change system() to execute_command_line() when new compiler is available
         if (.not. dir_exists('conf')) call system('mkdir conf')
@@ -280,17 +278,13 @@ contains
         end do
 
         ! open file conf/poscar_%08d.dat
-        if (istep == -1) then
+        if (istep == -1) then ! initial structure
              write(step_id_vasp,'(i8.8)') zero_step
-             out_id_vasp = 0
+             !out_id_vasp = 0
         else
-             !write(step_id_vasp,'(i8.8)') istep ! should this be the md step or an ongoing number??
-             write(step_id_vasp,'(i8.8)') out_id_vasp
+             write(step_id_vasp,'(i8.8)') istep
         end if
-        !write(fid,'(i8.8)') out_id_vasp+simparams%start
         write(traj_id_vasp,'(i8.8)') itraj
-        !write(step_id_vasp,'(i8.8)') istep
-        !fname = 'conf/poscar_'//fid//'.POSCAR'
         fname = 'conf/poscar_trj_'//traj_id_vasp//'_step_'//step_id_vasp//'.POSCAR'
         call open_for_write(out_unit, fname)
 
