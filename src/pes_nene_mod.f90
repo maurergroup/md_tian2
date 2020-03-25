@@ -474,7 +474,7 @@ module pes_nene_mod
                         if (nwords == maxnum_layers_short_atomic+1) then
                             do nodes_counter = 1,maxnum_layers_short_atomic-1
                                 read(words(nodes_counter+1),'(i1000)', iostat=ios) nodes_short_local(nodes_counter)
-                                if (ios /= 0) stop err // err_inpnn // "global_nodes_short value", nodes_counter, " must be integer"
+                                if (ios /= 0) stop err // err_inpnn // "global_nodes_short value"// nodes_counter// " must be integer"
                             end do
                         else
                             print *, err, err_inpnn, "global_nodes_short argument number does not match with global_hidden_layers_short value"; stop
@@ -485,7 +485,7 @@ module pes_nene_mod
                         if (nwords == maxnum_layers_elec+1) then
                             do nodes_counter = 1,maxnum_layers_elec-1
                                 read(words(nodes_counter+1),'(i1000)', iostat=ios) nodes_ewald_local(nodes_counter)
-                                if (ios /= 0) stop err // err_inpnn // "global_nodes_electrostatic value", nodes_counter, " must be integer"
+                                if (ios /= 0) stop err // err_inpnn // "global_nodes_electrostatic value"// nodes_counter// " must be integer"
                             end do
                         else
                             print *, err, err_inpnn, "global_nodes_electrostatic argument number ", nwords, " does not match with global_hidden_layers_electrostatic value ", maxnum_layers_elec-1; stop
@@ -716,33 +716,35 @@ module pes_nene_mod
                             select case (words(2))
 
                                 case ('1')
-                                    if (nwords == 3)
+                                    if (nwords == 3) then
                                         read(words(3),*, iostat=ios) funccutoff_local
-                                        if (ios /= 0) stop err // err_inpnn // "global_symfunction_short type ", words(2), " argument ", nwords-1, " must be a number"
+                                        if (ios /= 0) stop err // err_inpnn // "global_symfunction_short type "// words(2)// " argument "// nwords-1// " must be a number"
                                     else
                                         print *, err, err_inpnn, "global_symfunction_short type ", words(2), " needs 2 arguments"; stop
                                     end if
 
                                 case ('2')
-                                    if (nwords == 5)
+                                    if (nwords == 5) then
                                         read(words(5),*, iostat=ios) funccutoff_local
-                                        if (ios /= 0) stop err // err_inpnn // "global_symfunction_short type ", words(2), " argument ", nwords-1, " must be a number"
+                                        if (ios /= 0) stop err // err_inpnn // "global_symfunction_short type "// words(2)// " argument "// nwords-1// " must be a number"
                                     else
                                         print *, err, err_inpnn, "global_symfunction_short type ", words(2), " needs 4 arguments"; stop
                                     end if
 
                                 case ('3')
-                                    if (nwords == 6)
+                                    if (nwords == 6) then
                                         read(words(6),*, iostat=ios) funccutoff_local
-                                        if (ios /= 0) stop err // err_inpnn // "global_symfunction_short type ", words(2), " argument ", nwords-1, " must be a number"
+                                        if (ios /= 0) print *, err, err_inpnn, "global_symfunction_short type ", words(2), "
+                                        argument ", nwords-1, " must be a number"; stop
                                     else
                                         print *, err, err_inpnn, "global_symfunction_short type ", words(2), " needs 5 arguments"; stop
                                     end if
 
                                 case ('4')
-                                    if (nwords == 4)
+                                    if (nwords == 4) then
                                         read(words(4),*, iostat=ios) funccutoff_local
-                                        if (ios /= 0) stop err // err_inpnn // "global_symfunction_short type ", words(2), " argument ", nwords-1, " must be a number"
+                                        if (ios /= 0) print *, err, err_inpnn, "global_symfunction_short type ", words(2), "
+                                        argument ", nwords-1, " must be a number"; stop
                                     else
                                         print *, err, err_inpnn, "global_symfunction_short type ", words(2), " needs 3 arguments"; stop
                                     end if
@@ -754,15 +756,15 @@ module pes_nene_mod
                                     ! just let the debug function pass
 
                                 case ('8')
-                                    if (nwords == 5)
+                                    if (nwords == 5) then
                                         read(words(5),*, iostat=ios) funccutoff_local
-                                        if (ios /= 0) stop err // err_inpnn // "global_symfunction_short type ", words(2), " argument ", nwords-1, " must be a number"
+                                        if (ios /= 0) print *, err, err_inpnn, "global_symfunction_short type ", words(2), "argument ", nwords-1, " must be a number"; stop
                                     else
                                         print *, err, err_inpnn, "global_symfunction_short type ", words(2), " needs 4 arguments"; stop
                                     end if
 
                                 case ('9')
-                                    if (nwords == 6)
+                                    if (nwords == 6) then
                                         read(words(6),*, iostat=ios) funccutoff_local
                                         if (ios /= 0) stop err // err_inpnn // "global_symfunction_short type ", words(2), " argument ", nwords-1, " must be a number"
                                     else
@@ -784,7 +786,7 @@ module pes_nene_mod
                             select case (words(3))
 
                                 case ('1')
-                                    if (nwords == 4)
+                                    if (nwords == 4) then
                                         read(words(4),*, iostat=ios) funccutoff_local
                                         if (ios /= 0) stop err // err_inpnn // "element_symfunction_short type ", words(3), " argument ", nwords-1, " must be a number"
                                     else
@@ -792,7 +794,7 @@ module pes_nene_mod
                                     end if
 
                                 case ('2')
-                                    if (nwords == 6)
+                                    if (nwords == 6) then
                                         read(words(6),*, iostat=ios) funccutoff_local
                                         if (ios /= 0) stop err // err_inpnn // "element_symfunction_short type ", words(3), " argument ", nwords-1, " must be a number"
                                     else
@@ -800,7 +802,7 @@ module pes_nene_mod
                                     end if
 
                                 case ('3')
-                                    if (nwords == 7)
+                                    if (nwords == 7) then
                                         read(words(7),*, iostat=ios) funccutoff_local
                                         if (ios /= 0) stop err // err_inpnn // "element_symfunction_short type ", words(3), " argument ", nwords-1, " must be a number"
                                     else
@@ -808,7 +810,7 @@ module pes_nene_mod
                                     end if
 
                                 case ('4')
-                                    if (nwords == 5)
+                                    if (nwords == 5) then
                                         read(words(5),*, iostat=ios) funccutoff_local
                                         if (ios /= 0) stop err // err_inpnn // "element_symfunction_short type ", words(3), " argument ", nwords-1, " must be a number"
                                     else
@@ -822,7 +824,7 @@ module pes_nene_mod
                                     ! just let the debug function pass
 
                                 case ('8')
-                                    if (nwords == 6)
+                                    if (nwords == 6) then
                                         read(words(6),*, iostat=ios) funccutoff_local
                                         if (ios /= 0) stop err // err_inpnn // "element_symfunction_short type ", words(3), " argument ", nwords-1, " must be a number"
                                     else
@@ -830,7 +832,7 @@ module pes_nene_mod
                                     end if
 
                                 case ('9')
-                                    if (nwords == 7)
+                                    if (nwords == 7) then
                                         read(words(7),*, iostat=ios) funccutoff_local
                                         if (ios /= 0) stop err // err_inpnn // "element_symfunction_short type ", words(3), " argument ", nwords-1, " must be a number"
                                     else
@@ -852,7 +854,7 @@ module pes_nene_mod
                             select case (words(3))
 
                                 case ('1')
-                                    if (nwords == 5)
+                                    if (nwords == 5) then
                                         read(words(4),'(A)') elementtemp2
                                         read(words(5),*, iostat=ios) funccutoff_local
                                         if (ios /= 0) stop err // err_inpnn // "symfunction_short type ", words(3), " argument ", nwords-1, " must be a number"
@@ -861,7 +863,7 @@ module pes_nene_mod
                                     end if
 
                                 case ('2')
-                                    if (nwords == 7)
+                                    if (nwords == 7) then
                                         read(words(4),'(A)') elementtemp2
                                         read(words(7),*, iostat=ios) funccutoff_local
                                         if (ios /= 0) stop err // err_inpnn // "symfunction_short type ", words(3), " argument ", nwords-1, " must be a number"
@@ -870,11 +872,11 @@ module pes_nene_mod
                                     end if
 
                                 case ('3')
-                                    if (nwords == 9)
+                                    if (nwords == 9) then
                                         read(words(4),'(A)') elementtemp2
                                         read(words(5),'(A)') elementtemp3
                                         read(words(9),*, iostat=ios) funccutoff_local
-                                        if (ios /= 0) stop err // err_inpnn // "symfunction_short type ", words(3), " argument ", nwords-1, " must be a number"
+                                        if (ios /= 0) stop err // err_inpnn // "symfunction_short type "// words(3)// " argument "// nwords-1// " must be a number"
                                     else
                                         print *, err, err_inpnn, "symfunction_short type ", words(3), " needs 8 arguments"; stop
                                     end if
@@ -959,7 +961,7 @@ module pes_nene_mod
                             select case (words(2))
 
                                 case ('1')
-                                    if (nwords == 3)
+                                    if (nwords == 3) then
                                         read(words(3),*, iostat=ios) funccutoff_local
                                         if (ios /= 0) stop err // err_inpnn // "global_symfunction_electrostatic type ", words(2), " argument ", nwords-1, " must be a number"
                                     else
@@ -1268,7 +1270,7 @@ module pes_nene_mod
         ! start readout of input.nn according to readinput.f90
 
 
-            !call initializecounters() ! we use default values, but compare with 
+            !call initializecounters() ! we use default values, but compare with
 
             if(lshort.and.(nn_type_short.eq.1))then
                 nodes_short_atomic_temp(:)   =0
