@@ -33,6 +33,8 @@ module constants
     real(dp), parameter :: sqrt2          = sqrt(2.0_dp)
     real(dp), parameter :: isqrt2         = 1.0_dp/sqrt2
     real(dp), parameter :: sqrt3          = sqrt(3.0_dp)
+    real(dp), parameter :: sqrt8          = sqrt(8.0_dp)
+    real(dp), parameter :: sqrt11         = sqrt(11.0_dp)
     real(dp), parameter :: pi             = acos(-1.0_dp)
     real(dp), parameter :: kB             = 8.61733238496e-5_dp       ! eV / K
     real(dp), parameter :: hbar           = 0.6582119514467406_dp     ! eV * fs
