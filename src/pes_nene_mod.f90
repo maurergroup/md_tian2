@@ -86,7 +86,7 @@ module pes_nene_mod
 
 
                 case default
-                    print *, "Error in the PES file: unknown nene_ext parameter", words(1)
+                    print *, "Error in the PES file: unknown nene parameter", words(1)
                     stop
 
             end select
@@ -163,11 +163,9 @@ module pes_nene_mod
 
             if (eios == 0 .and. cios == 0) then
 
+                !read forces from nnforces.out calculated by RuNNer
                 call open_for_read(22,outforces_string); ios = 0
-                !Read out Forces from nnforces.out calculated by RuNNer
-                !open(unit=22,file=outforces_string,status='old',action='read',form='formatted',iostat=ios)
-                !read(22, '(A)', iostat=ios) buffer
-                !call open_for_read(22,outforces_string); ios = 0
+
                 do while (ios == 0)
                     read(22, '(A)', iostat=ios) buffer
                     if (ios == 0) then
@@ -178,7 +176,7 @@ module pes_nene_mod
                              case ('Conf.')
                                      ! skip headline
                                      
-                             case ('1')
+                             case ('1') ! read first structure
                                 index_counter = index_counter + 1
 
 
@@ -207,8 +205,7 @@ module pes_nene_mod
 
                 atoms%f(:,:,:) = atoms%f(:,:,:) * habohr2evang
 
-                !Read out Epot from energy.out calculated by RuNNer
-                !open(unit=23,file=outenergy_string,status='old',action='read',form='formatted',iostat=ios)
+                !read potential energy from energy.out calculated by RuNNer
                 call open_for_read(23,outenergy_string); ios = 0
 
                 do while (ios == 0)
@@ -222,7 +219,7 @@ module pes_nene_mod
                              case ('Conf.')
                                      ! skip headline
 
-                             case ('1')
+                             case ('1') ! read first structure
 
                                 read(words(4),*,iostat=ios) atoms%epot
                                 if (ios /= 0) stop err // "Error when reading energy.out, energy value must be a number"
