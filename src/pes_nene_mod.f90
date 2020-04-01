@@ -99,33 +99,32 @@ module pes_nene_mod
     real(dp), dimension(:,:)  , allocatable :: sense
 
     ! from readinput.f90
-      integer icount
-      integer jcount
-      integer nodes_short_atomic_temp(0:maxnum_layers_short_atomic)
-      integer nodes_elec_temp(0:maxnum_layers_elec)
-      integer nodes_short_pair_temp(0:maxnum_layers_short_pair)
-      integer wcount
-      integer i,i0,i1,i2,i3
-      integer ztemp1
-      integer ztemp2
-      integer itemp
-      integer layer
-      integer node
-      integer sym_short_atomic_count(nelem)
-      integer sym_elec_count(nelem)
-      integer sym_short_pair_count(npairs)
-      integer counter
+      integer :: icount
+      integer :: jcount
+      integer :: nodes_short_atomic_temp(0:maxnum_layers_short_atomic)
+      integer :: nodes_elec_temp(0:maxnum_layers_elec)
+      integer :: nodes_short_pair_temp(0:maxnum_layers_short_pair)
+      integer :: wcount
+      integer :: i,i0,i1,i2,i3
+      integer :: ztemp1, ztemp2
+      integer :: itemp
+      integer :: layer
+      integer :: node
+      integer :: sym_short_atomic_count(nelem)
+      integer :: sym_elec_count(nelem)
+      integer :: sym_short_pair_count(npairs)
+      integer :: counter
 
-      real*8 kalmanlambda_local
-      real*8 kalmanlambdae_local
-      real*8 chargetemp
+      real(dp) :: kalmanlambda_local
+      real(dp) :: kalmanlambdae_local
+      real(dp) :: chargetemp
 
-      character*1 actfunc_short_atomic_dummy(maxnum_layers_short_atomic)
-      character*1 actfunc_elec_dummy(maxnum_layers_elec)
-      character*1 actfunc_short_pair_dummy(maxnum_layers_short_pair)
-      character*1 actfunc
+      character(len=1) :: actfunc_short_atomic_dummy(maxnum_layers_short_atomic)
+      character(len=1) :: actfunc_elec_dummy(maxnum_layers_elec)
+      character(len=1) :: actfunc_short_pair_dummy(maxnum_layers_short_pair)
+      character(len=1) :: actfunc
 
-      logical lprint                                    !
+      logical :: lprint                                    !
 
     contains
 
@@ -142,6 +141,8 @@ module pes_nene_mod
 !   ask Sascha about writing 2 (1) additional files per trajectory (wanted?)
 !   check latest version of RuNNer files if all cases for symmetry functions (5,6 as debug functions etc.) are still included
 !   check latest version of RuNNer files if any keyword changed, removed or added
+!   change all declarations to our standard (real*8 -> real(dp), char*2 -> char(len=2) etc.)
+!   move readout of input.nn from single module to subroutines like in RuNNer to avoid problems with variable dimensions (otherwise much more has to be de-/allocated)!!
 
 
     ! Here all necessary files and keywords are read in for the high-dimensional neural network potentials (HDNNPs)
@@ -1333,13 +1334,13 @@ module pes_nene_mod
             !call initializecounters() ! we use default values, but compare with
 
             if(lshort.and.(nn_type_short.eq.1))then
-                nodes_short_atomic_temp(:)   =0
-                actfunc_short_atomic_dummy(:)=' '
+                nodes_short_atomic_temp(:)    = 0
+                actfunc_short_atomic_dummy(:) = default_string
             endif
             endif
             if(lelec.and.(nn_type_elec.eq.1))then
-                nodes_elec_temp(:)           =0
-                actfunc_elec_dummy(:)        =' '
+                nodes_elec_temp(:)            = 0
+                actfunc_elec_dummy(:)         = default_string
             endif
             kalmanlambda_local =0.98000d0
             kalmanlambdae_local=0.98000d0
@@ -1914,7 +1915,7 @@ module pes_nene_mod
                             end if
 
                         case ('energy_threshold')
-                            if (fitethres /= default_real) stop err // err_inpnn // 'Multiple use of the energy_threshold key'
+                            if (lfitethres /= default_bool) stop err // err_inpnn // 'Multiple use of the energy_threshold key'
                             if (nwords == 2) then
                                 lfitethres = .true.
                                 read(words(2),*, iostat=ios) fitethres
@@ -1924,7 +1925,7 @@ module pes_nene_mod
                             end if
 
                         case ('force_threshold')
-                            if (fitfthres /= default_real) stop err // err_inpnn // 'Multiple use of the force_threshold key'
+                            if (lfitfthres /= default_bool) stop err // err_inpnn // 'Multiple use of the force_threshold key'
                             if (nwords == 2) then
                                 lfitfthres = .true.
                                 read(words(2),*, iostat=ios) fitfthres
@@ -2424,7 +2425,7 @@ module pes_nene_mod
                             end if
 
                         case ('enforce_max_num_neighbors_atomic')
-                            if (max_num_neighbors_atomic_input /= default_int) stop err // err_inpnn // 'Multiple use of the enforce_max_num_neighbors_atomic key'
+                            if (lenforcemaxnumneighborsatomic /= default_bool) stop err // err_inpnn // 'Multiple use of the enforce_max_num_neighbors_atomic key'
                             if (nwords == 2) then
                                 lenforcemaxnumneighborsatomic = .true.
                                 read(words(2),'(i1000)', iostat=ios) max_num_neighbors_atomic_input
@@ -2680,7 +2681,7 @@ module pes_nene_mod
                         case ('shuffle_weights_short_atomic')
                             if (lshuffle_weights_short_atomic /= default_bool) stop err // err_inpnn // 'Multiple use of the shuffle_weights_short_atomic key'
                             if (nwords == 3) then
-                                rin pparam%lshuffle_weights_short_atomic = .true.
+                                lshuffle_weights_short_atomic = .true.
                                 read(words(2),'(i1000)', iostat=ios) nshuffle_weights_short_atomic
                                 if (ios /= 0) stop err // err_inpnn // "shuffle_weights_short_atomic first argument value must be integer"
                                 read(words(3),*, iostat=ios) shuffle_weights_short_atomic
@@ -2917,7 +2918,7 @@ module pes_nene_mod
                         ! check for keyword which is not related to RuNNer keywords
                         case default
                             if (trim(words(1)) /= '' .and. words(1)(1:1) /= '#') then ! check for empty and comment lines
-                                print *, err, err_inpnn, 'The keyword ', trim(words(1)),' in line ', line, ' was not recognized, check the spelling or look at the manual'
+                                print *, err, err_inpnn, 'The keyword ', trim(words(1)),' in line ', line, ' was not recognized, check the spelling or look at the manual!'
                                 stop
                             end if
 
@@ -3295,11 +3296,8 @@ module pes_nene_mod
 
                     select case (words(1))
 
-                        case ('symfunction_short') ! allocation of arrays is done in allocatesymfunctions() from module symfunctions.f90 when called in initnn.f90! -> no additional allocation subroutine needed!!
+                        case ('symfunction_short') ! allocation of arrays is done in allocatesymfunctions() from module symfunctions.f90 when called in initnn.f90!
                             if (lshort .and. (nn_type_short == 1)) then
-                                !call allocate_readsymfunctionatomic(maxnum_funcvalues_short_atomic, sym_short_atomic_count, function_type_short_atomic, symelement_short_atomic, &
-                                     !funccutoff_short_atomic, eta_short_atomic, zeta_short_atomic, rshift_short_atomic, lambda_short_atomic) ! maybe there is a better way to set the dimensions of variables needed for the readout?
-                                !if (nwords == 5) then
                                 read(words(2),'(A)', iostat=ios) elementtemp1
                                 call checkelement(elementtemp1)
                                 call nuccharge(elementtemp1,ztemp1)
@@ -6455,6 +6453,8 @@ subroutine set_defaults()
         !num_funcvaluese_local               = 0 ! needed so that the max function will work
         elementtemp                         = default_string
         ztemp                               = default_int
+        ztemp1                              = default_int
+        ztemp2                              = default_int
         maxnum_funcvalues_short_atomic      = 0 ! needed so that the max function will work
         maxnum_funcvalues_elec              = 0 ! needed so that the max function will work
         function_type_local                 = default_int
@@ -6473,18 +6473,188 @@ subroutine set_defaults()
         lcheckinputforces                   = default_bool
         inputforcethreshold                 = default_real
 
+        lprintforcecomponents		        = default_bool
+        lionforcesonly			            = default_bool
+        cutoff_type			                = default_int
+        cutoff_alpha			            = default_real
+        ldynforcegroup			            = default_bool
+        dynforcegroup_start		            = default_int
+        dynforcegroup_step		            = default_int
+        ldetect_saturation		            = default_bool
+        saturation_threshold		        = default_real
+        ldataclustering			            = default_bool
+        dataclusteringthreshold1	        = default_real
+        dataclusteringthreshold2	        = default_real
+        analyze_error_energy_step	        = default_real
+        analyze_error_force_step	        = default_real
+        analyze_error_charge_step	        = default_real
+        paramode			                = default_int
+        lpearson_correlation		        = default_bool
+        lweightanalysis			            = default_bool
+        lenvironmentanalysis		        = default_bool
+        lfindcontradictions		            = default_bool
+        deltagthres			                = default_real
+        deltafthres			                = default_real
+        luseoldscaling			            = default_bool
+        lmd				                    = default_bool
+        nodes_short_atomic_temp(:)	        = default_int
+        nodes_elec_temp(:)		            = default_int
+        ewaldalpha			                = default_real
+        ewaldcutoff			                = default_real
+        ewaldkmax			                = default_int
+        lprecond			                = default_bool
+        linionly			                = default_bool
+        lfgroupbystruct			            = default_bool
+        lqgroupbystruct			            = default_bool
+        lmixpoints			                = default_bool
+        lprintconv			                = default_bool
+        lprintmad			                = default_bool
+        noisee				                = default_real
+        noisef				                = default_real
+        noiseq				                = default_real
+        nenergygroup			            = default_int
+        nforcegroup			                = default_int
+        nchargegroup			            = default_int
+        luseforces			                = default_bool
+        energyrnd			                = default_real
+        forcernd			                = default_real
+        chargernd			                = default_real
+        lremoveatomenergies		            = default_bool
+        lanalyzeerror			            = default_bool
+        lchargeconstraint		            = default_bool
+        fitmode				                = default_int
+        lfitethres			                = default_bool
+        fitethres			                = default_real
+        lfitfthres			                = default_bool
+        fitfthres			                = default_real
+        rmin				                = default_real
+        optmodee			                = default_int
+        optmodef			                = default_int
+        optmodeq			                = default_int
+        iseed				                = default_int
+        nblock				                = default_int
+        nepochs				                = default_int
+        iwriteweight			            = default_int
+        lwritetmpweights		            = default_bool
+        lwritesymfunctions		            = default_bool
+        splitthres			                = default_real
+        scmin_short_atomic		            = default_real
+        scmax_short_atomic		            = default_real
+        scmin_elec			                = default_real
+        scmax_elec			                = default_real
+        kalmanthreshold			            = default_real
+        kalmanthresholdf		            = default_real
+        kalmanthresholde		            = default_real
+        kalmanthresholdc		            = default_real
+        kalman_dampe			            = default_real
+        kalman_dampf			            = default_real
+        kalman_dampq			            = default_real
+        kalmanlambda_local		            = default_real
+        kalmanlambdae_local		            = default_real
+        kalmanlambdac			            = default_real
+        kalmannue			                = default_real
+        kalmannuee			                = default_real
+        kalmannuec			                = default_real
+        lusenoisematrix			            = default_bool
+        kalman_q0			                = default_real
+        kalman_qtau			                = default_real
+        kalman_qmin			                = default_real
+        kalman_epsilon			            = default_real
+        steepeststepe			            = default_real
+        steepeststepf			            = default_real
+        steepeststepq			            = default_real
+        scalefactorf			            = default_real
+        scalefactorq			            = default_real
+        lscalesym			                = default_bool
+        lcentersym			                = default_bool
+        luseoldweightsshort		            = default_bool
+        luseoldweightscharge		        = default_bool
+        lsavekalman			                = default_bool
+        lrestkalman			                = default_bool
+        lupdatebyelement		            = default_bool
+        elemupdate			                = default_int
+        luseworste			                = default_bool
+        worste				                = default_real
+        luseworstf			                = default_bool
+        worstf				                = default_real
+        luseworstq			                = default_bool
+        worstq				                = default_real
+        lgrowth				                = default_bool
+        ngrowth				                = default_int
+        growthstep			                = default_int
+        ldampw				                = default_bool
+        dampw				                = default_real
+        lfixweights			                = default_bool
+        ldoforces			                = default_bool
+        ldohessian			                = default_bool
+        ldostress			                = default_bool
+        lenforcemaxnumneighborsatomic	    = default_bool
+        max_num_neighbors_atomic_input	    = default_int
+        lfinetime			                = default_bool
+        lfinetimeepoch			            = default_bool
+        lwritetrainpoints		            = default_bool
+        lwritetrainforces		            = default_bool
+        lwritetraincharges		            = default_bool
+        maxforce			                = default_real
+        maxenergy			                = default_real
+        nran				                = default_int
+        lfinalforce			                = default_bool
+        lnormnodes			                = default_bool
+        count_wconstraint		            = 0 ! otherwise the count does not make sense!!
+        weights_min			                = default_real
+                weights_max	                = default_real
+        lseparatebiasini		            = default_bool
+        biasweights_min			            = default_real
+        biasweights_max			            = default_real
+        weightse_min			            = default_real
+        weightse_max			            = default_real
+        lsysweights			                = default_bool
+        lsysweightse			            = default_bool
+        lsens				                = default_bool
+        lreadunformatted		            = default_bool
+        lresetkalman			            = default_bool
+        lsepkalman			                = default_bool
+        lrepeate			                = default_bool
+        enforcetotcharge		            = default_int
+        lshuffle_weights_short_atomic	    = default_bool
+        nshuffle_weights_short_atomic	    = default_int
+        shuffle_weights_short_atomic	    = default_real
+        lcheckf				                = default_bool
+        lfitstats			                = default_bool
+        lfixederrore			            = default_bool
+        fixederrore			                = default_real
+        lfixederrorf			            = default_bool
+        fixederrorf			                = default_real
+        restrictw			                = default_real
+        lscreen				                = default_bool
+        rscreen_onset			            = default_real
+        rscreen_cut			                = default_real
+        lsilent				                = default_bool
+        lpreparemd                          = default_bool
+        fitting_unit			            = default_int
+        ljointefupdate			            = default_bool
+        lompmkl				                = default_bool
+        lnwweights			                = default_bool
+        lnwweightse			                = default_bool
+        lprintdateandtime		            = default_bool
+        lenableontheflyinput		        = default_bool
+        luseedkalman			            = default_bool
+        ledforcesv2			                = default_bool
+        lanalyzecomposition		            = default_bool
+        actfunc_short_atomic_dummy	        = default_string
+        actfunc_elec_dummy		            = default_string
+        fixedcharge			                = default_real
+        layer				                = default_int
+        node				                = default_int
+        actfunc				                = default_string
 
 
+        pstring                             = default_string
 
-
-
-
-        pstring = default_string
-
-        ldebug = default_bool
+        ldebug                              = default_bool
         !maxnum_layers_short_atomic = default_int
-        luseatomenergies = default_bool
-        luseatomcharges = default_bool
+        luseatomenergies                    = default_bool
+        luseatomcharges                     = default_bool
 
 
     end subroutine set_defaults
