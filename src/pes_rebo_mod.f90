@@ -152,7 +152,7 @@ module pes_rebo_mod
 
 
 
-    ! Subroutine and function accessabililty
+    ! Subroutine and function accessability
     private :: init_spline2d, init_spline3d, gSpline, Sp5th, rebosi2d, rebosi3d
     public  :: rebosi_initialize, cufu
 

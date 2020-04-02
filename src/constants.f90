@@ -132,15 +132,17 @@ module constants
     !           Mass   : eV fs^2 / A^2 = 1/103.6382 amu
     !           Angle  : radian = 180 deg
     !           bohr   : bohr = 0.5291772 Angstroem
-    real(dp), parameter :: amu2mass         = 103.638239276_dp
-    real(dp), parameter :: deg2rad          = pi/180.0_dp
-    real(dp), parameter :: rad2deg          = 180.0_dp/pi
-    real(dp), parameter :: bohr2ang         = 0.529177211_dp
-    real(dp), parameter :: ang2bohr         = 1/bohr2ang
-    real(dp), parameter :: p2GPa            = 160.2176565_dp
-    real(dp), parameter :: joule2ev         = 6.2415093433e+18_dp
-    real(dp), parameter :: kelvin2ev        = kB
-    real(dp), parameter :: ha2ev            = 27.21138602_dp ! convert Ha to eV
-    real(dp), parameter :: habohr2evang     = ha2ev*ang2bohr !51.4220670398_dp; convert Ha/bohr to eV/ang
+    real(dp), parameter :: amu2mass             = 103.638239276_dp
+    real(dp), parameter :: deg2rad              = pi/180.0_dp
+    real(dp), parameter :: rad2deg              = 180.0_dp/pi
+    real(dp), parameter :: bohr2ang             = 0.529177211_dp
+    real(dp), parameter :: ang2bohr             = 1/bohr2ang
+    real(dp), parameter :: p2GPa                = 160.2176565_dp
+    real(dp), parameter :: joule2ev             = 6.2415093433e+18_dp
+    real(dp), parameter :: kelvin2ev            = kB
+    real(dp), parameter :: ha2ev                = 27.21138602_dp ! convert Ha to eV
+    real(dp), parameter :: habohr2evang         = ha2ev*ang2bohr !51.4220670398_dp; convert Ha/bohr to eV/ang
+    real(dp), parameter :: habohrcub2evangcub   = ha2ev*(ang2bohr^3)
+    real(dp), parameter :: au2gpa               = 29419.844d0 ! 1 Ha/Bohr3 = 29419.844 GPa
 
 end module constants
