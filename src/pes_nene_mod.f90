@@ -31,14 +31,12 @@ module pes_nene_mod
     use fileunits
     use fittingoptions
     use globaloptions
-    !use inputnncounters
     use mode1options
     use mpi_mod
     use nnconstants
     use nnewald
     use nnflags
     use nnshort_atomic
-    !use nnshort_pair ! check if no full subroutine of RuNNer we use needs this subroutine!!
     use predictionoptions
     !use saturation
     !use structures -> maybe needed?
@@ -204,7 +202,7 @@ module pes_nene_mod
                     if (inp_path /= default_string) stop err // err_pes // 'Multiple use of the inp_dir key'
                     read(words(2), '(A)') inp_path
 
-                case ('detailed_step')
+            case ('detailed_step') ! think about if this keyword is really necessary
                     if (lprint_detail /= default_bool) stop err // err_pes // 'Multiple use of the detailed_step key'
                     lprint_detail == .true.
 
@@ -1951,13 +1949,17 @@ module pes_nene_mod
                                 print *, err, err_inpnn, "random_seed key needs a single argument"; stop
                             end if
 
-                        case ('points_in_memory', 'nblock') ! think about to set it according to number of atoms from structure file
-                            if (nblock /= default_int) stop err // err_inpnn // 'Multiple use of the points_in_memory/nblock key'
+                        case ('points_in_memory', 'nblock')
+                            if (nblock /= default_int) stop err // err_inpnn // 'Multiple use of the points_in_memory / nblock key'
                             if (nwords == 2) then
                                 read(words(2),'(i1000)', iostat=ios) nblock
-                                if (ios /= 0) stop err // err_inpnn // "points_in_memory/nblock value must be integer"
+                                if (ios /= 0) stop err // err_inpnn // "points_in_memory / nblock value must be integer"
+                                if (nblock /= atoms%natoms) then
+                                    print *, "points_in_memory / nblock set to number of atoms found in structure file"
+                                    nblock = atoms%natoms
+                                end if
                             else
-                                print *, err, err_inpnn, "points_in_memory/nblock key needs a single argument"; stop
+                                print *, err, err_inpnn, "points_in_memory / nblock key needs a single argument"; stop
                             end if
 
                         case ('epochs')
@@ -4764,9 +4766,9 @@ module pes_nene_mod
               write(*,*)'Error: printing unknown symfunction in readinput '
               stop
             endif
-          enddo ! i2
-        enddo ! i1=1,nelem
-      endif ! lshort
+          enddo
+        enddo
+      endif
 
           if(lelec.and.(nn_type_elec.eq.1))then
         do i1=1,nelem
@@ -4822,9 +4824,9 @@ module pes_nene_mod
               write(*,*)'Error: printing unknown symfunctione in readinput '
               stop
             endif
-          enddo ! i2
-        enddo ! i1=1,nelem
-      endif ! lelec
+          enddo
+        enddo
+      endif
       write(*,*)'-------------------------------------------------------------'
       ! end of readout according to readinput.f90
 
@@ -4857,9 +4859,29 @@ module pes_nene_mod
             allocate (symfunction_elec_list(maxnum_funcvalues_elec,max_num_atoms,nblock))
             symfunction_elec_list(:,:,:)=0.0d0
         end if
-        ! end of readout according to initnn.f90, all things have been read and set up, ready for compute_nene()!!
 
-        !! determine maxcutoffs has to be done here??
+        ! end of readout according to initnn.f90
+
+        ! start according to initmode3.f90
+
+        maxcutoff_short_atomic       = 0.0d0
+        maxcutoff_elec               = 0.0d0
+
+        if(lshort.and.(nn_type_short.eq.1))then
+            do i2=1,nelem
+                do i1=1,num_funcvalues_short_atomic(i2)
+                    maxcutoff_short_atomic=max(maxcutoff_short_atomic,funccutoff_short_atomic(i1,i2))
+                enddo
+            enddo
+        endif
+
+        if(lelec.and.(nn_type_elec.eq.1))then
+            do i2=1,nelem
+                do i1=1,num_funcvalues_elec(i2)
+                    maxcutoff_elec=max(maxcutoff_elec,funccutoff_elec(i1,i2))
+                enddo
+            enddo
+        endif
 
         ! read in biases and weights for short part
         if(lshort.and.(nn_type_short.eq.1))then
@@ -4881,6 +4903,8 @@ module pes_nene_mod
             call readweights(inp_path,1,nelem,maxnum_weights_elec,num_weights_elec,weights_elec)
         end if
 
+        ! end according to initmode3.f90
+
         ! start according to predict.f90
         if(lshort.and.(nn_type_short.eq.1))then
             allocate(sens(nelem,maxnum_funcvalues_short_atomic))
@@ -4891,6 +4915,8 @@ module pes_nene_mod
         endif
         ! end according to predict.f90
 
+        ! all things have been read and set up, ready for compute_nene()!!
+
     end subroutine read_nene
 
 
@@ -4899,11 +4925,11 @@ module pes_nene_mod
 
         implicit none
 
-        if(lshort.and.(nn_type_short.eq.1))then
+        if(lshort.and.(nn_type_short.eq.1))then ! this could be problematic
             nodes_short_atomic(:,:)=0
         endif
 
-        if(lelec.and.(nn_type_elec.eq.1))then
+        if(lelec.and.(nn_type_elec.eq.1))then ! this could be problematic
             nodes_elec(:,:)=0
         endif
 
@@ -5319,7 +5345,7 @@ module pes_nene_mod
             stop
           endif
         endif
-      enddo ! i1
+      enddo
 
       do i1=1,nelem
         if(lshort.and.(nn_type_short.eq.1))then
@@ -5328,7 +5354,7 @@ module pes_nene_mod
             stop
           endif
         endif
-      enddo ! i1
+      enddo
 
       do i1=1,nelem
         if(lshort.and.(nn_type_short.eq.1))then
@@ -5339,7 +5365,7 @@ module pes_nene_mod
             stop
           endif
         endif
-      enddo ! i1
+      enddo
 
       do i1=1,nelem
         if(lelec.and.(nn_type_elec.eq.1))then
@@ -5348,7 +5374,7 @@ module pes_nene_mod
             stop
           endif
         endif
-      enddo ! i1
+      enddo
 
       do i1=1,nelem
         if(lelec.and.(nn_type_elec.eq.1))then
@@ -5359,7 +5385,7 @@ module pes_nene_mod
             stop
           endif
         endif
-      enddo ! i1
+      enddo
 
       if(lshort.and.(nn_type_short.eq.1))then
         if(count_global_activation_short_atomic.eq.0)then
@@ -5667,7 +5693,7 @@ module pes_nene_mod
             write(*,*)i1,num_funcvalues_short_atomic(i1),nodes_short_atomic(0,i1)
             stop
           endif
-        enddo! i1
+        enddo
       endif
 
       if(lelec.and.(nn_type_elec.eq.1))then
@@ -5677,7 +5703,7 @@ module pes_nene_mod
             write(*,*)i1,num_funcvalues_elec(i1),nodes_elec(0,i1)
             stop
           endif
-        enddo ! i1
+        enddo
       endif
 
       if((nn_type_elec.eq.4).and.(mode.ne.3))then
@@ -6263,6 +6289,7 @@ module pes_nene_mod
 
         character(len=*), parameter :: err = "Error in compute_nene: "
 
+        ! from predict.f90
         integer zelem(max_num_atoms)                           ! internal
         integer num_atoms                                      ! internal
         integer num_pairs                                      ! internal
@@ -6332,6 +6359,8 @@ module pes_nene_mod
         atomenergysum     = 0.0d0
         nnstress_short(:,:)=0.0d0
         nnstress_elec(:,:) =0.0d0
+
+
 
         ! 2do in compute_nene:
         ! the elements have to be sorted according to RuNNer before calling the prediction -> better way than calling sortelements in every MD step -> do that once in read_nene subroutine
@@ -6522,7 +6551,7 @@ subroutine set_defaults()
 
         iseed                               = default_int
         ielem                               = default_int
-        lelement                            = default_bool
+        lelement(:)                         = default_bool
 
         listdim                             = 100000
 
