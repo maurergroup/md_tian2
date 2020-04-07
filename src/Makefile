@@ -27,8 +27,8 @@ RUNNER_SRC_DIR = RuNNer_src/
 
 SUBROUTINES = 	md_tian.o \
 		abstime.o \
-	      	addatoms.o \
-	      	atomsymfunction1.o \
+		addatoms.o \
+		atomsymfunction1.o \
 		atomsymfunction2.o \
 		atomsymfunction3Andi.o \
 		atomsymfunction3.o \
@@ -58,23 +58,23 @@ SUBROUTINES = 	md_tian.o \
 		sortelements.o \
 		sortsymfunctions.o \
 		translate.o \
-	      	write_info.o \
+		write_info.o \
 
 
 MPI_DUMMY_SUBROUTINES = mpi_dummy_routines.o \
 
-MODULES      =  constants.o \
+MODULES      =	constants.o \
 		open_file.o \
 		useful_things.o \
-               	universe_mod.o \
-               	run_config.o \
-               	pes_non_mod.o \
-              	pes_ho_mod.o \
-               	pes_lj_mod.o \
-               	pes_emt_mod.o \
-               	pes_rebo_mod.o \
-               	fileunits.o \
-               	predictionoptions.o \
+		universe_mod.o \
+		run_config.o \
+		pes_non_mod.o \
+		pes_ho_mod.o \
+		pes_lj_mod.o \
+		pes_emt_mod.o \
+		pes_rebo_mod.o \
+		fileunits.o \
+		predictionoptions.o \
 	       	nnflags.o \
                	nnconstants.o \
                	globaloptions.o \
@@ -148,27 +148,27 @@ pes_rebo_mod.o: pes_rebo_mod.f90
 
 fileunits.o: $(RUNNER_SRC_DIR)fileunits.f90
 	rm $(RUNNER_SRC_DIR)fileunits.mod ; \
-        $(FC) $(FFLAGS_MPI) -c $(RUNNER_SRC_DIR)fileunits.f90
+	$(FC) $(FFLAGS_MPI) -c $(RUNNER_SRC_DIR)fileunits.f90
 
 fittingoptions.o: $(RUNNER_SRC_DIR)fittingoptions.f90
 	rm $(RUNNER_SRC_DIR)fittingoptions.mod ; \
-        $(FC) $(FFLAGS_MPI) -c $(RUNNER_SRC_DIR)fittingoptions.f90
+	$(FC) $(FFLAGS_MPI) -c $(RUNNER_SRC_DIR)fittingoptions.f90
 
 nnflags.o: $(RUNNER_SRC_DIR)nnflags.f90
 	rm $(RUNNER_SRC_DIR)nnflags.mod ; \
-        $(FC) $(FFLAGS_MPI) -c $(RUNNER_SRC_DIR)nnflags.f90
+	$(FC) $(FFLAGS_MPI) -c $(RUNNER_SRC_DIR)nnflags.f90
 
 nnconstants.o: $(RUNNER_SRC_DIR)nnconstants.f90
 	rm $(RUNNER_SRC_DIR)nnconstants.mod ; \
-        $(FC) $(FFLAGS_MPI) -c $(RUNNER_SRC_DIR)nnconstants.f90
+	$(FC) $(FFLAGS_MPI) -c $(RUNNER_SRC_DIR)nnconstants.f90
 
 globaloptions.o: $(RUNNER_SRC_DIR)globaloptions.f90
 	rm $(RUNNER_SRC_DIR)globaloptions.mod ; \
-        $(FC) $(FFLAGS_MPI) -c $(RUNNER_SRC_DIR)globaloptions.f90
+	$(FC) $(FFLAGS_MPI) -c $(RUNNER_SRC_DIR)globaloptions.f90
 
 mode1options.o: $(RUNNER_SRC_DIR)mode1options.f90
 	rm $(RUNNER_SRC_DIR)mode1options.mod ; \
-        $(FC) $(FFLAGS_MPI) -c $(RUNNER_SRC_DIR)mode1options.f90
+	$(FC) $(FFLAGS_MPI) -c $(RUNNER_SRC_DIR)mode1options.f90
 
 nnshort_atomic.o: $(RUNNER_SRC_DIR)nnshort_atomic.f90
 	rm $(RUNNER_SRC_DIR)nnshort_atomic.mod ; \
@@ -212,23 +212,23 @@ force.o: force.f90
 
 rpmd.o: rpmd.f90
 	rm rpmd.mod ; \
-        $(FC)  -c rpmd.f90
+	$(FC)  -c rpmd.f90
 
 md_init.o: md_init.f90
 	rm md_init.mod ; \
-        $(FC)  -c md_init.f90
+	$(FC)  -c md_init.f90
 
 md_algo.o: md_algo.f90
 	rm md_algo.mod ; \
-        $(FC)  -c md_algo.f90
+	$(FC)  -c md_algo.f90
 
 trajectory_info.o: trajectory_info.f90
 	rm trajectory_info.mod ; \
-        $(FC)  -c trajectory_info.f90
+	$(FC)  -c trajectory_info.f90
 
 output_mod.o: output_mod.f90
 	rm output_mod.mod ; \
-        $(FC)  -c output_mod.f90
+	$(FC)  -c output_mod.f90
 
 fit.o: fit.f90
 	rm fit.mod ; \
@@ -236,7 +236,7 @@ fit.o: fit.f90
 
 geometry_opt.o: geometry_opt.f90
 	rm geometry_opt.mod ; \
-        $(FC)  -c geometry_opt.f90
+	$(FC)  -c geometry_opt.f90
 
 
 
@@ -308,9 +308,6 @@ getshortatomic.o: $(RUNNER_SRC_DIR)getshortatomic.f90
 getvolume.o: $(RUNNER_SRC_DIR)getvolume.f90
 	$(FC) $(FFLAGS) -c $(RUNNER_SRC_DIR)getvolume.f90
 
-initializecounters.o: $(RUNNER_SRC_DIR)initializecounters.f90
-	$(FC) $(FFLAGS) -c $(RUNNER_SRC_DIR)initializecounters.f90
-
 inputnndefaults.o: $(RUNNER_SRC_DIR)inputnndefaults.f90
 	$(FC) $(FFLAGS) -c $(RUNNER_SRC_DIR)inputnndefaults.f90
 
@@ -350,7 +347,7 @@ write_info.o: write_info.f90
 serial: ./md_tian2.serial.x
 ./md_tian2.serial.x: $(MODULES_MPI_DUMMY) $(MODULES) $(SUBROUTINES) $(MPI_DUMMY_SUBROUTINES)
 	$(FC) $(FFLAGS) -o $@ \
-        	$(SUBROUTINES) $(MODULES_MPI_DUMMY) $(MODULES) $(MPI_DUMMY_SUBROUTINES) $(LIB)
+		$(SUBROUTINES) $(MODULES_MPI_DUMMY) $(MODULES) $(MPI_DUMMY_SUBROUTINES) $(LIB)
 
 debug: ./md_tian2.debug.serial.x
 ./md_tian2_debug.x: $(MODULES_MPI_DUMMY) $(MODULES) $(SUBROUTINES) $(MPI_DUMMY_SUBROUTINES)

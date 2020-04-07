@@ -332,9 +332,6 @@ module pes_nene_mod
 
                 end select
 
-            !else
-            !    print *, err, err_inpnn, 'iostat = ', ios
-            !    stop
             end if
 
         end do
@@ -474,9 +471,6 @@ module pes_nene_mod
 
                 end select
 
-            !else
-            !    print *, err, err_inpnn, 'iostat = ', ios
-            !    stop
             end if
 
         end do
@@ -701,9 +695,6 @@ module pes_nene_mod
 
                 end select
 
-            !else
-            !    print *, err, err_inpnn, 'iostat = ', ios
-            !    stop
             end if
 
         end do
@@ -753,7 +744,6 @@ module pes_nene_mod
                         case ('global_symfunction_short')
                             read(words(2),'(i1000)', iostat=ios) function_type_temp
                             if (ios /= 0) stop err // err_inpnn // "global_symfunction_short first argument value must be integer"
-                            !call lower_case(words(2))
                             select case (words(2))
 
                                 case ('1')
@@ -817,7 +807,6 @@ module pes_nene_mod
                             read(words(2),'(A)') elementtemp1
                             read(words(3),'(i1000)', iostat=ios) function_type_temp
                             if (ios /= 0) stop err // err_inpnn // "element_symfunction_short second argument value must be integer"
-                            !call lower_case(words(2))
 
                             select case (words(3))
 
@@ -882,7 +871,6 @@ module pes_nene_mod
                             read((words(2),'(A)') elementtemp1
                             read(words(3),'(i1000)', iostat=ios) function_type_temp
                             if (ios /= 0) stop err // err_inpnn // "symfunction_short second argument value must be integer"
-                            !call lower_case(words(2))
 
                             select case (words(3))
 
@@ -961,9 +949,6 @@ module pes_nene_mod
 
                     maxcutoff_local = max(maxcutoff_local, funccutoff_local)
 
-                !else
-                !    print *, err, err_inpnn, 'iostat = ', ios
-                !    stop
                 end if
 
             end do
@@ -1048,7 +1033,6 @@ module pes_nene_mod
                             read(words(2),'(A)') elementtemp1
                             read(words(3),'(i1000)', iostat=ios) function_type_temp
                             if (ios /= 0) stop err // err_inpnn // "element_symfunction_electrostatic second argument value must be integer"
-                            !call lower_case(words(2))
 
                             select case (words(3))
 
@@ -1110,7 +1094,6 @@ module pes_nene_mod
                             read((words(2),'(A)') elementtemp1
                             read(words(3),'(i1000)', iostat=ios) function_type_temp
                             if (ios /= 0) stop err // err_inpnn // "symfunction_electrostatic second argument value must be integer"
-                            !call lower_case(words(2))
 
                             select case (words(3))
 
@@ -2740,7 +2723,6 @@ module pes_nene_mod
                         case ('fitting_unit')
                             if (fitting_unit /= default_int) stop err // err_inpnn // 'Multiple use of the fitting_unit'
                             if (nwords == 2) then
-                                !call lower_case(words(2))
 
                                 select case (words(2))
 
@@ -2898,9 +2880,6 @@ module pes_nene_mod
 
                     end select
 
-                !else
-                !    print *, err, err_inpnn, 'iostat = ', ios
-                !    stop
                 end if
 
             end do
@@ -2988,9 +2967,6 @@ module pes_nene_mod
 
                     end select
 
-                !else
-                !    write(*,*) err // err_inpnn // 'iostat = ', ios
-                !    stop
                 end if
 
             end do
@@ -3014,7 +2990,6 @@ module pes_nene_mod
                         select case (words(1))
 
                             case ('fixed_charge')
-                                !if ((elementtemp /= default_string) .and. (chargetemp /= default_real)) stop err // err_inpnn // 'Multiple use of the fixed_charge key'
                                 if (nwords == 3) then
                                     read(words(2),'(A)', iostat=ios) elementtemp
                                     read(words(3),*, iostat=ios) chargetemp
@@ -3030,9 +3005,6 @@ module pes_nene_mod
 
                         end select
 
-                    !else
-                    !    write(*,*) err // err_inpnn // 'iostat = ', ios
-                    !    stop
                     end if
 
                 end do
@@ -3056,7 +3028,6 @@ module pes_nene_mod
                     select case (words(1))
 
                         case ('element_hidden_layers_short')
-                            !if (elementtemp /= default_string) stop err // err_inpnn // 'Multiple use of the element_hidden_layers_short key'
                             if (nwords == 3) then
                                 read(words(2),'(A)', iostat=ios) elementtemp
                                 call checkelement(elementtemp)
@@ -3076,7 +3047,6 @@ module pes_nene_mod
                             end if
 
                         case ('element_hidden_layers_electrostatic')
-                            !if (elementtemp /= default_string) stop err // err_inpnn // 'Multiple use of the element_hidden_layers_short key'
                             if (nwords == 3) then
                                 read(words(2),'(A)', iostat=ios) elementtemp
                                 call checkelement(elementtemp)
@@ -3103,9 +3073,6 @@ module pes_nene_mod
 
                     end select
 
-                !else
-                !    write(*,*) err // err_inpnn // 'iostat = ', ios
-                !    stop
                 end if
 
             end do
@@ -3175,9 +3142,6 @@ module pes_nene_mod
 
                     end select
 
-                !else
-                !    print *, err, err_inpnn, 'iostat = ', ios
-                !    stop
                 end if
 
             end do
@@ -3243,9 +3207,6 @@ module pes_nene_mod
 
                     end select
 
-                !else
-                !    print *,  err, err_inpnn, 'iostat = ', ios
-                !    stop
                 end if
 
             end do
@@ -4435,9 +4396,6 @@ module pes_nene_mod
 
                     end select
 
-                !else
-                !    print *, err, err_inpnn, 'iostat = ', ios
-                !    stop
                 end if
 
             end do
@@ -4476,7 +4434,7 @@ module pes_nene_mod
 
             call checkinputnn(err, err_inpnn) ! own subroutine
 
-            call printinputnn(iseed,ielem,nodes_short_atomic_temp,nodes_elec_temp,nodes_short_pair_temp,kalmanlambda_local,kalmanlambdae_local,actfunc_short_atomic_dummy,actfunc_elec_dummy,actfunc_short_pair_dummy)
+            call printinputnn(iseed,ielem,nodes_short_atomic_temp,nodes_elec_temp,nodes_short_pair_temp,kalmanlambda_local,kalmanlambdae_local,actfunc_short_atomic_dummy,actfunc_elec_dummy,actfunc_short_pair_dummy) ! own subroutine
 
             write(*,'(a15,i4,a30)')' Element pairs: ',npairs,' , shortest distance (Bohr)'
             icount=0
@@ -4553,7 +4511,7 @@ module pes_nene_mod
                         select case (words(1))
 
                             case ('atom_energy')
-                                !if ( /= default_int) stop err // err_inpnn // 'Multiple use of the  key'
+
                                 if (nwords == 3) then
                                     read(words(2),'(A)', iostat=ios) elementtemp
                                     call nuccharge(elementtemp,ztemp)
@@ -4576,9 +4534,6 @@ module pes_nene_mod
 
                         end select
 
-                    !else
-                    !    print *, err, err_inpnn, 'iostat = ', ios
-                    !    stop
                     end if
 
                 end do
@@ -4661,7 +4616,7 @@ module pes_nene_mod
                     itemp=0
                     do i1=0,num_layers_short_atomic(i3)
                         itemp=max(itemp,nodes_short_atomic(i1,i3))
-                    enddo ! i1
+                    enddo
                     do i1=1,itemp ! loop over all lines with hidden nodes
                         if(i1.le.nodes_short_atomic(0,i3))then ! still input node to be printed
                             if(i1.le.maxnodes_short_atomic)then ! still hidden nodes present
@@ -4673,7 +4628,7 @@ module pes_nene_mod
                             write(*,'(i4,4x,8a3)')i1,(actfunc_short_atomic(i1,i2,i3),i2=1,num_layers_short_atomic(i3))
                         endif
                     enddo
-                enddo ! i3
+                enddo
             endif
 
             if(lelec.and.(nn_type_elec.eq.1).and.(mode.ne.1))then
@@ -4685,7 +4640,7 @@ module pes_nene_mod
                     itemp=0
                     do i1=0,num_layers_elec(i3)
                         itemp=max(itemp,nodes_elec(i1,i3))
-                    enddo ! i1
+                    enddo
                     do i1=1,itemp ! loop over all lines with hidden nodes
                         if(i1.le.nodes_elec(0,i3))then ! still input node to be printed
                             if(i1.le.maxnodes_elec)then ! still hidden nodes present
@@ -4697,7 +4652,7 @@ module pes_nene_mod
                             write(*,'(i4,4x,8a3)')i1,(actfunc_elec(i1,i2,i3),i2=1,num_layers_elec(i3))
                         endif
                     enddo
-                enddo ! i3
+                enddo
             endif
             write(*,*)'-------------------------------------------------------------'
 
@@ -5317,7 +5272,7 @@ module pes_nene_mod
             stop
           endif
         endif
-      enddo ! i1
+      enddo
 
       do i1=1,nelem
         if(lshort.and.(nn_type_short.eq.1))then
@@ -5326,7 +5281,7 @@ module pes_nene_mod
             stop
           endif
         endif
-      enddo ! i1
+      enddo
 
       do i1=1,nelem
         if(lelec.and.(nn_type_elec.eq.1))then
@@ -5336,7 +5291,7 @@ module pes_nene_mod
             stop
           endif
         endif
-      enddo ! i1
+      enddo
 
       do i1=1,nelem
         if(lelec.and.(nn_type_elec.eq.1))then
