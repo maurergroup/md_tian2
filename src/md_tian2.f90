@@ -102,7 +102,7 @@ program md_tian2
 
                 if (any(simparams%output_type == output_id_scatter)) call output(atoms, itraj, istep, "scatter_final")
 
-                if (itraj < simparams%start+simparams%ntrajs-1) then ! couldn't we just use itraj as seed for the RNG??
+                if (itraj < simparams%start+simparams%ntrajs-1) then
                     call random_seed(put=randseed)  ! Seed random number generator
                     do i = 1, 100*(itraj+1)
                         call random_number(tmp)   ! rotate it according to trajectory number

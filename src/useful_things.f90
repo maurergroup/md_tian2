@@ -74,14 +74,15 @@ contains
 !        return
 !    end function normal
 
-    function ranx(nran, seed) result(rnd)
+    function ranx(nran, seed, start) result(rnd)
 
         implicit none
 
-        integer  :: nran ! switch what rng to use
+        integer  :: nran, i ! switch what rng to use
         real(dp) :: rnd
         integer*8, intent(inout) :: seed ! the seed will be the trajectory id
-        real(dp) :: ran_orig, ran_new
+        integer, optional :: start
+        real(dp) :: ran2
 
         integer :: randk
 
@@ -95,7 +96,7 @@ contains
                 call random_seed(put=randseed)
 
                 ! rotate rng
-                do i = 1, 100*simparams%start
+                do i = 1, 100*start
                     call random_number(rnd)
                 end do
                 
@@ -114,7 +115,7 @@ contains
 
     end function ranx
 
-    function ran6(seed) result(rnd)
+    function ran3(seed) result(rnd)
 
         implicit none
 
@@ -122,9 +123,79 @@ contains
         integer*8, intent(inout) :: seed
         real*8 :: xorshift64star
 
-        rnd = xorshift64star(seed)
+        !rnd = xorshift64star(seed)
 
-    end function
+    end function ran3
+
+    function xorshift64star(state) result(rnd)
+
+        implicit none
+
+        real*8 :: rnd
+        integer*8, intent(inout) :: state
+
+        integer*8 :: b(4)
+        integer*8, parameter :: f(4) = [56605, 20332, 62609, 9541] ! 2685821657736338717 in base 2**16
+        integer*8 :: m(4)
+
+        state = ieor(state, ishft(state, -12))
+        state = ieor(state, ishft(state,  25))
+        state = ieor(state, ishft(state, -27))
+
+        call toBase16(state, b)
+        call multBase16(b, f, m)
+
+        rnd = m(4) / 2.d0**16 + m(3) / 2.d0**32 + m(2) / 2.d0**48 + m(1) / 2.d0**64
+
+    end function xorshift64star
+
+    subroutine toBase16(x, b)
+
+        implicit none
+
+        integer*8, intent(in) :: x
+        integer*8, intent(out) :: b(4)
+        integer :: i
+        integer*8 :: t
+
+        b(:) = 0
+        if (x<0) then
+            t = (9223372036854775807_8 + x) + 1
+            b(4) = 2_8**15
+        else
+            t = x
+        end if
+
+        do i=1,4
+            b(i) = b(i) + modulo(t, 2_8**16)
+            t = t / 2_8**16
+        end do
+
+    end subroutine
+
+    subroutine multBase16(a, b, c)
+
+        implicit none
+
+        integer*8, intent(in) :: a(4), b(4)
+        integer*8, intent(out) :: c(4)
+
+        integer :: i,j
+
+        c(:) = 0
+        do i=1,4
+            do j=1,5-i
+                c(i+j-1) = c(i+j-1) + a(i) * b(j)
+            end do
+        end do
+
+        do i=1,3
+            c(i+1) = c(i+1) + c(i) / 2_8**16
+            c(i) = modulo(c(i), 2_8**16)
+        end do
+        c(4) = modulo(c(4), 2_8**16)
+
+    end subroutine multBase16
 
     subroutine normal_deviate_0d(mu, sigma, nrml_dvt)
 
