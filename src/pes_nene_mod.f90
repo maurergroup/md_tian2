@@ -53,36 +53,63 @@ module pes_nene_mod
 
     logical :: lelement(102)
 
-    !integer :: ztemp
+    integer :: ztemp
 
-    !integer, dimension(:)  , allocatable :: nodes_short_local
-    !integer, dimension(:)  , allocatable :: nodes_ewald_local
-    !integer, dimension(:)  , allocatable :: num_funcvalues_local
-    !integer, dimension(:)  , allocatable :: num_funcvaluese_local
+    integer, dimension(:)  , allocatable :: nodes_short_local
+    integer, dimension(:)  , allocatable :: nodes_ewald_local
+    integer, dimension(:)  , allocatable :: num_funcvalues_local
+    integer, dimension(:)  , allocatable :: num_funcvaluese_local
 
-    !character(len=2) :: elementtemp, elementtemp1, elementtemp2, elementtemp3
+    character(len=2) :: elementtemp, elementtemp1, elementtemp2, elementtemp3
 
-    !logical :: lfounddebug
-    !logical :: lfound_num_layersshort
-    !logical :: lfound_num_layersewald
-    !logical :: lfound_num_layerspair
-    !logical :: lfound_luseatomenergies
-    !logical :: lfound_luseatomcharges
-    !logical :: lfound_nelem
-    !logical :: lperiodic
+    logical :: lfounddebug
+    logical :: lfound_num_layersshort
+    logical :: lfound_num_layersewald
+    logical :: lfound_num_layerspair
+    logical :: lfound_luseatomenergies
+    logical :: lfound_luseatomcharges
+    logical :: lfound_nelem
+    logical :: lperiodic
 
-    !integer :: function_type_temp
+    integer :: function_type_temp
 
-    !real(dp) :: funccutoff_local
-    !real(dp) :: maxcutoff_local
+    real(dp) :: funccutoff_local
+    real(dp) :: maxcutoff_local
 
-    !integer :: max_num_pairs
+    integer :: max_num_pairs
 
-    !real(dp) :: lattice(3,3)
-    !real(dp) :: xyzstruct(3,atoms%natoms)
-    !real(dp) :: volume
+    real(dp) :: lattice(3,3)
+    real(dp) :: xyzstruct(3,atoms%natoms)
+    real(dp) :: volume
+    real(dp) :: dmin_temp(nelem*(nelem+1)/2)
 
-    !character(len=2) :: elementsymbol(atoms%natoms)
+    character(len=2) :: elementsymbol(atoms%natoms)
+
+    !integer count_struct                     ! internal
+      !integer function_type_temp               ! internal
+      !integer i1,i2                            ! internal
+      !integer nlattice                         ! internal
+      !integer num_atoms                        ! internal
+      integer nn_type_short_local                    ! internal
+      integer nn_type_elec_local
+      integer num_pairs                        ! in
+      integer zelem(max_num_atoms)             ! internal
+
+      !real*8  funccutoff_local                 ! internal
+      !real*8  lattice(3,3)                     ! internal
+      !real*8  maxcutoff_local                  ! internal
+      !real*8  xyzstruct(3,max_num_atoms)       ! internal
+           ! internal
+!!
+      !character*2  elementsymbol(max_num_atoms)! internal
+      !character*2  elementtemp1                ! internal
+      !character*2  elementtemp2                ! internal
+      !character*2  elementtemp3                ! internal
+      !character*40 keyword                     ! internal
+      !character*40 dummy
+      !character*7  dummy1
+      !character*40 dummy2
+      !logical lperiodic
 
 
 
@@ -598,9 +625,9 @@ module pes_nene_mod
 
                         end select
 
-                    case ('global_symfunction_short')
+                    case ('global_symfunction_short','global_symfunction_short_atomic')
                         read(words(2),'(i1000)', iostat=ios) function_type_local
-                        if (ios /= 0) stop err // err_inpnn // "global_symfunction_short second argument value must be integer"
+                        if (ios /= 0) stop err // err_inpnn // "global_symfunction_short / global_symfunction_short_atomic second argument value must be integer"
                         !call nuccharge(elementtemp, ztemp)
 
                         select case (words(2))
@@ -628,7 +655,7 @@ module pes_nene_mod
                                 end do
 
                             case default
-                                print *, err, err_inpnn, "Error in global_symfunction_short key, symfunction type ", words(2), " not implemented"
+                                print *, err, err_inpnn, "Error in global_symfunction_short / global_symfunction_short_atomic key, symfunction type ", words(2), " not implemented"
                                 stop
 
                         end select
@@ -687,8 +714,8 @@ module pes_nene_mod
                     case ('global_pairsymfunction_short')
                         print *, err, err_inpnn, "global_pairsymfunction_short key is not supported, Pair NN not implemented"
 
-                    case ('global_symfunction_short_pair')
-                        print *, err, err_inpnn, "global_symfunction_short_pair key is not supported, Pair NN not implemented"
+                    !case ('global_symfunction_short_pair') ! not included anymore
+                        !print *, err, err_inpnn, "global_symfunction_short_pair key is not supported, Pair NN not implemented"
 
                     case default
                         ! for every other keyword pass here, check for unrecognized keywords later
@@ -741,41 +768,41 @@ module pes_nene_mod
 
                     select case (words(1))
 
-                        case ('global_symfunction_short')
+                        case ('global_symfunction_short','global_symfunction_short_atomic')
                             read(words(2),'(i1000)', iostat=ios) function_type_temp
-                            if (ios /= 0) stop err // err_inpnn // "global_symfunction_short first argument value must be integer"
+                            if (ios /= 0) stop err // err_inpnn // "global_symfunction_short / global_symfunction_short_atomic first argument value must be integer"
                             select case (words(2))
 
                                 case ('1')
                                     if (nwords == 3) then
                                         read(words(3),*, iostat=ios) funccutoff_local
-                                        if (ios /= 0) stop err // err_inpnn // "global_symfunction_short type "// words(2)// " argument "// nwords-1// " must be a number"
+                                        if (ios /= 0) stop err // err_inpnn // "global_symfunction_short / global_symfunction_short_atomic type "// words(2)// " argument "// nwords-1// " must be a number"
                                     else
-                                        print *, err, err_inpnn, "global_symfunction_short type ", words(2), " needs 2 arguments"; stop
+                                        print *, err, err_inpnn, "global_symfunction_short / global_symfunction_short_atomic type ", words(2), " needs 2 arguments"; stop
                                     end if
 
                                 case ('2')
                                     if (nwords == 5) then
                                         read(words(5),*, iostat=ios) funccutoff_local
-                                        if (ios /= 0) stop err // err_inpnn // "global_symfunction_short type " // words(2) // " argument " // nwords-1 // " must be a number"
+                                        if (ios /= 0) stop err // err_inpnn // "global_symfunction_short / global_symfunction_short_atomic type " // words(2) // " argument " // nwords-1 // " must be a number"
                                     else
-                                        print *, err, err_inpnn, "global_symfunction_short type ", words(2), " needs 4 arguments"; stop
+                                        print *, err, err_inpnn, "global_symfunction_short / global_symfunction_short_atomic type ", words(2), " needs 4 arguments"; stop
                                     end if
 
                                 case ('3')
                                     if (nwords == 6) then
                                         read(words(6),*, iostat=ios) funccutoff_local
-                                        if (ios /= 0) stop err // err_inpnn // "global_symfunction_short type " // words(2) // "argument " // nwords-1 // " must be a number"
+                                        if (ios /= 0) stop err // err_inpnn // "global_symfunction_short / global_symfunction_short_atomic type " // words(2) // "argument " // nwords-1 // " must be a number"
                                     else
-                                        print *, err, err_inpnn, "global_symfunction_short type ", words(2), " needs 5 arguments"; stop
+                                        print *, err, err_inpnn, "global_symfunction_short / global_symfunction_short_atomic type ", words(2), " needs 5 arguments"; stop
                                     end if
 
                                 case ('4')
                                     if (nwords == 4) then
                                         read(words(4),*, iostat=ios) funccutoff_local
-                                        if (ios /= 0) stop err // err_inpnn // "global_symfunction_short type " // words(2) // "argument " // nwords-1 // " must be a number"
+                                        if (ios /= 0) stop err // err_inpnn // "global_symfunction_short / global_symfunction_short_atomic type " // words(2) // "argument " // nwords-1 // " must be a number"
                                     else
-                                        print *, err, err_inpnn, "global_symfunction_short type ", words(2), " needs 3 arguments"; stop
+                                        print *, err, err_inpnn, "global_symfunction_short / global_symfunction_short_atomic type ", words(2), " needs 3 arguments"; stop
                                     end if
 
                                 case ('5','6')
@@ -784,21 +811,21 @@ module pes_nene_mod
                                 case ('8')
                                     if (nwords == 5) then
                                         read(words(5),*, iostat=ios) funccutoff_local
-                                        if (ios /= 0) stop err // err_inpnn // "global_symfunction_short type " // words(2) // "argument " // nwords-1 // " must be a number"
+                                        if (ios /= 0) stop err // err_inpnn // "global_symfunction_short / global_symfunction_short_atomic type " // words(2) // "argument " // nwords-1 // " must be a number"
                                     else
-                                        print *, err, err_inpnn, "global_symfunction_short type ", words(2), " needs 4 arguments"; stop
+                                        print *, err, err_inpnn, "global_symfunction_short / global_symfunction_short_atomic type ", words(2), " needs 4 arguments"; stop
                                     end if
 
                                 case ('9')
                                     if (nwords == 6) then
                                         read(words(6),*, iostat=ios) funccutoff_local
-                                        if (ios /= 0) stop err // err_inpnn // "global_symfunction_short type " // words(2) // " argument " // nwords-1 // " must be a number"
+                                        if (ios /= 0) stop err // err_inpnn // "global_symfunction_short / global_symfunction_short_atomic type " // words(2) // " argument " // nwords-1 // " must be a number"
                                     else
-                                        print *, err, err_inpnn, "global_symfunction_short type ", words(2), " needs 5 arguments"; stop
+                                        print *, err, err_inpnn, "global_symfunction_short / global_symfunction_short_atomic type ", words(2), " needs 5 arguments"; stop
                                     end if
 
                                 case default
-                                    print *, err, err_inpnn, "Error in global_symfunction_short key, symfunction type ", words(2), " not implemented"
+                                    print *, err, err_inpnn, "Error in global_symfunction_short / global_symfunction_short_atomic key, symfunction type ", words(2), " not implemented"
                                     stop
 
                             end select
@@ -1277,9 +1304,9 @@ module pes_nene_mod
         allocate (elempair(npairs,2))
         elempair(:,:)=0
 
-        call allocatesymfunctions()
+        call allocatesymfunctions() !2DO: up to this point everything is fine, just check if all variables are declared and default values are set!!
 
-        !call readinput(ielem,iseed,lelement) !ielem iseed defined in main.f90/initnn.f90 -> I defined it in get_defaults.f90
+        call readinput(ielem,iseed,lelement) ! own subroutine!!
 
         ! start readout of input.nn according to readinput.f90
 
@@ -2886,7 +2913,7 @@ module pes_nene_mod
 
             close(inpnn_unit)
 
-            call inputnndefaults()
+            call inputnndefaults() ! own subroutine
 
             ! end of readout according to readkeywords.f90
 
@@ -4579,6 +4606,35 @@ module pes_nene_mod
                 enddo
                 ! end readout of input.nn according to readatomenergies.f90
 
+            endif
+
+            if (lvdw) then
+                if (nn_type_vdw == 1) then
+                    !call read_vdw_coefficients_type_1()
+
+                    do while (ios == 0)
+                        read(inpnn_unit, '(A)', iostat=ios) buffer
+
+                        if (ios == 0) then
+                            call split_string(buffer, words, nwords)
+
+                            select case (words(1))
+
+                                case ('vdw_coefficient', 'vdW_coefficient')
+                                    if (nwords /= )
+
+                                case default
+                                    ! just let it pass
+                            end select
+
+                        end if
+
+                    end do
+
+                else
+                    print *, err, err_inpnn, 'Error: unknown nn_type_vdw'
+                    stop
+                endif
             endif
 
             call open_for_read(inpnn_unit, filename_inpnn); ios = 0
