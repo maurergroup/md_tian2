@@ -74,6 +74,58 @@ contains
 !        return
 !    end function normal
 
+    function ranx(nran, seed) result(rnd)
+
+        implicit none
+
+        integer  :: nran ! switch what rng to use
+        real(dp) :: rnd
+        integer*8, intent(inout) :: seed ! the seed will be the trajectory id
+        real(dp) :: ran_orig, ran_new
+
+        integer :: randk
+
+        select case (nran)
+
+            case (1) ! loop
+
+                ! size of seed for random number generator
+                randk=size(randseed)
+                call random_seed(size=randk)
+                call random_seed(put=randseed)
+
+                ! rotate rng
+                do i = 1, 100*simparams%start
+                    call random_number(rnd)
+                end do
+                
+            case (2) ! like call random_number(var)
+                
+                call random_number(rnd)
+
+            case (3) ! rng with traj id as seed
+
+                rnd = ran3(seed)
+
+            case default
+                stop 'Error: Unknown random number generator type in ranx function'
+
+        end select
+
+    end function ranx
+
+    function ran6(seed) result(rnd)
+
+        implicit none
+
+        real(dp) :: rnd
+        integer*8, intent(inout) :: seed
+        real*8 :: xorshift64star
+
+        rnd = xorshift64star(seed)
+
+    end function
+
     subroutine normal_deviate_0d(mu, sigma, nrml_dvt)
 
         real(dp), intent(in)  :: mu, sigma
