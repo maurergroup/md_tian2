@@ -74,42 +74,57 @@ contains
 !        return
 !    end function normal
 
-    function ranx(nran, seed, start) result(rnd)
+    function ranx(nran, seed, switch) result(rnd)
 
         implicit none
 
-        integer  :: nran, i ! switch what rng to use
+        integer  :: nran, i ! set which rng to use
         real(dp) :: rnd
         integer*8, intent(inout) :: seed ! the seed will be the trajectory id
-        integer, optional :: start
-        real(dp) :: ran2
+        integer :: switch
+        !integer, optional :: start
+        !real(dp) :: ran3
 
         integer :: randk
 
+
         select case (nran)
 
-            case (1) ! loop
+            case (1)
 
-                ! size of seed for random number generator
-                randk=size(randseed)
-                call random_seed(size=randk)
-                call random_seed(put=randseed)
+                select case (switch)
 
-                ! rotate rng
-                do i = 1, 100*start
+                case (1) ! fixed seed, rotation according to traj id
+
+                    ! size of seed for random number generator
+                    randk=size(randseed)
+                    call random_seed(size=randk)
+                    call random_seed(put=randseed)
+
+                    ! rotate rng
+                    do i = 1, 100*seed
+                        call random_number(rnd)
+                    end do
+
+                case (-1)
+
                     call random_number(rnd)
-                end do
-                
-            case (2) ! like call random_number(var)
-                
-                call random_number(rnd)
 
-            case (3) ! rng with traj id as seed
+                case default
+
+                    print *, 'Unknown value for switch in ranx function'
+                    stop
+                
+                end select
+                
+            case (2) ! rng with traj id as seed
 
                 rnd = ran3(seed)
 
             case default
-                stop 'Error: Unknown random number generator type in ranx function'
+
+                print *, 'Error: Unknown random number generator type in ranx function'
+                stop
 
         end select
 
@@ -121,9 +136,9 @@ contains
 
         real(dp) :: rnd
         integer*8, intent(inout) :: seed
-        real*8 :: xorshift64star
+        !real*8 :: xorshift64star
 
-        !rnd = xorshift64star(seed)
+        rnd = xorshift64star(seed)
 
     end function ran3
 

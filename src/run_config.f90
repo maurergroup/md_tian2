@@ -26,7 +26,7 @@ module run_config
 
     use constants
     use universe_mod, only : universe
-    use useful_things, only : lower_case, split_string
+    use useful_things, only : lower_case, split_string, ranx
     use open_file, only : open_for_read
 
     implicit none
@@ -73,6 +73,7 @@ module run_config
         real(dp) :: evasp                                           ! reference energy for fit
         integer  :: maxit                                           ! maximum number of iteration during fit
         integer  :: nthreads                                        ! number of threads used for fitting
+        integer  :: nran                                            ! type of the random number genreator
 
     end type
 
@@ -121,6 +122,7 @@ contains
         new_simulation_parameters%evasp = default_real
         new_simulation_parameters%maxit = 30
         new_simulation_parameters%nthreads = 1
+        new_simulation_parameters%nran = default_int
 
     end function
 
@@ -130,6 +132,7 @@ contains
 
         integer :: i, ios = 0, line = 0, nwords, randk
         real(dp) :: rnd
+        integer*8 :: seed
         character(len=max_string_length) :: buffer
         character(len=max_string_length) :: words(100)
         integer, parameter :: inp_unit = 38
@@ -162,6 +165,23 @@ contains
                         else
                             print *, err, 'start key needs a single argument'; stop
                         end if
+                    case('random_number_generator')
+                        if (simparams%nran /= default_int) stop 'Error in the input file: Multiple use of the random_number_generator key'
+                        if (nwords == 2) then
+                            read(words(2),'(i1000)', iostat=ios) simparams%nran
+                            if (ios /= 0) stop err // 'random_number_generator value must be integer'
+                            select case (words(2))
+
+                                case ('1', '2')
+                                        ! let the valid types pass
+                                case default
+                                    print *, 'Unknown random_number_generator type'; stop
+
+                            end select
+                        else
+                            print *, err, 'random_number_generator key needs a single argument'; stop
+                        end if
+
                 end select
             end if
         end do
@@ -169,14 +189,16 @@ contains
         close(inp_unit)
 
         ! size of seed for random number generator
-        randk=size(randseed)
-        call random_seed(size=randk)
-        call random_seed(put=randseed)
+        !randk=size(randseed)
+        !call random_seed(size=randk)
+        !call random_seed(put=randseed)
 
         ! rotate rng
-        do i = 1, 100*simparams%start
-            call random_number(rnd)
-        end do
+        !do i = 1, 100*simparams%start
+        !    call random_number(rnd)
+        !end do
+        seed = simparams%start
+        rnd = ranx(simparams%nran,seed,1)
 
         ! read rest of the input file
         call open_for_read(inp_unit, input_file); ios = 0
@@ -192,6 +214,9 @@ contains
                 select case (words(1))
 
                     case ('start')
+                        ! pass
+
+                    case ('random_number_generator')
                         ! pass
 
                     case ('run')
@@ -433,7 +458,8 @@ contains
                                     if (nwords == 4) then
                                         read(words(4),'(i1000)',iostat=ios) simparams%nconfs
                                         if (ios /= 0) stop err // 'conf key - mxt argument must be integer'
-                                        call random_number(rnd)
+                                        !call random_number(rnd)
+                                        rnd = ranx(simparams%nran,seed,-1)
                                         write(simparams%confname_file, '(2a, i8.8, a)') trim(simparams%confname_file), "/mxt_", int(rnd*simparams%nconfs)+1, ".dat"
                                     end if
                                     if (nwords < 3) stop err // 'conf key - too few mxt arguments'
@@ -447,7 +473,8 @@ contains
                                     read(words(3),'(A)') simparams%merge_proj_file
                                     read(words(4),'(i1000)',iostat=ios) simparams%merge_proj_nconfs
                                     if (ios /= 0) stop err // "conf key - number of configurations must be integer"
-                                    call random_number(rnd)
+                                    !call random_number(rnd)
+                                    rnd = ranx(simparams%nran,seed,-1)
                                     write(simparams%merge_proj_file, '(2a, i8.8, a)') &
                                         trim(simparams%merge_proj_file), "/mxt_", int(rnd*simparams%merge_proj_nconfs)+1, ".dat"
 
@@ -455,7 +482,8 @@ contains
                                     read(words(5),'(A)') simparams%confname_file
                                     read(words(6),'(i1000)',iostat=ios) simparams%nconfs
                                     if (ios /= 0) stop err // "conf key - number of configurations must be integer"
-                                    call random_number(rnd)
+                                    !call random_number(rnd)
+                                    rnd = ranx(simparams%nran,seed,-1)
                                     write(simparams%confname_file, '(2a, i8.8, a)') &
                                         trim(simparams%confname_file), "/mxt_", int(rnd*simparams%nconfs)+1, ".dat"
 

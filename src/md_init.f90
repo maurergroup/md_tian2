@@ -47,6 +47,7 @@ contains
     subroutine simbox_init(atoms)
 
         type(universe), intent(out) :: atoms
+        integer*8 :: seed
 
         character(len=:), allocatable :: input_file
         integer :: input_file_length, input_file_status
@@ -65,8 +66,8 @@ contains
         ! build the simparams object
         call read_input_file(input_file)
         call ensure_input_sanity()
-
-        call read_geometry(atoms, simparams%confname_file)
+        
+        call read_geometry(atoms, simparams%confname_file, seed)
         call ensure_geometry_sanity(atoms)
 
         call read_pes(atoms)
@@ -157,12 +158,13 @@ contains
 
     ! After this subroutine, the system will be initialized with all user-specified geometry
     !   and velocity information.
-    subroutine read_geometry(atoms, infile)
+    subroutine read_geometry(atoms, infile, seed)
 
         use useful_things, only : file_exists
 
         character(len=*), intent(in) :: infile
         type(universe), intent(inout) :: atoms
+        integer*8 :: seed
 
         type(universe) :: proj
 
@@ -184,11 +186,11 @@ contains
         ! merge projectile file if present
         if (simparams%confname == "merge") then
             call read_mxt(proj, simparams%merge_proj_file)
-            call merge_universes(atoms, proj)
+            call merge_universes(atoms, proj, seed)
         end if
 
         ! prepare initial projectile velocity vector (if provided)
-        if (any(atoms%is_proj)) call set_proj_incidence(atoms)
+        if (any(atoms%is_proj)) call set_proj_incidence(atoms, seed)
 
     end subroutine read_geometry
 
@@ -488,11 +490,12 @@ contains
 
 
 
-    subroutine apply_pip(atoms)
+    subroutine apply_pip(atoms, seed)
 
         use rpmd, only : calc_centroid_positions
 
         type(universe), intent(inout) :: atoms
+        integer*8 :: seed
         real(dp) :: target_position, cents(3, atoms%natoms)
 
         integer  :: k, b, ios
@@ -507,7 +510,8 @@ contains
         do k = 1, dimensionality
             ! draw random number from direct coordinates, then convert to cartesian
             if (simparams%pip(k) == random_position) then
-                call random_number(target_position)
+                !call random_number(target_position)
+                target_position = ranx(simparams%nran,seed,-1)
                 target_position = target_position * sum(atoms%simbox(:,k))
 
             else
@@ -529,7 +533,7 @@ contains
 
 
 
-    subroutine merge_universes(this, other)
+    subroutine merge_universes(this, other, seed)
         ! add other universe to this universe
         ! projectile must be other
 
@@ -537,6 +541,7 @@ contains
 
         type(universe), intent(inout) :: this
         type(universe), intent(inout) :: other
+        integer*8 :: seed
 
         type(universe) :: new
 
@@ -557,7 +562,7 @@ contains
         new = new_atoms(this%nbeads, this%natoms+other%natoms, this%ntypes+other%ntypes)
 
         if (.not. all(simparams%pip == default_string)) then
-            call apply_pip(other)
+            call apply_pip(other, seed)
         end if
 
         new%r(:,:,:other%natoms)        = other%r
@@ -799,9 +804,10 @@ contains
 
 
 
-    subroutine set_proj_incidence(atoms)
+    subroutine set_proj_incidence(atoms, seed)
 
         type(universe), intent(inout) :: atoms
+        integer*8 :: seed
 
         real(dp) :: vinc, drawn_einc, proj_mass, vx, vy, vz, chosen_azimuth
         integer  :: i, ios
@@ -822,7 +828,8 @@ contains
 
         ! set the azimuth angle
         if (simparams%azimuth == random_position) then
-            call random_number(chosen_azimuth)
+            !call random_number(chosen_azimuth)
+            chosen_azimuth = ranx(simparams%nran,seed,-1)
             chosen_azimuth = 2 * pi * chosen_azimuth
         else
             read(simparams%azimuth, *, iostat=ios) chosen_azimuth
@@ -863,9 +870,10 @@ contains
 
 
 
-    subroutine prepare_next_traj(atoms)
+    subroutine prepare_next_traj(atoms, seed)
 
         type(universe), intent(inout) :: atoms
+        integer*8 :: seed
 
         character(len=*), parameter :: err = "Error in prepare_next_traj(): "
         integer :: mxt_idx, dat_idx, new_conf
@@ -878,7 +886,8 @@ contains
             mxt_idx = index(simparams%confname_file, "mxt_")
             dat_idx = index(simparams%confname_file, ".dat")
             if (mxt_idx /= 0 .and. dat_idx /= 0 .and. dat_idx == mxt_idx+12) then
-                call random_number(rnd)
+                !call random_number(rnd)
+                rnd = ranx(simparams%nran,seed,-1)
                 new_conf = int(rnd*simparams%nconfs)+1
                 write(simparams%confname_file, '(a, i8.8, a)') simparams%confname_file(:mxt_idx+3), new_conf, ".dat"
             else
@@ -889,7 +898,8 @@ contains
             mxt_idx = index(simparams%merge_proj_file, "mxt_")
             dat_idx = index(simparams%merge_proj_file, ".dat")
             if (mxt_idx /= 0 .and. dat_idx /= 0 .and. dat_idx == mxt_idx+12) then
-                call random_number(rnd)
+                !call random_number(rnd)
+                rnd = ranx(simparams%nran,seed,-1)
                 new_conf = int(rnd*simparams%merge_proj_nconfs)+1
                 write(simparams%merge_proj_file, '(a, i8.8, a)') simparams%merge_proj_file(:mxt_idx+3), new_conf, ".dat"
             else
@@ -900,7 +910,7 @@ contains
             call read_mxt(proj, simparams%merge_proj_file)
             call read_mxt(slab, simparams%confname_file)
 
-            call merge_universes(slab, proj)
+            call merge_universes(slab, proj, seed)
             slab%pes = atoms%pes
             atoms = slab
 
@@ -908,7 +918,7 @@ contains
             print *, err, "multiple trajectories only available for <conf merge> option"; stop
         end if
 
-        if (any(atoms%is_proj)) call set_proj_incidence(atoms)
+        if (any(atoms%is_proj)) call set_proj_incidence(atoms, seed)
 
     end subroutine prepare_next_traj
 

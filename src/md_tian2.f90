@@ -38,6 +38,7 @@ program md_tian2
     implicit none
 
     integer :: itraj, istep, i
+    integer*8 :: seed
     real(dp) :: tmp
     type(universe) :: atoms
 
@@ -103,12 +104,14 @@ program md_tian2
                 if (any(simparams%output_type == output_id_scatter)) call output(atoms, itraj, istep, "scatter_final")
 
                 if (itraj < simparams%start+simparams%ntrajs-1) then
-                    call random_seed(put=randseed)  ! Seed random number generator
-                    do i = 1, 100*(itraj+1)
-                        call random_number(tmp)   ! rotate it according to trajectory number
-                    end do
+                    !call random_seed(put=randseed)  ! Seed random number generator
+                    !do i = 1, 100*(itraj+1)
+                    !    call random_number(tmp)   ! rotate it according to trajectory number
+                    !end do
+                    seed = itraj + 1
+                    tmp = ranx(simparams%nran,seed,1)
 
-                    call prepare_next_traj(atoms)
+                    call prepare_next_traj(atoms, seed)
                 end if
 
             end do
