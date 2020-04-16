@@ -77,7 +77,7 @@ program md_tian2
 
                 do istep = 1, simparams%nsteps
 
-                    if (simparams%details == .true. )
+                    if (simparams%details == .true.) then 
                         print *, "MD step ", istep
                     end if
 

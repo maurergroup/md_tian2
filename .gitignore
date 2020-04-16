@@ -13,6 +13,8 @@ RuNNer_input/*
 # conf folder
 conf/pos* 
 conf/mxt*
+conf/proj
+conf/latt
 !conf/proj/mxt_00000001.dat
 !conf/latt/mxt_00000001.dat
 # traj folder
