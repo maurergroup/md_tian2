@@ -74,6 +74,7 @@ module run_config
         integer  :: maxit                                           ! maximum number of iteration during fit
         integer  :: nthreads                                        ! number of threads used for fitting
         integer  :: nran                                            ! type of the random number genreator
+        logical  :: details                                         ! if true a lot of information is writtenj during each md step
 
     end type
 
@@ -123,6 +124,7 @@ contains
         new_simulation_parameters%maxit = 30
         new_simulation_parameters%nthreads = 1
         new_simulation_parameters%nran = default_int
+        new_simulation_parameters%details = default_bool
 
     end function
 
@@ -165,21 +167,21 @@ contains
                         else
                             print *, err, 'start key needs a single argument'; stop
                         end if
-                    case('random_number_generator')
-                        if (simparams%nran /= default_int) stop 'Error in the input file: Multiple use of the random_number_generator key'
+                    case('rng_type')
+                        if (simparams%nran /= default_int) stop 'Error in the input file: Multiple use of the rng_type key'
                         if (nwords == 2) then
                             read(words(2),'(i1000)', iostat=ios) simparams%nran
-                            if (ios /= 0) stop err // 'random_number_generator value must be integer'
+                            if (ios /= 0) stop err // 'rng_type value must be integer'
                             select case (words(2))
 
                                 case ('1', '2')
                                         ! let the valid types pass
                                 case default
-                                    print *, 'Unknown random_number_generator type'; stop
+                                    print *, err, 'Unknown rng_type value'; stop
 
                             end select
                         else
-                            print *, err, 'random_number_generator key needs a single argument'; stop
+                            print *, err, 'rng_type key needs a single argument'; stop
                         end if
 
                 end select
@@ -197,6 +199,13 @@ contains
         !do i = 1, 100*simparams%start
         !    call random_number(rnd)
         !end do
+        ! in case the rng_type is missing in the input file
+        if (simparams%nran == default_int) then
+            simparams%nran = 1
+        end if
+
+
+
         seed = simparams%start
         rnd = ranx(simparams%nran,seed,1)
 
@@ -216,7 +225,7 @@ contains
                     case ('start')
                         ! pass
 
-                    case ('random_number_generator')
+                    case ('rng_type')
                         ! pass
 
                     case ('run')
@@ -607,6 +616,14 @@ contains
                         read(words(2), *, iostat=ios) simparams%nthreads
                         if (ios /= 0) stop err // "Error reading number of threads"
 
+                    case ('detailed_step')
+                        if (simparams%details /= default_bool) stop err // 'Multiple use of the detailed_step key'
+                        if (nwords == 1) then
+                            simparams%details = .true.
+                        else
+                            print *, err, 'detailed_step key needs no argument(s)'
+                            stop
+                        end if
 
                     case default
                         if (trim(words(1)) /= '' .and. words(1)(1:1) /= '!') &

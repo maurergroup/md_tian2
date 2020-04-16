@@ -80,7 +80,7 @@ contains
 
         integer  :: nran, i ! set which rng to use
         real(dp) :: rnd
-        integer*8, intent(inout) :: seed ! the seed will be the trajectory id
+        integer*8, intent(in) :: seed ! the seed will be the trajectory id
         integer :: switch
         !integer, optional :: start
         !real(dp) :: ran3
@@ -119,7 +119,23 @@ contains
                 
             case (2) ! rng with traj id as seed
 
-                rnd = ran3(seed)
+                print *, 'This type of RNG is not implemented yet!'
+                stop
+
+               !select case (switch)
+
+               !    case (1)
+               !        ! just let it pass
+
+               !    case (-1)
+
+               !        rnd = ran2(seed)
+
+               !    case default
+               !         print *, 'Unknown value for switch in ranx function'
+               !         stop
+
+               !end select
 
             case default
 
@@ -130,24 +146,24 @@ contains
 
     end function ranx
 
-    function ran3(seed) result(rnd)
+    function ran2(seed) result(rnd)
 
         implicit none
 
         real(dp) :: rnd
-        integer*8, intent(inout) :: seed
+        integer*8, intent(in) :: seed
         !real*8 :: xorshift64star
 
         rnd = xorshift64star(seed)
 
-    end function ran3
+    end function ran2
 
     function xorshift64star(state) result(rnd)
 
         implicit none
 
         real*8 :: rnd
-        integer*8, intent(inout) :: state
+        integer*8, intent(in) :: state
 
         integer*8 :: b(4)
         integer*8, parameter :: f(4) = [56605, 20332, 62609, 9541] ! 2685821657736338717 in base 2**16

@@ -77,9 +77,9 @@ program md_tian2
 
                 do istep = 1, simparams%nsteps
 
-                    !if (print_step == .true. )
-                    !    print *, "MD step ", istep
-                    !end if
+                    if (simparams%details == .true. )
+                        print *, "MD step ", istep
+                    end if
 
                     ! core propagation
                     call propagate_1(atoms)
