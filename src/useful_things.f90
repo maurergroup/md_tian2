@@ -81,7 +81,9 @@ contains
         integer  :: nran, i ! set which rng to use
         real(dp) :: rnd
         integer*8, intent(inout) :: seed ! the seed will be the trajectory id
-        integer :: switch
+        integer :: switch, sizeseed
+        integer, dimension(1) :: putseed
+        integer, dimension(1) :: getseed
         !integer, optional :: start
         !real(dp) :: ran3
 
@@ -94,44 +96,72 @@ contains
 
                 select case (switch)
 
-                case (1) ! fixed seed, rotation according to traj id
+                    case (0) ! fixed seed, rotation according to traj id
 
-                    ! size of seed for random number generator
-                    randk=size(randseed)
-                    call random_seed(size=randk)
-                    call random_seed(put=randseed)
+                        ! size of seed for random number generator
+                        randk=size(randseed)
+                        call random_seed(size=randk)
+                        call random_seed(put=randseed)
 
-                    ! rotate rng
-                    do i = 1, 100*seed
+                        ! rotate rng
+                        do i = 1, 100*seed
+                            call random_number(rnd)
+                        end do
+
+                    case (1)
+
                         call random_number(rnd)
-                    end do
 
-                case (-1)
+                    case default
 
-                    call random_number(rnd)
-
-                case default
-
-                    print *, 'Unknown value for switch in ranx function'
-                    stop
+                        print *, 'Unknown value for switch in ranx function'
+                        stop
                 
                 end select
+
+            case (2) ! seed is traj id, with rotation
+
+                select case (switch)
+
+                    case (0)
+                        !sizeseed = 1
+                        !call random_seed(size=sizeseed)
+                        putseed = (/seed/)
+                        call random_seed(put=putseed)
+                        !call random_seed(get=getseed)
+                        !print *, getseed
+
+                        !do i = 1, 100*seed
+                        !call random_number(rnd)
+                        !end do
+
+                    case (1)
+
+                        call random_number(rnd)
+                        print *, rnd
+
+                    case default
+
+                        print *, 'Unknown value for switch in ranx function'
+                        stop
+
+                end select
                 
-            case (2) ! rng with traj id as seed
+            case (3) ! rng with traj id as seed
 
                 !print *, 'This type of RNG is not implemented yet!'
                 !stop
 
                 select case (switch)
 
-                    case (1)
+                    case (0)
                         ! just let it pass
-                        rnd = ran2(seed)
+                        !rnd = ran2(seed)
 
-                    case (-1)
-
-                        print *, 'The reproducability of a single trajectory is not guaranteed yet'
+                    case (1)
+                        print *, seed
                         rnd = ran2(seed)
+                        print *, rnd
 
                     case default
                          print *, 'Unknown value for switch in ranx function'

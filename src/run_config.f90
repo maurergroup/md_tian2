@@ -133,7 +133,7 @@ contains
         character(len=*), intent(in) :: input_file
 
         integer :: i, ios = 0, line = 0, nwords, randk
-        real(dp) :: rnd
+        real(dp) :: rnd, tmp
         integer*8 :: seed
         character(len=max_string_length) :: buffer
         character(len=max_string_length) :: words(100)
@@ -207,7 +207,7 @@ contains
 
 
         seed = simparams%start
-        rnd = ranx(simparams%nran,seed,1)
+        tmp = ranx(simparams%nran,seed,0) ! seed the RNG
 
         ! read rest of the input file
         call open_for_read(inp_unit, input_file); ios = 0
@@ -468,8 +468,8 @@ contains
                                         read(words(4),'(i1000)',iostat=ios) simparams%nconfs
                                         if (ios /= 0) stop err // 'conf key - mxt argument must be integer'
                                         !call random_number(rnd)
-                                        rnd = ranx(simparams%nran,seed,-1)
-                                        write(simparams%confname_file, '(2a, i8.8, a)') trim(simparams%confname_file), "/mxt_", int(rnd*simparams%nconfs)+1, ".dat"
+                                        rnd = ranx(simparams%nran,seed,1)
+                                        write(simparams%confname_file, '(2a, i8.8, a)') trim(simparams%confname_file), "mxt_", int(rnd*simparams%nconfs)+1, ".dat"
                                     end if
                                     if (nwords < 3) stop err // 'conf key - too few mxt arguments'
                                     if (nwords > 4) stop err // 'conf key - too many mxt arguments'
@@ -483,18 +483,22 @@ contains
                                     read(words(4),'(i1000)',iostat=ios) simparams%merge_proj_nconfs
                                     if (ios /= 0) stop err // "conf key - number of configurations must be integer"
                                     !call random_number(rnd)
-                                    rnd = ranx(simparams%nran,seed,-1)
+                                    rnd = ranx(simparams%nran,seed,1)
+                                    print *, 'merge mxt file 1', rnd
                                     write(simparams%merge_proj_file, '(2a, i8.8, a)') &
                                         trim(simparams%merge_proj_file), "/mxt_", int(rnd*simparams%merge_proj_nconfs)+1, ".dat"
 
+                                    print *, simparams%merge_proj_file
                                     ! slab
                                     read(words(5),'(A)') simparams%confname_file
                                     read(words(6),'(i1000)',iostat=ios) simparams%nconfs
                                     if (ios /= 0) stop err // "conf key - number of configurations must be integer"
                                     !call random_number(rnd)
-                                    rnd = ranx(simparams%nran,seed,-1)
+                                    rnd = ranx(simparams%nran,seed,1)
+                                    print *, 'merge mxt file 2', rnd
                                     write(simparams%confname_file, '(2a, i8.8, a)') &
                                         trim(simparams%confname_file), "/mxt_", int(rnd*simparams%nconfs)+1, ".dat"
+                                    print *, simparams%confname_file
 
 
                                 case default

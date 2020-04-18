@@ -109,7 +109,9 @@ program md_tian2
                     !    call random_number(tmp)   ! rotate it according to trajectory number
                     !end do
                     seed = itraj + 1
-                    tmp = ranx(simparams%nran,seed,1)
+                    !call random_seed(get=tmp)
+                    !print *, tmp_int
+                    tmp = ranx(simparams%nran,seed,0) ! new seed for RNG
 
                     call prepare_next_traj(atoms, seed)
                 end if
