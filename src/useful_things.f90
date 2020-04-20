@@ -78,14 +78,11 @@ contains
 
         implicit none
 
-        integer  :: nran, i ! set which rng to use
+        integer  :: nran ! set which rng to use
         real(dp) :: rnd
         integer*8, intent(inout) :: seed ! the seed will be the trajectory id
-        integer :: switch, sizeseed
+        integer :: switch, i
         integer, dimension(1) :: putseed
-        integer, dimension(1) :: getseed
-        !integer, optional :: start
-        !real(dp) :: ran3
 
         integer :: randk
 
@@ -119,26 +116,22 @@ contains
                 
                 end select
 
-            case (2) ! seed is traj id, with rotation
+            case (2) ! seed is traj id, without rotation
 
                 select case (switch)
 
                     case (0)
-                        !sizeseed = 1
-                        !call random_seed(size=sizeseed)
+
                         putseed = (/seed/)
                         call random_seed(put=putseed)
-                        !call random_seed(get=getseed)
-                        !print *, getseed
 
                         !do i = 1, 100*seed
-                        !call random_number(rnd)
+                            !call random_number(rnd)
                         !end do
 
                     case (1)
 
                         call random_number(rnd)
-                        print *, rnd
 
                     case default
 
@@ -149,19 +142,16 @@ contains
                 
             case (3) ! rng with traj id as seed
 
-                !print *, 'This type of RNG is not implemented yet!'
-                !stop
-
                 select case (switch)
 
                     case (0)
+
+                        print *, 'Warning: Reproducability of random numbers not guarenteed when recalculate single trajectory!'
                         ! just let it pass
-                        !rnd = ran2(seed)
 
                     case (1)
-                        print *, seed
-                        rnd = ran2(seed)
-                        print *, rnd
+
+                        rnd = ran3(seed)
 
                     case default
                          print *, 'Unknown value for switch in ranx function'
@@ -178,18 +168,21 @@ contains
 
     end function ranx
 
-    function ran2(seed) result(rnd)
+    function ran3(seed) result(rnd)
 
         implicit none
 
         real(dp) :: rnd
         integer*8, intent(inout) :: seed
-        !real*8 :: xorshift64star
 
         rnd = xorshift64star(seed)
 
-    end function ran2
+    end function ran3
 
+    ! xorshift64*
+    ! took implementation of the algorithm in the Spire package as reference (MIT license)
+    ! https://github.com/typelevel/spire/blob/master/extras/src/main/scala/spire/random/rng/XorShift64Star.scala
+    ! has a period of 2**64-1, translated to fortran by JAF
     function xorshift64star(state) result(rnd)
 
         implicit none
@@ -205,13 +198,33 @@ contains
         state = ieor(state, ishft(state,  25))
         state = ieor(state, ishft(state, -27))
 
+        ! fortran has no unsigned ints.
+        ! below would be how we convert signed to unsigned (twos complement)
+        ! if (x < 0) then
+        !   x = 2_16**64 + state
+        ! else
+        !   x = state
+        ! end if
+        ! doing the modulo is equivalent however
+        ! BUT: no 128 bit int support from intel compiler
+        ! we therefore use some trickery by transforming the number into base 2**16
+        ! the version below would work with gnu compiler
+        ! x = modulo(state * 2685821657736338717_16, 2_16**64)
+        ! rnd = real(x, 8) / 2_16**64
+        ! write(*,*) rnd
+        ! this is the version for intel
+
         call toBase16(state, b)
         call multBase16(b, f, m)
-
+        ! call fromBase16(m, xx)
+        ! to return a double we divide by 2^64
         rnd = m(4) / 2.d0**16 + m(3) / 2.d0**32 + m(2) / 2.d0**48 + m(1) / 2.d0**64
 
     end function xorshift64star
 
+    ! becaus we cannot use 128 bit ints in ifort we represent our number using 4 ints in base 2**16
+    ! x = sum_i b(i) * 2**(16*(i-1))
+    ! treats x as unsigned int
     subroutine toBase16(x, b)
 
         implicit none
@@ -236,6 +249,25 @@ contains
 
     end subroutine
 
+    ! also treats x as unsigned int
+    subroutine fromBase16(b, x) ! not needed, but left in for support information
+
+        implicit none
+
+        integer*8, intent(in) :: b(4)
+        integer*8, intent(out) :: x
+        integer*8 :: t
+        integer :: i
+
+        x = 0
+        do i=1,3
+            x = x + b(i) * 2_8**(16*(i-1))
+        end do
+        x = x + modulo(b(4), 2_8**16) * 2_8**(16*3)
+
+    end subroutine
+
+    ! does multiplication mod 2**64 of two numbers in the base of 2**16
     subroutine multBase16(a, b, c)
 
         implicit none

@@ -12,26 +12,26 @@ Source code is in Fortran.
 List of modules: -> maybe also here, but put in manual!
 2do: add RuNNer related files in the following list
 
-constants.f90           : contains the global constants
-fit.f90                 : fitting routine for EMT
-force.f90               : get the energies/forces in molecular dynamics simulation
-geometry_opt.f90        : relax structure
-md_algo.f90             : contains propagation algorithms for molecular dynamics simulation
-md_init.f90             : initialize molecular dynamics simulation
-md_tian.f90             : main program
-open_file.f90           : input/output routines
-output_mod.f90          : output format routines
-pes_emt_mod.f90         : contains the EMT potential
-pes_ho_mod.f90          : contains the
-pes_lj_mod.f90          : contains the Lennard-Jones potential
-pes_nene_mod.f90        : contains the high-dimensional neural network potential (external call of RuNNer)
-pes_non_mod.f90         : contains the non-interaction potential
-pes_rebo_mod.f90        : contains the empirical reactive bond order potential
-rpmd.f90                : contains the ring-polymer molecular dynamics simulation routine
-run_config.f90          : initialize simulation parameters, read in input files
-trajectory_info.f90     : collect information from the calculated trajectories
-universe_mod.f90        : contains definitions of user types and all constants
-useful_things.f90       : useful math routines
+	constants.f90		contains the global constants
+	fit.f90			fitting routine for EMT
+	force.f90		get the energies/forces in molecular dynamics simulation
+	geometry_opt.f90	relax structure
+	md_algo.f90		contains propagation algorithms for molecular dynamics simulation
+	md_init.f90		initialize molecular dynamics simulation
+	md_tian.f90		main program
+	open_file.f90		input/output routines
+	output_mod.f90		output format routines
+	pes_emt_mod.f90		contains the EMT potential
+	pes_ho_mod.f90		contains the
+	pes_lj_mod.f90		contains the Lennard-Jones potential
+	pes_nene_mod.f90	contains the high-dimensional neural network potential (external call of RuNNer)
+	pes_non_mod.f90		contains the non-interaction potential
+	pes_rebo_mod.f90	contains the empirical reactive bond order potential
+	rpmd.f90		contains the ring-polymer molecular dynamics simulation routine
+	run_config.f90		initialize simulation parameters, read in input files
+	trajectory_info.f90	collect information from the calculated trajectories
+	universe_mod.f90	contains definitions of user types and all constants
+	useful_things.f90	useful math routines
 
 
 

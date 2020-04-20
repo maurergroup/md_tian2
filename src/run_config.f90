@@ -174,7 +174,7 @@ contains
                             if (ios /= 0) stop err // 'rng_type value must be integer'
                             select case (words(2))
 
-                                case ('1', '2')
+                                case ('1', '2', '3')
                                         ! let the valid types pass
                                 case default
                                     print *, err, 'Unknown rng_type value'; stop
@@ -190,16 +190,7 @@ contains
 
         close(inp_unit)
 
-        ! size of seed for random number generator
-        !randk=size(randseed)
-        !call random_seed(size=randk)
-        !call random_seed(put=randseed)
-
-        ! rotate rng
-        !do i = 1, 100*simparams%start
-        !    call random_number(rnd)
-        !end do
-        ! in case the rng_type is missing in the input file
+        ! in case the rng_type key is missing in the input file
         if (simparams%nran == default_int) then
             simparams%nran = 1
         end if
@@ -467,7 +458,6 @@ contains
                                     if (nwords == 4) then
                                         read(words(4),'(i1000)',iostat=ios) simparams%nconfs
                                         if (ios /= 0) stop err // 'conf key - mxt argument must be integer'
-                                        !call random_number(rnd)
                                         rnd = ranx(simparams%nran,seed,1)
                                         write(simparams%confname_file, '(2a, i8.8, a)') trim(simparams%confname_file), "mxt_", int(rnd*simparams%nconfs)+1, ".dat"
                                     end if
@@ -482,24 +472,17 @@ contains
                                     read(words(3),'(A)') simparams%merge_proj_file
                                     read(words(4),'(i1000)',iostat=ios) simparams%merge_proj_nconfs
                                     if (ios /= 0) stop err // "conf key - number of configurations must be integer"
-                                    !call random_number(rnd)
                                     rnd = ranx(simparams%nran,seed,1)
-                                    print *, 'merge mxt file 1', rnd
                                     write(simparams%merge_proj_file, '(2a, i8.8, a)') &
                                         trim(simparams%merge_proj_file), "/mxt_", int(rnd*simparams%merge_proj_nconfs)+1, ".dat"
 
-                                    print *, simparams%merge_proj_file
                                     ! slab
                                     read(words(5),'(A)') simparams%confname_file
                                     read(words(6),'(i1000)',iostat=ios) simparams%nconfs
                                     if (ios /= 0) stop err // "conf key - number of configurations must be integer"
-                                    !call random_number(rnd)
                                     rnd = ranx(simparams%nran,seed,1)
-                                    print *, 'merge mxt file 2', rnd
                                     write(simparams%confname_file, '(2a, i8.8, a)') &
                                         trim(simparams%confname_file), "/mxt_", int(rnd*simparams%nconfs)+1, ".dat"
-                                    print *, simparams%confname_file
-
 
                                 case default
                                     stop 'Error in the input file: conf key - unknown conf name'

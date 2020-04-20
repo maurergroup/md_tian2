@@ -510,11 +510,8 @@ contains
         do k = 1, dimensionality
             ! draw random number from direct coordinates, then convert to cartesian
             if (simparams%pip(k) == random_position) then
-                !call random_number(target_position)
                 target_position = ranx(simparams%nran,seed,1)
-                print *, 'target_position 1', target_position
                 target_position = target_position * sum(atoms%simbox(:,k))
-                print *, 'target_position 2', target_position
 
             else
                 read(simparams%pip(k), *, iostat=ios) target_position
@@ -830,7 +827,6 @@ contains
 
         ! set the azimuth angle
         if (simparams%azimuth == random_position) then
-            !call random_number(chosen_azimuth)
             chosen_azimuth = ranx(simparams%nran,seed,1)
             chosen_azimuth = 2 * pi * chosen_azimuth
         else
