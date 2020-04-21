@@ -1,5 +1,9 @@
 #!/usr/bin/env python
 
+# Original version written by Marvin Kammler
+# Modified ... by Sebastian Wille and Nils Hertl
+# things chaged ...  ! change version number
+
 # intention: create all necessary output files for plotting with next script
 
 import os, sys, math, copy, numpy, time

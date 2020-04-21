@@ -19,6 +19,8 @@ conf/latt
 !conf/latt/mxt_00000001.dat
 # traj folder
 traj/
+# poscar folder
+poscar/
 # Manual
 *.aux
 *.bbl

@@ -82,6 +82,9 @@ contains
                     case (output_id_scatter)
                         ! pass
 
+                    case (output_id_nene)
+                        simparams%details = .true.
+
                     case default
                         print *, err // "unknown output format", simparams%output_type(i)
                         stop
@@ -261,7 +264,7 @@ contains
 
         character(len=max_string_length)    :: fname
         character(len=8)                    :: traj_id_vasp
-        character(len=8)                    :: step_id_vasp
+        character(len=6)                    :: step_id_vasp
 
         integer                             :: time_vals(8), noccurrences(atoms%ntypes), i, j
         real(dp)                            :: cents(3, atoms%natoms) ! for the beads to get center of mass
@@ -269,7 +272,8 @@ contains
         zero_step = 0 ! write the initial structure to step 0 file
 
         ! XXX: change system() to execute_command_line() when new compiler is available
-        if (.not. dir_exists('conf')) call system('mkdir conf')
+        !if (.not. dir_exists('conf')) call system('mkdir conf')
+        if (.not. dir_exists('poscar')) call system('mkdir poscar')
 
         ! prepare arrays
         noccurrences = 0
@@ -279,13 +283,13 @@ contains
 
         ! open file conf/poscar_%08d.dat
         if (istep == -1) then ! initial structure
-             write(step_id_vasp,'(i8.8)') zero_step
+             write(step_id_vasp,'(i6.6)') zero_step
              !out_id_vasp = 0
         else
-             write(step_id_vasp,'(i8.8)') istep
+             write(step_id_vasp,'(i6.6)') istep
         end if
         write(traj_id_vasp,'(i8.8)') itraj
-        fname = 'conf/poscar_trj_'//traj_id_vasp//'_step_'//step_id_vasp//'.POSCAR'
+        fname = 'poscar/'//traj_id_vasp//'step'//step_id_vasp//'.POSCAR'
         call open_for_write(out_unit, fname)
 
         ! write date and time as comment line

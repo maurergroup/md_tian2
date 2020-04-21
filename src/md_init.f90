@@ -592,7 +592,7 @@ contains
 
         this = new
 
-        print *, this%r, this%name
+        !print *, this%r, this%name
 
         ! fold all centroids into simulation box
         centroids = calc_centroid_positions(this)

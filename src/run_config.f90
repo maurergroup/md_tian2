@@ -74,7 +74,7 @@ module run_config
         integer  :: maxit                                           ! maximum number of iteration during fit
         integer  :: nthreads                                        ! number of threads used for fitting
         integer  :: nran                                            ! type of the random number genreator
-        logical  :: details                                         ! if true a lot of information is writtenj during each md step
+        logical  :: details                                         ! if true a lot of information is written during each md step mostly in RuNNer
 
     end type
 
@@ -513,6 +513,8 @@ contains
                                     simparams%output_type(i) = output_id_mxt
                                 case (output_key_scatter)
                                     simparams%output_type(i) = output_id_scatter
+                                case (output_key_nene)
+                                    simparams%output_type(i) = output_id_nene
                                 case default
                                     print *, 'Error in the input file: output format ', trim(words(2*i)), ' unknown'
                                     stop
@@ -603,14 +605,14 @@ contains
                         read(words(2), *, iostat=ios) simparams%nthreads
                         if (ios /= 0) stop err // "Error reading number of threads"
 
-                    case ('detailed_step')
-                        if (simparams%details /= default_bool) stop err // 'Multiple use of the detailed_step key'
-                        if (nwords == 1) then
-                            simparams%details = .true.
-                        else
-                            print *, err, 'detailed_step key needs no argument(s)'
-                            stop
-                        end if
+                    !case ('detailed_step')
+                        !if (simparams%details /= default_bool) stop err // 'Multiple use of the detailed_step key'
+                        !if (nwords == 1) then
+                            !simparams%details = .true.
+                        !else
+                            !print *, err, 'detailed_step key needs no argument(s)'
+                            !stop
+                        !end if
 
                     case default
                         if (trim(words(1)) /= '' .and. words(1)(1:1) /= '!') &

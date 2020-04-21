@@ -157,5 +157,6 @@ clean:
 help:
 	@echo ''
 	@echo 'make serial		serial version, default'
+	@echo 'make debug		debug version, developer only'
 	@echo 'make clean		delete all object, module and binary files'
 	@echo ''
