@@ -592,6 +592,8 @@ contains
 
         this = new
 
+        print *, this%r, this%name
+
         ! fold all centroids into simulation box
         centroids = calc_centroid_positions(this)
         centroids = matmul(this%isimbox, centroids)
