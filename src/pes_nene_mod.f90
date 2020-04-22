@@ -79,7 +79,7 @@ module pes_nene_mod
     real(dp) :: lattice(3,3)
     real(dp) :: xyzstruct(3,atoms%natoms)
     real(dp) :: volume
-    real(dp) :: dmin_temp(nelem*(nelem+1)/2)
+    real(dp) :: dmin_temp(atoms%ntypes*(atoms%ntypes+1)/2) ! dmin_temp(nelem*(nelem+1)/2)
 
     character(len=2) :: elementsymbol(atoms%natoms)
 
@@ -91,7 +91,7 @@ module pes_nene_mod
       integer nn_type_short_local                    ! internal
       integer nn_type_elec_local
       integer num_pairs                        ! in
-      integer zelem(max_num_atoms)             ! internal
+      integer zelem(atoms%natoms)             ! internal
 
       !real*8  funccutoff_local                 ! internal
       !real*8  lattice(3,3)                     ! internal
@@ -119,20 +119,17 @@ module pes_nene_mod
     contains
 
 !   2do in the whole module:
-!   seed for the random number generator should be the trajectory number, not a sum of start number and total number of trajectories
 !   variable declarations concerning RuNNer in the corresponding modules, but set to (our) default values has to be done before reading out keywords (own subroutine called in compute_nene)
 !
 !   check how many mpi routines have to stay in the code, at least set the few default values so that no error will occur due to wrong default mpi settings, therefore the mpi_dummy_routines.f90 file makes sense
 !   declare all needed variables which are not declared in modules (especially look at main, initnn, predict)
 !
 !   check if every useful information concerning RuNNer setup is written (like printinputnn etc.)
-!   add things concerning extrapolation warnings like in the RuNNer-LAMMPS interface
-!   sort elements when reading in the structure from poscar, mxt, xyz files!!
-!   ask Sascha about writing 2 (1) additional files per trajectory (wanted?)
+!   add things concerning extrapolation warnings like in the RuNNer-LAMMPS interface -> test in RuNNer source code, then copy files
+!   ask Sascha about writing 2 (1) additional output structure files per trajectory (step 0 and last step repeated -> wanted?)
 !   check latest version of RuNNer files if all cases for symmetry functions (5,6 as debug functions etc.) are still included
 !   check latest version of RuNNer files if any keyword changed, removed or added
 !   change all declarations to our standard (real*8 -> real(dp), char*2 -> char(len=2) etc.)
-!   move readout of input.nn from single module to subroutines like in RuNNer to avoid problems with variable dimensions (otherwise much more has to be de-/allocated)!!
 
 
     ! Here all necessary files and keywords are read in for the high-dimensional neural network potentials (HDNNPs)
@@ -344,12 +341,12 @@ module pes_nene_mod
                         end if
 
                     case ('electrostatic_type', 'nn_type_elec')
-                        if (nn_type_elec /= default_int) stop err // err_inpnn // 'Multiple use of the electrostatic_type/nn_type_elec key'
+                        if (nn_type_elec /= default_int) stop err // err_inpnn // 'Multiple use of the electrostatic_type / nn_type_elec key'
                         if (nwords == 2) then
                             read(words(2),'(i1000)', iostat=ios) nn_type_elec
-                            if (ios /= 0) stop err // err_inpnn // "electrostatic_type/nn_type_elec value must be integer"
+                            if (ios /= 0) stop err // err_inpnn // "electrostatic_type / nn_type_elec value must be integer"
                         else
-                            print *, err, err_inpnn, "electrostatic_type/nn_type_elec key needs a single argument"; stop
+                            print *, err, err_inpnn, "electrostatic_type / nn_type_elec key needs a single argument"; stop
                         end if
 
                     case default
@@ -432,7 +429,7 @@ module pes_nene_mod
                             lfound_nelem = .true.
                             read(words(2),'(i1000)', iostat=ios) nelem
                             if (ios /= 0) stop err // err_inpnn // "number_of_elements value must be integer"
-                            if (nelem /= atoms%ntypes) stop err // err_inpnn // "number of elements in input.nn and in structure file differ"
+                            if (nelem /= atoms%ntypes) stop err // err_inpnn // "number of elements in input.nn and in structure file differ" ! is ntypes always number of elements?
                             npairs = 0
                             do npairs_counter_1 = 1,nelem
                                 do npairs_counter_2 = npairs_counter_1,nelem
@@ -1246,7 +1243,12 @@ module pes_nene_mod
         end do
 
         ! a periodic structure is assumed
-        call translate(atoms%natoms,lattice,xyzstruct)
+
+        !call translate(atoms%natoms,lattice,xyzstruct)
+
+        if(lperiodic)then ! we always assume a periodic structure
+            call translate(num_atoms,lattice,xyzstruct)
+        endif
 
         !! check if lattice vectors make sense
         if(lperiodic)then
@@ -2887,59 +2889,59 @@ module pes_nene_mod
         character(len=*), parameter :: err = "Error in compute_nene: "
 
         ! from predict.f90
-        integer zelem(max_num_atoms)                           ! internal
+        integer zelem(atoms%natoms)                           ! internal
         integer num_atoms                                      ! internal
         integer num_pairs                                      ! internal
         integer num_atoms_element(nelem)                       ! internal
         integer i1,i2,i3,i4                                    ! internal
         integer counter                                        ! internal
-        integer pairs_charge(2,max_num_pairs)                  ! internal
+        !integer pairs_charge(2,max_num_pairs)                  ! internal
 
-        real*8 lattice(3,3)                                    ! internal
-        real*8 xyzstruct(3,max_num_atoms)                      ! internal
-        real*8 minvalue_short_atomic(nelem,maxnum_funcvalues_short_atomic)  ! internal
-        real*8 maxvalue_short_atomic(nelem,maxnum_funcvalues_short_atomic)  ! internal
-        real*8 avvalue_short_atomic(nelem,maxnum_funcvalues_short_atomic)   ! internal
-        real*8 minvalue_elec(nelem,maxnum_funcvalues_elec)     ! internal
-        real*8 maxvalue_elec(nelem,maxnum_funcvalues_elec)     ! internal
-        real*8 avvalue_elec(nelem,maxnum_funcvalues_elec)      ! internal
-        real*8 minvalue_short_pair(npairs,maxnum_funcvalues_short_pair)  ! internal
-        real*8 maxvalue_short_pair(npairs,maxnum_funcvalues_short_pair)  ! internal
-        real*8 avvalue_short_pair(npairs,maxnum_funcvalues_short_pair)   ! internal
+        real(dp) :: lattice(3,3)                                    ! internal
+        real(dp) :: xyzstruct(3,atoms%natoms)                      ! internal
+        real(dp) :: minvalue_short_atomic(nelem,maxnum_funcvalues_short_atomic)  ! internal
+        real(dp) :: maxvalue_short_atomic(nelem,maxnum_funcvalues_short_atomic)  ! internal
+        real(dp) :: avvalue_short_atomic(nelem,maxnum_funcvalues_short_atomic)   ! internal
+        real(dp) ::  minvalue_elec(nelem,maxnum_funcvalues_elec)     ! internal
+        real(dp) :: maxvalue_elec(nelem,maxnum_funcvalues_elec)     ! internal
+        real(dp) :: avvalue_elec(nelem,maxnum_funcvalues_elec)      ! internal
+        real(dp) :: minvalue_short_pair(npairs,maxnum_funcvalues_short_pair)  ! internal
+        real(dp) :: maxvalue_short_pair(npairs,maxnum_funcvalues_short_pair)  ! internal
+        real(dp) :: avvalue_short_pair(npairs,maxnum_funcvalues_short_pair)   ! internal
         !real*8, dimension(:,:)  , allocatable :: sens          ! internal
         !real*8, dimension(:,:)  , allocatable :: sense         ! internal
-        real*8 eshort                                          ! internal
-        real*8 volume                                          ! internal
+        real(dp) :: eshort                                          ! internal
+        real(dp) :: volume                                          ! internal
 
-        real*8 totalcharge                                     ! internal
-        real*8 totalenergy                                     ! internal
-        real*8 totalforce(3,max_num_atoms)                     ! internal
-        real*8 atomcharge(max_num_atoms)                       ! internal
-        real*8 atomenergy(max_num_atoms)                       ! internal
+        real(dp) :: totalcharge                                     ! internal
+        real(dp) :: totalenergy                                     ! internal
+        real(dp) :: totalforce(3,atoms%natoms)                     ! internal
+        real(dp) :: atomcharge(atoms%natoms)                       ! internal
+        real(dp) :: atomenergy(atoms%natoms)                       ! internal
 
-        real*8 nntotalenergy                                   ! internal
-        real*8 nnshortenergy                                   ! internal
-        real*8 nntotalcharge                                   ! internal
-        real*8 nnshortforce(3,max_num_atoms)                   ! internal
-        real*8 nntotalforce(3,max_num_atoms)                   ! internal
-        real*8 nnatomcharge(max_num_atoms)                     ! internal
-        real*8 nnatomenergy(max_num_atoms)                     ! internal
-        real*8 nnelecforce(3,max_num_atoms)                    ! internal
-        real*8 nnpairenergy(max_num_pairs)                     ! internal
-        real*8 nnstress(3,3)                                   ! internal
-        real*8 nnstress_short(3,3)                             ! internal
-        real*8 nnstress_elec(3,3)                              ! internal
-        real*8 nnelecenergy                                    ! internal
-        real*8 atomenergysum                                   ! internal
-        real*8 eshortmin                                       ! internal
-        real*8 eshortmax                                       ! internal
+        real(dp) :: nntotalenergy                                   ! internal
+        real(dp) :: nnshortenergy                                   ! internal
+        real(dp) :: nntotalcharge                                   ! internal
+        real(dp) :: nnshortforce(3,atoms%natoms)                   ! internal
+        real(dp) :: nntotalforce(3,atoms%natoms)                   ! internal
+        real(dp) :: nnatomcharge(atoms%natoms)                     ! internal
+        real(dp) :: nnatomenergy(atoms%natoms)                     ! internal
+        real(dp) :: nnelecforce(3,atoms%natoms)                    ! internal
+        !real*8 nnpairenergy(max_num_pairs)                     ! internal
+        real(dp) :: nnstress(3,3)                                   ! internal
+        real(dp) :: nnstress_short(3,3)                             ! internal
+        real(dp) :: nnstress_elec(3,3)                              ! internal
+        real(dp) :: nnelecenergy                                    ! internal
+        real(dp) :: atomenergysum                                   ! internal
+        real(dp) :: eshortmin                                       ! internal
+        real(dp) :: eshortmax                                       ! internal
 
-        real*8 chargemin(nelem)                                ! internal
-        real*8 chargemax(nelem)                                ! internal
-        real*8 pressure                                        ! internal
-        real*8 forcesum(3)                                     ! internal
+        real(dp) :: chargemin(nelem)                                ! internal
+        real(dp) :: chargemax(nelem)                                ! internal
+        real(dp) :: pressure                                        ! internal
+        real(dp) :: forcesum(3)                                     ! internal
 
-        character*2 elementsymbol(max_num_atoms)               ! internal
+        character(len=2) elementsymbol(atoms%natoms)               ! internal
 
         logical lperiodic
 
@@ -2962,8 +2964,7 @@ module pes_nene_mod
         ! 2do in compute_nene:
         ! the elements have to be sorted according to RuNNer before calling the prediction -> better way than calling sortelements in every MD step -> do that once in read_nene subroutine
         ! convert the lattice just once in read_nene and not in every MD step
-        ! print symmetry function values, volume, NN sum, atomic energies, atomic forces only if keyword is given (true, detailed_information or so) every MD step, default is false and only warnings should be printed!
-        ! introduce logic variable for writing information like volume etc.
+        ! print symmetry function values, volume, NN sum, atomic energies, atomic forces only if keyword is given (simparams%details) every MD step, default is false and only warnings should be printed!
         ! include the cleanup function in the md_tian2 source code after the loop over trajectories
         ! compare initnn and initmode3!!
 
@@ -2975,16 +2976,16 @@ module pes_nene_mod
         ! convert position units, commit element symbols and set corresponding RuNNer variables
         do j = 1,atoms%natoms
             xyzstruct(:,j) = atoms%r(:,:,j) * ang2bohr
-            elementsymbol(j) = atoms%name(atoms%idx(j))
-            call nuccharge(elementsymbol(j),zelem(j))
-            lelement(zelem(j)) = .true.
+            !elementsymbol(j) = atoms%name(atoms%idx(j)) ! this is already set
+            !call nuccharge(elementsymbol(j),zelem(j)) ! this is already set
+            !lelement(zelem(j)) = .true. ! this is already set
         end do
 
-        if(lperiodic)then
+        if(lperiodic)then ! we always assume a periodic structure
             call translate(num_atoms,lattice,xyzstruct)
         endif
 
-        do i=1,num_atoms
+        do i=1,num_atoms ! this should move to read_nene
             num_atoms_element(elementindex(zelem(i))) = num_atoms_element(elementindex(zelem(i))) + 1
         enddo
         ! end according to getstructure_mode3.f90
@@ -3049,7 +3050,7 @@ module pes_nene_mod
         ! calculate the volume, needed also for stress
         if (simparams%details == .true.) then
 
-            if (lperiodic) then
+            if (lperiodic) then ! do we need this in each step?
                 volume=0.0d0
                 call getvolume(lattice,volume)
                 if (.not.lmd) then
@@ -3059,14 +3060,14 @@ module pes_nene_mod
             endif
 
             ! combination of short-range and electrostatic stress
-            if(ldostress.and.lperiodic)then
+            if(ldostress.and.lperiodic)then ! maybe remove this in each step!
                 nnstress(:,:)=nnstress_short(:,:)+nnstress_elec(:,:)
                 nnstress(:,:)=nnstress(:,:)/volume
             endif
 
-            ! check sum of forces if requested -> every MD step?
-            if (lcheckf) then
-                forcesum(:)=0.0d0 ! convert to our unit convention!!
+            ! check sum of forces if requested
+            if (lcheckf) then ! do we need this in each step?
+                forcesum(:)=0.0d0
                 do i3=1,num_atoms
                     do i2=1,3
                         forcesum(i2)=forcesum(i2)+nntotalforce(i2,i3)
@@ -3082,7 +3083,7 @@ module pes_nene_mod
                 enddo
             endif
 
-            if (.not.lmd) then
+            if (.not.lmd) then ! do we need this in each step?
                 write(*,*)'-------------------------------------------------------------'
                 !write(*,"(A84, I10)")'NN sum of free atom energies,short range and electrostatic energy for configuration',i4
                 write(*,'(a30,f18.8,a3)')' NN sum of free atom energies ',atomenergysum * timestep_ha2ev,' eV'
@@ -3098,7 +3099,7 @@ module pes_nene_mod
             endif
             write(*,*)'-------------------------------------------------------------'
 
-            if(lelec)then
+            if(lelec)then ! do we need this in each step?
                 !write(*,*)'NNcharges for configuration ',i4
                 do i1=1,num_atoms
                     write(*,'(a10,i6,f14.8)')'NNcharge ',i1,nnatomcharge(i1)
@@ -3115,7 +3116,7 @@ module pes_nene_mod
                 write(*,*)'-------------------------------------------------------------'
             endif
 
-            if(ldostress.and.lperiodic)then
+            if(ldostress.and.lperiodic)then ! do we need this in each step?
                 !write(*,*)'NNstress for the configuration ',i4
                 do i1=1,3
                     write(*,'(a10,3f18.8,a10)')'NNstress ',nnstress(i1,1) * habohrcub2evangcub,&
@@ -3129,7 +3130,7 @@ module pes_nene_mod
                 write(*,*)'-------------------------------------------------------------'
             endif
 
-            if(lsens.and.lshort.and.(nn_type_short.eq.1))then
+            if(lsens.and.lshort.and.(nn_type_short.eq.1))then ! do we need this in each step?
                 do i1=1,nelem
                     do i2=1,num_funcvalues_short_atomic(i1)
                         write(*,'(a15,x,a2,x,i4,f16.8)')' NNsensitivity ',&
@@ -6760,7 +6761,7 @@ subroutine set_defaults()
             if (lvdw) then
                 if (nn_type_vdw == 1) then
 
-                    call read_vdw_coefficients_type_1()
+                    call read_vdw_coefficients_type_1() ! own subroutine
 
                 else
                     print *, err, err_inpnn, 'Error: unknown nn_type_vdw'
