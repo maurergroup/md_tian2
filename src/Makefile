@@ -86,7 +86,6 @@ MODULES      =	constants.o \
 		symfunctions.o \
 		timings.o \
 		fittingoptions.o \
-		pes_nene_mod_supply.o \
 	        pes_nene_mod.o \
 	        force.o \
 	        rpmd.o \
@@ -192,7 +191,7 @@ symfunctions.o: $(RUNNER_SRC_DIR)symfunctions.f90
 
 timings.o: $(RUNNER_SRC_DIR)timings.f90
 	rm $(RUNNER_SRC_DIR)timings.mod ; \
-        $(FC) $(FFLAGS_MPI) -c timings.f90
+        $(FC) $(FFLAGS_MPI) -c $(RUNNER_SRC_DIR)timings.f90
 
 predictionoptions.o: $(RUNNER_SRC_DIR)predictionoptions.f90
 	rm $(RUNNER_SRC_DIR)predicitonoptions.mod ; \

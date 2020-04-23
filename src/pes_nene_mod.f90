@@ -44,6 +44,7 @@ module pes_nene_mod
 
     implicit none
 
+
     !logical :: lprint_detail
 
     integer :: ielem
@@ -74,14 +75,14 @@ module pes_nene_mod
     real(dp) :: funccutoff_local
     real(dp) :: maxcutoff_local
 
-    integer :: max_num_pairs
+    !integer :: max_num_pairs
 
     real(dp) :: lattice(3,3)
-    real(dp) :: xyzstruct(3,atoms%natoms)
+    !!real(dp) :: xyzstruct(3,atoms%natoms) ! declare this in read_nene and compute_nene
     real(dp) :: volume
-    real(dp) :: dmin_temp(atoms%ntypes*(atoms%ntypes+1)/2) ! dmin_temp(nelem*(nelem+1)/2)
+    !!real(dp) :: dmin_temp(atoms%ntypes*(atoms%ntypes+1)/2) ! dmin_temp(nelem*(nelem+1)/2) ! declare this in read_nene and compute_nene
 
-    character(len=2) :: elementsymbol(atoms%natoms)
+    !!character(len=2) :: elementsymbol(atoms%natoms) ! declare this in read_nene and compute_nene
 
     !integer count_struct                     ! internal
       !integer function_type_temp               ! internal
@@ -91,14 +92,14 @@ module pes_nene_mod
       integer nn_type_short_local                    ! internal
       integer nn_type_elec_local
       integer num_pairs                        ! in
-      integer zelem(atoms%natoms)             ! internal
+      !!integer zelem(atoms%natoms) ! declare this in read_nene and compute_nene
 
       !real*8  funccutoff_local                 ! internal
       !real*8  lattice(3,3)                     ! internal
       !real*8  maxcutoff_local                  ! internal
       !real*8  xyzstruct(3,max_num_atoms)       ! internal
            ! internal
-!!
+
       !character*2  elementsymbol(max_num_atoms)! internal
       !character*2  elementtemp1                ! internal
       !character*2  elementtemp2                ! internal
@@ -319,7 +320,9 @@ module pes_nene_mod
                             read(words(2),'(i1000)', iostat=ios) mode
                             if (ios /= 0) stop err // err_inpnn // "runner_mode value must be integer"
                             if (mode /= 3) then
-                                print *, err, err_inpnn, "Only mode 3 (prediction mode) available"; stop
+                                print *, err, err_inpnn, "Only mode 3 (prediction mode) available"
+                                stop
+                            end if
                         else
                             print *, err, err_inpnn, "runner_mode key needs a single argument"; stop
                         end if
@@ -523,7 +526,7 @@ module pes_nene_mod
             allocate(nodes_short_local(0:maxnum_layers_short_atomic))
             nodes_short_local(:) = default_int ! = 0 in getdimensions.f90
         end if
-        if (maxnum_layers_selec .gt. 0) then
+        if (maxnum_layers_elec .gt. 0) then
             allocate(nodes_ewald_local(0:maxnum_layers_elec))
             nodes_ewald_local(:) = default_int ! = 0 in getdimensions.f90
         end if
@@ -540,7 +543,7 @@ module pes_nene_mod
                 select case (words(1))
 
                     case ('global_nodes_short')
-                        if (nodes_short_local /= default_int) stop err // err_inpnn // 'Multiple use of the global_nodes_short key'
+                        if (any(nodes_short_local /= default_int)) stop err // err_inpnn // 'Multiple use of the global_nodes_short key'
                         if (nwords == maxnum_layers_short_atomic+1) then
                             do nodes_counter = 1,maxnum_layers_short_atomic-1
                                 read(words(nodes_counter+1),'(i1000)', iostat=ios) nodes_short_local(nodes_counter)
@@ -551,7 +554,7 @@ module pes_nene_mod
                         end if
 
                     case ('global_nodes_electrostatic')
-                        if (nodes_ewald_local /= default_int) stop err // err_inpnn // 'Multiple use of the global_nodes_electrostatic key'
+                        if (any(nodes_ewald_local /= default_int)) stop err // err_inpnn // 'Multiple use of the global_nodes_electrostatic key'
                         if (nwords == maxnum_layers_elec+1) then
                             do nodes_counter = 1,maxnum_layers_elec-1
                                 read(words(nodes_counter+1),'(i1000)', iostat=ios) nodes_ewald_local(nodes_counter)
@@ -870,7 +873,7 @@ module pes_nene_mod
                                 case ('8')
                                     if (nwords == 6) then
                                         read(words(6),*, iostat=ios) funccutoff_local
-                                        if (ios /= 0) stop err // err_inpnn // "element_symfunction_short type ", words(3) // " argument " // nwords-1 // " must be a number"
+                                        if (ios /= 0) stop err // err_inpnn // "element_symfunction_short type "// words(3) // " argument " // nwords-1 // " must be a number"
                                     else
                                         print *, err, err_inpnn, "element_symfunction_short type ", words(3), " needs 5 arguments"; stop
                                     end if
@@ -890,7 +893,7 @@ module pes_nene_mod
                             end select
 
                         case ('symfunction_short')
-                            read((words(2),'(A)') elementtemp1
+                            read(words(2),'(A)') elementtemp1
                             read(words(3),'(i1000)', iostat=ios) function_type_temp
                             if (ios /= 0) stop err // err_inpnn // "symfunction_short second argument value must be integer"
 
@@ -979,7 +982,7 @@ module pes_nene_mod
 
         end if
 
-        if (nn_type_elec == 1) .or. (nn_type_elec == 3) .or. (nn_type_elec == 4) then
+        if ((nn_type_elec == 1) .or. (nn_type_elec == 3) .or. (nn_type_elec == 4)) then
 
             call open_for_read(inpnn_unit, filename_inpnn); ios = 0
 
@@ -1000,7 +1003,7 @@ module pes_nene_mod
                                 case ('1')
                                     if (nwords == 3) then
                                         read(words(3),*, iostat=ios) funccutoff_local
-                                        if (ios /= 0) stop err // err_inpnn // "global_symfunction_electrostatic type ", words(2), " argument ", nwords-1, " must be a number"
+                                        if (ios /= 0) stop err // err_inpnn // "global_symfunction_electrostatic type "// words(2)//" argument "// nwords-1// " must be a number"
                                     else
                                         print *, err, err_inpnn, "global_symfunction_electrostatic type ", words(2), " needs 2 arguments"; stop
                                     end if
@@ -1008,7 +1011,7 @@ module pes_nene_mod
                                 case ('2')
                                     if (nwords == 5) then
                                         read(words(5),*, iostat=ios) funccutoff_local
-                                        if (ios /= 0) stop err // err_inpnn // "global_symfunction_electrostatic type ", words(2), " argument ", nwords-1, " must be a number"
+                                        if (ios /= 0) stop err // err_inpnn // "global_symfunction_electrostatic type "// words(2)// " argument "// nwords-1// " must be a number"
                                     else
                                         print *, err, err_inpnn, "global_symfunction_electrostatic type ", words(2), " needs 4 arguments"; stop
                                     end if
@@ -1016,7 +1019,7 @@ module pes_nene_mod
                                 case ('3')
                                     if (nwords == 6) then
                                         read(words(6),*, iostat=ios) funccutoff_local
-                                        if (ios /= 0) stop err // err_inpnn // "global_symfunction_electrostatic type ", words(2), " argument ", nwords-1, " must be a number"
+                                        if (ios /= 0) stop err // err_inpnn // "global_symfunction_electrostatic type "// words(2)// " argument "// nwords-1// " must be a number"
                                     else
                                         print *, err, err_inpnn, "global_symfunction_electrostatic type ", words(2), " needs 5 arguments"; stop
                                     end if
@@ -1024,7 +1027,7 @@ module pes_nene_mod
                                 case ('4')
                                     if (nwords == 4) then
                                         read(words(4),*, iostat=ios) funccutoff_local
-                                        if (ios /= 0) stop err // err_inpnn // "global_symfunction_electrostatic type ", words(2), " argument ", nwords-1, " must be a number"
+                                        if (ios /= 0) stop err // err_inpnn // "global_symfunction_electrostatic type "// words(2)// " argument "// nwords-1// " must be a number"
                                     else
                                         print *, err, err_inpnn, "global_symfunction_electrostatic type ", words(2), " needs 3 arguments"; stop
                                     end if
@@ -1032,7 +1035,7 @@ module pes_nene_mod
                                 case ('8')
                                     if (nwords == 5) then
                                         read(words(5),*, iostat=ios) funccutoff_local
-                                        if (ios /= 0) stop err // err_inpnn // "global_symfunction_electrostatic type ", words(2), " argument ", nwords-1, " must be a number"
+                                        if (ios /= 0) stop err // err_inpnn // "global_symfunction_electrostatic type "// words(2)// " argument "// nwords-1// " must be a number"
                                     else
                                         print *, err, err_inpnn, "global_symfunction_electrostatic type ", words(2), " needs 4 arguments"; stop
                                     end if
@@ -1113,7 +1116,7 @@ module pes_nene_mod
                             end select
 
                         case ('symfunction_electrostatic')
-                            read((words(2),'(A)') elementtemp1
+                            read(words(2),'(A)') elementtemp1
                             read(words(3),'(i1000)', iostat=ios) function_type_temp
                             if (ios /= 0) stop err // err_inpnn // "symfunction_electrostatic second argument value must be integer"
 
@@ -1646,8 +1649,8 @@ module pes_nene_mod
 
         integer counter
 
-        character(len=*), parameter, intent(in) :: err_main, err_file
-        character(len=*), parameter,            :: err_check = "Error in checkinputnn: "
+        character(len=*) :: err_main, err_file
+        character(len=*), parameter :: err_check = "Error in checkinputnn: "
 
 
         if (nran .neq. 5) then
@@ -2462,7 +2465,7 @@ module pes_nene_mod
 
         implicit none
 
-        integer             :: scaling_unit
+        !integer             :: scaling_unit
         integer             :: ndim
         integer             :: maxnum_funcvalues_local
         integer             :: num_funcvalues_local(ndim)
@@ -2480,7 +2483,7 @@ module pes_nene_mod
 
         logical             :: lexist
 
-        character(len=*)                    :: err = "Error in readscale: "
+        character(len=*), parameter         :: err = "Error in readscale: "
 
         character(len=max_string_length)    :: filename
         character(len=*)                    :: filename_error
@@ -2539,7 +2542,7 @@ module pes_nene_mod
                     print *, err, filename_error, "Error in last line: need exactly 2 arguments"
                     stop
                 end if
-            else if (iswitch == 3) ! 3 to be comparable to RuNNer
+            else if (iswitch == 3) then ! 3 to be comparable to RuNNer
                 do counter_2 = 1,nelem
                     line = line + 1
                     if (nwords == 2) then
@@ -2602,9 +2605,9 @@ module pes_nene_mod
 
         logical             :: lexist
 
-        character(len=*)                    :: err = "Error in readweights: "
-        character(len=*)                    :: err_weight = "Error when reading the following weight file: "
-        character(len=*)                    :: err_weighte = "Error when reading the following weighte file: "
+        character(len=*), parameter         :: err = "Error in readweights: "
+        character(len=*), parameter         :: err_weight = "Error when reading the following weight file: "
+        character(len=*), parameter         :: err_weighte = "Error when reading the following weighte file: "
 
         character(len=max_string_length)    :: directory, filename_weight, filename_weighte
         character*40                        :: filename
@@ -3055,7 +3058,7 @@ module pes_nene_mod
                 call getvolume(lattice,volume)
                 if (.not.lmd) then
                     write(*,*)'-------------------------------------------------------------'
-                    write(*,*)'volume ',volume * bohr2ang^3,' Ang^3'
+                    write(*,*)'volume ',volume * bohr2ang**3,' Ang^3'
                 endif
             endif
 
@@ -3149,7 +3152,7 @@ subroutine set_defaults()
 
         iseed                               = default_int
         ielem                               = default_int
-        lelement(:)                         = default_bool
+        lelement                            = default_bool
 
         listdim                             = 100000
 
@@ -3225,8 +3228,8 @@ subroutine set_defaults()
         deltafthres                         = default_real
         luseoldscaling                      = default_bool
         lmd                                 = default_bool
-        nodes_short_atomic_temp(:)          = default_int
-        nodes_elec_temp(:)                  = default_int
+        nodes_short_atomic_temp             = default_int
+        nodes_elec_temp                     = default_int
         ewaldalpha                          = default_real
         ewaldcutoff                         = default_real
         ewaldkmax                           = default_int
