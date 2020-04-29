@@ -48,7 +48,7 @@ module pes_nene_mod
     integer :: ielem
     integer*8 :: iseed
 
-    integer :: i1, i2
+    integer :: ictr_1, ictr_2
 
     logical :: lelement(102)
 
@@ -79,7 +79,6 @@ module pes_nene_mod
     !integer :: max_num_pairs
     integer :: num_atoms
 
-    !real(dp) :: )
     real(dp) :: volume
     !!real(dp) :: dmin_temp(atoms%ntypes*(atoms%ntypes+1)/2) ! dmin_temp(nelem*(nelem+1)/2) ! declare this in read_nene and compute_nene
 
@@ -176,9 +175,9 @@ module pes_nene_mod
         integer, parameter  :: inpnn_unit = 61
 
         integer  :: idx1, idx2
-        integer  :: npairs_counter_1, npairs_counter_2, element_counter, nodes_counter
-        integer  :: nuc_counter, ielem_counter
-        integer  :: general_counter_1, general_counter_2, general_counter_3
+        integer  :: pairctr_1, pairctr_12, elemctr, nodesctr ! replace
+        integer  :: nucctr, elemctr ! replace
+        integer  :: genctr_1, genctr_2, genctr_3 ! replace
         integer  :: k, j
 
         character(len=*), parameter :: err = "Error in read_nene: "
@@ -1289,8 +1288,8 @@ module pes_nene_mod
         ! end readout according to checkonestructure.f90
 
         ielem=0
-        do ielem_counter=1,102
-            if(lelement(ielem_counter)) ielem=ielem+1
+        do elemctr=1,102
+            if(lelement(elemctr)) ielem=ielem+1
         enddo
         ! end readout according to checkstructures.f90
 
@@ -1378,23 +1377,23 @@ module pes_nene_mod
         maxcutoff_elec               = 0.0d0
 
         if(lshort.and.(nn_type_short.eq.1))then
-            do i2=1,nelem
-                do i1=1,num_funcvalues_short_atomic(i2)
-                    maxcutoff_short_atomic=max(maxcutoff_short_atomic,funccutoff_short_atomic(i1,i2))
+            do ictr_2=1,nelem
+                do ictr_1=1,num_funcvalues_short_atomic(ictr_2)
+                    maxcutoff_short_atomic=max(maxcutoff_short_atomic,funccutoff_short_atomic(ictr_1,ictr_2))
                 enddo
             enddo
         endif
 
         if(lelec.and.(nn_type_elec.eq.1))then
-            do i2=1,nelem
-                do i1=1,num_funcvalues_elec(i2)
-                    maxcutoff_elec=max(maxcutoff_elec,funccutoff_elec(i1,i2))
+            do ictr_2=1,nelem
+                do ictr_1=1,num_funcvalues_elec(ictr_2)
+                    maxcutoff_elec=max(maxcutoff_elec,funccutoff_elec(ictr_1,ictr_2))
                 enddo
             enddo
         endif
 
         ! read in biases and weights for short part
-        if(lshort.and.(nn_type_short.eq.1))then
+        if(lshort.and.(nn_type_short.eq.1))then ! allocate arrays before calling readscale/readweights
             ! check existance of scaling.data
             if (.not. file_exists(filename_scaling)) stop err // err_scaling // 'file does not exist'
             ! read in all data from scaling.data
