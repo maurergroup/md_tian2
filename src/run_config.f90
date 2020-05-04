@@ -73,6 +73,9 @@ module run_config
         real(dp) :: evasp                                           ! reference energy for fit
         integer  :: maxit                                           ! maximum number of iteration during fit
         integer  :: nthreads                                        ! number of threads used for fitting
+        integer  :: nran                                            ! type of the random number genreator
+        logical  :: details                                         ! if true a lot of information is written during each md step in RuNNer
+        logical  :: pes_nene                                        ! in case of the nene pes this variable is needed to call the subroutine for deallocation of variables
 
     end type
 
@@ -121,6 +124,9 @@ contains
         new_simulation_parameters%evasp = default_real
         new_simulation_parameters%maxit = 30
         new_simulation_parameters%nthreads = 1
+        new_simulation_parameters%nran = default_int
+        new_simulation_parameters%details = default_bool
+        new_simulation_parameters%pes_nene = default_bool
 
     end function
 
@@ -162,21 +168,32 @@ contains
                         else
                             print *, err, 'start key needs a single argument'; stop
                         end if
+                    case('rng_type')
+                        if (simparams%nran /= default_int) stop 'Error in the input file: Multiple use of the rng_type key'
+                        if (nwords == 2) then
+                            read(words(2),'(i1000)', iostat=ios) simparams%nran
+                            if (ios /= 0) stop err // 'rng_type value must be integer'
+                            select case (words(2))
+                                case ('1', '2')
+                                        ! let the valid types pass
+                                case default
+                                    print *, err, 'Unknown rng_type value'; stop
+                            end select
+                        else
+                            print *, err, 'rng_type key needs a single argument'; stop
+                        end if
                 end select
             end if
         end do
 
         close(inp_unit)
 
-        ! size of seed for random number generator
-        randk=size(randseed)
-        call random_seed(size=randk)
-        call random_seed(put=randseed)
+        ! in case the rng_type key is missing in the input file
+        if (simparams%nran == default_int) then
+            simparams%nran = 1
+        end if
 
-        ! rotate rng
-        do i = 1, 100*simparams%start
-            call random_number(rnd)
-        end do
+        call ran_seed(simparams%nran,simparams%start) ! seed the RNG
 
         ! read rest of the input file
         call open_for_read(inp_unit, input_file); ios = 0
@@ -433,7 +450,7 @@ contains
                                     if (nwords == 4) then
                                         read(words(4),'(i1000)',iostat=ios) simparams%nconfs
                                         if (ios /= 0) stop err // 'conf key - mxt argument must be integer'
-                                        call random_number(rnd)
+                                        call ranx(simparams%nran,rnd)
                                         write(simparams%confname_file, '(2a, i8.8, a)') trim(simparams%confname_file), "/mxt_", int(rnd*simparams%nconfs)+1, ".dat"
                                     end if
                                     if (nwords < 3) stop err // 'conf key - too few mxt arguments'
@@ -447,7 +464,7 @@ contains
                                     read(words(3),'(A)') simparams%merge_proj_file
                                     read(words(4),'(i1000)',iostat=ios) simparams%merge_proj_nconfs
                                     if (ios /= 0) stop err // "conf key - number of configurations must be integer"
-                                    call random_number(rnd)
+                                    call ranx(simparams%nran,rnd)
                                     write(simparams%merge_proj_file, '(2a, i8.8, a)') &
                                         trim(simparams%merge_proj_file), "/mxt_", int(rnd*simparams%merge_proj_nconfs)+1, ".dat"
 
@@ -455,7 +472,7 @@ contains
                                     read(words(5),'(A)') simparams%confname_file
                                     read(words(6),'(i1000)',iostat=ios) simparams%nconfs
                                     if (ios /= 0) stop err // "conf key - number of configurations must be integer"
-                                    call random_number(rnd)
+                                    call ranx(simparams%nran,rnd)
                                     write(simparams%confname_file, '(2a, i8.8, a)') &
                                         trim(simparams%confname_file), "/mxt_", int(rnd*simparams%nconfs)+1, ".dat"
 
@@ -489,6 +506,8 @@ contains
                                     simparams%output_type(i) = output_id_mxt
                                 case (output_key_scatter)
                                     simparams%output_type(i) = output_id_scatter
+                                case (output_key_nene)
+                                    simparams%output_type(i) = output_id_nene
                                 case default
                                     print *, 'Error in the input file: output format ', trim(words(2*i)), ' unknown'
                                     stop

@@ -34,10 +34,12 @@ program md_tian2
     use output_mod, only : output
     use trajectory_info
     use geometry_opt
+    use pes_nene_mod, only : cleanup_nene
+    use useful_things, only ; ran_seed
 
     implicit none
 
-    integer :: itraj, istep, i
+    integer :: itraj, istep, i, seed
     real(dp) :: tmp
     type(universe) :: atoms
 
@@ -76,9 +78,7 @@ program md_tian2
 
                 do istep = 1, simparams%nsteps
 
-                    !if (print_step == .true. )
-                    !    print *, "MD step ", istep
-                    !end if
+                    if (simparams%details) print *, "MD step ", istep
 
                     ! core propagation
                     call propagate_1(atoms)
@@ -102,16 +102,18 @@ program md_tian2
 
                 if (any(simparams%output_type == output_id_scatter)) call output(atoms, itraj, istep, "scatter_final")
 
-                if (itraj < simparams%start+simparams%ntrajs-1) then ! couldn't we just use itraj as seed for the RNG??
-                    call random_seed(put=randseed)  ! Seed random number generator
-                    do i = 1, 100*(itraj+1)
-                        call random_number(tmp)   ! rotate it according to trajectory number
-                    end do
+                if (itraj < simparams%start+simparams%ntrajs-1) then
+
+                    seed = itraj + 1
+                    call ran_seed(simparams%nran,seed)
 
                     call prepare_next_traj(atoms)
+
                 end if
 
             end do
+
+            if (simparams%pes_nene) call cleanup_nene() ! in case of pes_nene some variables had to be deallocated
 
         case default
             call abort

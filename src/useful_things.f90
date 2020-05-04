@@ -25,6 +25,7 @@
 module useful_things
 
     use constants
+    use run_config, only : simparams
 
     implicit none
 
@@ -74,14 +75,74 @@ contains
 !        return
 !    end function normal
 
+    subroutine ran_seed(nran,seed)
+
+        integer,intent(in) :: nran
+        integer,intent(in) :: seed ! the seed will be the trajectory id
+
+        integer, dimension(1) :: putseed
+        integer :: randk
+
+        real(dp) :: tmp
+
+        select case (nran)
+
+            case (1) ! fixed seed, rotation according to traj id
+
+                ! size of seed for random number generator
+                randk=size(randseed)
+                call random_seed(size=randk)
+                call random_seed(put=randseed)
+
+                ! rotate rng
+                do i = 1, 100*seed
+                    call random_number(tmp)
+                end do
+
+            case (2) ! seed is traj id
+
+                putseed = (/seed/)
+                call random_seed(put=putseed)
+
+            case default
+
+                print *, 'Error: Unknown random number generator type in ran_seed function'
+                stop
+
+        end select
+
+    end subroutine ran_seed
+
+
+    subroutine ranx(nran,rnd)
+
+        integer,intent(in)    :: nran
+        real(dp), intent(out) :: rnd
+
+        select case (nran)
+
+            case (1,2)
+
+                call random_number(rnd)
+
+            case default
+
+                print *, 'Error: Unknown random number generator type in ranx function'
+                stop
+
+        end select
+
+    end subroutine ranx
+
+
     subroutine normal_deviate_0d(mu, sigma, nrml_dvt)
 
         real(dp), intent(in)  :: mu, sigma
         real(dp), intent(out) :: nrml_dvt
         real(dp)              :: rnd1, rnd2
 
-        call random_number(rnd1)
-        call random_number(rnd2)
+        call ranx(simparams%nran,rnd1)
+        call ranx(simparams%nran,rnd2)
         nrml_dvt = sqrt(-2*log(rnd1)) * cos(2*pi*rnd2) * sigma + mu
 
     end subroutine normal_deviate_0d
@@ -93,8 +154,8 @@ contains
         real(dp), intent(out)               :: nrml_dvt(:)
         real(dp), dimension(size(nrml_dvt)) :: rnd1, rnd2
 
-        call random_number(rnd1)
-        call random_number(rnd2)
+        call ranx(simparams%nran,rnd1)
+        call ranx(simparams%nran,rnd2)
         nrml_dvt = sqrt(-2*log(rnd1)) * cos(2*pi*rnd2) * sigma + mu
 
     end subroutine normal_deviate_1d
@@ -107,8 +168,8 @@ contains
         real(dp), dimension(size(nrml_dvt, dim=1), &
                             size(nrml_dvt, dim=2)) :: rnd1, rnd2
 
-        call random_number(rnd1)
-        call random_number(rnd2)
+        call ranx(simparams%nran,rnd1)
+        call ranx(simparams%nran,rnd2)
         nrml_dvt = sqrt(-2*log(rnd1)) * cos(2*pi*rnd2) * sigma + mu
 
     end subroutine normal_deviate_2d
@@ -122,8 +183,8 @@ contains
                             size(nrml_dvt, dim=2), &
                             size(nrml_dvt, dim=3)) :: rnd1, rnd2
 
-        call random_number(rnd1)
-        call random_number(rnd2)
+        call ranx(simparams%nran,rnd1)
+        call ranx(simparams%nran,rnd2)
         nrml_dvt = sqrt(-2*log(rnd1)) * cos(2*pi*rnd2) * sigma + mu
 
     end subroutine normal_deviate_3d

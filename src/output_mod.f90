@@ -82,6 +82,9 @@ contains
                     case (output_id_scatter)
                         ! pass
 
+                    case (output_id_nene)
+                        simparams%details = .true.
+
                     case default
                         print *, err // "unknown output format", simparams%output_type(i)
                         stop
