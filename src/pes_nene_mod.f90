@@ -80,27 +80,27 @@ module pes_nene_mod
     real(dp) :: nnstress_short(3,3) = default_real
     real(dp) :: nnstress_elec(3,3)  = default_real
 
-    real(dp), dimension(:), allocatable :: atomcharge               ! atomcharge(max_num_atoms)
-    real(dp), dimension(:), allocatable :: atomenergy               ! atomenergy(max_num_atoms)
+    !real(dp), dimension(:), allocatable :: atomcharge               ! atomcharge(max_num_atoms)
+    !real(dp), dimension(:), allocatable :: atomenergy               ! atomenergy(max_num_atoms)
     real(dp), dimension(:), allocatable :: chargemin                ! chargemin(nelem)
     real(dp), dimension(:), allocatable :: chargemax                ! chargemax(nelem)
     real(dp), dimension(:), allocatable :: nnatomcharge             ! nnatomcharge(max_num_atoms)
     real(dp), dimension(:), allocatable :: nnatomenergy             ! nnatomenergy(max_num_atoms)
-    real(dp), dimension(:), allocatable :: dmin_temp                ! dmin_temp(nelem*(nelem+1)/2)
+    !real(dp), dimension(:), allocatable :: dmin_temp                ! dmin_temp(nelem*(nelem+1)/2)
 
-    real(dp), dimension(:,:), allocatable :: xyzstruct              ! xyzstruct(3,max_num_atoms)
+    !real(dp), dimension(:,:), allocatable :: xyzstruct              ! xyzstruct(3,max_num_atoms)
     real(dp), dimension(:,:), allocatable :: minvalue_short_atomic  ! minvalue_short_atomic(nelem,maxnum_funcvalues_short_atomic)
     real(dp), dimension(:,:), allocatable :: maxvalue_short_atomic  ! maxvalue_short_atomic(nelem,maxnum_funcvalues_short_atomic)
     real(dp), dimension(:,:), allocatable :: avvalue_short_atomic   ! avvalue_short_atomic(nelem,maxnum_funcvalues_short_atomic)
     real(dp), dimension(:,:), allocatable :: minvalue_elec          ! minvalue_elec(nelem,maxnum_funcvalues_elec)
     real(dp), dimension(:,:), allocatable :: maxvalue_elec          ! maxvalue_elec(nelem,maxnum_funcvalues_elec)
     real(dp), dimension(:,:), allocatable :: avvalue_elec           ! avvalue_elec(nelem,maxnum_funcvalues_elec)
-    real(dp), dimension(:,:), allocatable :: totalforce             ! totalforce(3,max_num_atoms)
+    !real(dp), dimension(:,:), allocatable :: totalforce             ! totalforce(3,max_num_atoms)
     real(dp), dimension(:,:), allocatable :: nnshortforce           ! nnshortforce(3,max_num_atoms)
     real(dp), dimension(:,:), allocatable :: nntotalforce           ! nntotalforce(3,max_num_atoms)
     real(dp), dimension(:,:), allocatable :: nnelecforce            ! nnelecforce(3,max_num_atoms)
-    real(dp), dimension(:,:), allocatable :: sens
-    real(dp), dimension(:,:), allocatable :: sense
+    real(dp), dimension(:,:), allocatable :: sens                   ! ; already deallocated in cleanup
+    real(dp), dimension(:,:), allocatable :: sense                  ! ; already deallocated in cleanup
 
 
     contains
@@ -154,7 +154,8 @@ module pes_nene_mod
         integer :: pairctr_1, pairctr_2, elemctr, nodesctr ! replace
         integer :: nucctr, ielemctr ! replace
         integer :: genctr_1, genctr_2, genctr_3 ! replace
-        integer :: k, j
+        integer :: lattctr, atctr
+        integer :: ictr_1, ictr_2, ictr_3
 
         integer :: ztemp  = default_int
         integer :: ztemp1 = default_int
@@ -165,19 +166,22 @@ module pes_nene_mod
         integer, dimension(:)  , allocatable :: nodes_ewald_local
         integer, dimension(:)  , allocatable :: num_funcvalues_local
         integer, dimension(:)  , allocatable :: num_funcvaluese_local
-        integer, dimension(:,:), allocatable :: num_funcvaluesp_local
 
-        character(len=2) :: elementtemp  = default_string
-        character(len=2) :: elementtemp1 = default_string
-        character(len=2) :: elementtemp2 = default_string
-        character(len=2) :: elementtemp3 = default_string
+        character(len=2) :: elementtemp     = default_string
+        character(len=2) :: elementtemp1    = default_string
+        character(len=2) :: elementtemp2    = default_string
+        character(len=2) :: elementtemp3    = default_string
 
-        logical lfounddebug
-        logical lfound_num_layersshort  = default_bool
-        logical lfound_num_layersewald  = default_bool
-        logical lfound_luseatomenergies = default_bool
-        logical lfound_luseatomcharges  = default_bool
-        logical lfound_nelem            = default_bool
+        logical :: lfounddebug              = default_bool
+        logical :: lfound_num_layersshort   = default_bool
+        logical :: lfound_num_layersewald   = default_bool
+        logical :: lfound_luseatomenergies  = default_bool
+        logical :: lfound_luseatomcharges   = default_bool
+        logical :: lfound_nelem             = default_bool
+
+        real(dp) :: xyzstruct(3,atoms%natoms) = default_real
+
+        real(dp), dimension(:), allocatable :: rdummy                   ! rdummy(nelem)
 
 
 
@@ -286,6 +290,205 @@ module pes_nene_mod
         nelem                               = default_int
         npairs                              = default_int
         max_num_pairs                       = default_int
+
+
+
+
+
+        maxnum_funcvalues_short_atomic      = 0 ! needed so that the max function will work
+        maxnum_funcvalues_elec              = 0 ! needed so that the max function will work
+        function_type_local                 = default_int
+        function_type_temp                  = default_int
+        funccutoff_local                    = 0.0d0 ! needed so that the max function will work
+        maxcutoff_local                     = 0.0d0 ! needed so that the max function will work
+
+        maxnodes_short_atomic               = 0 ! needed so that the max function will work
+        maxnodes_elec                       = 0 ! needed so that the max function will work
+
+        lcheckinputforces                   = default_bool
+        inputforcethreshold                 = default_real
+
+        lprintforcecomponents               = default_bool
+        lionforcesonly                      = default_bool
+        cutoff_type                         = default_int
+        cutoff_alpha                        = default_real
+        ldynforcegroup                      = default_bool
+        dynforcegroup_start                 = default_int
+        dynforcegroup_step                  = default_int
+        ldetect_saturation                  = default_bool
+        saturation_threshold                = default_real
+        ldataclustering                     = default_bool
+        dataclusteringthreshold1            = default_real
+        dataclusteringthreshold2            = default_real
+        analyze_error_energy_step           = default_real
+        analyze_error_force_step            = default_real
+        analyze_error_charge_step           = default_real
+        paramode                            = default_int
+        lpearson_correlation                = default_bool
+        lweightanalysis                     = default_bool
+        lenvironmentanalysis                = default_bool
+        lfindcontradictions                 = default_bool
+        deltagthres                         = default_real
+        deltafthres                         = default_real
+        luseoldscaling                      = default_bool
+        lmd                                 = default_bool
+        nodes_short_atomic_temp             = default_int
+        nodes_elec_temp                     = default_int
+        ewaldalpha                          = default_real
+        ewaldcutoff                         = default_real
+        ewaldkmax                           = default_int
+        lprecond                            = default_bool
+        linionly                            = default_bool
+        lfgroupbystruct                     = default_bool
+        lqgroupbystruct                     = default_bool
+        lmixpoints                          = default_bool
+        lprintconv                          = default_bool
+        lprintmad                           = default_bool
+        noisee                              = default_real
+        noisef                              = default_real
+        noiseq                              = default_real
+        nenergygroup                        = default_int
+        nforcegroup                         = default_int
+        nchargegroup                        = default_int
+        luseforces                          = default_bool
+        energyrnd                           = default_real
+        forcernd                            = default_real
+        chargernd                           = default_real
+        lremoveatomenergies                 = default_bool
+        lanalyzeerror                       = default_bool
+        lchargeconstraint                   = default_bool
+        fitmode                             = default_int
+        lfitethres                          = default_bool
+        fitethres                           = default_real
+        lfitfthres                          = default_bool
+        fitfthres                           = default_real
+        rmin                                = default_real
+        optmodee                            = default_int
+        optmodef                            = default_int
+        optmodeq                            = default_int
+        iseed                               = default_int
+        nblock                              = default_int
+        nepochs                             = default_int
+        iwriteweight                        = default_int
+        lwritetmpweights                    = default_bool
+        lwritesymfunctions                  = default_bool
+        splitthres                          = default_real
+        scmin_short_atomic                  = default_real
+        scmax_short_atomic                  = default_real
+        scmin_elec                          = default_real
+        scmax_elec                          = default_real
+        kalmanthreshold                     = default_real
+        kalmanthresholdf                    = default_real
+        kalmanthresholde                    = default_real
+        kalmanthresholdc                    = default_real
+        kalman_dampe                        = default_real
+        kalman_dampf                        = default_real
+        kalman_dampq                        = default_real
+        kalmanlambda_local                  = default_real
+        kalmanlambdae_local                 = default_real
+        kalmanlambdac                       = default_real
+        kalmannue                           = default_real
+        kalmannuee                          = default_real
+        kalmannuec                          = default_real
+        lusenoisematrix                     = default_bool
+        kalman_q0                           = default_real
+        kalman_qtau                         = default_real
+        kalman_qmin                         = default_real
+        kalman_epsilon                      = default_real
+        steepeststepe                       = default_real
+        steepeststepf                       = default_real
+        steepeststepq                       = default_real
+        scalefactorf                        = default_real
+        scalefactorq                        = default_real
+        lscalesym                           = default_bool
+        lcentersym                          = default_bool
+        luseoldweightsshort                 = default_bool
+        luseoldweightscharge                = default_bool
+        lsavekalman                         = default_bool
+        lrestkalman                         = default_bool
+        lupdatebyelement                    = default_bool
+        elemupdate                          = default_int
+        luseworste                          = default_bool
+        worste                              = default_real
+        luseworstf                          = default_bool
+        worstf                              = default_real
+        luseworstq                          = default_bool
+        worstq                              = default_real
+        lgrowth                             = default_bool
+        ngrowth                             = default_int
+        growthstep                          = default_int
+        ldampw                              = default_bool
+        dampw                               = default_real
+        lfixweights                         = default_bool
+        ldoforces                           = default_bool
+        ldohessian                          = default_bool
+        ldostress                           = default_bool
+        lenforcemaxnumneighborsatomic       = default_bool
+        max_num_neighbors_atomic_input      = default_int
+        lfinetime                           = default_bool
+        lfinetimeepoch                      = default_bool
+        lwritetrainpoints                   = default_bool
+        lwritetrainforces                   = default_bool
+        lwritetraincharges                  = default_bool
+        maxforce                            = default_real
+        maxenergy                           = default_real
+        nran                                = default_int
+        lfinalforce                         = default_bool
+        lnormnodes                          = default_bool
+        count_wconstraint                   = 0 ! otherwise the count does not make sense!!
+        weights_min                         = default_real
+        weights_max                         = default_real
+        lseparatebiasini                    = default_bool
+        biasweights_min                     = default_real
+        biasweights_max                     = default_real
+        weightse_min                        = default_real
+        weightse_max                        = default_real
+        lsysweights                         = default_bool
+        lsysweightse                        = default_bool
+        lsens                               = default_bool
+        lreadunformatted                    = default_bool
+        lresetkalman                        = default_bool
+        lsepkalman                          = default_bool
+        lrepeate                            = default_bool
+        enforcetotcharge                    = default_int
+        lshuffle_weights_short_atomic       = default_bool
+        nshuffle_weights_short_atomic       = default_int
+        shuffle_weights_short_atomic        = default_real
+        lcheckf                             = default_bool
+        lfitstats                           = default_bool
+        lfixederrore                        = default_bool
+        fixederrore                         = default_real
+        lfixederrorf                        = default_bool
+        fixederrorf                         = default_real
+        restrictw                           = default_real
+        lscreen                             = default_bool
+        rscreen_onset                       = default_real
+        rscreen_cut                         = default_real
+        lsilent                             = default_bool
+        lpreparemd                          = default_bool
+        fitting_unit                        = default_int
+        ljointefupdate                      = default_bool
+        lompmkl                             = default_bool
+        lnwweights                          = default_bool
+        lnwweightse                         = default_bool
+        lprintdateandtime                   = default_bool
+        lenableontheflyinput                = default_bool
+        luseedkalman                        = default_bool
+        ledforcesv2                         = default_bool
+        lanalyzecomposition                 = default_bool
+        actfunc_short_atomic_dummy          = default_string
+        actfunc_elec_dummy                  = default_string
+        fixedcharge                         = default_real
+        layer                               = default_int
+        node                                = default_int
+        actfunc                             = default_string
+
+
+        pstring                             = default_string
+
+        ldebug                              = default_bool
+        luseatomenergies                    = default_bool
+        luseatomcharges                     = default_bool
 
 
 
@@ -655,8 +858,8 @@ module pes_nene_mod
                             case ('3','8','9')
                                 num_funcvaluese_local(ztemp) = num_funcvaluese_local(ztemp) + nelem
                                 if (nelem .gt. 1) then
-                                    do general_counter_1 = 1,nelem-1
-                                        num_funcvaluese_local(ztemp) = num_funcvaluese_local(ztemp) + general_counter_1
+                                    do genctr_1 = 1,nelem-1
+                                        num_funcvaluese_local(ztemp) = num_funcvaluese_local(ztemp) + genctr_1
                                     end do
                                 end if
 
@@ -677,25 +880,25 @@ module pes_nene_mod
                         select case (words(2))
 
                             case ('1','2','4')
-                                do general_counter_1 = 1,nelem
-                                    num_funcvalues_local(nucelem(general_counter_1)) = num_funcvalues_local(nucelem(general_counter_1)) + nelem
+                                do genctr_1 = 1,nelem
+                                    num_funcvalues_local(nucelem(genctr_1)) = num_funcvalues_local(nucelem(genctr_1)) + nelem
                                 end do
 
                             case ('3','8','9')
-                                do general_counter_1 = 1,nelem
-                                    num_funcvalues_local(nucelem(general_counter_1)) = num_funcvalues_local(nucelem(general_counter_1)) + nelem
+                                do genctr_1 = 1,nelem
+                                    num_funcvalues_local(nucelem(genctr_1)) = num_funcvalues_local(nucelem(genctr_1)) + nelem
                                 end do
-                                do general_counter_1 = 1,nelem
+                                do genctr_1 = 1,nelem
                                     if (nelem .gt. 1) then
-                                        do general_counter_2 = 1,nelem-1
-                                            num_funcvalues_local(nucelem(general_counter_1)) = num_funcvalues_local(nucelem(general_counter_1)) + general_counter_2
+                                        do genctr_2 = 1,nelem-1
+                                            num_funcvalues_local(nucelem(genctr_1)) = num_funcvalues_local(nucelem(genctr_1)) + genctr_2
                                         end do
                                     end if
                                 end do
 
                             case ('5','6') ! debug functions
-                                do general_counter_1 = 1,nelem
-                                    num_funcvalues_local(nucelem(general_counter_1)) = num_funcvalues_local(nucelem(general_counter_1)) + 1
+                                do genctr_1 = 1,nelem
+                                    num_funcvalues_local(nucelem(genctr_1)) = num_funcvalues_local(nucelem(genctr_1)) + 1
                                 end do
 
                             case default
@@ -712,25 +915,25 @@ module pes_nene_mod
                         select case (words(2))
 
                             case ('1','2','4')
-                                do general_counter_1 = 1,nelem
-                                    num_funcvaluese_local(nucelem(general_counter_1)) = num_funcvaluese_local(nucelem(general_counter_1)) + nelem
+                                do genctr_1 = 1,nelem
+                                    num_funcvaluese_local(nucelem(genctr_1)) = num_funcvaluese_local(nucelem(genctr_1)) + nelem
                                 end do
 
                             case ('3','8','9')
-                                do general_counter_1 = 1,nelem
-                                    num_funcvaluese_local(nucelem(general_counter_1)) = num_funcvaluese_local(nucelem(general_counter_1)) + nelem
+                                do genctr_1 = 1,nelem
+                                    num_funcvaluese_local(nucelem(genctr_1)) = num_funcvaluese_local(nucelem(genctr_1)) + nelem
                                 end do
-                                do general_counter_1 = 1,nelem
+                                do genctr_1 = 1,nelem
                                     if (nelem .gt. 1) then
-                                        do general_counter_2 = 1,nelem-1
-                                            num_funcvaluese_local(nucelem(general_counter_1)) = num_funcvaluese_local(nucelem(general_counter_1)) + general_counter_2
+                                        do genctr_2 = 1,nelem-1
+                                            num_funcvaluese_local(nucelem(genctr_1)) = num_funcvaluese_local(nucelem(genctr_1)) + genctr_2
                                         end do
                                     end if
                                 end do
 
                             case ('5','6') ! only for Pair NN
-                                do general_counter_1 = 1,nelem
-                                    num_funcvaluese_local(nucelem(general_counter_1)) = num_funcvaluese_local(nucelem(general_counter_1)) + 1
+                                do genctr_1 = 1,nelem
+                                    num_funcvaluese_local(nucelem(genctr_1)) = num_funcvaluese_local(nucelem(genctr_1)) + 1
                                 end do
 
                             case default
@@ -798,6 +1001,10 @@ module pes_nene_mod
         deallocate(nucelem)
         deallocate(element)
         !end readout according to getdimensions.f90
+
+        ! start readout according to structurecount.f90
+        max_num_atoms = atoms%natoms
+        ! end readout according to structurecount.f90
 
         !start readout according to paircount.f90
         if (nn_type_short == 1) then
@@ -1263,25 +1470,11 @@ module pes_nene_mod
 
         ! start readout according to checkonestructure.f90
 
-        !if(keyword.eq.'lattice') then
-        !    nlattice=nlattice+1
-        !    backspace(dataunit)
-        !    read(dataunit,*,err=90)keyword,(lattice(nlattice,i),i=1,3)
-        !endif
-
         do lattctr = 1,3
             lattice(lattctr,:) = atoms%simbox(:,lattctr) * ang2bohr
         end do
 
-        !if(keyword.eq.'atom') then
-        !    num_atoms=num_atoms+1
-        !    backspace(dataunit)
-        !    read(dataunit,*,err=91)keyword,(xyzstruct(i,num_atoms),i=1,3),&
-        !        elementsymbol(num_atoms),atomcharge(num_atoms),&
-        !        atomenergy(num_atoms),(totalforce(i,num_atoms),i=1,3)
-        !    call nuccharge(elementsymbol(num_atoms),zelem(num_atoms))
-        !    lelement(zelem(num_atoms))=.true. ! element found
-        !endif
+        num_atoms = atoms%natoms
 
         do atctr = 1,atoms%natoms ! this is done here to check if it is a valid structure
             xyzstruct(:,atctr) = atoms%r(:,1,atctr) * ang2bohr
@@ -1290,13 +1483,16 @@ module pes_nene_mod
             lelement(zelem(atctr)) = .true.
         end do
 
-        ! a periodic structure is assumed
-
-        !call translate(atoms%natoms,lattice,xyzstruct)
-
         if(lperiodic)then
             call translate(num_atoms,lattice,xyzstruct)
         endif
+
+        ! according to readonestructure.f90
+        allocate (num_atoms_element(nelem))
+        do ictr_1=1,num_atoms ! this should move to read_nene
+            num_atoms_element(elementindex(zelem(ictr_1))) = num_atoms_element(elementindex(zelem(ictr_1))) + 1
+        enddo
+        ! end according to readonestructure.f90
 
         !! check if lattice vectors make sense
         if(lperiodic)then
@@ -1351,8 +1547,9 @@ module pes_nene_mod
         allocate (nucelem(nelem))
         allocate (element(nelem))
         allocate (atomrefenergies(nelem))
-        allocate (elempair(npairs,2))
-        elempair(:,:)=0
+        atomrefenergies = default_real
+        !allocate (elempair(npairs,2))
+        !elempair(:,:)=0
 
         allocate (vdw_coefficients(nelem,nelem))
 
@@ -1663,13 +1860,13 @@ module pes_nene_mod
                         case ('global_nodes_short')
                             if(lshort .and. (nn_type_short == 1)) then
                                 if (nwords == maxnum_layers_short_atomic) then
-                                    do general_counter_1 = 1,maxnum_layers_short_atomic-1
-                                        read(words(general_counter_1+1),'(i1000)', iostat=ios) nodes_short_atomic_temp(general_counter_1)
-                                        if (ios /= 0) stop err // err_inpnn // "global_nodes_short argument ", general_counter_1, " value must be integer"
+                                    do genctr_1 = 1,maxnum_layers_short_atomic-1
+                                        read(words(genctr_1+1),'(i1000)', iostat=ios) nodes_short_atomic_temp(genctr_1)
+                                        if (ios /= 0) stop err // err_inpnn // "global_nodes_short argument ", genctr_1, " value must be integer"
                                     end do
-                                    do general_counter_1 = 1,nelem
-                                        do general_counter_2 = 1,maxnum_layers_short_atomic
-                                            nodes_short_atomic(general_counter_2,general_counter_1) = nodes_short_atomic_temp(general_counter_2)
+                                    do genctr_1 = 1,nelem
+                                        do genctr_2 = 1,maxnum_layers_short_atomic
+                                            nodes_short_atomic(genctr_2,genctr_1) = nodes_short_atomic_temp(genctr_2)
                                         end do
                                     end do
                                 else
@@ -1680,13 +1877,13 @@ module pes_nene_mod
                         case ('global_nodes_electrostatic')
                             if(lelec .and. (nn_type_elec == 1)) then
                                 if (nwords == maxnum_layers_elec) then
-                                    do general_counter_1 = 1,maxnum_layers_elec-1
-                                        read(words(general_counter_1+1),'(i1000)', iostat=ios) nodes_elec_temp(general_counter_1)
-                                        if (ios /= 0) stop err // err_inpnn // "global_nodes_electrostatic argument ", general_counter_1, " value must be integer"
+                                    do genctr_1 = 1,maxnum_layers_elec-1
+                                        read(words(genctr_1+1),'(i1000)', iostat=ios) nodes_elec_temp(genctr_1)
+                                        if (ios /= 0) stop err // err_inpnn // "global_nodes_electrostatic argument ", genctr_1, " value must be integer"
                                     end do
-                                    do general_counter_1 = 1,nelem
-                                        do general_counter_2 = 1,maxnum_layers_elec
-                                            nodes_elec(general_counter_2,general_counter_1) = nodes_elec_temp(general_counter_2)
+                                    do genctr_1 = 1,nelem
+                                        do genctr_2 = 1,maxnum_layers_elec
+                                            nodes_elec(genctr_2,genctr_1) = nodes_elec_temp(genctr_2)
                                         end do
                                     end do
                                 else
@@ -2969,21 +3166,16 @@ module pes_nene_mod
 
             ! further readout according to readinput.f90
             if (lshort .and. (nn_type_short == 1)) then
-                do general_counter=1,nelem
-                    nodes_short_atomic(maxnum_layers_short_atomic,general_counter)=1
+                do genctr_1=1,nelem
+                    nodes_short_atomic(maxnum_layers_short_atomic,genctr_1)=1
                     if(lelec.and.(nn_type_elec.eq.2))then
-                        nodes_short_atomic(maxnum_layers_short_atomic,general_counter) = nodes_short_atomic(maxnum_layers_short_atomic,general_counter)+1
+                        nodes_short_atomic(maxnum_layers_short_atomic,genctr_1) = nodes_short_atomic(maxnum_layers_short_atomic,genctr_1)+1
                     endif
                 enddo
             endif
-            if(lshort.and.(nn_type_short.eq.2))then
-                do general_counter=1,npairs
-                    nodes_short_pair(maxnum_layers_short_pair,general_counter)=1
-                enddo
-            endif
             if(lelec.and.(nn_type_elec.eq.1))then
-                do general_counter=1,nelem
-                    nodes_elec(maxnum_layers_elec,general_counter)=1
+                do genctr_1=1,nelem
+                    nodes_elec(maxnum_layers_elec,genctr_1)=1
                 enddo
             endif
 
@@ -2999,16 +3191,16 @@ module pes_nene_mod
                         case ('global_activation_short')
                             if (any(actfunc_short_atomic /= default_string)) stop err // err_inpnn // 'Multiple use of the global_activation_short key'
                             if (nwords == maxnum_layers_short_atomic+1) then
-                                do general_counter_1 = 1,maxnum_layers_short_atomic
-                                    do general_counter_3 = 1,nelem
-                                        do general_counter_2 = 1,nodes_short_atomic
-                                            read(words(general_counter_1+1),'(A)', iostat=ios) actfunc_short_atomic_dummy(general_counter_1)
-                                            actfunc_short_atomic(general_counter_2, general_counter_1, general_counter_3) = actfunc_short_atomic_dummy(general_counter_1)
-                                            !actfunc_short_atomic(general_counter_2, general_counter_1, general_counter_3) = words(general_counter_1+1)
+                                do genctr_1 = 1,maxnum_layers_short_atomic
+                                    do genctr_3 = 1,nelem
+                                        do genctr_2 = 1,nodes_short_atomic
+                                            read(words(genctr_1+1),'(A)', iostat=ios) actfunc_short_atomic_dummy(genctr_1)
+                                            actfunc_short_atomic(genctr_2, genctr_1, genctr_3) = actfunc_short_atomic_dummy(genctr_1)
+                                            !actfunc_short_atomic(genctr_2, genctr_1, genctr_3) = words(genctr_1+1)
                                         end do
-                                        if(nodes_short_atomic(general_counter_1, general_counter_3) .lt. maxnodes_short_atomic)then
-                                            do general_counter_2 = nodes_short_atomic(general_counter_1, general_counter_3)+1,maxnodes_short_atomic
-                                                actfunc_short_atomic(general_counter_2, general_counter_1, general_counter_3) = ' '
+                                        if(nodes_short_atomic(genctr_1, genctr_3) .lt. maxnodes_short_atomic)then
+                                            do genctr_2 = nodes_short_atomic(genctr_1, genctr_3)+1,maxnodes_short_atomic
+                                                actfunc_short_atomic(genctr_2, genctr_1, genctr_3) = ' '
                                             enddo
                                     end do
                                 end do
@@ -3019,16 +3211,16 @@ module pes_nene_mod
                         case ('global_activation_electrostatic')
                             if (any(actfunc_elec /= default_string)) stop err // err_inpnn // 'Multiple use of the global_activation_electrostatic key'
                             if (nwords == maxnum_layers_elec+1) then
-                                do general_counter_1 = 1,maxnum_layers_elec
-                                    do general_counter_3 = 1,nelem
-                                        do general_counter_2 = 1,nodes_elec
-                                            read(words(general_counter_1+1),'(A)', iostat=ios) actfunc_elec_dummy(general_counter_1)
-                                            actfunc_elec(general_counter_2, general_counter_1, general_counter_3) = actfunc_elec_dummy(general_counter_1)
-                                            !actfunc_elec(general_counter_2, general_counter_1, general_counter_3) = words(general_counter_1+1)
+                                do genctr_1 = 1,maxnum_layers_elec
+                                    do genctr_3 = 1,nelem
+                                        do genctr_2 = 1,nodes_elec
+                                            read(words(genctr_1+1),'(A)', iostat=ios) actfunc_elec_dummy(genctr_1)
+                                            actfunc_elec(genctr_2, genctr_1, genctr_3) = actfunc_elec_dummy(genctr_1)
+                                            !actfunc_elec(genctr_2, genctr_1, genctr_3) = words(genctr_1+1)
                                         end do
-                                        if (nodes_elec(general_counter_1, general_counter_3) .lt. maxnodes_elec) then
-                                            do general_counter_2 = nodes_elec(general_counter_1, general_counter_3)+1,maxnodes_elec
-                                                actfunc_elec(general_counter_2, general_counter_1, general_counter_3) = ' '
+                                        if (nodes_elec(genctr_1, genctr_3) .lt. maxnodes_elec) then
+                                            do genctr_2 = nodes_elec(genctr_1, genctr_3)+1,maxnodes_elec
+                                                actfunc_elec(genctr_2, genctr_1, genctr_3) = ' '
                                             enddo
                                     end do
                                 end do
@@ -3088,9 +3280,9 @@ module pes_nene_mod
 
                 close(inpnn_unit)
 
-                do general_counter_1 = 1,nelem
-                    if (fixedcharge(general_counter_1) .gt. 10.0d0) then
-                        print *, err, err_inpnn, "Error when reading fixed_charge: No fixed charge specified for element ",element(general_counter_1); stop
+                do genctr_1 = 1,nelem
+                    if (fixedcharge(genctr_1) .gt. 10.0d0) then
+                        print *, err, err_inpnn, "Error when reading fixed_charge: No fixed charge specified for element ",element(genctr_1); stop
                     endif
                 enddo
             endif
@@ -3116,8 +3308,8 @@ module pes_nene_mod
                                     print *, err, err_inpnn, "Error when reading element_hidden_layers_short: element ", ztemp, " has too many hidden layers"; stop
                                 endif
                                 nodes_short_atomic(num_layers_short_atomic(elementindex(ztemp)),elementindex(ztemp)) = 1
-                                do general_counter_1=2,maxnodes_short_atomic
-                                    actfunc_short_atomic(general_counter_1,num_layers_short_atomic(elementindex(ztemp)),elementindex(ztemp)) = ' '
+                                do genctr_1=2,maxnodes_short_atomic
+                                    actfunc_short_atomic(genctr_1,num_layers_short_atomic(elementindex(ztemp)),elementindex(ztemp)) = ' '
                                 enddo
                             else
                                 print *, err, err_inpnn, "element_hidden_layers_short key for element ", ztemp, " needs two arguments"; stop
@@ -3135,8 +3327,8 @@ module pes_nene_mod
                                     print *, err, err_inpnn, "Error when reading element_hidden_layers_electrostatic: element ", ztemp, " has too many hidden layers"; stop
                                 endif
                                 nodes_elec(num_layers_elec(elementindex(ztemp)),elementindex(ztemp)) = 1
-                                do general_counter_1=2,maxnodes_elec
-                                    actfunc_elec(general_counter_1,num_layers_elec(elementindex(ztemp)),elementindex(ztemp)) = ' '
+                                do genctr_1=2,maxnodes_elec
+                                    actfunc_elec(genctr_1,num_layers_elec(elementindex(ztemp)),elementindex(ztemp)) = ' '
                                 enddo
                             else
                                 print *, err, err_inpnn, "element_hidden_layers_electrostatic key for element ", ztemp, " needs two arguments"; stop
@@ -3181,8 +3373,8 @@ module pes_nene_mod
                                    print *, err, err_inpnn, "Error when reading element_nodes_short: too many nodes requested for element ", element(elementindex(ztemp)); stop
                                 end if
                                 nodes_short_atomic(layer,elementindex(ztemp)) = node
-                                do general_counter_1 = nodes_short_atomic(layer,elementindex(ztemp))+1,maxnodes_short_atomic
-                                    actfunc_short_atomic(general_counter_1,layer,elementindex(ztemp)) = ' '
+                                do genctr_1 = nodes_short_atomic(layer,elementindex(ztemp))+1,maxnodes_short_atomic
+                                    actfunc_short_atomic(genctr_1,layer,elementindex(ztemp)) = ' '
                                 end do
                             else
                                 print *, err, err_inpnn, "element_nodes_short key for element ", element(elementindex(ztemp)), " needs three arguments"; stop
@@ -3204,8 +3396,8 @@ module pes_nene_mod
                                    print *, err, err_inpnn, "Error when reading element_nodes_electrostatic: too many nodes requested for element ", element(elementindex(ztemp)); stop
                                 end if
                                 nodes_elec(layer,elementindex(ztemp)) = node
-                                do general_counter_1 = nodes_elec(layer,elementindex(ztemp))+1,maxnodes_elec
-                                    actfunc_elec(general_counter_1,layer,elementindex(ztemp)) = ' '
+                                do genctr_1 = nodes_elec(layer,elementindex(ztemp))+1,maxnodes_elec
+                                    actfunc_elec(genctr_1,layer,elementindex(ztemp)) = ' '
                                 end do
                             else
                                 print *, err, err_inpnn, "element_nodes_electrostatic key for element ", element(elementindex(ztemp)), " needs three arguments"; stop
@@ -3482,11 +3674,11 @@ module pes_nene_mod
                                         if (nwords == 4) then
                                             read(words(4),*, iostat=ios) funccutoff_temp
                                             if (ios /= 0) stop err // err_inpnn // "element_symfunction_short type ", words(3), " argument 3 must be a number"
-                                            do general_counter_1 = 1,nelem
+                                            do genctr_1 = 1,nelem
                                                 sym_short_atomic_count(elementindex(ztemp1) = sym_short_atomic_count(elementindex(ztemp1) + 1
                                                 function_type_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1)) = function_type_temp
                                                 funccutoff_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1)) = funccutoff_temp
-                                                symelement_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),1,elementindex(ztemp1)) = nucelem(general_counter_1)
+                                                symelement_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),1,elementindex(ztemp1)) = nucelem(genctr_1)
                                             end do
                                         else
                                             print *, err, err_inpnn, "element_symfunction_short type ", words(3), " needs 3 arguments"; stop
@@ -3500,13 +3692,13 @@ module pes_nene_mod
                                             if (ios /= 0) stop err // err_inpnn // "element_symfunction_short type ", words(3), " argument 4 must be a number"
                                             read(words(6),*, iostat=ios) funccutoff_temp
                                             if (ios /= 0) stop err // err_inpnn // "element_symfunction_short type ", words(3), " argument 5 must be a number"
-                                            do general_counter_1 = 1,nelem
+                                            do genctr_1 = 1,nelem
                                                 sym_short_atomic_count(elementindex(ztemp1) = sym_short_atomic_count(elementindex(ztemp1) + 1
                                                 function_type_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1)) = function_type_temp
                                                 eta_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1)) = eta_temp
                                                 rshift_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1)) = rshift_temp
                                                 funccutoff_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1)) = funccutoff_temp
-                                                symelement_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),1,elementindex(ztemp1)) = nucelem(general_counter_1)
+                                                symelement_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),1,elementindex(ztemp1)) = nucelem(genctr_1)
                                             end do
                                         else
                                             print *, err, err_inpnn, "element_symfunction_short type ", words(3), " needs 5 arguments"; stop
@@ -3522,27 +3714,27 @@ module pes_nene_mod
                                             if (ios /= 0) stop err // err_inpnn // "element_symfunction_short type ", words(3), " argument 5 must be a number"
                                             read(words(7),*, iostat=ios) funccutoff_temp
                                             if (ios /= 0) stop err // err_inpnn // "element_symfunction_short type ", words(3), " argument 6 must be a number"
-                                            do general_counter_1 = 1,nelem
+                                            do genctr_1 = 1,nelem
                                                 sym_short_atomic_count(elementindex(ztemp1) = sym_short_atomic_count(elementindex(ztemp1) + 1
                                                 function_type_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1)) = function_type_temp
                                                 eta_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1)) = eta_temp
                                                 lambda_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1)) = lambda_temp
                                                 zeta_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1)) = zeta_temp
                                                 funccutoff_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1)) = funccutoff_temp
-                                                symelement_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),1,elementindex(ztemp1)) = nucelem(general_counter_1)
-                                                symelement_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),2,elementindex(ztemp1)) = nucelem(general_counter_1)
+                                                symelement_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),1,elementindex(ztemp1)) = nucelem(genctr_1)
+                                                symelement_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),2,elementindex(ztemp1)) = nucelem(genctr_1)
                                             end do
-                                            do general_counter_1 = 1,nelem
+                                            do genctr_1 = 1,nelem
                                                 if (nelem .gt. 1) then
-                                                    do general_counter_2 = 1,general_counter_1-1
+                                                    do genctr_2 = 1,genctr_1-1
                                                         sym_short_atomic_count(elementindex(ztemp1) = sym_short_atomic_count(elementindex(ztemp1) + 1
                                                         function_type_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1)) = function_type_temp
                                                         eta_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1)) = eta_temp
                                                         lambda_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1)) = lambda_temp
                                                         zeta_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1)) = zeta_temp
                                                         funccutoff_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1)) = funccutoff_temp
-                                                        symelement_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),1,elementindex(ztemp1)) = nucelem(general_counter_2)
-                                                        symelement_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),2,elementindex(ztemp1)) = nucelem(general_counter_1)
+                                                        symelement_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),1,elementindex(ztemp1)) = nucelem(genctr_2)
+                                                        symelement_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),2,elementindex(ztemp1)) = nucelem(genctr_1)
                                                     end do
                                                 end if
                                             end do
@@ -3556,12 +3748,12 @@ module pes_nene_mod
                                             if (ios /= 0) stop err // err_inpnn // "element_symfunction_short type ", words(3), " argument 3 must be a number"
                                             read(words(5),*, iostat=ios) funccutoff_temp
                                             if (ios /= 0) stop err // err_inpnn // "element_symfunction_short type ", words(3), " argument 4 must be a number"
-                                            do general_counter_1 = 1,nelem
+                                            do genctr_1 = 1,nelem
                                                 sym_short_atomic_count(elementindex(ztemp1) = sym_short_atomic_count(elementindex(ztemp1) + 1
                                                 function_type_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1)) = function_type_temp
                                                 eta_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1)) = eta_temp
                                                 funccutoff_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1)) = funccutoff_temp
-                                                symelement_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),1,elementindex(ztemp1)) = nucelem(general_counter_1)
+                                                symelement_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),1,elementindex(ztemp1)) = nucelem(genctr_1)
                                             end do
                                         else
                                             print *, err, err_inpnn, "element_symfunction_short type ", words(3), " needs 4 arguments"; stop
@@ -3596,25 +3788,25 @@ module pes_nene_mod
                                             if (ios /= 0) stop err // err_inpnn // "element_symfunction_short type ", words(3), " argument 4 must be a number"
                                             read(words(6),*, iostat=ios) funccutoff_temp
                                             if (ios /= 0) stop err // err_inpnn // "element_symfunction_short type ", words(3), " argument 5 must be a number"
-                                            do general_counter_1 = 1,nelem
+                                            do genctr_1 = 1,nelem
                                                 sym_short_atomic_count(elementindex(ztemp1) = sym_short_atomic_count(elementindex(ztemp1) + 1
                                                 function_type_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1)) = function_type_temp
                                                 eta_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1)) = eta_temp
                                                 rshift_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1)) = rshift_temp
                                                 funccutoff_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1)) = funccutoff_temp
-                                                symelement_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),1,elementindex(ztemp1)) = nucelem(general_counter_1)
-                                                symelement_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),2,elementindex(ztemp1)) = nucelem(general_counter_1)
+                                                symelement_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),1,elementindex(ztemp1)) = nucelem(genctr_1)
+                                                symelement_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),2,elementindex(ztemp1)) = nucelem(genctr_1)
                                             end do
-                                            do general_counter_1 = 1,nelem
+                                            do genctr_1 = 1,nelem
                                                 if (nelem .gt. 1) then
-                                                    do general_counter_2 = 1,general_counter_1-1
+                                                    do genctr_2 = 1,genctr_1-1
                                                         sym_short_atomic_count(elementindex(ztemp1) = sym_short_atomic_count(elementindex(ztemp1) + 1
                                                         function_type_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1)) = function_type_temp
                                                         eta_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1)) = eta_temp
                                                         rshift_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1)) = rshift_temp
                                                         funccutoff_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1)) = funccutoff_temp
-                                                        symelement_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),1,elementindex(ztemp1)) = nucelem(general_counter_2)
-                                                        symelement_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),2,elementindex(ztemp1)) = nucelem(general_counter_1)
+                                                        symelement_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),1,elementindex(ztemp1)) = nucelem(genctr_2)
+                                                        symelement_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),2,elementindex(ztemp1)) = nucelem(genctr_1)
                                                     end do
                                                 end if
                                             end do
@@ -3632,26 +3824,26 @@ module pes_nene_mod
                                             if (ios /= 0) stop err // err_inpnn // "element_symfunction_short type ", words(3), " argument 5 must be a number"
                                             read(words(7),*, iostat=ios) funccutoff_temp
                                             if (ios /= 0) stop err // err_inpnn // "element_symfunction_short type ", words(3), " argument 6 must be a number"
-                                            do general_counter_1 = 1,nelem
+                                            do genctr_1 = 1,nelem
                                                 sym_short_atomic_count(elementindex(ztemp1) = sym_short_atomic_count(elementindex(ztemp1) + 1
                                                 function_type_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1)) = function_type_temp
                                                 eta_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1)) = eta_temp
                                                 lambda_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1)) = lambda_temp
                                                 zeta_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1)) = zeta_temp
                                                 funccutoff_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1)) = funccutoff_temp
-                                                symelement_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),1,elementindex(ztemp1)) = nucelem(general_counter_1)
+                                                symelement_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),1,elementindex(ztemp1)) = nucelem(genctr_1)
                                             end do
-                                            do general_counter_1 = 1,nelem
+                                            do genctr_1 = 1,nelem
                                                 if (nelem .gt. 1) then
-                                                    do general_counter_2 = 1,general_counter_1-1
+                                                    do genctr_2 = 1,genctr_1-1
                                                         sym_short_atomic_count(elementindex(ztemp1) = sym_short_atomic_count(elementindex(ztemp1) + 1
                                                         function_type_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1)) = function_type_temp
                                                         eta_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1)) = eta_temp
                                                         lambda_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1)) = lambda_temp
                                                         zeta_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1)) = zeta_temp
                                                         funccutoff_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1)) = funccutoff_temp
-                                                        symelement_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),1,elementindex(ztemp1)) = nucelem(general_counter_2)
-                                                        symelement_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),2,elementindex(ztemp1)) = nucelem(general_counter_1)
+                                                        symelement_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),1,elementindex(ztemp1)) = nucelem(genctr_2)
+                                                        symelement_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),2,elementindex(ztemp1)) = nucelem(genctr_1)
                                                     end do
                                                 end if
                                             end do
@@ -3678,12 +3870,12 @@ module pes_nene_mod
                                         if (nwords == 3) then
                                             read(words(3),*, iostat=ios) funccutoff_temp
                                             if (ios /= 0) stop err // err_inpnn // "global_symfunction_short type ", words(2), " argument 2 must be a number"
-                                            do general_counter_1 = 1,nelem
-                                                do general_counter_2 = 1,nelem
-                                                    sym_short_atomic_count(general_counter_1) = sym_short_atomic_count(general_counter_1) + 1
-                                                    function_type_short_atomic(sym_short_atomic_count(general_counter_1),general_counter_1) = function_type_temp
-                                                    funccutoff_short_atomic(sym_short_atomic_count(general_counter_1),general_counter_1) = funccutoff_temp
-                                                    symelement_short_atomic(sym_short_atomic_count(general_counter_1),1,general_counter_1) = nucelem(general_counter_2)
+                                            do genctr_1 = 1,nelem
+                                                do genctr_2 = 1,nelem
+                                                    sym_short_atomic_count(genctr_1) = sym_short_atomic_count(genctr_1) + 1
+                                                    function_type_short_atomic(sym_short_atomic_count(genctr_1),genctr_1) = function_type_temp
+                                                    funccutoff_short_atomic(sym_short_atomic_count(genctr_1),genctr_1) = funccutoff_temp
+                                                    symelement_short_atomic(sym_short_atomic_count(genctr_1),1,genctr_1) = nucelem(genctr_2)
                                                 end do
                                             end do
                                         else
@@ -3698,14 +3890,14 @@ module pes_nene_mod
                                             if (ios /= 0) stop err // err_inpnn // "global_symfunction_short type ", words(2), " argument 3 must be a number"
                                             read(words(5),*, iostat=ios) funccutoff_temp
                                             if (ios /= 0) stop err // err_inpnn // "global_symfunction_short type ", words(2), " argument 4 must be a number"
-                                            do general_counter_1 = 1,nelem
-                                                do general_counter_2 = 1,nelem
-                                                    sym_short_atomic_count(general_counter_1) = sym_short_atomic_count(general_counter_1) + 1
-                                                    function_type_short_atomic(sym_short_atomic_count(general_counter_1),general_counter_1) = function_type_temp
-                                                    eta_short_atomic(sym_short_atomic_count(general_counter_1),general_counter_1) = eta_temp
-                                                    rshift_short_atomic(sym_short_atomic_count(general_counter_1),general_counter_1) = rshift_temp
-                                                    funccutoff_short_atomic(sym_short_atomic_count(general_counter_1),general_counter_1) = funccutoff_temp
-                                                    symelement_short_atomic(sym_short_atomic_count(general_counter_1),1,general_counter_1) = nucelem(general_counter_2)
+                                            do genctr_1 = 1,nelem
+                                                do genctr_2 = 1,nelem
+                                                    sym_short_atomic_count(genctr_1) = sym_short_atomic_count(genctr_1) + 1
+                                                    function_type_short_atomic(sym_short_atomic_count(genctr_1),genctr_1) = function_type_temp
+                                                    eta_short_atomic(sym_short_atomic_count(genctr_1),genctr_1) = eta_temp
+                                                    rshift_short_atomic(sym_short_atomic_count(genctr_1),genctr_1) = rshift_temp
+                                                    funccutoff_short_atomic(sym_short_atomic_count(genctr_1),genctr_1) = funccutoff_temp
+                                                    symelement_short_atomic(sym_short_atomic_count(genctr_1),1,genctr_1) = nucelem(genctr_2)
                                                 end do
                                             end do
                                         else
@@ -3722,28 +3914,28 @@ module pes_nene_mod
                                             if (ios /= 0) stop err // err_inpnn // "global_symfunction_short type ", words(2), " argument 4 must be a number"
                                             read(words(6),*, iostat=ios) funccutoff_temp
                                             if (ios /= 0) stop err // err_inpnn // "global_symfunction_short type ", words(2), " argument 5 must be a number"
-                                            do general_counter_3 = 1,nelem
-                                                do general_counter_1 = 1,nelem
-                                                    sym_short_atomic_count(general_counter_3) = sym_short_atomic_count(general_counter_3) + 1
-                                                    function_type_short_atomic(sym_short_atomic_count(general_counter_3),general_counter_3) = function_type_temp
-                                                    eta_short_atomic(sym_short_atomic_count(general_counter_3),general_counter_3) = eta_temp
-                                                    lambda_short_atomic(sym_short_atomic_count(general_counter_3),general_counter_3) = lambda_temp
-                                                    zeta_short_atomic(sym_short_atomic_count(general_counter_3),general_counter_3) = zeta_temp
-                                                    funccutoff_short_atomic(sym_short_atomic_count(general_counter_3),general_counter_3) = funccutoff_temp
-                                                    symelement_short_atomic(sym_short_atomic_count(general_counter_3),1,general_counter_3) = nucelem(general_counter_1)
-                                                    symelement_short_atomic(sym_short_atomic_count(general_counter_3),2,general_counter_3) = nucelem(general_counter_1)
+                                            do genctr_3 = 1,nelem
+                                                do genctr_1 = 1,nelem
+                                                    sym_short_atomic_count(genctr_3) = sym_short_atomic_count(genctr_3) + 1
+                                                    function_type_short_atomic(sym_short_atomic_count(genctr_3),genctr_3) = function_type_temp
+                                                    eta_short_atomic(sym_short_atomic_count(genctr_3),genctr_3) = eta_temp
+                                                    lambda_short_atomic(sym_short_atomic_count(genctr_3),genctr_3) = lambda_temp
+                                                    zeta_short_atomic(sym_short_atomic_count(genctr_3),genctr_3) = zeta_temp
+                                                    funccutoff_short_atomic(sym_short_atomic_count(genctr_3),genctr_3) = funccutoff_temp
+                                                    symelement_short_atomic(sym_short_atomic_count(genctr_3),1,genctr_3) = nucelem(genctr_1)
+                                                    symelement_short_atomic(sym_short_atomic_count(genctr_3),2,genctr_3) = nucelem(genctr_1)
                                                 end do
-                                                do general_counter_1 = 1,nelem
+                                                do genctr_1 = 1,nelem
                                                     if (nelem .gt. 1) then
-                                                        do general_counter_2 = 1,general_counter_1-1
-                                                            sym_short_atomic_count(general_counter_3) = sym_short_atomic_count(general_counter_3) + 1
-                                                            function_type_short_atomic(sym_short_atomic_count(general_counter_3),general_counter_3) = function_type_temp
-                                                            eta_short_atomic(sym_short_atomic_count(general_counter_3),general_counter_3) = eta_temp
-                                                            lambda_short_atomic(sym_short_atomic_count(general_counter_3),general_counter_3) = lambda_temp
-                                                            zeta_short_atomic(sym_short_atomic_count(general_counter_3),general_counter_3) = zeta_temp
-                                                            funccutoff_short_atomic(sym_short_atomic_count(general_counter_3),general_counter_3) = funccutoff_temp
-                                                            symelement_short_atomic(sym_short_atomic_count(general_counter_3),1,general_counter_3) = nucelem(general_counter_2)
-                                                            symelement_short_atomic(sym_short_atomic_count(general_counter_3),2,general_counter_3) = nucelem(general_counter_1)
+                                                        do genctr_2 = 1,genctr_1-1
+                                                            sym_short_atomic_count(genctr_3) = sym_short_atomic_count(genctr_3) + 1
+                                                            function_type_short_atomic(sym_short_atomic_count(genctr_3),genctr_3) = function_type_temp
+                                                            eta_short_atomic(sym_short_atomic_count(genctr_3),genctr_3) = eta_temp
+                                                            lambda_short_atomic(sym_short_atomic_count(genctr_3),genctr_3) = lambda_temp
+                                                            zeta_short_atomic(sym_short_atomic_count(genctr_3),genctr_3) = zeta_temp
+                                                            funccutoff_short_atomic(sym_short_atomic_count(genctr_3),genctr_3) = funccutoff_temp
+                                                            symelement_short_atomic(sym_short_atomic_count(genctr_3),1,genctr_3) = nucelem(genctr_2)
+                                                            symelement_short_atomic(sym_short_atomic_count(genctr_3),2,genctr_3) = nucelem(genctr_1)
                                                         end do
                                                     end if
                                                 end do
@@ -3758,13 +3950,13 @@ module pes_nene_mod
                                             if (ios /= 0) stop err // err_inpnn // "global_symfunction_short type ", words(2), " argument 2 must be a number"
                                             read(words(4),*, iostat=ios) funccutoff_temp
                                             if (ios /= 0) stop err // err_inpnn // "global_symfunction_short type ", words(2), " argument 3 must be a number"
-                                            do general_counter_3 = 1,nelem
-                                                do general_counter_1 = 1,nelem
-                                                    sym_short_atomic_count(general_counter_3) = sym_short_atomic_count(general_counter_3) + 1
-                                                    function_type_short_atomic(sym_short_atomic_count(general_counter_3),general_counter_3) = function_type_temp
-                                                    eta_short_atomic(sym_short_atomic_count(general_counter_3),general_counter_3) = eta_temp
-                                                    funccutoff_short_atomic(sym_short_atomic_count(general_counter_3),general_counter_3) = funccutoff_temp
-                                                    symelement_short_atomic(sym_short_atomic_count(general_counter_3),1,general_counter_3) = nucelem(general_counter_1)
+                                            do genctr_3 = 1,nelem
+                                                do genctr_1 = 1,nelem
+                                                    sym_short_atomic_count(genctr_3) = sym_short_atomic_count(genctr_3) + 1
+                                                    function_type_short_atomic(sym_short_atomic_count(genctr_3),genctr_3) = function_type_temp
+                                                    eta_short_atomic(sym_short_atomic_count(genctr_3),genctr_3) = eta_temp
+                                                    funccutoff_short_atomic(sym_short_atomic_count(genctr_3),genctr_3) = funccutoff_temp
+                                                    symelement_short_atomic(sym_short_atomic_count(genctr_3),1,genctr_3) = nucelem(genctr_1)
                                                 end do
                                             end do
                                         else
@@ -3775,11 +3967,11 @@ module pes_nene_mod
                                         if (nwords == 3) then
                                             read(words(3),*, iostat=ios) eta_temp
                                             if (ios /= 0) stop err // err_inpnn // "global_symfunction_short type ", words(2), " argument 2 must be a number"
-                                            do general_counter_3 = 1,nelem
-                                                sym_short_atomic_count(general_counter_3) = sym_short_atomic_count(general_counter_3) + 1
-                                                function_type_short_atomic(sym_short_atomic_count(general_counter_3),general_counter_3) = function_type_temp
-                                                eta_short_atomic(sym_short_atomic_count(general_counter_3),general_counter_3) = eta_temp
-                                                symelement_short_atomic(sym_short_atomic_count(general_counter_3),1,general_counter_3) = nucelem(general_counter_3)
+                                            do genctr_3 = 1,nelem
+                                                sym_short_atomic_count(genctr_3) = sym_short_atomic_count(genctr_3) + 1
+                                                function_type_short_atomic(sym_short_atomic_count(genctr_3),genctr_3) = function_type_temp
+                                                eta_short_atomic(sym_short_atomic_count(genctr_3),genctr_3) = eta_temp
+                                                symelement_short_atomic(sym_short_atomic_count(genctr_3),1,genctr_3) = nucelem(genctr_3)
                                             end do
                                         else
                                             print *, err, err_inpnn, "global_symfunction_short type ", words(2), " needs 2 arguments"; stop
@@ -3789,11 +3981,11 @@ module pes_nene_mod
                                         if (nwords == 3) then
                                             read(words(3),*, iostat=ios) funccutoff_temp
                                             if (ios /= 0) stop err // err_inpnn // "global_symfunction_short type ", words(2), " argument 2 must be a number"
-                                            do general_counter_3 = 1,nelem
-                                                sym_short_atomic_count(general_counter_3) = sym_short_atomic_count(general_counter_3) + 1
-                                                function_type_short_atomic(sym_short_atomic_count(general_counter_3),general_counter_3) = function_type_temp
-                                                funccutoff_short_atomic(sym_short_atomic_count(general_counter_3),general_counter_3) = funccutoff_temp
-                                                symelement_short_atomic(sym_short_atomic_count(general_counter_3),1,general_counter_3) = nucelem(general_counter_3)
+                                            do genctr_3 = 1,nelem
+                                                sym_short_atomic_count(genctr_3) = sym_short_atomic_count(genctr_3) + 1
+                                                function_type_short_atomic(sym_short_atomic_count(genctr_3),genctr_3) = function_type_temp
+                                                funccutoff_short_atomic(sym_short_atomic_count(genctr_3),genctr_3) = funccutoff_temp
+                                                symelement_short_atomic(sym_short_atomic_count(genctr_3),1,genctr_3) = nucelem(genctr_3)
                                             end do
                                         else
                                             print *, err, err_inpnn, "global_symfunction_short type ", words(2), " needs 2 arguments"; stop
@@ -3807,26 +3999,26 @@ module pes_nene_mod
                                             if (ios /= 0) stop err // err_inpnn // "global_symfunction_short type ", words(2), " argument 3 must be a number"
                                             read(words(5),*, iostat=ios) funccutoff_temp
                                             if (ios /= 0) stop err // err_inpnn // "global_symfunction_short type ", words(2), " argument 4 must be a number"
-                                            do general_counter_3 = 1,nelem
-                                                do general_counter_1 = 1,nelem
-                                                    sym_short_atomic_count(general_counter_3) = sym_short_atomic_count(general_counter_3) + 1
-                                                    function_type_short_atomic(sym_short_atomic_count(general_counter_3),general_counter_3) = function_type_temp
-                                                    eta_short_atomic(sym_short_atomic_count(general_counter_3),general_counter_3) = eta_temp
-                                                    rshift_short_atomic(sym_short_atomic_count(general_counter_3),general_counter_3) = rshift_temp
-                                                    funccutoff_short_atomic(sym_short_atomic_count(general_counter_3),general_counter_3) = funccutoff_temp
-                                                    symelement_short_atomic(sym_short_atomic_count(general_counter_3),1,general_counter_3) = nucelem(general_counter_1)
-                                                    symelement_short_atomic(sym_short_atomic_count(general_counter_3),2,general_counter_3) = nucelem(general_counter_1)
+                                            do genctr_3 = 1,nelem
+                                                do genctr_1 = 1,nelem
+                                                    sym_short_atomic_count(genctr_3) = sym_short_atomic_count(genctr_3) + 1
+                                                    function_type_short_atomic(sym_short_atomic_count(genctr_3),genctr_3) = function_type_temp
+                                                    eta_short_atomic(sym_short_atomic_count(genctr_3),genctr_3) = eta_temp
+                                                    rshift_short_atomic(sym_short_atomic_count(genctr_3),genctr_3) = rshift_temp
+                                                    funccutoff_short_atomic(sym_short_atomic_count(genctr_3),genctr_3) = funccutoff_temp
+                                                    symelement_short_atomic(sym_short_atomic_count(genctr_3),1,genctr_3) = nucelem(genctr_1)
+                                                    symelement_short_atomic(sym_short_atomic_count(genctr_3),2,genctr_3) = nucelem(genctr_1)
                                                 end do
-                                                do general_counter_1 = 1,nelem
+                                                do genctr_1 = 1,nelem
                                                     if (nelem .gt. 1) then
-                                                        do general_counter_2 = 1,general_counter_1-1
-                                                            sym_short_atomic_count(general_counter_3) = sym_short_atomic_count(general_counter_3) + 1
-                                                            function_type_short_atomic(sym_short_atomic_count(general_counter_3),general_counter_3) = function_type_temp
-                                                            eta_short_atomic(sym_short_atomic_count(general_counter_3),general_counter_3) = eta_temp
-                                                            rshift_short_atomic(sym_short_atomic_count(general_counter_3),general_counter_3) = rshift_temp
-                                                            funccutoff_short_atomic(sym_short_atomic_count(general_counter_3),general_counter_3) = funccutoff_temp
-                                                            symelement_short_atomic(sym_short_atomic_count(general_counter_3),1,general_counter_3) = nucelem(general_counter_2)
-                                                            symelement_short_atomic(sym_short_atomic_count(general_counter_3),2,general_counter_3) = nucelem(general_counter_1)
+                                                        do genctr_2 = 1,genctr_1-1
+                                                            sym_short_atomic_count(genctr_3) = sym_short_atomic_count(genctr_3) + 1
+                                                            function_type_short_atomic(sym_short_atomic_count(genctr_3),genctr_3) = function_type_temp
+                                                            eta_short_atomic(sym_short_atomic_count(genctr_3),genctr_3) = eta_temp
+                                                            rshift_short_atomic(sym_short_atomic_count(genctr_3),genctr_3) = rshift_temp
+                                                            funccutoff_short_atomic(sym_short_atomic_count(genctr_3),genctr_3) = funccutoff_temp
+                                                            symelement_short_atomic(sym_short_atomic_count(genctr_3),1,genctr_3) = nucelem(genctr_2)
+                                                            symelement_short_atomic(sym_short_atomic_count(genctr_3),2,genctr_3) = nucelem(genctr_1)
                                                         end do
                                                     end if
                                                 end do
@@ -3845,28 +4037,28 @@ module pes_nene_mod
                                             if (ios /= 0) stop err // err_inpnn // "global_symfunction_short type ", words(2), " argument 4 must be a number"
                                             read(words(6),*, iostat=ios) funccutoff_temp
                                             if (ios /= 0) stop err // err_inpnn // "global_symfunction_short type ", words(2), " argument 5 must be a number"
-                                            do general_counter_3 = 1,nelem
-                                                do general_counter_1 = 1,nelem
-                                                    sym_short_atomic_count(general_counter_3) = sym_short_atomic_count(general_counter_3) + 1
-                                                    function_type_short_atomic(sym_short_atomic_count(general_counter_3),general_counter_3) = function_type_temp
-                                                    eta_short_atomic(sym_short_atomic_count(general_counter_3),general_counter_3) = eta_temp
-                                                    lambda_short_atomic(sym_short_atomic_count(general_counter_3),general_counter_3) = lambda_temp
-                                                    zeta_short_atomic(sym_short_atomic_count(general_counter_3),general_counter_3) = zeta_temp
-                                                    funccutoff_short_atomic(sym_short_atomic_count(general_counter_3),general_counter_3) = funccutoff_temp
-                                                    symelement_short_atomic(sym_short_atomic_count(general_counter_3),1,general_counter_3) = nucelem(general_counter_1)
-                                                    symelement_short_atomic(sym_short_atomic_count(general_counter_3),2,general_counter_3) = nucelem(general_counter_1)
+                                            do genctr_3 = 1,nelem
+                                                do genctr_1 = 1,nelem
+                                                    sym_short_atomic_count(genctr_3) = sym_short_atomic_count(genctr_3) + 1
+                                                    function_type_short_atomic(sym_short_atomic_count(genctr_3),genctr_3) = function_type_temp
+                                                    eta_short_atomic(sym_short_atomic_count(genctr_3),genctr_3) = eta_temp
+                                                    lambda_short_atomic(sym_short_atomic_count(genctr_3),genctr_3) = lambda_temp
+                                                    zeta_short_atomic(sym_short_atomic_count(genctr_3),genctr_3) = zeta_temp
+                                                    funccutoff_short_atomic(sym_short_atomic_count(genctr_3),genctr_3) = funccutoff_temp
+                                                    symelement_short_atomic(sym_short_atomic_count(genctr_3),1,genctr_3) = nucelem(genctr_1)
+                                                    symelement_short_atomic(sym_short_atomic_count(genctr_3),2,genctr_3) = nucelem(genctr_1)
                                                 end do
-                                                do general_counter_1 = 1,nelem
+                                                do genctr_1 = 1,nelem
                                                     if (nelem .gt. 1) then
-                                                        do general_counter_2 = 1,general_counter_1-1
-                                                            sym_short_atomic_count(general_counter_3) = sym_short_atomic_count(general_counter_3) + 1
-                                                            function_type_short_atomic(sym_short_atomic_count(general_counter_3),general_counter_3) = function_type_temp
-                                                            eta_short_atomic(sym_short_atomic_count(general_counter_3),general_counter_3) = eta_temp
-                                                            lambda_short_atomic(sym_short_atomic_count(general_counter_3),general_counter_3) = lambda_temp
-                                                            zeta_short_atomic(sym_short_atomic_count(general_counter_3),general_counter_3) = zeta_temp
-                                                            funccutoff_short_atomic(sym_short_atomic_count(general_counter_3),general_counter_3) = funccutoff_temp
-                                                            symelement_short_atomic(sym_short_atomic_count(general_counter_3),1,general_counter_3) = nucelem(general_counter_2)
-                                                            symelement_short_atomic(sym_short_atomic_count(general_counter_3),2,general_counter_3) = nucelem(general_counter_1)
+                                                        do genctr_2 = 1,genctr_1-1
+                                                            sym_short_atomic_count(genctr_3) = sym_short_atomic_count(genctr_3) + 1
+                                                            function_type_short_atomic(sym_short_atomic_count(genctr_3),genctr_3) = function_type_temp
+                                                            eta_short_atomic(sym_short_atomic_count(genctr_3),genctr_3) = eta_temp
+                                                            lambda_short_atomic(sym_short_atomic_count(genctr_3),genctr_3) = lambda_temp
+                                                            zeta_short_atomic(sym_short_atomic_count(genctr_3),genctr_3) = zeta_temp
+                                                            funccutoff_short_atomic(sym_short_atomic_count(genctr_3),genctr_3) = funccutoff_temp
+                                                            symelement_short_atomic(sym_short_atomic_count(genctr_3),1,genctr_3) = nucelem(genctr_2)
+                                                            symelement_short_atomic(sym_short_atomic_count(genctr_3),2,genctr_3) = nucelem(genctr_1)
                                                         end do
                                                     end if
                                                 end do
@@ -4058,11 +4250,11 @@ module pes_nene_mod
                                         if (nwords == 4) then
                                             read(words(4),*, iostat=ios) funccutoff_temp
                                             if (ios /= 0) stop err // err_inpnn // "element_symfunction_electrostatic type ", words(3), " argument 3 must be a number"
-                                            do general_counter_1 = 1,nelem
+                                            do genctr_1 = 1,nelem
                                                 sym_elec_count(elementindex(ztemp1) = sym_elec_count(elementindex(ztemp1) + 1
                                                 function_type_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1)) = function_type_temp
                                                 funccutoff_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1)) = funccutoff_temp
-                                                symelement_elec(sym_elec_count(elementindex(ztemp1)),1,elementindex(ztemp1)) = nucelem(general_counter_1)
+                                                symelement_elec(sym_elec_count(elementindex(ztemp1)),1,elementindex(ztemp1)) = nucelem(genctr_1)
                                             end do
                                         else
                                             print *, err, err_inpnn, "element_symfunction_electrostatic type ", words(3), " needs 3 arguments"; stop
@@ -4076,13 +4268,13 @@ module pes_nene_mod
                                             if (ios /= 0) stop err // err_inpnn // "element_symfunction_electrostatic type ", words(3), " argument 4 must be a number"
                                             read(words(6),*, iostat=ios) funccutoff_temp
                                             if (ios /= 0) stop err // err_inpnn // "element_symfunction_electrostatic type ", words(3), " argument 5 must be a number"
-                                            do general_counter_1 = 1,nelem
+                                            do genctr_1 = 1,nelem
                                                 sym_elec_count(elementindex(ztemp1) = sym_elec_count(elementindex(ztemp1) + 1
                                                 function_type_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1)) = function_type_temp
                                                 eta_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1)) = eta_temp
                                                 rshift_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1)) = rshift_temp
                                                 funccutoff_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1)) = funccutoff_temp
-                                                symelement_elec(sym_elec_count(elementindex(ztemp1)),1,elementindex(ztemp1)) = nucelem(general_counter_1)
+                                                symelement_elec(sym_elec_count(elementindex(ztemp1)),1,elementindex(ztemp1)) = nucelem(genctr_1)
                                             end do
                                         else
                                             print *, err, err_inpnn, "element_symfunction_electrostatic type ", words(3), " needs 5 arguments"; stop
@@ -4098,27 +4290,27 @@ module pes_nene_mod
                                             if (ios /= 0) stop err // err_inpnn // "element_symfunction_electrostatic type ", words(3), " argument 5 must be a number"
                                             read(words(7),*, iostat=ios) funccutoff_temp
                                             if (ios /= 0) stop err // err_inpnn // "element_symfunction_electrostatic type ", words(3), " argument 6 must be a number"
-                                            do general_counter_1 = 1,nelem
+                                            do genctr_1 = 1,nelem
                                                 sym_elec_count(elementindex(ztemp1) = sym_elec_count(elementindex(ztemp1) + 1
                                                 function_type_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1)) = function_type_temp
                                                 eta_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1)) = eta_temp
                                                 lambda_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1)) = lambda_temp
                                                 zeta_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1)) = zeta_temp
                                                 funccutoff_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1)) = funccutoff_temp
-                                                symelement_elec(sym_elec_count(elementindex(ztemp1)),1,elementindex(ztemp1)) = nucelem(general_counter_1)
-                                                symelement_elec(sym_elec_count(elementindex(ztemp1)),2,elementindex(ztemp1)) = nucelem(general_counter_1)
+                                                symelement_elec(sym_elec_count(elementindex(ztemp1)),1,elementindex(ztemp1)) = nucelem(genctr_1)
+                                                symelement_elec(sym_elec_count(elementindex(ztemp1)),2,elementindex(ztemp1)) = nucelem(genctr_1)
                                             end do
-                                            do general_counter_1 = 1,nelem
+                                            do genctr_1 = 1,nelem
                                                 if (nelem .gt. 1) then
-                                                    do general_counter_2 = 1,general_counter_1-1
+                                                    do genctr_2 = 1,genctr_1-1
                                                         sym_elec_count(elementindex(ztemp1) = sym_elec_count(elementindex(ztemp1) + 1
                                                         function_type_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1)) = function_type_temp
                                                         eta_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1)) = eta_temp
                                                         lambda_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1)) = lambda_temp
                                                         zeta_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1)) = zeta_temp
                                                         funccutoff_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1)) = funccutoff_temp
-                                                        symelement_elec(sym_elec_count(elementindex(ztemp1)),1,elementindex(ztemp1)) = nucelem(general_counter_2)
-                                                        symelement_elec(sym_elec_count(elementindex(ztemp1)),2,elementindex(ztemp1)) = nucelem(general_counter_1)
+                                                        symelement_elec(sym_elec_count(elementindex(ztemp1)),1,elementindex(ztemp1)) = nucelem(genctr_2)
+                                                        symelement_elec(sym_elec_count(elementindex(ztemp1)),2,elementindex(ztemp1)) = nucelem(genctr_1)
                                                     end do
                                                 end if
                                             end do
@@ -4132,12 +4324,12 @@ module pes_nene_mod
                                             if (ios /= 0) stop err // err_inpnn // "element_symfunction_electrostatic type ", words(3), " argument 3 must be a number"
                                             read(words(5),*, iostat=ios) funccutoff_temp
                                             if (ios /= 0) stop err // err_inpnn // "element_symfunction_electrostatic type ", words(3), " argument 4 must be a number"
-                                            do general_counter_1 = 1,nelem
+                                            do genctr_1 = 1,nelem
                                                 sym_elec_count(elementindex(ztemp1) = sym_elec_count(elementindex(ztemp1) + 1
                                                 function_type_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1)) = function_type_temp
                                                 eta_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1)) = eta_temp
                                                 funccutoff_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1)) = funccutoff_temp
-                                                symelement_elec(sym_elec_count(elementindex(ztemp1)),1,elementindex(ztemp1)) = nucelem(general_counter_1)
+                                                symelement_elec(sym_elec_count(elementindex(ztemp1)),1,elementindex(ztemp1)) = nucelem(genctr_1)
                                             end do
                                         else
                                             print *, err, err_inpnn, "element_symfunction_electrostatic type ", words(3), " needs 4 arguments"; stop
@@ -4172,25 +4364,25 @@ module pes_nene_mod
                                             if (ios /= 0) stop err // err_inpnn // "element_symfunction_electrostatic type ", words(3), " argument 4 must be a number"
                                             read(words(6),*, iostat=ios) funccutoff_temp
                                             if (ios /= 0) stop err // err_inpnn // "element_symfunction_electrostatic type ", words(3), " argument 5 must be a number"
-                                            do general_counter_1 = 1,nelem
+                                            do genctr_1 = 1,nelem
                                                 sym_elec_count(elementindex(ztemp1) = sym_elec_count(elementindex(ztemp1) + 1
                                                 function_type_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1)) = function_type_temp
                                                 eta_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1)) = eta_temp
                                                 rshift_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1)) = rshift_temp
                                                 funccutoff_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1)) = funccutoff_temp
-                                                symelement_elec(sym_elec_count(elementindex(ztemp1)),1,elementindex(ztemp1)) = nucelem(general_counter_1)
-                                                symelement_elec(sym_elec_count(elementindex(ztemp1)),2,elementindex(ztemp1)) = nucelem(general_counter_1)
+                                                symelement_elec(sym_elec_count(elementindex(ztemp1)),1,elementindex(ztemp1)) = nucelem(genctr_1)
+                                                symelement_elec(sym_elec_count(elementindex(ztemp1)),2,elementindex(ztemp1)) = nucelem(genctr_1)
                                             end do
-                                            do general_counter_1 = 1,nelem
+                                            do genctr_1 = 1,nelem
                                                 if (nelem .gt. 1) then
-                                                    do general_counter_2 = 1,general_counter_1-1
+                                                    do genctr_2 = 1,genctr_1-1
                                                         sym_elec_count(elementindex(ztemp1) = sym_elec_count(elementindex(ztemp1) + 1
                                                         function_type_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1)) = function_type_temp
                                                         eta_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1)) = eta_temp
                                                         rshift_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1)) = rshift_temp
                                                         funccutoff_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1)) = funccutoff_temp
-                                                        symelement_elec(sym_elec_count(elementindex(ztemp1)),1,elementindex(ztemp1)) = nucelem(general_counter_2)
-                                                        symelement_elec(sym_elec_count(elementindex(ztemp1)),2,elementindex(ztemp1)) = nucelem(general_counter_1)
+                                                        symelement_elec(sym_elec_count(elementindex(ztemp1)),1,elementindex(ztemp1)) = nucelem(genctr_2)
+                                                        symelement_elec(sym_elec_count(elementindex(ztemp1)),2,elementindex(ztemp1)) = nucelem(genctr_1)
                                                     end do
                                                 end if
                                             end do
@@ -4208,26 +4400,26 @@ module pes_nene_mod
                                             if (ios /= 0) stop err // err_inpnn // "element_symfunction_electrostatic type ", words(3), " argument 5 must be a number"
                                             read(words(7),*, iostat=ios) funccutoff_temp
                                             if (ios /= 0) stop err // err_inpnn // "element_symfunction_electrostatic type ", words(3), " argument 6 must be a number"
-                                            do general_counter_1 = 1,nelem
+                                            do genctr_1 = 1,nelem
                                                 sym_elec_count(elementindex(ztemp1) = sym_elec_count(elementindex(ztemp1) + 1
                                                 function_type_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1)) = function_type_temp
                                                 eta_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1)) = eta_temp
                                                 lambda_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1)) = lambda_temp
                                                 zeta_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1)) = zeta_temp
                                                 funccutoff_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1)) = funccutoff_temp
-                                                symelement_elec(sym_elec_count(elementindex(ztemp1)),1,elementindex(ztemp1)) = nucelem(general_counter_1)
+                                                symelement_elec(sym_elec_count(elementindex(ztemp1)),1,elementindex(ztemp1)) = nucelem(genctr_1)
                                             end do
-                                            do general_counter_1 = 1,nelem
+                                            do genctr_1 = 1,nelem
                                                 if (nelem .gt. 1) then
-                                                    do general_counter_2 = 1,general_counter_1-1
+                                                    do genctr_2 = 1,genctr_1-1
                                                         sym_elec_count(elementindex(ztemp1) = sym_elec_count(elementindex(ztemp1) + 1
                                                         function_type_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1)) = function_type_temp
                                                         eta_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1)) = eta_temp
                                                         lambda_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1)) = lambda_temp
                                                         zeta_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1)) = zeta_temp
                                                         funccutoff_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1)) = funccutoff_temp
-                                                        symelement_elec(sym_elec_count(elementindex(ztemp1)),1,elementindex(ztemp1)) = nucelem(general_counter_2)
-                                                        symelement_elec(sym_elec_count(elementindex(ztemp1)),2,elementindex(ztemp1)) = nucelem(general_counter_1)
+                                                        symelement_elec(sym_elec_count(elementindex(ztemp1)),1,elementindex(ztemp1)) = nucelem(genctr_2)
+                                                        symelement_elec(sym_elec_count(elementindex(ztemp1)),2,elementindex(ztemp1)) = nucelem(genctr_1)
                                                     end do
                                                 end if
                                             end do
@@ -4254,12 +4446,12 @@ module pes_nene_mod
                                         if (nwords == 3) then
                                             read(words(3),*, iostat=ios) funccutoff_temp
                                             if (ios /= 0) stop err // err_inpnn // "global_symfunction_electrostatic type ", words(2), " argument 2 must be a number"
-                                            do general_counter_1 = 1,nelem
-                                                do general_counter_2 = 1,nelem
-                                                    sym_elec_count(general_counter_1) = sym_elec_count(general_counter_1) + 1
-                                                    function_type_elec(sym_elec_count(general_counter_1),general_counter_1) = function_type_temp
-                                                    funccutoff_elec(sym_elec_count(general_counter_1),general_counter_1) = funccutoff_temp
-                                                    symelement_elec(sym_elec_count(general_counter_1),1,general_counter_1) = nucelem(general_counter_2)
+                                            do genctr_1 = 1,nelem
+                                                do genctr_2 = 1,nelem
+                                                    sym_elec_count(genctr_1) = sym_elec_count(genctr_1) + 1
+                                                    function_type_elec(sym_elec_count(genctr_1),genctr_1) = function_type_temp
+                                                    funccutoff_elec(sym_elec_count(genctr_1),genctr_1) = funccutoff_temp
+                                                    symelement_elec(sym_elec_count(genctr_1),1,genctr_1) = nucelem(genctr_2)
                                                 end do
                                             end do
                                         else
@@ -4274,14 +4466,14 @@ module pes_nene_mod
                                             if (ios /= 0) stop err // err_inpnn // "global_symfunction_electrostatic type ", words(2), " argument 3 must be a number"
                                             read(words(5),*, iostat=ios) funccutoff_temp
                                             if (ios /= 0) stop err // err_inpnn // "global_symfunction_electrostatic type ", words(2), " argument 4 must be a number"
-                                            do general_counter_1 = 1,nelem
-                                                do general_counter_2 = 1,nelem
-                                                    sym_elec_count(general_counter_1) = sym_elec_count(general_counter_1) + 1
-                                                    function_type_elec(sym_elec_count(general_counter_1),general_counter_1) = function_type_temp
-                                                    eta_elec(sym_elec_count(general_counter_1),general_counter_1) = eta_temp
-                                                    rshift_elec(sym_elec_count(general_counter_1),general_counter_1) = rshift_temp
-                                                    funccutoff_elec(sym_elec_count(general_counter_1),general_counter_1) = funccutoff_temp
-                                                    symelement_elec(sym_elec_count(general_counter_1),1,general_counter_1) = nucelem(general_counter_2)
+                                            do genctr_1 = 1,nelem
+                                                do genctr_2 = 1,nelem
+                                                    sym_elec_count(genctr_1) = sym_elec_count(genctr_1) + 1
+                                                    function_type_elec(sym_elec_count(genctr_1),genctr_1) = function_type_temp
+                                                    eta_elec(sym_elec_count(genctr_1),genctr_1) = eta_temp
+                                                    rshift_elec(sym_elec_count(genctr_1),genctr_1) = rshift_temp
+                                                    funccutoff_elec(sym_elec_count(genctr_1),genctr_1) = funccutoff_temp
+                                                    symelement_elec(sym_elec_count(genctr_1),1,genctr_1) = nucelem(genctr_2)
                                                 end do
                                             end do
                                         else
@@ -4298,28 +4490,28 @@ module pes_nene_mod
                                             if (ios /= 0) stop err // err_inpnn // "global_symfunction_electrostatic type ", words(2), " argument 4 must be a number"
                                             read(words(6),*, iostat=ios) funccutoff_temp
                                             if (ios /= 0) stop err // err_inpnn // "global_symfunction_electrostatic type ", words(2), " argument 5 must be a number"
-                                            do general_counter_3 = 1,nelem
-                                                do general_counter_1 = 1,nelem
-                                                    sym_elec_count(general_counter_3) = sym_elec_count(general_counter_3) + 1
-                                                    function_type_elec(sym_elec_count(general_counter_3),general_counter_3) = function_type_temp
-                                                    eta_elec(sym_elec_count(general_counter_3),general_counter_3) = eta_temp
-                                                    lambda_elec(sym_elec_count(general_counter_3),general_counter_3) = lambda_temp
-                                                    zeta_elec(sym_elec_count(general_counter_3),general_counter_3) = zeta_temp
-                                                    funccutoff_elec(sym_elec_count(general_counter_3),general_counter_3) = funccutoff_temp
-                                                    symelement_elec(sym_elec_count(general_counter_3),1,general_counter_3) = nucelem(general_counter_1)
-                                                    symelement_elec(sym_elec_count(general_counter_3),2,general_counter_3) = nucelem(general_counter_1)
+                                            do genctr_3 = 1,nelem
+                                                do genctr_1 = 1,nelem
+                                                    sym_elec_count(genctr_3) = sym_elec_count(genctr_3) + 1
+                                                    function_type_elec(sym_elec_count(genctr_3),genctr_3) = function_type_temp
+                                                    eta_elec(sym_elec_count(genctr_3),genctr_3) = eta_temp
+                                                    lambda_elec(sym_elec_count(genctr_3),genctr_3) = lambda_temp
+                                                    zeta_elec(sym_elec_count(genctr_3),genctr_3) = zeta_temp
+                                                    funccutoff_elec(sym_elec_count(genctr_3),genctr_3) = funccutoff_temp
+                                                    symelement_elec(sym_elec_count(genctr_3),1,genctr_3) = nucelem(genctr_1)
+                                                    symelement_elec(sym_elec_count(genctr_3),2,genctr_3) = nucelem(genctr_1)
                                                 end do
-                                                do general_counter_1 = 1,nelem
+                                                do genctr_1 = 1,nelem
                                                     if (nelem .gt. 1) then
-                                                        do general_counter_2 = 1,general_counter_1-1
-                                                            sym_elec_count(general_counter_3) = sym_elec_count(general_counter_3) + 1
-                                                            function_type_elec(sym_elec_count(general_counter_3),general_counter_3) = function_type_temp
-                                                            eta_elec(sym_elec_count(general_counter_3),general_counter_3) = eta_temp
-                                                            lambda_elec(sym_elec_count(general_counter_3),general_counter_3) = lambda_temp
-                                                            zeta_elec(sym_elec_count(general_counter_3),general_counter_3) = zeta_temp
-                                                            funccutoff_elec(sym_elec_count(general_counter_3),general_counter_3) = funccutoff_temp
-                                                            symelement_elec(sym_elec_count(general_counter_3),1,general_counter_3) = nucelem(general_counter_2)
-                                                            symelement_elec(sym_elec_count(general_counter_3),2,general_counter_3) = nucelem(general_counter_1)
+                                                        do genctr_2 = 1,genctr_1-1
+                                                            sym_elec_count(genctr_3) = sym_elec_count(genctr_3) + 1
+                                                            function_type_elec(sym_elec_count(genctr_3),genctr_3) = function_type_temp
+                                                            eta_elec(sym_elec_count(genctr_3),genctr_3) = eta_temp
+                                                            lambda_elec(sym_elec_count(genctr_3),genctr_3) = lambda_temp
+                                                            zeta_elec(sym_elec_count(genctr_3),genctr_3) = zeta_temp
+                                                            funccutoff_elec(sym_elec_count(genctr_3),genctr_3) = funccutoff_temp
+                                                            symelement_elec(sym_elec_count(genctr_3),1,genctr_3) = nucelem(genctr_2)
+                                                            symelement_elec(sym_elec_count(genctr_3),2,genctr_3) = nucelem(genctr_1)
                                                         end do
                                                     end if
                                                 end do
@@ -4334,13 +4526,13 @@ module pes_nene_mod
                                             if (ios /= 0) stop err // err_inpnn // "global_symfunction_electrostatic type ", words(2), " argument 2 must be a number"
                                             read(words(4),*, iostat=ios) funccutoff_temp
                                             if (ios /= 0) stop err // err_inpnn // "global_symfunction_electrostatic type ", words(2), " argument 3 must be a number"
-                                            do general_counter_3 = 1,nelem
-                                                do general_counter_1 = 1,nelem
-                                                    sym_elec_count(general_counter_3) = sym_elec_count(general_counter_3) + 1
-                                                    function_type_elec(sym_elec_count(general_counter_3),general_counter_3) = function_type_temp
-                                                    eta_elec(sym_elec_count(general_counter_3),general_counter_3) = eta_temp
-                                                    funccutoff_elec(sym_elec_count(general_counter_3),general_counter_3) = funccutoff_temp
-                                                    symelement_elec(sym_elec_count(general_counter_3),1,general_counter_3) = nucelem(general_counter_1)
+                                            do genctr_3 = 1,nelem
+                                                do genctr_1 = 1,nelem
+                                                    sym_elec_count(genctr_3) = sym_elec_count(genctr_3) + 1
+                                                    function_type_elec(sym_elec_count(genctr_3),genctr_3) = function_type_temp
+                                                    eta_elec(sym_elec_count(genctr_3),genctr_3) = eta_temp
+                                                    funccutoff_elec(sym_elec_count(genctr_3),genctr_3) = funccutoff_temp
+                                                    symelement_elec(sym_elec_count(genctr_3),1,genctr_3) = nucelem(genctr_1)
                                                 end do
                                             end do
                                         else
@@ -4351,11 +4543,11 @@ module pes_nene_mod
                                         if (nwords == 3) then
                                             read(words(3),*, iostat=ios) eta_temp
                                             if (ios /= 0) stop err // err_inpnn // "global_symfunction_electrostatic type ", words(2), " argument 2 must be a number"
-                                            do general_counter_3 = 1,nelem
-                                                sym_elec_count(general_counter_3) = sym_elec_count(general_counter_3) + 1
-                                                function_type_elec(sym_elec_count(general_counter_3),general_counter_3) = function_type_temp
-                                                eta_elec(sym_elec_count(general_counter_3),general_counter_3) = eta_temp
-                                                symelement_elec(sym_elec_count(general_counter_3),1,general_counter_3) = nucelem(general_counter_3)
+                                            do genctr_3 = 1,nelem
+                                                sym_elec_count(genctr_3) = sym_elec_count(genctr_3) + 1
+                                                function_type_elec(sym_elec_count(genctr_3),genctr_3) = function_type_temp
+                                                eta_elec(sym_elec_count(genctr_3),genctr_3) = eta_temp
+                                                symelement_elec(sym_elec_count(genctr_3),1,genctr_3) = nucelem(genctr_3)
                                             end do
                                         else
                                             print *, err, err_inpnn, "global_symfunction_electrostatic type ", words(2), " needs 2 arguments"; stop
@@ -4365,11 +4557,11 @@ module pes_nene_mod
                                         if (nwords == 3) then
                                             read(words(3),*, iostat=ios) funccutoff_temp
                                             if (ios /= 0) stop err // err_inpnn // "global_symfunction_electrostatic type ", words(2), " argument 2 must be a number"
-                                            do general_counter_3 = 1,nelem
-                                                sym_elec_count(general_counter_3) = sym_elec_count(general_counter_3) + 1
-                                                function_type_elec(sym_elec_count(general_counter_3),general_counter_3) = function_type_temp
-                                                funccutoff_elec(sym_elec_count(general_counter_3),general_counter_3) = funccutoff_temp
-                                                symelement_elec(sym_elec_count(general_counter_3),1,general_counter_3) = nucelem(general_counter_3)
+                                            do genctr_3 = 1,nelem
+                                                sym_elec_count(genctr_3) = sym_elec_count(genctr_3) + 1
+                                                function_type_elec(sym_elec_count(genctr_3),genctr_3) = function_type_temp
+                                                funccutoff_elec(sym_elec_count(genctr_3),genctr_3) = funccutoff_temp
+                                                symelement_elec(sym_elec_count(genctr_3),1,genctr_3) = nucelem(genctr_3)
                                             end do
                                         else
                                             print *, err, err_inpnn, "global_symfunction_electrostatic type ", words(2), " needs 2 arguments"; stop
@@ -4383,26 +4575,26 @@ module pes_nene_mod
                                             if (ios /= 0) stop err // err_inpnn // "global_symfunction_electrostatic type ", words(2), " argument 3 must be a number"
                                             read(words(5),*, iostat=ios) funccutoff_temp
                                             if (ios /= 0) stop err // err_inpnn // "global_symfunction_electrostatic type ", words(2), " argument 4 must be a number"
-                                            do general_counter_3 = 1,nelem
-                                                do general_counter_1 = 1,nelem
-                                                    sym_elec_count(general_counter_3) = sym_elec_count(general_counter_3) + 1
-                                                    function_type_elec(sym_elec_count(general_counter_3),general_counter_3) = function_type_temp
-                                                    eta_elec(sym_elec_count(general_counter_3),general_counter_3) = eta_temp
-                                                    rshift_elec(sym_elec_count(general_counter_3),general_counter_3) = rshift_temp
-                                                    funccutoff_elec(sym_elec_count(general_counter_3),general_counter_3) = funccutoff_temp
-                                                    symelement_elec(sym_elec_count(general_counter_3),1,general_counter_3) = nucelem(general_counter_1)
-                                                    symelement_elec(sym_elec_count(general_counter_3),2,general_counter_3) = nucelem(general_counter_1)
+                                            do genctr_3 = 1,nelem
+                                                do genctr_1 = 1,nelem
+                                                    sym_elec_count(genctr_3) = sym_elec_count(genctr_3) + 1
+                                                    function_type_elec(sym_elec_count(genctr_3),genctr_3) = function_type_temp
+                                                    eta_elec(sym_elec_count(genctr_3),genctr_3) = eta_temp
+                                                    rshift_elec(sym_elec_count(genctr_3),genctr_3) = rshift_temp
+                                                    funccutoff_elec(sym_elec_count(genctr_3),genctr_3) = funccutoff_temp
+                                                    symelement_elec(sym_elec_count(genctr_3),1,genctr_3) = nucelem(genctr_1)
+                                                    symelement_elec(sym_elec_count(genctr_3),2,genctr_3) = nucelem(genctr_1)
                                                 end do
-                                                do general_counter_1 = 1,nelem
+                                                do genctr_1 = 1,nelem
                                                     if (nelem .gt. 1) then
-                                                        do general_counter_2 = 1,general_counter_1-1
-                                                            sym_elec_count(general_counter_3) = sym_elec_count(general_counter_3) + 1
-                                                            function_type_elec(sym_elec_count(general_counter_3),general_counter_3) = function_type_temp
-                                                            eta_elec(sym_elec_count(general_counter_3),general_counter_3) = eta_temp
-                                                            rshift_elec(sym_elec_count(general_counter_3),general_counter_3) = rshift_temp
-                                                            funccutoff_elec(sym_elec_count(general_counter_3),general_counter_3) = funccutoff_temp
-                                                            symelement_elec(sym_elec_count(general_counter_3),1,general_counter_3) = nucelem(general_counter_2)
-                                                            symelement_elec(sym_elec_count(general_counter_3),2,general_counter_3) = nucelem(general_counter_1)
+                                                        do genctr_2 = 1,genctr_1-1
+                                                            sym_elec_count(genctr_3) = sym_elec_count(genctr_3) + 1
+                                                            function_type_elec(sym_elec_count(genctr_3),genctr_3) = function_type_temp
+                                                            eta_elec(sym_elec_count(genctr_3),genctr_3) = eta_temp
+                                                            rshift_elec(sym_elec_count(genctr_3),genctr_3) = rshift_temp
+                                                            funccutoff_elec(sym_elec_count(genctr_3),genctr_3) = funccutoff_temp
+                                                            symelement_elec(sym_elec_count(genctr_3),1,genctr_3) = nucelem(genctr_2)
+                                                            symelement_elec(sym_elec_count(genctr_3),2,genctr_3) = nucelem(genctr_1)
                                                         end do
                                                     end if
                                                 end do
@@ -4421,28 +4613,28 @@ module pes_nene_mod
                                             if (ios /= 0) stop err // err_inpnn // "global_symfunction_electrostatic type ", words(2), " argument 4 must be a number"
                                             read(words(6),*, iostat=ios) funccutoff_temp
                                             if (ios /= 0) stop err // err_inpnn // "global_symfunction_electrostatic type ", words(2), " argument 5 must be a number"
-                                            do general_counter_3 = 1,nelem
-                                                do general_counter_1 = 1,nelem
-                                                    sym_elec_count(general_counter_3) = sym_elec_count(general_counter_3) + 1
-                                                    function_type_elec(sym_elec_count(general_counter_3),general_counter_3) = function_type_temp
-                                                    eta_elec(sym_elec_count(general_counter_3),general_counter_3) = eta_temp
-                                                    lambda_elec(sym_elec_count(general_counter_3),general_counter_3) = lambda_temp
-                                                    zeta_elec(sym_elec_count(general_counter_3),general_counter_3) = zeta_temp
-                                                    funccutoff_elec(sym_elec_count(general_counter_3),general_counter_3) = funccutoff_temp
-                                                    symelement_elec(sym_elec_count(general_counter_3),1,general_counter_3) = nucelem(general_counter_1)
-                                                    symelement_elec(sym_elec_count(general_counter_3),2,general_counter_3) = nucelem(general_counter_1)
+                                            do genctr_3 = 1,nelem
+                                                do genctr_1 = 1,nelem
+                                                    sym_elec_count(genctr_3) = sym_elec_count(genctr_3) + 1
+                                                    function_type_elec(sym_elec_count(genctr_3),genctr_3) = function_type_temp
+                                                    eta_elec(sym_elec_count(genctr_3),genctr_3) = eta_temp
+                                                    lambda_elec(sym_elec_count(genctr_3),genctr_3) = lambda_temp
+                                                    zeta_elec(sym_elec_count(genctr_3),genctr_3) = zeta_temp
+                                                    funccutoff_elec(sym_elec_count(genctr_3),genctr_3) = funccutoff_temp
+                                                    symelement_elec(sym_elec_count(genctr_3),1,genctr_3) = nucelem(genctr_1)
+                                                    symelement_elec(sym_elec_count(genctr_3),2,genctr_3) = nucelem(genctr_1)
                                                 end do
-                                                do general_counter_1 = 1,nelem
+                                                do genctr_1 = 1,nelem
                                                     if (nelem .gt. 1) then
-                                                        do general_counter_2 = 1,general_counter_1-1
-                                                            sym_elec_count(general_counter_3) = sym_elec_count(general_counter_3) + 1
-                                                            function_type_elec(sym_elec_count(general_counter_3),general_counter_3) = function_type_temp
-                                                            eta_elec(sym_elec_count(general_counter_3),general_counter_3) = eta_temp
-                                                            lambda_elec(sym_elec_count(general_counter_3),general_counter_3) = lambda_temp
-                                                            zeta_elec(sym_elec_count(general_counter_3),general_counter_3) = zeta_temp
-                                                            funccutoff_elec(sym_elec_count(general_counter_3),general_counter_3) = funccutoff_temp
-                                                            symelement_elec(sym_elec_count(general_counter_3),1,general_counter_3) = nucelem(general_counter_2)
-                                                            symelement_elec(sym_elec_count(general_counter_3),2,general_counter_3) = nucelem(general_counter_1)
+                                                        do genctr_2 = 1,genctr_1-1
+                                                            sym_elec_count(genctr_3) = sym_elec_count(genctr_3) + 1
+                                                            function_type_elec(sym_elec_count(genctr_3),genctr_3) = function_type_temp
+                                                            eta_elec(sym_elec_count(genctr_3),genctr_3) = eta_temp
+                                                            lambda_elec(sym_elec_count(genctr_3),genctr_3) = lambda_temp
+                                                            zeta_elec(sym_elec_count(genctr_3),genctr_3) = zeta_temp
+                                                            funccutoff_elec(sym_elec_count(genctr_3),genctr_3) = funccutoff_temp
+                                                            symelement_elec(sym_elec_count(genctr_3),1,genctr_3) = nucelem(genctr_2)
+                                                            symelement_elec(sym_elec_count(genctr_3),2,genctr_3) = nucelem(genctr_1)
                                                         end do
                                                     end if
                                                 end do
@@ -4479,29 +4671,29 @@ module pes_nene_mod
 
             close(inpnn_unit)
 
-            do i1=1,nelem
+            do ictr_1=1,nelem
                 if(lshort.and.(nn_type_short.eq.1))then
-                    num_funcvalues_short_atomic(i1)=sym_short_atomic_count(i1)
-                    nodes_short_atomic(0,i1)=num_funcvalues_short_atomic(i1)
+                    num_funcvalues_short_atomic(ictr_1)=sym_short_atomic_count(ictr_1)
+                    nodes_short_atomic(0,ictr_1)=num_funcvalues_short_atomic(ictr_1)
                 endif
                 if(lelec.and.(nn_type_elec.eq.1))then
-                    num_funcvalues_elec(i1)=sym_elec_count(i1)
-                    nodes_elec(0,i1)=num_funcvalues_elec(i1)
+                    num_funcvalues_elec(ictr_1)=sym_elec_count(ictr_1)
+                    nodes_elec(0,ictr_1)=num_funcvalues_elec(ictr_1)
                 endif
             enddo
 
             if(lshort.and.(nn_type_short.eq.1))then
-                do i1=1,nelem
-                    if(num_funcvalues_short_atomic(i1).eq.0)then
-                        print *, 'ERROR: No short range symfunctions specified for ',element(i1)
+                do ictr_1=1,nelem
+                    if(num_funcvalues_short_atomic(ictr_1).eq.0)then
+                        print *, 'ERROR: No short range symfunctions specified for ',element(ictr_1)
                         stop
                     endif
                 enddo
             endif
             if(lelec.and.(nn_type_elec.eq.1))then
-                do i1=1,nelem
-                    if(num_funcvalues_elec(i1).eq.0)then
-                        print *, 'ERROR: No electrostatic symfunctions specified for ',element(i1)
+                do ictr_1=1,nelem
+                    if(num_funcvalues_elec(ictr_1).eq.0)then
+                        print *, 'ERROR: No electrostatic symfunctions specified for ',element(ictr_1)
                         stop
                     endif
                 enddo
@@ -4509,9 +4701,9 @@ module pes_nene_mod
 
             ! call set_runner_counters() ! to avoid unwanted error messages in checkinputnn() subroutine
 
-            call checkinputnn(err, err_inpnn) ! own subroutine
+            call checkinputnn() ! own subroutine
 
-            call printinputnn(iseed,ielem,nodes_short_atomic_temp,nodes_elec_temp,nodes_short_pair_temp,kalmanlambda_local,kalmanlambdae_local,actfunc_short_atomic_dummy,actfunc_elec_dummy,actfunc_short_pair_dummy) ! own subroutine
+            call printinputnn(nodes_short_atomic_temp,nodes_elec_temp,nodes_short_pair_temp,kalmanlambda_local,kalmanlambdae_local,actfunc_short_atomic_dummy,actfunc_elec_dummy,actfunc_short_pair_dummy) ! own subroutine
 
             !write(*,'(a15,i4,a30)')' Element pairs: ',npairs,' , shortest distance (Bohr)'
             !icount=0
@@ -4527,39 +4719,39 @@ module pes_nene_mod
             print *, '============================================================='
 
             if(lshort.and.(nn_type_short.eq.1))then
-                do i1=1,nelem
+                do ictr_1=1,nelem
                     wcount=0
-                    do i=1,num_layers_short_atomic(i1)
+                    do ictr_2=1,num_layers_short_atomic(ictr_1)
                         wcount=wcount+1
-                        windex_short_atomic(wcount,i1)=num_weights_short_atomic(i1)+1
-                        num_weights_short_atomic(i1)=num_weights_short_atomic(i1)&
-                          +nodes_short_atomic(i-1,i1)*nodes_short_atomic(i,i1)
+                        windex_short_atomic(wcount,ictr_1)=num_weights_short_atomic(ictr_1)+1
+                        num_weights_short_atomic(ictr_1)=num_weights_short_atomic(ictr_1)&
+                          +nodes_short_atomic(ictr_2-1,ictr_1)*nodes_short_atomic(ictr_2,ictr_1)
                         wcount=wcount+1
-                        windex_short_atomic(wcount,i1)=num_weights_short_atomic(i1)+1
-                        num_weights_short_atomic(i1)=num_weights_short_atomic(i1)&
-                          +nodes_short_atomic(i,i1) ! bias weights
+                        windex_short_atomic(wcount,ictr_1)=num_weights_short_atomic(ictr_1)+1
+                        num_weights_short_atomic(ictr_1)=num_weights_short_atomic(ictr_1)&
+                          +nodes_short_atomic(ictr_2,ictr_1) ! bias weights
                     enddo
                     if((mode.eq.2).or.(mode.eq.3))then
                         write(*,'(a,a3,i10)')' => short range NN weights type 1                ',&
-                        element(i1),num_weights_short_atomic(i1)
+                        element(ictr_1),num_weights_short_atomic(ictr_1)
                     endif
-                    maxnum_weights_short_atomic=max(maxnum_weights_short_atomic,num_weights_short_atomic(i1))
+                    maxnum_weights_short_atomic=max(maxnum_weights_short_atomic,num_weights_short_atomic(ictr_1))
                 enddo
             endif
 
             if(lelec.and.(nn_type_elec.eq.1))then
-                do i1=1,nelem
+                do ictr_1=1,nelem
                     wcount=0
-                    do i=1,num_layers_elec(i1)
+                    do ictr_2=1,num_layers_elec(ictr_1)
                         wcount=wcount+1
-                        windex_elec(wcount,i1)=num_weights_elec(i1)+1
-                        num_weights_elec(i1)=num_weights_elec(i1)+nodes_elec(i-1,i1)*nodes_elec(i,i1)
+                        windex_elec(wcount,ictr_1)=num_weights_elec(ictr_1)+1
+                        num_weights_elec(ictr_1)=num_weights_elec(ictr_1)+nodes_elec(ictr_2-1,ictr_1)*nodes_elec(ictr_2,ictr_1)
                         wcount=wcount+1
-                        windex_elec(wcount,i1)=num_weights_elec(i1)+1
-                        num_weights_elec(i1)=num_weights_elec(i1)+nodes_elec(i,i1)
+                        windex_elec(wcount,ictr_1)=num_weights_elec(ictr_1)+1
+                        num_weights_elec(ictr_1)=num_weights_elec(ictr_1)+nodes_elec(ictr_2,ictr_1)
                     enddo
-                    write(*,'(a,a3,i10)')' => electrostatic NN weights                     ',element(i1),num_weights_elec(i1)
-                    maxnum_weights_elec=max(maxnum_weights_elec,num_weights_elec(i1))
+                    write(*,'(a,a3,i10)')' => electrostatic NN weights                     ',element(ictr_1),num_weights_elec(ictr_1)
+                    maxnum_weights_elec=max(maxnum_weights_elec,num_weights_elec(ictr_1))
                 enddo
             endif
             write(*,*)'-------------------------------------------------------------'
@@ -4592,8 +4784,8 @@ module pes_nene_mod
                                 if (nwords == 3) then
                                     read(words(2),'(A)', iostat=ios) elementtemp
                                     call nuccharge(elementtemp,ztemp)
-                                    do general_counter_1 = 1,nelem
-                                        if (ztemp.eq.nucelem(general_counter_1)) then
+                                    do genctr_1 = 1,nelem
+                                        if (ztemp.eq.nucelem(genctr_1)) then
                                             atom_energy_counter = atom_energy_counter + 1
                                             read(words(2),'(A)', iostat=ios) elementtemp(atom_energy_counter)
                                             read(words(3),*, iostat=ios) atomrefenergies(atom_energy_counter)
@@ -4617,7 +4809,7 @@ module pes_nene_mod
 
                 close(inpnn_unit)
 
-                do general_counter_1 = 1,atom_energy_counter
+                do genctr_1 = 1,atom_energy_counter
                     call nuccharge(elementsymbol(atom_energy_counter),zelem(atom_energy_counter))
                 end do
 
@@ -4696,48 +4888,48 @@ module pes_nene_mod
             close(inpnn_unit)
 
             if(lshort.and.(nn_type_short.eq.1).and.(mode.ne.1))then
-                do i3=1,nelem
+                do ictr_3=1,nelem
                     write(*,*)'-------------------------------------------------'
-                    write(*,*)'Atomic short range NN for element: ',element(i3)
-                    write(*,'(a,10i5)')' architecture    ',(nodes_short_atomic(i1,i3),i1=0,num_layers_short_atomic(i3))
+                    write(*,*)'Atomic short range NN for element: ',element(ictr_3)
+                    write(*,'(a,10i5)')' architecture    ',(nodes_short_atomic(ictr_1,ictr_3),ictr_1=0,num_layers_short_atomic(ictr_3))
                     write(*,*)'-------------------------------------------------'
                     itemp=0
-                    do i1=0,num_layers_short_atomic(i3)
-                        itemp=max(itemp,nodes_short_atomic(i1,i3))
+                    do ictr_1=0,num_layers_short_atomic(ictr_3)
+                        itemp=max(itemp,nodes_short_atomic(ictr_1,ictr_3))
                     enddo
-                    do i1=1,itemp ! loop over all lines with hidden nodes
-                        if(i1.le.nodes_short_atomic(0,i3))then ! still input node to be printed
-                            if(i1.le.maxnodes_short_atomic)then ! still hidden nodes present
-                                write(*,'(i4,x,9a3)')i1,'  G',(actfunc_short_atomic(i1,i2,i3),i2=1,num_layers_short_atomic(i3))
+                    do ictr_1=1,itemp ! loop over all lines with hidden nodes
+                        if(ictr_1.le.nodes_short_atomic(0,ictr_3))then ! still input node to be printed
+                            if(ictr_1.le.maxnodes_short_atomic)then ! still hidden nodes present
+                                write(*,'(i4,x,9a3)')ictr_1,'  G',(actfunc_short_atomic(ictr_1,ictr_2,ictr_3),ictr_2=1,num_layers_short_atomic(ictr_3))
                             else
-                                write(*,'(i4,x,a3)')i1,'  G'
+                                write(*,'(i4,x,a3)')ictr_1,'  G'
                             endif
                         else ! no input node in front of hidden nodes
-                            write(*,'(i4,4x,8a3)')i1,(actfunc_short_atomic(i1,i2,i3),i2=1,num_layers_short_atomic(i3))
+                            write(*,'(i4,4x,8a3)')ictr_1,(actfunc_short_atomic(ictr_1,ictr_2,ictr_3),ictr_2=1,num_layers_short_atomic(ictr_3))
                         endif
                     enddo
                 enddo
             endif
 
             if(lelec.and.(nn_type_elec.eq.1).and.(mode.ne.1))then
-                do i3=1,nelem
+                do ictr_3=1,nelem
                     write(*,*)'---------------------------------------------------'
-                    write(*,*)'Electrostatic NN for element: ',element(i3)
-                    write(*,'(a,10i5)')' architecture    ',(nodes_elec(i1,i3),i1=0,num_layers_elec(i3))
+                    write(*,*)'Electrostatic NN for element: ',element(ictr_3)
+                    write(*,'(a,10i5)')' architecture    ',(nodes_elec(ictr_1,ictr_3),ictr_1=0,num_layers_elec(ictr_3))
                     write(*,*)'---------------------------------------------------'
                     itemp=0
-                    do i1=0,num_layers_elec(i3)
-                        itemp=max(itemp,nodes_elec(i1,i3))
+                    do ictr_1=0,num_layers_elec(ictr_3)
+                        itemp=max(itemp,nodes_elec(ictr_1,ictr_3))
                     enddo
-                    do i1=1,itemp ! loop over all lines with hidden nodes
-                        if(i1.le.nodes_elec(0,i3))then ! still input node to be printed
-                            if(i1.le.maxnodes_elec)then ! still hidden nodes present
-                                write(*,'(i4,x,9a3)')i1,'  G',(actfunc_elec(i1,i2,i3),i2=1,num_layers_elec(i3))
+                    do ictr_1=1,itemp ! loop over all lines with hidden nodes
+                        if(ictr_1.le.nodes_elec(0,ictr_3))then ! still input node to be printed
+                            if(ictr_1.le.maxnodes_elec)then ! still hidden nodes present
+                                write(*,'(i4,x,9a3)')i1,'  G',(actfunc_elec(ictr_1,ictr_2,ictr_3),ictr_2=1,num_layers_elec(ictr_3))
                             else
-                                write(*,'(i4,x,a3)')i1,'  G'
+                                write(*,'(i4,x,a3)')ictr_1,'  G'
                             endif
                         else ! no input node in front of hidden nodes
-                            write(*,'(i4,4x,8a3)')i1,(actfunc_elec(i1,i2,i3),i2=1,num_layers_elec(i3))
+                            write(*,'(i4,4x,8a3)')ictr_1,(actfunc_elec(ictr_1,ictr_2,ictr_3),ictr_2=1,num_layers_elec(ictr_3))
                         endif
                     enddo
                 enddo
@@ -4755,56 +4947,56 @@ module pes_nene_mod
             endif
 
             if(lshort.and.(nn_type_short.eq.1))then
-                do i1=1,nelem
+                do ictr_1=1,nelem
                     write(*,*)'-------------------------------------------------------------'
                     write(*,*)' short range atomic symmetry &
-                          &functions element ',element(i1),' :'
+                          &functions element ',element(ictr_1),' :'
                     write(*,*)'-------------------------------------------------------------'
-                    do i2=1,num_funcvalues_short_atomic(i1)
-                        if(function_type_short_atomic(i2,i1).eq.1)then
+                    do ictr_2=1,num_funcvalues_short_atomic(ictr_1)
+                        if(function_type_short_atomic(ictr_2,ictr_1).eq.1)then
                             write(*,'(i5,a3,i3,x,a3,3x,24x,f8.3)')&
-                                i2,element(i1),function_type_short_atomic(i2,i1),&
-                                element(elementindex(symelement_short_atomic(i2,1,i1))),&
-                                funccutoff_short_atomic(i2,i1)
-                        elseif(function_type_short_atomic(i2,i1).eq.2)then
+                                ictr_2,element(ictr_1),function_type_short_atomic(ictr_2,ictr_1),&
+                                element(elementindex(symelement_short_atomic(ictr_2,1,ictr_1))),&
+                                funccutoff_short_atomic(ictr_2,ictr_1)
+                        elseif(function_type_short_atomic(ictr_2,ictr_1).eq.2)then
                             write(*,'(i5,a3,i3,x,a3,3x,8x,3f8.3)')&
-                                i2,element(i1),function_type_short_atomic(i2,i1),&
-                                element(elementindex(symelement_short_atomic(i2,1,i1))),&
-                                eta_short_atomic(i2,i1),rshift_short_atomic(i2,i1),funccutoff_short_atomic(i2,i1)
-                        elseif(function_type_short_atomic(i2,i1).eq.3)then
+                                ictr_2,element(ictr_1),function_type_short_atomic(ictr_2,ictr_1),&
+                                element(elementindex(symelement_short_atomic(ictr_2,1,ictr_1))),&
+                                eta_short_atomic(ictr_2,ictr_1),rshift_short_atomic(ictr_2,ictr_1),funccutoff_short_atomic(ictr_2,ictr_1)
+                        elseif(function_type_short_atomic(ictr_2,ictr_1).eq.3)then
                             write(*,'(i5,a3,i3,x,2a3,4f8.3)')&
-                                i2,element(i1),function_type_short_atomic(i2,i1),&
-                                element(elementindex(symelement_short_atomic(i2,1,i1))),&
-                                element(elementindex(symelement_short_atomic(i2,2,i1))),&
-                                eta_short_atomic(i2,i1),lambda_short_atomic(i2,i1),&
-                                zeta_short_atomic(i2,i1),funccutoff_short_atomic(i2,i1)
-                        elseif(function_type_short_atomic(i2,i1).eq.4)then
+                                ictr_2,element(ictr_1),function_type_short_atomic(ictr_2,ictr_1),&
+                                element(elementindex(symelement_short_atomic(ictr_2,1,ictr_1))),&
+                                element(elementindex(symelement_short_atomic(ictr_2,2,ictr_1))),&
+                                eta_short_atomic(ictr_2,ictr_1),lambda_short_atomic(ictr_2,ictr_1),&
+                                zeta_short_atomic(ictr_2,ictr_1),funccutoff_short_atomic(ictr_2,ictr_1)
+                        elseif(function_type_short_atomic(ictr_2,ictr_1).eq.4)then
                             write(*,'(i5,a3,i3,x,a3,3x,16x,2f8.3)')&
-                                i2,element(i1),function_type_short_atomic(i2,i1),&
-                                element(elementindex(symelement_short_atomic(i2,1,i1))),&
-                                eta_short_atomic(i2,i1),funccutoff_short_atomic(i2,i1)
-                        elseif(function_type_short_atomic(i2,i1).eq.5)then
+                                ictr_2,element(ictr_1),function_type_short_atomic(ictr_2,ictr_1),&
+                                element(elementindex(symelement_short_atomic(ictr_2,1,ictr_1))),&
+                                eta_short_atomic(ictr_2,ictr_1),funccutoff_short_atomic(ictr_2,ictr_1)
+                        elseif(function_type_short_atomic(ictr_2,ictr_1).eq.5)then
                             write(*,'(i5,a3,i3,4x,27x,f8.3)')&
-                                i2,element(i1),function_type_short_atomic(i2,i1),eta_short_atomic(i2,i1)
-                        elseif(function_type_short_atomic(i2,i1).eq.6)then
+                                ictr_2,element(ictr_1),function_type_short_atomic(ictr_2,ictr_1),eta_short_atomic(ictr_2,ictr_1)
+                        elseif(function_type_short_atomic(ictr_2,ictr_1).eq.6)then
                             write(*,'(i5,a3,i3,x,a3,3x,24x,f8.3)')&
-                                i2,element(i1),function_type_short_atomic(i2,i1),&
-                                element(elementindex(symelement_short_atomic(i2,1,i1))),&
-                                funccutoff_short_atomic(i2,i1)
-                        elseif(function_type_short_atomic(i2,i1).eq.8)then
+                                ictr_2,element(ictr_1),function_type_short_atomic(ictr_2,ictr_1),&
+                                element(elementindex(symelement_short_atomic(ictr_2,1,ictr_1))),&
+                                funccutoff_short_atomic(ictr_2,ictr_1)
+                        elseif(function_type_short_atomic(ictr_2,ictr_1).eq.8)then
                             write(*,'(i5,a3,i3,x,2a3,4f8.3)')&
-                                i2,element(i1),function_type_short_atomic(i2,i1),&
-                                element(elementindex(symelement_short_atomic(i2,1,i1))),&
-                                element(elementindex(symelement_short_atomic(i2,2,i1))),&
-                                eta_short_atomic(i2,i1),rshift_short_atomic(i2,i1),&
-                                funccutoff_short_atomic(i2,i1)
-                        elseif(function_type_short_atomic(i2,i1).eq.9)then
+                                ictr_2,element(ictr_1),function_type_short_atomic(ictr_2,ictr_1),&
+                                element(elementindex(symelement_short_atomic(ictr_2,1,ictr_1))),&
+                                element(elementindex(symelement_short_atomic(ictr_2,2,ictr_1))),&
+                                eta_short_atomic(ictr_2,ictr_1),rshift_short_atomic(ictr_2,ictr_1),&
+                                funccutoff_short_atomic(ictr_2,ictr_1)
+                        elseif(function_type_short_atomic(ictr_2,ictr_1).eq.9)then
                             write(*,'(i5,a3,i3,x,2a3,4f8.3)')&
-                                i2,element(i1),function_type_short_atomic(i2,i1),&
-                                element(elementindex(symelement_short_atomic(i2,1,i1))),&
-                                element(elementindex(symelement_short_atomic(i2,2,i1))),&
-                                eta_short_atomic(i2,i1),lambda_short_atomic(i2,i1),&
-                                zeta_short_atomic(i2,i1),funccutoff_short_atomic(i2,i1)
+                                ictr_2,element(ictr_1),function_type_short_atomic(ictr_2,ictr_1),&
+                                element(elementindex(symelement_short_atomic(ictr_2,1,ictr_1))),&
+                                element(elementindex(symelement_short_atomic(ictr_2,2,ictr_1))),&
+                                eta_short_atomic(ictr_2,ictr_1),lambda_short_atomic(ictr_2,ictr_1),&
+                                zeta_short_atomic(ictr_2,ictr_1),funccutoff_short_atomic(ictr_2,ictr_1)
                         else
                             write(*,*)'Error: printing unknown symfunction in readinput '
                             stop
@@ -4814,55 +5006,55 @@ module pes_nene_mod
             endif
 
             if(lelec.and.(nn_type_elec.eq.1))then
-        do i1=1,nelem
+        do ictr_1=1,nelem
           write(*,*)'-------------------------------------------------------------'
-          write(*,*)' electrostatic symmetry functions element ',element(i1),' :'
+          write(*,*)' electrostatic symmetry functions element ',element(ictr_1),' :'
           write(*,*)'-------------------------------------------------------------'
-          do i2=1,num_funcvalues_elec(i1)
-            if(function_type_elec(i2,i1).eq.1)then
+          do ictr_2=1,num_funcvalues_elec(ictr_1)
+            if(function_type_elec(ictr_2,ictr_1).eq.1)then
               write(*,'(i5,a3,i3,x,a3,3x,24x,f8.3)')&
-                i2,element(i1),function_type_elec(i2,i1),&
-                element(elementindex(symelement_elec(i2,1,i1))),&
-                funccutoff_elec(i2,i1)
-            elseif(function_type_elec(i2,i1).eq.2)then
+                ictr_2,element(ictr_1),function_type_elec(ictr_2,ictr_1),&
+                element(elementindex(symelement_elec(ictr_2,1,ictr_1))),&
+                funccutoff_elec(ictr_2,ictr_1)
+            elseif(function_type_elec(ictr_2,ictr_1).eq.2)then
               write(*,'(i5,a3,i3,x,a3,3x,8x,3f8.3)')&
-                i2,element(i1),function_type_elec(i2,i1),&
-                element(elementindex(symelement_elec(i2,1,i1))),&
-                eta_elec(i2,i1),rshift_elec(i2,i1),funccutoff_elec(i2,i1)
-            elseif(function_type_elec(i2,i1).eq.3)then
+                ictr_2,element(ictr_1),function_type_elec(ictr_2,ictr_1),&
+                element(elementindex(symelement_elec(ictr_2,1,ictr_1))),&
+                eta_elec(ictr_2,ictr_1),rshift_elec(ictr_2,ictr_1),funccutoff_elec(ictr_2,ictr_1)
+            elseif(function_type_elec(ictr_2,ictr_1).eq.3)then
               write(*,'(i5,a3,i3,x,2a3,4f8.3)')&
-                i2,element(i1),function_type_elec(i2,i1),&
-                element(elementindex(symelement_elec(i2,1,i1))),&
-                element(elementindex(symelement_elec(i2,2,i1))),&
-                eta_elec(i2,i1),lambda_elec(i2,i1),&
-                zeta_elec(i2,i1),funccutoff_elec(i2,i1)
-            elseif(function_type_elec(i2,i1).eq.4)then
+                ictr_2,element(ictr_1),function_type_elec(ictr_2,ictr_1),&
+                element(elementindex(symelement_elec(ictr_2,1,ictr_1))),&
+                element(elementindex(symelement_elec(ictr_2,2,ictr_1))),&
+                eta_elec(ictr_2,ictr_1),lambda_elec(ictr_2,ictr_1),&
+                zeta_elec(ictr_2,ictr_1),funccutoff_elec(ictr_2,ictr_1)
+            elseif(function_type_elec(ictr_2,ictr_1).eq.4)then
               write(*,'(i5,a3,i3,x,a3,3x,16x,2f8.3)')&
-                i2,element(i1),function_type_elec(i2,i1),&
-                element(elementindex(symelement_elec(i2,1,i1))),&
-                eta_elec(i2,i1),funccutoff_elec(i2,i1)
-            elseif(function_type_elec(i2,i1).eq.5)then
+                ictr_2,element(ictr_1),function_type_elec(ictr_2,ictr_1),&
+                element(elementindex(symelement_elec(ictr_2,1,ictr_1))),&
+                eta_elec(ictr_2,ictr_1),funccutoff_elec(ictr_2,ictr_1)
+            elseif(function_type_elec(ictr_2,ictr_1).eq.5)then
               write(*,'(i5,a3,i3,4x,27x,f8.3)')&
-                i2,element(i1),function_type_elec(i2,i1),eta_elec(i2,i1)
-            elseif(function_type_elec(i2,i1).eq.6)then
+                ictr_2,element(ictr_1),function_type_elec(ictr_2,ictr_1),eta_elec(ictr_2,ictr_1)
+            elseif(function_type_elec(ictr_2,ictr_1).eq.6)then
               write(*,'(i5,a3,i3,x,a3,3x,24x,f8.3)')&
-                i2,element(i1),function_type_elec(i2,i1),&
-                element(elementindex(symelement_elec(i2,1,i1))),&
-                funccutoff_elec(i2,i1)
-            elseif(function_type_elec(i2,i1).eq.8)then
+                ictr_2,element(ictr_1),function_type_elec(ictr_2,ictr_1),&
+                element(elementindex(symelement_elec(ictr_2,1,ictr_1))),&
+                funccutoff_elec(ictr_2,ictr_1)
+            elseif(function_type_elec(ictr_2,ictr_1).eq.8)then
               write(*,'(i5,a3,i3,x,2a3,4f8.3)')&
-                i2,element(i1),function_type_elec(i2,i1),&
-                element(elementindex(symelement_elec(i2,1,i1))),&
-                element(elementindex(symelement_elec(i2,2,i1))),&
-                eta_elec(i2,i1),rshift_elec(i2,i1),&
-                funccutoff_elec(i2,i1)
-            elseif(function_type_elec(i2,i1).eq.9)then
+                ictr_2,element(ictr_1),function_type_elec(ictr_2,ictr_1),&
+                element(elementindex(symelement_elec(ictr_2,1,ictr_1))),&
+                element(elementindex(symelement_elec(ictr_2,2,ictr_1))),&
+                eta_elec(ictr_2,ictr_1),rshift_elec(ictr_2,ictr_1),&
+                funccutoff_elec(ictr_2,ictr_1)
+            elseif(function_type_elec(ictr_2,ictr_1).eq.9)then
               write(*,'(i5,a3,i3,x,2a3,4f8.3)')&
-                i2,element(i1),function_type_elec(i2,i1),&
-                element(elementindex(symelement_elec(i2,1,i1))),&
-                element(elementindex(symelement_elec(i2,2,i1))),&
-                eta_elec(i2,i1),lambda_elec(i2,i1),&
-                zeta_elec(i2,i1),funccutoff_elec(i2,i1)
+                ictr_2,element(ictr_1),function_type_elec(ictr_2,ictr_1),&
+                element(elementindex(symelement_elec(ictr_2,1,ictr_1))),&
+                element(elementindex(symelement_elec(ictr_2,2,ictr_1))),&
+                eta_elec(ictr_2,ictr_1),lambda_elec(ictr_2,ictr_1),&
+                zeta_elec(ictr_2,ictr_1),funccutoff_elec(ictr_2,ictr_1)
             else
               write(*,*)'Error: printing unknown symfunctione in readinput '
               stop
@@ -4924,7 +5116,9 @@ module pes_nene_mod
             ! check existance of scaling.data
             if (.not. file_exists(filename_scaling)) stop err // err_scaling // 'file does not exist'
             ! read in all data from scaling.data
+            allocate(rdummy(nelem))
             call readscale(filename_scaling,err_scaling,nelem,1,maxnum_funcvalues_short_atomic,num_funcvalues_short_atomic,minvalue_short_atomic,maxvalue_short_atomic,avvalue_short_atomic,eshortmin,eshortmax,rdummy,rdummy)
+            deallocate(rdummy)
             ! read in all data from all weight files
             call readweights(inp_path,0,nelem,maxnum_weights_short_atomic,num_weights_short_atomic,weights_short_atomic)
         end if
@@ -4956,18 +5150,8 @@ module pes_nene_mod
     end subroutine read_nene
 
 
-
     subroutine inputnndefaults()
 
-        implicit none
-
-        !if(lshort.and.(nn_type_short.eq.1))then
-        !    nodes_short_atomic(:,:)=0
-        !endif
-
-        !if(lelec.and.(nn_type_elec.eq.1))then
-        !    nodes_elec(:,:)=0
-        !endif
 
         if (analyze_error_energy_step == default_real) then
             analyze_error_energy_step = 0.01d0
@@ -5194,119 +5378,110 @@ module pes_nene_mod
 
     end subroutine inputnndefaults
 
-    subroutine checkinputnn(err_main,err_file)
+    subroutine checkinputnn()
 
-        implicit none
+        integer :: ictr_1
 
-        integer counter
+        character(len=*), parameter :: err              = "Error in read_nene: "
+        character(len=*), parameter :: err_inpnn        = "Error when reading input.nn: "
 
-        character(len=*) :: err_main, err_file
-        character(len=*), parameter :: err_check = "Error in checkinputnn: "
+        character(len=*), parameter :: err_check        = "Error in checkinputnn: "
 
 
         if (nran .neq. 5) then
-            print *, err_main, err_file, err_check, "random_number_type not implemented, only 5 available"
+            print *, err, err_inpnn, err_check, "random_number_type not implemented, only 5 available"
         end if
 
-      if(lfindcontradictions)then
-        if(deltagthres.gt.0.0d0)then
-          write(*,*)'ERROR: find_contradictions requires positive deltagthres ',&
-            deltagthres
-          stop
+        if(lfindcontradictions)then
+            if(deltagthres.gt.0.0d0)then
+                print *, err, err_inpnn, err_check, 'find_contradictions requires positive deltagthres ', deltagthres
+                stop
+            endif
+            if(deltafthres.gt.0.0d0)then
+                print *, err, err_inpnn, err_check, 'find_contradictions requires positive deltafthres ', deltafthres
+                stop
+            endif
         endif
-        if(deltafthres.gt.0.0d0)then
-          write(*,*)'ERROR: find_contradictions requires positive deltafthres ',&
-            deltafthres
-          stop
+
+        if((cutoff_alpha.gt.1.00000001d0).or.(cutoff_alpha.lt.0.0d0))then
+            print *, err, err_inpnn, err_check, 'please use cutoff_alpha within 0 and 1 ', cutoff_alpha
+            stop
         endif
-      endif
 
-      if((cutoff_alpha.gt.1.00000001d0).or.(cutoff_alpha.lt.0.0d0))then
-        write(*,*)'ERROR: please use cutoff_alpha within 0 and 1 ',cutoff_alpha
-        stop
-      endif
-
-      if(lusenoisematrix) then
-        if((kalman_q0 .le. 0.0d0 ).or.(kalman_qmin.le.0.0d0).or.(kalman_qtau.le.0.0d0)) then
-          write(*,*)'ERROR: please define the q0,qmin,qtau for noise matrix ', &
-          'and use them larger than zero ',kalman_q0,kalman_qmin,kalman_qtau
-          stop
+        if(lusenoisematrix) then
+            if((kalman_q0 .le. 0.0d0 ).or.(kalman_qmin.le.0.0d0).or.(kalman_qtau.le.0.0d0)) then
+                print *, err, err_inpnn, err_check, 'please define the q0,qmin,qtau for noise matrix and use them larger than zero ', kalman_q0, kalman_qmin, kalman_qtau
+                stop
+            endif
         endif
-      endif
 
-      if(lfixweights.and.lshuffle_weights_short_atomic)then
-        write(*,*)'ERROR: shuffle_weights_short_atomic cannot be combined with fixed weights'
-        stop
-      endif
-
-      if(lscreen)then
-        if(rscreen_onset.gt.rscreen_cut)then
-          write(*,*)'ERROR: rscreen_onset .gt. rscreen_cut in screen_electrostatics'
-          stop
+        if(lfixweights.and.lshuffle_weights_short_atomic)then
+            print *, err, err_inpnn, err_check, 'shuffle_weights_short_atomic cannot be combined with fixed weights'
+            stop
         endif
-        if(rscreen_onset.lt.0.0d0)then
-          write(*,*)'ERROR: rscreen_onset .lt. 0 in screen_electrostatics'
-          stop
+
+        if(lscreen)then
+            if(rscreen_onset.gt.rscreen_cut)then
+                print *, err, err_inpnn, err_check, 'rscreen_onset .gt. rscreen_cut in screen_electrostatics'
+                stop
+            endif
+            if(rscreen_onset.lt.0.0d0)then
+                print *, err, err_inpnn, err_check, 'rscreen_onset .lt. 0 in screen_electrostatics'
+                stop
+            endif
+            if(rscreen_cut.lt.0.0d0)then
+                print *, err, err_inpnn, err_check, 'rscreen_cut .lt. 0 in screen_electrostatics'
+                stop
+            endif
         endif
-        if(rscreen_cut.lt.0.0d0)then
-          write(*,*)'ERROR: rscreen_cut .lt. 0 in screen_electrostatics'
-          stop
+
+        if(noisee.lt.0.0d0)then
+            print *, err, err_inpnn, err_check, 'noise_energy must not be negative ', noisee
+            stop
         endif
-      endif
 
-      if(noisee.lt.0.0d0)then
-        write(*,*)'ERROR: noise_energy must not be negative ',noisee
-        stop
-      endif
+        if(noisef.lt.0.0d0)then
+            print *, err, err_inpnn, err_check, 'noise_force must not be negative ', noisef
+            stop
+        endif
 
-      if(noisef.lt.0.0d0)then
-        write(*,*)'ERROR: noise_force must not be negative ',noisef
-        stop
-      endif
+        if(noiseq.lt.0.0d0)then
+            print *, err, err_inpnn, err_check, 'noise_charge must not be negative ', noiseq
+            stop
+        endif
 
-      if(noiseq.lt.0.0d0)then
-        write(*,*)'ERROR: noise_charge must not be negative ',noiseq
-        stop
-      endif
+        if(lsysweights.and.lnwweights)then
+            print *, err, err_inpnn, err_check, 'Cannot use systematic_weights_short and nguyen_widrow_weights_short together!'
+            stop
+        endif
 
-      if(lsysweights.and.lnwweights)then
-        write(*,'(a)')'Error: Cannot use systematic_weights_short and nguyen_widrow_weights_short together!'
-        stop
-      endif
+        if(lsysweightse.and.lnwweightse)then
+            print *, err, err_inpnn, err_check, 'Cannot use systematic_weights_ewald and nguyen_widrow_weights_ewald together!'
+            stop
+        endif
 
-      if(lsysweightse.and.lnwweightse)then
-        write(*,'(a)')'Error: Cannot use systematic_weights_ewald and nguyen_widrow_weights_ewald together!'
-        stop
-      endif
+        if(lnormnodes.and.lnwweights)then
+            print *, err, err_inpnn, err_check, 'Cannot use normalize_nodes and nguyen_widrow_weights_short together!'
+            stop
+        endif
 
-      if(lnormnodes.and.lnwweights)then
-        write(*,'(a)')'Error: Cannot use normalize_nodes and nguyen_widrow_weights_short together!'
-        stop
-      endif
+        if(lnormnodes.and.lnwweightse)then
+            print *, err, err_inpnn, err_check, 'Cannot use normalize_nodes and nguyen_widrow_weights_ewald together!'
+            stop
+        endif
 
-      if(lnormnodes.and.lnwweightse)then
-        write(*,'(a)')'Error: Cannot use normalize_nodes and nguyen_widrow_weights_ewald together!'
-        stop
-      endif
-
-      if((count_kalmanthreshold.eq.1).and.(count_lfixederrore.eq.1))then
-        write(*,'(2a)')'Error: short_energy_error_threshold cannot be used ',&
-          'in combination with fixed_short_energy_error_threshold'
-        stop
-      endif
+        if((count_kalmanthreshold.eq.1).and.(count_lfixederrore.eq.1))then
+            print *, err, err_inpnn, err_check, 'short_energy_error_threshold cannot be used in combination with fixed_short_energy_error_threshold'
+            stop
+        endif
 
       if((count_kalmanthresholdf.eq.1).and.(count_lfixederrorf.eq.1))then
-        write(*,'(a)')'Error: short_force_error_thresholdf cannot be used in combination with fixed_short_force_error_threshold'
-        stop
-      endif
-
-      if(count_mode.eq.0)then
-        write(*,*)'Error: runner_mode is not specified'
+        print *, err, err_inpnn, err_check, 'short_force_error_thresholdf cannot be used in combination with fixed_short_force_error_threshold'
         stop
       endif
 
       if((.not.lshort).and.(.not.lelec))then
-        write(*,*)'Error: short range and electrostatic NNs are switched off'
+        print *, err, err_inpnn, err_check, 'short range and electrostatic NNs are switched off'
         stop
       endif
 
@@ -5340,14 +5515,9 @@ module pes_nene_mod
         stop
       endif
 
-      if(lshort.and.(count_nodes_short_pair.eq.0).and.(nn_type_short.eq.2))then
-        write(*,*)'Error: global_nodes_pair is not specified'
-        stop
-      endif
-
-      do i1=1,nelem
+      do ictr_1=1,nelem
         if(lshort.and.(nn_type_short.eq.1))then
-          if(nodes_short_atomic(maxnum_layers_short_atomic,i1).gt.1)then
+          if(nodes_short_atomic(maxnum_layers_short_atomic,ictr_1).gt.1)then
             write(*,*)'Error: More than 1 output node currently does '
             write(*,*)'make sense in short range NN'
             stop
@@ -5355,18 +5525,18 @@ module pes_nene_mod
         endif
       enddo
 
-      do i1=1,nelem
+      do ictr_1=1,nelem
         if(lshort.and.(nn_type_short.eq.1))then
-          if(nodes_short_atomic(maxnum_layers_short_atomic,i1).eq.0)then
+          if(nodes_short_atomic(maxnum_layers_short_atomic,ictr_1).eq.0)then
             write(*,*)'Error: output_nodes_short is 0'
             stop
           endif
         endif
       enddo
 
-      do i1=1,nelem
+      do ictr_1=1,nelem
         if(lelec.and.(nn_type_elec.eq.1))then
-          if(nodes_elec(maxnum_layers_elec,i1).gt.1)then
+          if(nodes_elec(maxnum_layers_elec,ictr_1).gt.1)then
             write(*,*)'Error: More than 1 output node currently does '
             write(*,*)'make sense in electrostatic NN'
             stop
@@ -5374,49 +5544,49 @@ module pes_nene_mod
         endif
       enddo
 
-      do i1=1,nelem
+      do ictr_1=1,nelem
         if(lelec.and.(nn_type_elec.eq.1))then
-          if(nodes_elec(maxnum_layers_elec,i1).eq.0)then
+          if(nodes_elec(maxnum_layers_elec,ictr_1).eq.0)then
             write(*,*)'Error: output_nodes_electrostatic is 0'
             stop
           endif
         endif
       enddo
 
-      do i1=1,nelem
+      do ictr_1=1,nelem
         if(lshort.and.(nn_type_short.eq.1))then
-          if(nodes_short_atomic(0,i1).eq.0)then
+          if(nodes_short_atomic(0,ictr_1).eq.0)then
             write(*,*)'Error: input_nodes_short is 0'
             stop
           endif
         endif
       enddo
 
-      do i1=1,nelem
+      do ictr_1=1,nelem
         if(lshort.and.(nn_type_short.eq.1))then
-          if(nodes_short_atomic(0,i1).ne.num_funcvalues_short_atomic(i1))then
+          if(nodes_short_atomic(0,ictr_1).ne.num_funcvalues_short_atomic(ictr_1))then
             write(*,*)'Error: num_funcvalues_short_atomic .ne. nodes_short_atomic(0)',&
-              num_funcvalues_short_atomic(i1),nodes_short_atomic(0,i1)
+              num_funcvalues_short_atomic(ictr_1),nodes_short_atomic(0,ictr_1)
             write(*,*)'Did you set the right number of input nodes?'
             stop
           endif
         endif
       enddo
 
-      do i1=1,nelem
+      do ictr_1=1,nelem
         if(lelec.and.(nn_type_elec.eq.1))then
-          if(nodes_elec(0,i1).eq.0)then
+          if(nodes_elec(0,ictr_1).eq.0)then
             write(*,*)'Error: input_nodes_electrostatic is 0'
             stop
           endif
         endif
       enddo
 
-      do i1=1,nelem
+      do ictr_1=1,nelem
         if(lelec.and.(nn_type_elec.eq.1))then
-          if(nodes_elec(0,i1).ne.num_funcvalues_elec(i1))then
+          if(nodes_elec(0,ictr_1).ne.num_funcvalues_elec(ictr_1))then
             write(*,*)'Error: num_funcvalues_elec .ne. nodes_elec(0)',&
-              num_funcvalues_elec(i1),nodes_elec(0,i1)
+              num_funcvalues_elec(ictr_1),nodes_elec(0,ictr_1)
             write(*,*)'Did you set the right number of input nodes?'
             stop
           endif
@@ -5723,28 +5893,23 @@ module pes_nene_mod
       endif
 
       if(lshort.and.(nn_type_short.eq.1))then
-        do i1=1,nelem
-          if(num_funcvalues_short_atomic(i1).ne.nodes_short_atomic(0,i1))then
+        do ictr_1=1,nelem
+          if(num_funcvalues_short_atomic(ictr_1).ne.nodes_short_atomic(0,ictr_1))then
             write(*,*)'ERROR: num_funcvalues_short_atomic .ne. nodes_short_atomic(0)'
-            write(*,*)i1,num_funcvalues_short_atomic(i1),nodes_short_atomic(0,i1)
+            write(*,*)ictr_1,num_funcvalues_short_atomic(ictr_1),nodes_short_atomic(0,ictr_1)
             stop
           endif
         enddo
       endif
 
       if(lelec.and.(nn_type_elec.eq.1))then
-        do i1=1,nelem
-          if(num_funcvalues_elec(i1).ne.nodes_elec(0,i1))then
+        do ictr_1=1,nelem
+          if(num_funcvalues_elec(ictr_1).ne.nodes_elec(0,ictr_1))then
             write(*,*)'ERROR: num_funcvalues_elec .ne. nodes_elec(0)'
-            write(*,*)i1,num_funcvalues_elec(i1),nodes_elec(0,i1)
+            write(*,*)ictr_1,num_funcvalues_elec(ictr_1),nodes_elec(0,ictr_1)
             stop
           endif
         enddo
-      endif
-
-      if((nn_type_elec.eq.4).and.(mode.ne.3))then
-        write(*,*)'ERROR: electrostatic_type 4 is only valid for prediction mode'
-        stop
       endif
 
       if((mode.eq.3).and.(max_num_atoms.lt.nblock).and.(nn_type_short.eq.1).and.lshort)then
@@ -5754,25 +5919,20 @@ module pes_nene_mod
 
     end subroutine checkinputnn
 
-    subroutine printinputnn(iseed,ielem,nodes_short_atomic_temp,nodes_elec_temp,kalmanlambda_local,kalmanlambdae_local,actfunc_short_atomic_dummy,actfunc_elec_dummy)
+    subroutine printinputnn(nodes_short_atomic_temp,nodes_elec_temp,kalmanlambda_local,kalmanlambdae_local,actfunc_short_atomic_dummy,actfunc_elec_dummy)
+
 
         ! check counter from inputnncounters, they should be removed and replaced by our default values!!
 
-        implicit none
+        integer :: ictr_1, ictr_2
+        integer :: nodes_short_atomic_temp(0:maxnum_layers_short_atomic)
+        integer :: nodes_elec_temp(0:maxnum_layers_elec)
 
-        integer*8 iseed
-        integer ielem
+        real(dp) :: kalmanlambda_local
+        real(dp) :: kalmanlambdae_local
 
-        integer i
-        integer i1, i2, i3
-        integer nodes_short_atomic_temp(0:maxnum_layers_short_atomic)
-        integer nodes_elec_temp(0:maxnum_layers_elec)
-
-        real*8 kalmanlambda_local
-        real*8 kalmanlambdae_local
-
-        character*1 actfunc_short_atomic_dummy(maxnum_layers_short_atomic)
-        character*1 actfunc_elec_dummy(maxnum_layers_elec)
+        character(len=1) :: actfunc_short_atomic_dummy(maxnum_layers_short_atomic)
+        character(len=1) :: actfunc_elec_dummy(maxnum_layers_elec)
 
         write(*,*)'General input parameters:'
         write(*,*)'-------------------------------------------------------------'
@@ -5843,8 +6003,8 @@ module pes_nene_mod
       endif
 
       write(*,*)'elements (sorted):'
-      do i1=1,nelem
-        write(*,'(i3,x,a2)')nucelem(i1),element(i1)
+      do ictr_1=1,nelem
+        write(*,'(i3,x,a2)')nucelem(ictr_1),element(ictr_1)
       enddo
 
 
@@ -5905,8 +6065,8 @@ module pes_nene_mod
           write(*,'(a)')' Constructing atomic charges from short range NN'
         elseif(nn_type_elec.eq.3)then
           write(*,'(a)')' Fixed atomic charges are used:'
-          do i1=1,nelem
-            write(*,'(a1,a2,x,f14.3)')' ',element(i1),fixedcharge(i1)
+          do ictr_1=1,nelem
+            write(*,'(a1,a2,x,f14.3)')' ',element(ictr_1),fixedcharge(ictr_1)
           enddo
         elseif(nn_type_elec.eq.4)then
           write(*,'(a)')' Using atomic charges from charges.in file'
@@ -5919,12 +6079,12 @@ module pes_nene_mod
       if(lelec.and.(nn_type_elec.eq.1))then
         write(*,'(a,10i5)')' global hidden layers electrostatic NN                ',maxnum_layers_elec-1
         write(*,'(a,10i5)')' global nodes hidden layers electrostatic NN     ',&
-          (nodes_elec_temp(i1),i1=1,maxnum_layers_elec-1)
+          (nodes_elec_temp(ictr_1),ictr_1=1,maxnum_layers_elec-1)
       endif
 
       if(lelec.and.(nn_type_elec.eq.1))then
         write(*,'(a,x,10a)')' global activation functions electrostatic             ',&
-          (actfunc_elec_dummy(i),i=1,maxnum_layers_elec)
+          (actfunc_elec_dummy(ictr_2),ictr_2=1,maxnum_layers_elec)
       endif
 
       if(lelec)then
@@ -6006,17 +6166,11 @@ module pes_nene_mod
 
       write(*,*)'============================================================='
 
-
-
-
-
     end subroutine printinputnn
 
     subroutine readscale(filename,filename_error,ndim,iswitch,maxnum_funcvalues_local,num_funcvalues_local,minvalue_local,maxvalue_local,avvalue_local,eshortmin,eshortmax,chargemin,chargemax)
 
-        implicit none
 
-        !integer             :: scaling_unit
         integer             :: ndim
         integer             :: maxnum_funcvalues_local
         integer             :: num_funcvalues_local(ndim)
@@ -6039,7 +6193,7 @@ module pes_nene_mod
         character(len=max_string_length)    :: filename
         character(len=*)                    :: filename_error
 
-        integer, parameter  :: scaling_unit = 62 ! for scling.data and scalinge.data
+        integer, parameter  :: scaling_unit = 62 ! for scaling.data and scalinge.data
 
 
 
@@ -6143,18 +6297,15 @@ module pes_nene_mod
 
     subroutine readweights(directory,iswitch,ndim,maxnum_weights_local,num_weights_local,weights_local)
 
-        implicit none
 
         integer             :: ndim
         integer             :: iswitch
-        integer             :: icount
         integer             :: maxnum_weights_local
         integer             :: num_weights_local(ndim)
-        integer             :: counter_1, counter_2, counter_3, counter_4
+        integer             :: counter_1, counter_2
 
         real(dp)            :: weights_local(maxnum_weights_local,ndim)
 
-        logical             :: lexist
 
         character(len=*), parameter         :: err = "Error in readweights: "
         character(len=*), parameter         :: err_weight = "Error when reading the following weight file: "
@@ -6251,15 +6402,37 @@ module pes_nene_mod
 
     subroutine cleanup_nene()
 
-            implicit none
 
-            ! according to compute_nene (based on predict.f90)
+            ! according to compute_nene (based on predict.f90) and set allocatable in module:
+            deallocate(elementsymbol)
+            deallocate(zelem)
+            deallocate(num_atoms_element)
+
+
+
+            deallocate(nnatomcharge)
+            deallocate(nnatomenergy)
+            deallocate(minvalue_short_atomic)
+            deallocate(maxvalue_short_atomic)
+            deallocate(avvalue_short_atomic)
+            deallocate(minvalue_elec)
+            deallocate(maxvalue_elec)
+            deallocate(avvalue_elec)
+            deallocate(totalforce)
+            deallocate(nnshortforce)
+            deallocate(nntotalforce)
+            deallocate(nnelecforce)
+
             if(lshort.and.(nn_type_short.eq.1))then
                 deallocate(sens)
+                deallocate(atomenergy)
             end if
 
             if(lelec.and.(nn_type_elec.eq.1).or.(nn_type_elec.eq.3).or.(nn_type_elec.eq.4))then
                 deallocate(sense)
+                deallocate(atomcharge)
+                deallocate(chargemin)
+                deallocate(chargemax)
             end if
 
             ! according to cleanup.f90
@@ -6304,7 +6477,7 @@ module pes_nene_mod
             !deallocate(dmin_element)
             if(allocated(atomrefenergies))deallocate(atomrefenergies)
             if(allocated(fixedcharge))deallocate(fixedcharge)
-            if(allocated(elempair))deallocate(elempair)
+            !if(allocated(elempair))deallocate(elempair)
 
             call mpi_barrier(mpi_comm_world,mpierror)
 
@@ -6315,8 +6488,8 @@ module pes_nene_mod
 
     subroutine read_vdw_coefficients_type_1()
 
-        integer :: ictr1
-        integer :: ictr2
+        integer :: ictr_1
+        integer :: ictr_2
         integer :: ztemp1
         integer :: ztemp2
         logical :: stop_flag
@@ -6326,7 +6499,7 @@ module pes_nene_mod
         character(len=2) :: elementsymbol1(nelem)
         character(len=2) :: elementsymbol2(nelem)
 
-        logical lfound(nelem,nelem)
+        logical :: lfound(nelem,nelem)
 
         integer :: nwords, line, ios = 0
         character(len=max_string_length) :: buffer
@@ -6335,7 +6508,7 @@ module pes_nene_mod
         character(len=*), parameter :: err = "Error in read_vdw_coefficients_type_1: "
         character(len=*), parameter :: err_inpnn = "Error when reading input.nn: "
 
-        lfound(:,:)=.false.
+        lfound(:,:) = .false.
 
         call open_for_read(inpnn_unit, filename_inpnn); ios = 0
 
@@ -6355,26 +6528,26 @@ module pes_nene_mod
                             call nuccharge(elementtemp1,ztemp1)
                             call nuccharge(elementtemp2,ztemp2)
 
-                            do i1=1,nelem
-                                if(ztemp1 == nucelem(i1))then
-                                    do i2=1,nelem
-                                        if (ztemp2 == nucelem(i2)) then
+                            do ictr_1=1,nelem
+                                if(ztemp1 == nucelem(ictr_1))then
+                                    do ictr_2=1,nelem
+                                        if (ztemp2 == nucelem(ictr_2)) then
 
-                                            if(vdw_coefficients(i1,i2).ne.0.0d0)then
-                                                print *, '### ERROR ### vdw_coefficient for pair ', elementtemp1, '- ', elementtemp2, 'has been specified twice. ', vdw_coefficients(i1,i2)
+                                            if(vdw_coefficients(ictr_1,ictr_2).ne.0.0d0)then
+                                                print *, '### ERROR ### vdw_coefficient for pair ', elementtemp1, '- ', elementtemp2, 'has been specified twice. ', vdw_coefficients(ictr_1,ictr_2)
                                                 stop
 
 
                                             else
 
-                                                read(words(2),'(A)', iostat=ios) elementsymbol1(i1)
-                                                read(words(3),'(A)', iostat=ios) elementsymbol2(i2)
-                                                read(words(4),'(A)', iostat=ios) vdw_coefficients(i1,i2)
-                                                lfound(i1,i2)=.true.
+                                                read(words(2),'(A)', iostat=ios) elementsymbol1(ictr_1)
+                                                read(words(3),'(A)', iostat=ios) elementsymbol2(ictr_2)
+                                                read(words(4),'(A)', iostat=ios) vdw_coefficients(ictr_1,ictr_2)
+                                                lfound(ictr_1,ictr_2)=.true.
 
                                                 if(ztemp1.ne.ztemp2)then
-                                                    vdw_coefficients(i2,i1)=vdw_coefficients(i1,i2)
-                                                    lfound(i2,i1)=.true.
+                                                    vdw_coefficients(ictr_2,ictr_1)=vdw_coefficients(ictr_1,ictr_2)
+                                                    lfound(ictr_2,ictr_1)=.true.
                                                 endif
 
                                             endif
@@ -6402,10 +6575,10 @@ module pes_nene_mod
 
         stop_flag = .false.
 
-        do i1=1,nelem
-            do i2=1,nelem
-                if (.not. lfound(i1,i2))then
-                    print *, '### ERROR ### vdw_coefficient for pair ', nucelem(i1), '- ', nucelem(i2), ' not specified.'
+        do ictr_1=1,nelem
+            do ictr_2=1,nelem
+                if (.not. lfound(ictr_1,ictr_2))then
+                    print *, '### ERROR ### vdw_coefficient for pair ', nucelem(ictr_1), '- ', nucelem(ictr_2), ' not specified.'
                     stop_flag = .true.
                 endif
             enddo
@@ -6417,15 +6590,16 @@ module pes_nene_mod
         endif
 
         print *, 'vdw_coefficients read from input.nn:'
-        do i1=1,nelem
-            do i2=1,nelem
-                write(*,'(a1,a2, a3, x,f18.8)') ' ', elementsymbol1(i1), elementsymbol2(i2), vdw_coefficients(i1, i2)
+        do ictr_1=1,nelem
+            do ictr_2=1,nelem
+                write(*,'(a1,a2, a3, x,f18.8)') ' ', elementsymbol1(ictr_1), elementsymbol2(ictr_2), vdw_coefficients(ictr_1, ictr_2)
             enddo
         enddo
 
     end subroutine read_vdw_coefficients_type_1
 
     subroutine compute_nene(atoms, flag)
+
 
         ! Calculates energy and forces with HDNNPs
 
@@ -6437,6 +6611,10 @@ module pes_nene_mod
         integer, intent(in)             :: flag
 
         character(len=*), parameter :: err = "Error in compute_nene: "
+
+        integer :: atctr, ictr_1, ictr_2, ictr_3
+
+        real(dp) :: xyzstruct(3,num_atoms) = default_real
 
         ! is the following needed?
         eshort              = 0.0d0
@@ -6467,8 +6645,8 @@ module pes_nene_mod
         ! start according to getstructure_mode3.f90
 
         ! convert position units, commit element symbols and set corresponding RuNNer variables
-        do j = 1,atoms%natoms
-            xyzstruct(:,j) = atoms%r(:,:,j) * ang2bohr
+        do atctr = 1,num_atoms
+            xyzstruct(:,atctr) = atoms%r(:,:,atctr) * ang2bohr
             !elementsymbol(j) = atoms%name(atoms%idx(j)) ! this is already set
             !call nuccharge(elementsymbol(j),zelem(j)) ! this is already set
             !lelement(zelem(j)) = .true. ! this is already set
@@ -6477,19 +6655,7 @@ module pes_nene_mod
         if(lperiodic)then ! we always assume a periodic structure
             call translate(num_atoms,lattice,xyzstruct)
         endif
-
-        do i=1,num_atoms ! this should move to read_nene
-            num_atoms_element(elementindex(zelem(i))) = num_atoms_element(elementindex(zelem(i))) + 1
-        enddo
         ! end according to getstructure_mode3.f90
-
-
-        ! the initialization of mode3 will be done in read_nene
-        ! start according to initmode3.f90
-
-        !call initmode3(i4,minvalue_short_atomic,maxvalue_short_atomic,avvalue_short_atomic,minvalue_short_pair,maxvalue_short_pair,avvalue_short_pair,minvalue_elec,maxvalue_elec,avvalue_elec,eshortmin,eshortmax,chargemin,chargemax)
-
-        ! end according to initmode3.f90
 
         ! further according to predict.f90
 
@@ -6505,7 +6671,8 @@ module pes_nene_mod
         endif
 
         if(lelec .and. ((nn_type_elec == 1) .or. (nn_type_elec == 3) .or. (nn_type_elec == 4))) then
-            print *, err, "electrostatic NN prediction not implemented yet, be patient you must"; stop
+            print *, err, "electrostatic NN prediction not implemented yet, be patient you must"
+            stop
             !call predictionelectrostatic(&
               !num_atoms,zelem,&
               !minvalue_elec,maxvalue_elec,avvalue_elec,&
@@ -6538,7 +6705,7 @@ module pes_nene_mod
         endif
 
         ! convert calculated forces from RuNNer to MDT2
-        atoms%f(:,:,:) = nntotalforce(:,:) * habohr2evang
+        atoms%f(:,1,:) = nntotalforce(:,:) * habohr2evang
 
         ! calculate the volume, needed also for stress
         if (simparams%details == .true.) then
@@ -6561,16 +6728,16 @@ module pes_nene_mod
             ! check sum of forces if requested
             if (lcheckf) then ! not needed in every step; check if forces are zero
                 forcesum(:)=0.0d0
-                do i3=1,num_atoms
-                    do i2=1,3
-                        forcesum(i2)=forcesum(i2)+nntotalforce(i2,i3)
+                do ictr_3=1,num_atoms
+                    do ictr_2=1,3
+                        forcesum(ictr_2)=forcesum(ictr_2)+nntotalforce(ictr_2,ictr_3)
                     enddo
                 enddo
                 write(*,'(3A25)') 'Sum of Fx(eV/Ang)', 'Sum of Fy(eV/Ang)','Sum of Fz(eV/Ang)'
                 write(*,'(3f25.8)') forcesum(1) * habohr2evang, forcesum(2) * habohr2evang, forcesum(3) * habohr2evang
-                do i2=1,3
-                    if(abs(forcesum(i2)).gt.0.000001d0)then
-                        write(*,'(A20,I10,f25.8)')'Error in forces ',i2,forcesum(i2) * habohr2evang
+                do ictr_2=1,3
+                    if(abs(forcesum(ictr_2)).gt.0.000001d0)then
+                        write(*,'(A20,I10,f25.8)')'Error in forces ',ictr_2,forcesum(ictr_2) * habohr2evang
                         stop
                     endif
                 enddo
@@ -6586,34 +6753,34 @@ module pes_nene_mod
                 write(*,*)'-------------------------------------------------------------'
                 if(nn_type_short.eq.1)then
                 !write(*,*)'NN atomenergies with configuration ',i4
-                do i1=1,num_atoms
-                    write(*,*)'NNatomenergy ',i1,elementsymbol(i1),nnatomenergy(i1) * timestep_ha2ev
+                do ictr_1=1,num_atoms
+                    write(*,*)'NNatomenergy ',ictr_1,elementsymbol(ictr_1),nnatomenergy(ictr_1) * timestep_ha2ev
                 enddo
             endif
             write(*,*)'-------------------------------------------------------------'
 
             if(lelec)then ! not needed in every step
                 !write(*,*)'NNcharges for configuration ',i4
-                do i1=1,num_atoms
-                    write(*,'(a10,i6,f14.8)')'NNcharge ',i1,nnatomcharge(i1)
+                do ictr_1=1,num_atoms
+                    write(*,'(a10,i6,f14.8)')'NNcharge ',ictr_1,nnatomcharge(ictr_1)
                 enddo
             endif
 
             write(*,*)'-------------------------------------------------------------'
             !write(*,*)'NN forces for the configuration ',i4
             if(ldoforces)then ! not needed in every step, write forces
-                do i1=1,num_atoms
-                    write(*,'(a10,i6,3f16.8,a8)')'NNforces ',i1,nntotalforce(1,i1) * habohr2evang,&
-                    nntotalforce(2,i1) * habohr2evang,nntotalforce(3,i1) * habohr2evang,' eV/Ang'
+                do ictr_1=1,num_atoms
+                    write(*,'(a10,i6,3f16.8,a8)')'NNforces ',ictr_1,nntotalforce(1,ictr_1) * habohr2evang,&
+                    nntotalforce(2,ictr_1) * habohr2evang,nntotalforce(3,ictr_1) * habohr2evang,' eV/Ang'
                 enddo
                 write(*,*)'-------------------------------------------------------------'
             endif
 
             if(ldostress.and.lperiodic)then ! not needed in every step
                 !write(*,*)'NNstress for the configuration ',i4
-                do i1=1,3
-                    write(*,'(a10,3f18.8,a10)')'NNstress ',nnstress(i1,1) * habohrcub2evangcub,&
-                    nnstress(i1,2) * habohrcub2evangcub,nnstress(i1,3) * habohrcub2evangcub,' eV/Ang^3'
+                do ictr_1=1,3
+                    write(*,'(a10,3f18.8,a10)')'NNstress ',nnstress(ictr_1,1) * habohrcub2evangcub,&
+                    nnstress(ictr_1,2) * habohrcub2evangcub,nnstress(ictr_1,3) * habohrcub2evangcub,' eV/Ang^3'
                 enddo
                 write(*,*)'-------------------------------------------------------------'
                 pressure=(nnstress(1,1)+nnstress(2,2)+nnstress(3,3))/3.0d0
@@ -6624,10 +6791,10 @@ module pes_nene_mod
             endif
 
             if(lsens.and.lshort.and.(nn_type_short.eq.1))then ! not needed in every step
-                do i1=1,nelem
-                    do i2=1,num_funcvalues_short_atomic(i1)
+                do ictr_1=1,nelem
+                    do ictr_2=1,num_funcvalues_short_atomic(ictr_1)
                         write(*,'(a15,x,a2,x,i4,f16.8)')' NNsensitivity ',&
-                        element(i1),i2,sqrt(sens(i1,i2)/dble(num_atoms_element(i1)))
+                        element(ictr_1),ictr_2,sqrt(sens(ictr_1,ictr_2)/dble(num_atoms_element(ictr_1)))
                     enddo
                     write(*,*)'-------------------------------------------------------------'
                 enddo
@@ -6635,208 +6802,5 @@ module pes_nene_mod
         endif
 
     end subroutine compute_nene
-
-
-    subroutine set_defaults() ! move this to read_nene
-
-
-
-        maxnum_funcvalues_short_atomic      = 0 ! needed so that the max function will work
-        maxnum_funcvalues_elec              = 0 ! needed so that the max function will work
-        function_type_local                 = default_int
-        function_type_temp                  = default_int
-        funccutoff_local                    = 0.0d0 ! needed so that the max function will work
-        maxcutoff_local                     = 0.0d0 ! needed so that the max function will work
-
-        maxnodes_short_atomic               = 0 ! needed so that the max function will work
-        maxnodes_elec                       = 0 ! needed so that the max function will work
-
-        lcheckinputforces                   = default_bool
-        inputforcethreshold                 = default_real
-
-        lprintforcecomponents               = default_bool
-        lionforcesonly                      = default_bool
-        cutoff_type                         = default_int
-        cutoff_alpha                        = default_real
-        ldynforcegroup                      = default_bool
-        dynforcegroup_start                 = default_int
-        dynforcegroup_step                  = default_int
-        ldetect_saturation                  = default_bool
-        saturation_threshold                = default_real
-        ldataclustering                     = default_bool
-        dataclusteringthreshold1            = default_real
-        dataclusteringthreshold2            = default_real
-        analyze_error_energy_step           = default_real
-        analyze_error_force_step            = default_real
-        analyze_error_charge_step           = default_real
-        paramode                            = default_int
-        lpearson_correlation                = default_bool
-        lweightanalysis                     = default_bool
-        lenvironmentanalysis                = default_bool
-        lfindcontradictions                 = default_bool
-        deltagthres                         = default_real
-        deltafthres                         = default_real
-        luseoldscaling                      = default_bool
-        lmd                                 = default_bool
-        nodes_short_atomic_temp             = default_int
-        nodes_elec_temp                     = default_int
-        ewaldalpha                          = default_real
-        ewaldcutoff                         = default_real
-        ewaldkmax                           = default_int
-        lprecond                            = default_bool
-        linionly                            = default_bool
-        lfgroupbystruct                     = default_bool
-        lqgroupbystruct                     = default_bool
-        lmixpoints                          = default_bool
-        lprintconv                          = default_bool
-        lprintmad                           = default_bool
-        noisee                              = default_real
-        noisef                              = default_real
-        noiseq                              = default_real
-        nenergygroup                        = default_int
-        nforcegroup                         = default_int
-        nchargegroup                        = default_int
-        luseforces                          = default_bool
-        energyrnd                           = default_real
-        forcernd                            = default_real
-        chargernd                           = default_real
-        lremoveatomenergies                 = default_bool
-        lanalyzeerror                       = default_bool
-        lchargeconstraint                   = default_bool
-        fitmode                             = default_int
-        lfitethres                          = default_bool
-        fitethres                           = default_real
-        lfitfthres                          = default_bool
-        fitfthres                           = default_real
-        rmin                                = default_real
-        optmodee                            = default_int
-        optmodef                            = default_int
-        optmodeq                            = default_int
-        iseed                               = default_int
-        nblock                              = default_int
-        nepochs                             = default_int
-        iwriteweight                        = default_int
-        lwritetmpweights                    = default_bool
-        lwritesymfunctions                  = default_bool
-        splitthres                          = default_real
-        scmin_short_atomic                  = default_real
-        scmax_short_atomic                  = default_real
-        scmin_elec                          = default_real
-        scmax_elec                          = default_real
-        kalmanthreshold                     = default_real
-        kalmanthresholdf                    = default_real
-        kalmanthresholde                    = default_real
-        kalmanthresholdc                    = default_real
-        kalman_dampe                        = default_real
-        kalman_dampf                        = default_real
-        kalman_dampq                        = default_real
-        kalmanlambda_local                  = default_real
-        kalmanlambdae_local                 = default_real
-        kalmanlambdac                       = default_real
-        kalmannue                           = default_real
-        kalmannuee                          = default_real
-        kalmannuec                          = default_real
-        lusenoisematrix                     = default_bool
-        kalman_q0                           = default_real
-        kalman_qtau                         = default_real
-        kalman_qmin                         = default_real
-        kalman_epsilon                      = default_real
-        steepeststepe                       = default_real
-        steepeststepf                       = default_real
-        steepeststepq                       = default_real
-        scalefactorf                        = default_real
-        scalefactorq                        = default_real
-        lscalesym                           = default_bool
-        lcentersym                          = default_bool
-        luseoldweightsshort                 = default_bool
-        luseoldweightscharge                = default_bool
-        lsavekalman                         = default_bool
-        lrestkalman                         = default_bool
-        lupdatebyelement                    = default_bool
-        elemupdate                          = default_int
-        luseworste                          = default_bool
-        worste                              = default_real
-        luseworstf                          = default_bool
-        worstf                              = default_real
-        luseworstq                          = default_bool
-        worstq                              = default_real
-        lgrowth                             = default_bool
-        ngrowth                             = default_int
-        growthstep                          = default_int
-        ldampw                              = default_bool
-        dampw                               = default_real
-        lfixweights                         = default_bool
-        ldoforces                           = default_bool
-        ldohessian                          = default_bool
-        ldostress                           = default_bool
-        lenforcemaxnumneighborsatomic       = default_bool
-        max_num_neighbors_atomic_input      = default_int
-        lfinetime                           = default_bool
-        lfinetimeepoch                      = default_bool
-        lwritetrainpoints                   = default_bool
-        lwritetrainforces                   = default_bool
-        lwritetraincharges                  = default_bool
-        maxforce                            = default_real
-        maxenergy                           = default_real
-        nran                                = default_int
-        lfinalforce                         = default_bool
-        lnormnodes                          = default_bool
-        count_wconstraint                   = 0 ! otherwise the count does not make sense!!
-        weights_min                         = default_real
-        weights_max                         = default_real
-        lseparatebiasini                    = default_bool
-        biasweights_min                     = default_real
-        biasweights_max                     = default_real
-        weightse_min                        = default_real
-        weightse_max                        = default_real
-        lsysweights                         = default_bool
-        lsysweightse                        = default_bool
-        lsens                               = default_bool
-        lreadunformatted                    = default_bool
-        lresetkalman                        = default_bool
-        lsepkalman                          = default_bool
-        lrepeate                            = default_bool
-        enforcetotcharge                    = default_int
-        lshuffle_weights_short_atomic       = default_bool
-        nshuffle_weights_short_atomic       = default_int
-        shuffle_weights_short_atomic        = default_real
-        lcheckf                             = default_bool
-        lfitstats                           = default_bool
-        lfixederrore                        = default_bool
-        fixederrore                         = default_real
-        lfixederrorf                        = default_bool
-        fixederrorf                         = default_real
-        restrictw                           = default_real
-        lscreen                             = default_bool
-        rscreen_onset                       = default_real
-        rscreen_cut                         = default_real
-        lsilent                             = default_bool
-        lpreparemd                          = default_bool
-        fitting_unit                        = default_int
-        ljointefupdate                      = default_bool
-        lompmkl                             = default_bool
-        lnwweights                          = default_bool
-        lnwweightse                         = default_bool
-        lprintdateandtime                   = default_bool
-        lenableontheflyinput                = default_bool
-        luseedkalman                        = default_bool
-        ledforcesv2                         = default_bool
-        lanalyzecomposition                 = default_bool
-        actfunc_short_atomic_dummy          = default_string
-        actfunc_elec_dummy                  = default_string
-        fixedcharge                         = default_real
-        layer                               = default_int
-        node                                = default_int
-        actfunc                             = default_string
-
-
-        pstring                             = default_string
-
-        ldebug                              = default_bool
-        luseatomenergies                    = default_bool
-        luseatomcharges                     = default_bool
-
-
-    end subroutine set_defaults
 
 end module pes_nene_mod

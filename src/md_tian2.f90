@@ -113,7 +113,7 @@ program md_tian2
 
             end do
 
-            if (simparams%pes_nene) call cleanup_nene() ! in case of pes_nene some variables had to be deallocated
+            if (simparams%pes_nene) call cleanup_nene() ! in case of pes_nene some variables had to be deallocated, really needed? -> compare with pes_rebo_mod.f90
 
         case default
             call abort
