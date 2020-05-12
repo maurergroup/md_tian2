@@ -59,6 +59,8 @@ module pes_nene_mod
 
     integer, dimension(:), allocatable :: zelem                     ! zelem(max_num_atoms)
     integer, dimension(:), allocatable :: num_atoms_element         ! num_atoms_element(nelem)
+    integer :: count_wconstraint    = 0
+    integer :: count_wconstrainte   = 0
 
     real(dp) :: eshort              = default_real
     real(dp) :: volume              = default_real
@@ -161,6 +163,7 @@ module pes_nene_mod
         integer :: ztemp1 = default_int
         integer :: ztemp2 = default_int
         integer :: function_type_local = default_int
+        integer :: atom_energy_counter = default_int
 
         integer, dimension(:)  , allocatable :: nodes_short_local
         integer, dimension(:)  , allocatable :: nodes_ewald_local
@@ -291,6 +294,12 @@ module pes_nene_mod
         npairs                              = default_int
         max_num_pairs                       = default_int
 
+        vdw_screening(1)                    = default_real
+        vdw_screening(2)                    = default_real
+        nn_type_vdw                         = default_int
+        vdw_coefficients(:,:)               = default_real
+        lvdw                                = default_bool
+
 
 
 
@@ -366,7 +375,6 @@ module pes_nene_mod
         optmodee                            = default_int
         optmodef                            = default_int
         optmodeq                            = default_int
-        iseed                               = default_int
         nblock                              = default_int
         nepochs                             = default_int
         iwriteweight                        = default_int
@@ -435,7 +443,6 @@ module pes_nene_mod
         nran                                = default_int
         lfinalforce                         = default_bool
         lnormnodes                          = default_bool
-        count_wconstraint                   = 0 ! otherwise the count does not make sense!!
         weights_min                         = default_real
         weights_max                         = default_real
         lseparatebiasini                    = default_bool
@@ -485,11 +492,6 @@ module pes_nene_mod
 
 
         pstring                             = default_string
-
-        ldebug                              = default_bool
-        luseatomenergies                    = default_bool
-        luseatomcharges                     = default_bool
-
 
 
         !call initnn(iseed)
@@ -1571,7 +1573,7 @@ module pes_nene_mod
             endif
             kalmanlambda_local =0.98000d0
             kalmanlambdae_local=0.98000d0
-            iseed=200
+            !iseed=200
 
             if(lshort.and.(nn_type_short.eq.1))then
                 windex_short_atomic(:,:)    =0
@@ -2771,7 +2773,7 @@ module pes_nene_mod
                             ! just let it pass
 
                         case ('weighte_constraint')
-                            count_wconstraint=count_wconstraint+1 ! same as previous?
+                            count_wconstrainte=count_wconstrainte+1 ! same as previous?
                             ! just let it pass
 
                         case ('weights_min')
@@ -4937,8 +4939,7 @@ module pes_nene_mod
             write(*,*)'-------------------------------------------------------------'
 
             if((nn_type_short.eq.1).and.lshort)then
-                call sortsymfunctions(&
-                  maxnum_funcvalues_short_atomic,num_funcvalues_short_atomic,function_type_short_atomic,symelement_short_atomic,eta_short_atomic,zeta_short_atomic,rshift_short_atomic,lambda_short_atomic,funccutoff_short_atomic)
+                call sortsymfunctions(maxnum_funcvalues_short_atomic,num_funcvalues_short_atomic,function_type_short_atomic,symelement_short_atomic,eta_short_atomic,zeta_short_atomic,rshift_short_atomic,lambda_short_atomic,funccutoff_short_atomic)
             endif
 
             if(lelec.and.(nn_type_elec.eq.1))then
@@ -5006,64 +5007,64 @@ module pes_nene_mod
             endif
 
             if(lelec.and.(nn_type_elec.eq.1))then
-        do ictr_1=1,nelem
-          write(*,*)'-------------------------------------------------------------'
-          write(*,*)' electrostatic symmetry functions element ',element(ictr_1),' :'
-          write(*,*)'-------------------------------------------------------------'
-          do ictr_2=1,num_funcvalues_elec(ictr_1)
-            if(function_type_elec(ictr_2,ictr_1).eq.1)then
-              write(*,'(i5,a3,i3,x,a3,3x,24x,f8.3)')&
-                ictr_2,element(ictr_1),function_type_elec(ictr_2,ictr_1),&
-                element(elementindex(symelement_elec(ictr_2,1,ictr_1))),&
-                funccutoff_elec(ictr_2,ictr_1)
-            elseif(function_type_elec(ictr_2,ictr_1).eq.2)then
-              write(*,'(i5,a3,i3,x,a3,3x,8x,3f8.3)')&
-                ictr_2,element(ictr_1),function_type_elec(ictr_2,ictr_1),&
-                element(elementindex(symelement_elec(ictr_2,1,ictr_1))),&
-                eta_elec(ictr_2,ictr_1),rshift_elec(ictr_2,ictr_1),funccutoff_elec(ictr_2,ictr_1)
-            elseif(function_type_elec(ictr_2,ictr_1).eq.3)then
-              write(*,'(i5,a3,i3,x,2a3,4f8.3)')&
-                ictr_2,element(ictr_1),function_type_elec(ictr_2,ictr_1),&
-                element(elementindex(symelement_elec(ictr_2,1,ictr_1))),&
-                element(elementindex(symelement_elec(ictr_2,2,ictr_1))),&
-                eta_elec(ictr_2,ictr_1),lambda_elec(ictr_2,ictr_1),&
-                zeta_elec(ictr_2,ictr_1),funccutoff_elec(ictr_2,ictr_1)
-            elseif(function_type_elec(ictr_2,ictr_1).eq.4)then
-              write(*,'(i5,a3,i3,x,a3,3x,16x,2f8.3)')&
-                ictr_2,element(ictr_1),function_type_elec(ictr_2,ictr_1),&
-                element(elementindex(symelement_elec(ictr_2,1,ictr_1))),&
-                eta_elec(ictr_2,ictr_1),funccutoff_elec(ictr_2,ictr_1)
-            elseif(function_type_elec(ictr_2,ictr_1).eq.5)then
-              write(*,'(i5,a3,i3,4x,27x,f8.3)')&
-                ictr_2,element(ictr_1),function_type_elec(ictr_2,ictr_1),eta_elec(ictr_2,ictr_1)
-            elseif(function_type_elec(ictr_2,ictr_1).eq.6)then
-              write(*,'(i5,a3,i3,x,a3,3x,24x,f8.3)')&
-                ictr_2,element(ictr_1),function_type_elec(ictr_2,ictr_1),&
-                element(elementindex(symelement_elec(ictr_2,1,ictr_1))),&
-                funccutoff_elec(ictr_2,ictr_1)
-            elseif(function_type_elec(ictr_2,ictr_1).eq.8)then
-              write(*,'(i5,a3,i3,x,2a3,4f8.3)')&
-                ictr_2,element(ictr_1),function_type_elec(ictr_2,ictr_1),&
-                element(elementindex(symelement_elec(ictr_2,1,ictr_1))),&
-                element(elementindex(symelement_elec(ictr_2,2,ictr_1))),&
-                eta_elec(ictr_2,ictr_1),rshift_elec(ictr_2,ictr_1),&
-                funccutoff_elec(ictr_2,ictr_1)
-            elseif(function_type_elec(ictr_2,ictr_1).eq.9)then
-              write(*,'(i5,a3,i3,x,2a3,4f8.3)')&
-                ictr_2,element(ictr_1),function_type_elec(ictr_2,ictr_1),&
-                element(elementindex(symelement_elec(ictr_2,1,ictr_1))),&
-                element(elementindex(symelement_elec(ictr_2,2,ictr_1))),&
-                eta_elec(ictr_2,ictr_1),lambda_elec(ictr_2,ictr_1),&
-                zeta_elec(ictr_2,ictr_1),funccutoff_elec(ictr_2,ictr_1)
-            else
-              write(*,*)'Error: printing unknown symfunctione in readinput '
-              stop
+                do ictr_1=1,nelem
+                    write(*,*)'-------------------------------------------------------------'
+                    write(*,*)' electrostatic symmetry functions element ',element(ictr_1),' :'
+                    write(*,*)'-------------------------------------------------------------'
+                    do ictr_2=1,num_funcvalues_elec(ictr_1)
+                        if(function_type_elec(ictr_2,ictr_1).eq.1)then
+                            write(*,'(i5,a3,i3,x,a3,3x,24x,f8.3)')&
+                                ictr_2,element(ictr_1),function_type_elec(ictr_2,ictr_1),&
+                                element(elementindex(symelement_elec(ictr_2,1,ictr_1))),&
+                                funccutoff_elec(ictr_2,ictr_1)
+                        elseif(function_type_elec(ictr_2,ictr_1).eq.2)then
+                            write(*,'(i5,a3,i3,x,a3,3x,8x,3f8.3)')&
+                                ictr_2,element(ictr_1),function_type_elec(ictr_2,ictr_1),&
+                                element(elementindex(symelement_elec(ictr_2,1,ictr_1))),&
+                                eta_elec(ictr_2,ictr_1),rshift_elec(ictr_2,ictr_1),funccutoff_elec(ictr_2,ictr_1)
+                        elseif(function_type_elec(ictr_2,ictr_1).eq.3)then
+                            write(*,'(i5,a3,i3,x,2a3,4f8.3)')&
+                                ictr_2,element(ictr_1),function_type_elec(ictr_2,ictr_1),&
+                                element(elementindex(symelement_elec(ictr_2,1,ictr_1))),&
+                                element(elementindex(symelement_elec(ictr_2,2,ictr_1))),&
+                                eta_elec(ictr_2,ictr_1),lambda_elec(ictr_2,ictr_1),&
+                                zeta_elec(ictr_2,ictr_1),funccutoff_elec(ictr_2,ictr_1)
+                        elseif(function_type_elec(ictr_2,ictr_1).eq.4)then
+                            write(*,'(i5,a3,i3,x,a3,3x,16x,2f8.3)')&
+                                ictr_2,element(ictr_1),function_type_elec(ictr_2,ictr_1),&
+                                element(elementindex(symelement_elec(ictr_2,1,ictr_1))),&
+                                eta_elec(ictr_2,ictr_1),funccutoff_elec(ictr_2,ictr_1)
+                        elseif(function_type_elec(ictr_2,ictr_1).eq.5)then
+                            write(*,'(i5,a3,i3,4x,27x,f8.3)')&
+                                ictr_2,element(ictr_1),function_type_elec(ictr_2,ictr_1),eta_elec(ictr_2,ictr_1)
+                        elseif(function_type_elec(ictr_2,ictr_1).eq.6)then
+                            write(*,'(i5,a3,i3,x,a3,3x,24x,f8.3)')&
+                                ictr_2,element(ictr_1),function_type_elec(ictr_2,ictr_1),&
+                                element(elementindex(symelement_elec(ictr_2,1,ictr_1))),&
+                                funccutoff_elec(ictr_2,ictr_1)
+                        elseif(function_type_elec(ictr_2,ictr_1).eq.8)then
+                            write(*,'(i5,a3,i3,x,2a3,4f8.3)')&
+                                ictr_2,element(ictr_1),function_type_elec(ictr_2,ictr_1),&
+                                element(elementindex(symelement_elec(ictr_2,1,ictr_1))),&
+                                element(elementindex(symelement_elec(ictr_2,2,ictr_1))),&
+                                eta_elec(ictr_2,ictr_1),rshift_elec(ictr_2,ictr_1),&
+                                funccutoff_elec(ictr_2,ictr_1)
+                        elseif(function_type_elec(ictr_2,ictr_1).eq.9)then
+                            write(*,'(i5,a3,i3,x,2a3,4f8.3)')&
+                                ictr_2,element(ictr_1),function_type_elec(ictr_2,ictr_1),&
+                                element(elementindex(symelement_elec(ictr_2,1,ictr_1))),&
+                                element(elementindex(symelement_elec(ictr_2,2,ictr_1))),&
+                                eta_elec(ictr_2,ictr_1),lambda_elec(ictr_2,ictr_1),&
+                                zeta_elec(ictr_2,ictr_1),funccutoff_elec(ictr_2,ictr_1)
+                        else
+                            write(*,*)'Error: printing unknown symfunctione in readinput '
+                            stop
+                        endif
+                    enddo
+                enddo
             endif
-          enddo
-        enddo
-      endif
-      write(*,*)'-------------------------------------------------------------'
-      ! end of readout according to readinput.f90
+            write(*,*)'-------------------------------------------------------------'
+        ! end of readout according to readinput.f90
 
         ! further readout according to initnn.f90
         call getlistdim()
@@ -5162,6 +5163,12 @@ module pes_nene_mod
         if (analyze_error_charge_step == default_real) then
             analyze_error_charge_step = 0.001d0
         end if
+        if (vdw_screening(1) == default_real) then
+            vdw_screening(1) = 0.0d0
+        end if
+        if (vdw_screening(2) == default_real) then
+            vdw_screening(2) = 0.0d0
+        end if
         if (paramode == default_int) then
             paramode = 1
         end if
@@ -5215,6 +5222,12 @@ module pes_nene_mod
         end if
         if (nepochs == default_int) then
             nepochs = 0
+        end if
+        if (nn_type_vdw == default_int) then
+            nn_type_vdw = 1
+        end if
+        if (all(vdw_coefficients == default_real)) then
+            vdw_coefficients(:,:) = 0.0d0
         end if
         if (iwriteweight == default_int) then
             iwriteweight = 1
@@ -5290,6 +5303,9 @@ module pes_nene_mod
         end if
         if (nran == default_int) then
             nran = 5
+        end if
+        if (enforcetotcharge = default_int) then
+            enforcetotcharge = 0
         end if
         if (all(fixedcharge == default_real)) then
             fixedcharge(:) = 99.0d0
@@ -5388,7 +5404,7 @@ module pes_nene_mod
         character(len=*), parameter :: err_check        = "Error in checkinputnn: "
 
 
-        if (nran .neq. 5) then
+        if (nran .ne. 5) then
             print *, err, err_inpnn, err_check, "random_number_type not implemented, only 5 available"
         end if
 
@@ -5400,6 +5416,28 @@ module pes_nene_mod
             if(deltafthres.gt.0.0d0)then
                 print *, err, err_inpnn, err_check, 'find_contradictions requires positive deltafthres ', deltafthres
                 stop
+            endif
+        endif
+
+        if (lvdw) then
+            if (nn_type_vdw .eq. 1) then
+                ! do nothing
+            else
+                print *, err, err_inpnn, err_check, 'illegal value for vdw_type ', nn_type_vdw
+                stop
+            endif
+        endif
+
+        if(lvdw)then
+            if (nn_type_vdw .eq. 1) then
+                if (count_vdwscreening .eq. 0) then ! check counter
+                    print *, err, err_inpnn, err_check, 'please specify keyword vdw_screening'
+                    stop
+                endif
+                if((abs(vdw_screening(1)).lt.0.00000001d0).and.(abs(vdw_screening(2)).lt.0.000000001d0))then
+                    print *, err, err_inpnn, err_check, 'illegal value for vdw_type ',nn_type_vdw
+                    stop
+                endif
             endif
         endif
 
@@ -5470,452 +5508,427 @@ module pes_nene_mod
             stop
         endif
 
-        if((count_kalmanthreshold.eq.1).and.(count_lfixederrore.eq.1))then
+        if ((fitmode.ne.1).and.(fitmode.ne.2)) then
+            print *, err, err_inpnn, err_check, 'Unknown fitmode in readinput ', fitmode
+            stop
+        endif
+
+        if((count_kalmanthreshold.eq.1).and.(count_lfixederrore.eq.1))then ! check counter
             print *, err, err_inpnn, err_check, 'short_energy_error_threshold cannot be used in combination with fixed_short_energy_error_threshold'
             stop
         endif
 
-      if((count_kalmanthresholdf.eq.1).and.(count_lfixederrorf.eq.1))then
-        print *, err, err_inpnn, err_check, 'short_force_error_thresholdf cannot be used in combination with fixed_short_force_error_threshold'
-        stop
-      endif
-
-      if((.not.lshort).and.(.not.lelec))then
-        print *, err, err_inpnn, err_check, 'short range and electrostatic NNs are switched off'
-        stop
-      endif
-
-      if(lshort.and.(maxnum_layers_short_atomic.eq.0).and.(nn_type_short.eq.1))then
-        write(*,*)'Error: global_hidden_layers_short is not specified'
-        stop
-      endif
-
-      if(lshort.and.(maxnum_layers_short_pair.eq.0).and.(nn_type_short.eq.2))then
-        write(*,*)'Error: global_hidden_layers_pair is not specified'
-        stop
-      endif
-
-      if(lelec.and.(nn_type_elec.eq.0))then
-        write(*,*)'Error: electrostatic_type is not specified'
-        stop
-      endif
-
-      if(lelec.and.(nn_type_elec.eq.1).and.(maxnum_layers_elec.eq.0))then
-        write(*,*)'Error: global_hidden_layers_electrostatic is not specified'
-        stop
-      endif
-
-      if(lshort.and.(count_nodes_short_atomic.eq.0).and.(nn_type_short.eq.1))then
-        write(*,*)'Error: global_nodes_short is not specified'
-        stop
-      endif
-
-      if(lelec.and.(nn_type_elec.eq.1).and.(count_nodes_elec.eq.0))then
-        write(*,*)'Error: global_nodes_electrostatic is not specified'
-        stop
-      endif
-
-      do ictr_1=1,nelem
-        if(lshort.and.(nn_type_short.eq.1))then
-          if(nodes_short_atomic(maxnum_layers_short_atomic,ictr_1).gt.1)then
-            write(*,*)'Error: More than 1 output node currently does '
-            write(*,*)'make sense in short range NN'
+        if((count_kalmanthresholdf.eq.1).and.(count_lfixederrorf.eq.1))then ! check counter
+            print *, err, err_inpnn, err_check, 'short_force_error_thresholdf cannot be used in combination with fixed_short_force_error_threshold'
             stop
-          endif
         endif
-      enddo
 
-      do ictr_1=1,nelem
-        if(lshort.and.(nn_type_short.eq.1))then
-          if(nodes_short_atomic(maxnum_layers_short_atomic,ictr_1).eq.0)then
-            write(*,*)'Error: output_nodes_short is 0'
+        if(mode.eq.default_int)then
+            print *, err, err_inpnn, err_check, 'runner_mode is not specified'
             stop
-          endif
         endif
-      enddo
 
-      do ictr_1=1,nelem
-        if(lelec.and.(nn_type_elec.eq.1))then
-          if(nodes_elec(maxnum_layers_elec,ictr_1).gt.1)then
-            write(*,*)'Error: More than 1 output node currently does '
-            write(*,*)'make sense in electrostatic NN'
+        if((.not.lshort).and.(.not.lelec))then
+            print *, err, err_inpnn, err_check, 'short range and electrostatic NNs are switched off'
             stop
-          endif
         endif
-      enddo
 
-      do ictr_1=1,nelem
-        if(lelec.and.(nn_type_elec.eq.1))then
-          if(nodes_elec(maxnum_layers_elec,ictr_1).eq.0)then
-            write(*,*)'Error: output_nodes_electrostatic is 0'
+        if(lshort.and.(maxnum_layers_short_atomic.eq.0).and.(nn_type_short.eq.1))then ! check if 0 makes sense
+            print *, err, err_inpnn, err_check, 'global_hidden_layers_short is not specified'
             stop
-          endif
         endif
-      enddo
 
-      do ictr_1=1,nelem
-        if(lshort.and.(nn_type_short.eq.1))then
-          if(nodes_short_atomic(0,ictr_1).eq.0)then
-            write(*,*)'Error: input_nodes_short is 0'
+        if(lelec.and.(nn_type_elec.eq.default_int))then
+            print *, err, err_inpnn, err_check, 'electrostatic_type is not specified'
             stop
-          endif
         endif
-      enddo
 
-      do ictr_1=1,nelem
-        if(lshort.and.(nn_type_short.eq.1))then
-          if(nodes_short_atomic(0,ictr_1).ne.num_funcvalues_short_atomic(ictr_1))then
-            write(*,*)'Error: num_funcvalues_short_atomic .ne. nodes_short_atomic(0)',&
-              num_funcvalues_short_atomic(ictr_1),nodes_short_atomic(0,ictr_1)
-            write(*,*)'Did you set the right number of input nodes?'
+        if(lelec.and.(nn_type_elec.eq.1).and.(maxnum_layers_elec.eq.0))then ! check counter
+            write(*,*)'Error: global_hidden_layers_electrostatic is not specified'
             stop
-          endif
         endif
-      enddo
 
-      do ictr_1=1,nelem
-        if(lelec.and.(nn_type_elec.eq.1))then
-          if(nodes_elec(0,ictr_1).eq.0)then
-            write(*,*)'Error: input_nodes_electrostatic is 0'
+        if(lshort.and.(count_nodes_short_atomic.eq.0).and.(nn_type_short.eq.1))then ! check counter
+            write(*,*)'Error: global_nodes_short is not specified'
             stop
-          endif
         endif
-      enddo
 
-      do ictr_1=1,nelem
-        if(lelec.and.(nn_type_elec.eq.1))then
-          if(nodes_elec(0,ictr_1).ne.num_funcvalues_elec(ictr_1))then
-            write(*,*)'Error: num_funcvalues_elec .ne. nodes_elec(0)',&
-              num_funcvalues_elec(ictr_1),nodes_elec(0,ictr_1)
-            write(*,*)'Did you set the right number of input nodes?'
+        if(lelec.and.(nn_type_elec.eq.1).and.(count_nodes_elec.eq.0))then ! check counter
+            write(*,*)'Error: global_nodes_electrostatic is not specified'
             stop
-          endif
         endif
-      enddo
 
-      if(lshort.and.(nn_type_short.eq.1))then
-        if(count_global_activation_short_atomic.eq.0)then
-          write(*,*)'Error: global_activation_short is not specified'
-          stop
-        endif
-      endif
-
-      if(lelec.and.(nn_type_elec.eq.1))then
-        if(count_global_activation_elec.eq.0)then
-          write(*,*)'Error: global_activation_ewald is not specified'
-          stop
-        endif
-      endif
-
-      if(lelec.and.(count_ewaldalpha.eq.0))then
-        write(*,*)'Error: ewald_alpha must be specified for electrostatic NN'
-        stop
-      endif
-
-      if(lelec.and.(ewaldalpha.le.0))then
-        write(*,*)'Error: ewald_alpha must be positive ',ewaldalpha
-        stop
-      endif
-
-      if(lelec.and.(count_ewaldcutoff.eq.0))then
-        write(*,*)'Error: ewald_cutoff must be specified for electrostatic NN'
-        stop
-      endif
-
-      if(lelec.and.(ewaldcutoff.le.0))then
-        write(*,*)'Error: ewald_cutoff must be positive ',ewaldcutoff
-        stop
-      endif
-
-      if(lelec.and.(count_ewaldkmax.eq.0))then
-        write(*,*)'Error: ewald_kmax must be specified for electrostatic NN'
-        stop
-      endif
-
-      if((.not.lshort).and.(luseforces))then
-        write(*,*)'### WARNING ### switching off use_short_forces because no short range NN is used'
-        luseforces=.false.
-      endif
-
-      if(lelec.and.(.not.luseatomcharges))then
-        write(*,*)'### WARNING ### use_atom_charges is switched on for electrostatic NN'
-        luseatomcharges=.true.
-      endif
-
-      if(lshort.and.(luseatomenergies))then
-        write(*,*)'### WARNING ### use_atom_energies is switched off (not implemented)'
-        luseatomenergies=.false.
-      endif
-
-      if((.not.lshort).and.(lremoveatomenergies))then
-        write(*,*)'### WARNING ### remove_atom_energies is switched on without short range NN'
-      endif
-
-      if(lelec.and.(lchargeconstraint))then
-        write(*,'(a)')' ### WARNING ### use_charge_constraint is not maintained at the moment and might fail'
-      endif
-
-      if(count_iseed.eq.0)then
-        write(*,*)'### WARNING ### no random_seed specified, using default '
-      endif
-
-      if(nenergygroup.gt.nblock)then
-        nenergygroup=nblock
-        write(*,*)'### WARNING ### reducing nenergygroup to nblock'
-      endif
-
-      if(count_nelem.eq.0)then
-        write(*,*)'Error: number_of_elements not specified'
-        stop
-      endif
-
-      if(count_element.eq.0)then
-        write(*,*)'Error: elements not specified'
-        stop
-      endif
-
-      if((mode.eq.1).and.(count_splitthres.eq.0))then
-        write(*,*)'Error: test_fraction not specified'
-        stop
-      endif
-
-      if(lcentersym.and.(count_scmin_short_atomic.gt.0))then
-        write(*,'(a)')'Error: center_symmetry_functions cannot be combined with scale_min_short_atomic keyword'
-        stop
-      endif
-
-      if(lcentersym.and.(count_scmax_short_atomic.gt.0))then
-        write(*,'(a)')'Error: center_symmetry_functions cannot be combined with scale_max_short_atomic keyword'
-        stop
-      endif
-
-      if(lcentersym.and.(count_scmin_short_pair.gt.0))then
-        write(*,'(a)')'Error: center_symmetry_functions cannot be combined with scale_min_short_pair keyword'
-        stop
-      endif
-
-      if(lcentersym.and.(count_scmax_short_pair.gt.0))then
-        write(*,'(a)')'Error: center_symmetry_functions cannot be combined with scale_max_short_pair keyword'
-        stop
-      endif
-
-      if(lcentersym.and.(count_scmin_elec.gt.0))then
-        write(*,'(a)')'Error: center_symmetry_functions cannot be combined with scale_min_elec keyword'
-        stop
-      endif
-
-      if(lcentersym.and.(count_scmax_elec.gt.0))then
-        write(*,'(a)')'Error: center_symmetry_functions cannot be combined with scale_max_elec keyword'
-        stop
-      endif
-
-      if((count_scmin_short_atomic.gt.0).and.(.not.lscalesym))then
-        write(*,*)'Error: scale_min_short requires keyword scale_symmetry_functions'
-        stop
-      endif
-
-      if((count_scmax_short_atomic.gt.0).and.(.not.lscalesym))then
-        write(*,*)'Error: scale_max_short requires keyword scale_symmetry_functions'
-        stop
-      endif
-
-      if((count_scmin_short_pair.gt.0).and.(.not.lscalesym))then
-        write(*,*)'Error: scale_min_short_pair requires keyword scale_symmetry_functions'
-        stop
-      endif
-
-      if((count_scmax_short_pair.gt.0).and.(.not.lscalesym))then
-        write(*,*)'Error: scale_max_short_pair requires keyword scale_symmetry_functions'
-        stop
-      endif
-
-      if((count_scmin_elec.gt.0).and.(.not.lscalesym))then
-        write(*,*)'Error: scale_min_elec requires keyword scale_symmetry_functions'
-        stop
-      endif
-
-      if((count_scmax_elec.gt.0).and.(.not.lscalesym))then
-        write(*,*)'Error: scale_max_elec requires keyword scale_symmetry_functions'
-        stop
-      endif
-
-      if(scmin_short_atomic.ge.scmax_short_atomic)then
-        write(*,'(a)')'Error: scale_min_short .ge. scale_max_short'
-        stop
-      endif
-
-      if(scmin_short_pair.ge.scmax_short_pair)then
-        write(*,'(a)')'Error: scale_min_short_pair .ge. scale_max_short_pair'
-        stop
-      endif
-
-      if(scmin_elec.ge.scmax_elec)then
-        write(*,'(a)')'Error: scale_min_elec .ge. scale_max_elec'
-        stop
-      endif
-
-      if(lupdatebyelement.and.lchargeconstraint)then
-        lchargeconstraint=.false.
-        if(mode.eq.2)then
-          write(*,*)'### WARNING ### lchargeconstraint is switched off because of lupdatebyelement'
-        endif
-      endif
-
-      if(lshort.and.lupdatebyelement.and.(mode.eq.2))then
-        write(*,*)'### WARNING ### lupdatebyelement works only for charges and forces'
-      endif
-
-      if(luseworste.and.lshort.and.(energyrnd.lt.1.0d0))then
-        energyrnd=1.0d0
-        write(*,*)'### WARNING ### luseworste overrides energyrnd: ',energyrnd
-      endif
-
-      if(luseworstf.and.lshort.and.luseforces.and.(forcernd.lt.1.0d0))then
-        forcernd=1.0d0
-        write(*,*)'### WARNING ### luseworstf overrides forcernd: ',forcernd
-      endif
-
-      if(luseworstq.and.lelec.and.(nn_type_elec.eq.1).and.(chargernd.lt.1.0d0))then
-        chargernd=1.0d0
-        write(*,*)'### WARNING ### luseworstq overrides chargernd: ',chargernd
-      endif
-
-      if(dampw.gt.1.0d0)then
-        write(*,*)'Error: dampw must not be larger than 1.0d0 ',dampw
-        stop
-      endif
-
-      if(ldostress.and.(.not.ldoforces))then
-        write(*,*)'### WARNING ### Analytic stress is requested without forces'
-        write(*,*)'Switching on calculation of analytic forces'
-        ldoforces=.true.
-      endif
-
-      if(ldohessian.and.(.not.ldoforces))then
-        write(*,*)'### WARNING ### Analytic Hessian is requested without forces'
-        write(*,*)'Switching on calculation of analytic forces'
-        ldoforces=.true.
-      endif
-
-      if(ldostress.and.(mode.eq.1))then
-        write(*,*)'### WARNING ### switching off stress calculation in mode 1 for increased performance'
-        ldostress=.false.
-      endif
-
-      if((count_wconstraint.gt.0).and.(.not.lfixweights))then
-        write(*,*)'ERROR: weight constraints are specified without fix_weights keyword'
-        stop
-      endif
-
-      if((count_wconstraint.eq.0).and.(lfixweights))then
-        write(*,*)'ERROR: no weights constrained but keyword fix_weights has been selected'
-        stop
-      endif
-
-      if(weights_min.ge.weights_max)then
-        write(*,*)'ERROR: weights_min > weights_max'
-        stop
-      endif
-
-      if(biasweights_min.ge.biasweights_max)then
-        write(*,*)'ERROR: biasweights_min > biasweights_max'
-        stop
-      endif
-
-      if(weightse_min.ge.weightse_max)then
-        write(*,*)'ERROR: weightse_min > weightse_max'
-        stop
-      endif
-
-      if(kalman_dampe.lt.0.0d0)then
-        write(*,*)'ERROR: kalman_damp_short must be non-negative ',kalman_dampe
-        stop
-      endif
-
-      if(kalman_dampf.lt.0.0d0)then
-        write(*,*)'ERROR: kalman_damp_force must be non-negative ',kalman_dampf
-        stop
-      endif
-
-      if(kalman_dampq.lt.0.0d0)then
-        write(*,*)'ERROR: kalman_damp_charge must be non-negative ',kalman_dampq
-        stop
-      endif
-
-      if(ljointefupdate.and.lelec)then
-        write(*,*)'ERROR: joint_energy_force_update is not implemented for lelec and nn_type_elec 2'
-        stop
-      endif
-
-      if(ljointefupdate)then
-        if(optmodee.ne.optmodef)then
-          write(*,*)'ERROR: joint_energy_force_update requires to use the'
-          write(*,*)'same optimization algorithm for energy and forces'
-          stop
-        endif
-        if(.not.luseforces)then
-          write(*,*)'ERROR: switch on use_short_forces for joint_energy_force_update'
-          stop
-        endif
-        if(lrepeate)then
-          write(*,*)'ERROR: repeated energy update cannot be combined with joint energy and force update'
-          stop
-        endif
-        if(forcernd.lt.1.0d0)then
-          write(*,*)'ERROR: joint energy and force update requires force_fraction = 1.0d0'
-          stop
-        endif
-        if(luseworste)then
-          write(*,*)'ERROR: joint energy and force update cannot be combined with update_worst_short_energies'
-          stop
-        endif
-        if(luseworstf)then
-          write(*,*)'ERROR: joint energy and force update cannot be combined with update_worst_short_forces'
-          stop
-        endif
-        if(nenergygroup.gt.1)then
-          write(*,*)'ERROR: joint energy and force update cannot be combined with short_energy_group > 1'
-          stop
-        endif
-        if(nforcegroup.gt.1)then
-          write(*,*)'ERROR: joint energy and force update cannot be combined with short_force_group > 1'
-          stop
-        endif
-        if(kalmanthresholdf.gt.0.0d0)then
-          write(*,*)'ERROR: joint energy and force update cannot be combined with short_force_error_threshold > 0.0'
-          stop
-        endif
-      endif
-
-      if(maxforce.le.0.0d0)then
-        write(*,*)'ERROR: max_force must not be negative ',maxforce
-        stop
-      endif
-
-      if(lshort.and.(nn_type_short.eq.1))then
         do ictr_1=1,nelem
-          if(num_funcvalues_short_atomic(ictr_1).ne.nodes_short_atomic(0,ictr_1))then
-            write(*,*)'ERROR: num_funcvalues_short_atomic .ne. nodes_short_atomic(0)'
-            write(*,*)ictr_1,num_funcvalues_short_atomic(ictr_1),nodes_short_atomic(0,ictr_1)
-            stop
-          endif
+            if(lshort.and.(nn_type_short.eq.1))then
+                if(nodes_short_atomic(maxnum_layers_short_atomic,ictr_1).gt.1)then
+                    write(*,*)'Error: More than 1 output node currently does '
+                    write(*,*)'make sense in short range NN'
+                    stop
+                endif
+            endif
         enddo
-      endif
 
-      if(lelec.and.(nn_type_elec.eq.1))then
         do ictr_1=1,nelem
-          if(num_funcvalues_elec(ictr_1).ne.nodes_elec(0,ictr_1))then
-            write(*,*)'ERROR: num_funcvalues_elec .ne. nodes_elec(0)'
-            write(*,*)ictr_1,num_funcvalues_elec(ictr_1),nodes_elec(0,ictr_1)
-            stop
-          endif
+            if(lshort.and.(nn_type_short.eq.1))then
+                if(nodes_short_atomic(maxnum_layers_short_atomic,ictr_1).eq.0)then ! check if 0 makes sense
+                    write(*,*)'Error: output_nodes_short is 0'
+                    stop
+                endif
+            endif
         enddo
-      endif
 
-      if((mode.eq.3).and.(max_num_atoms.lt.nblock).and.(nn_type_short.eq.1).and.lshort)then
-        write(*,*) 'WARNING: reducing points_in_memory to max_num_atoms ',max_num_atoms
-        nblock=max_num_atoms
-      endif
+        do ictr_1=1,nelem
+            if(lelec.and.(nn_type_elec.eq.1))then
+                if(nodes_elec(maxnum_layers_elec,ictr_1).gt.1)then
+                    write(*,*)'Error: More than 1 output node currently does '
+                    write(*,*)'make sense in electrostatic NN'
+                    stop
+                endif
+            endif
+        enddo
+
+        do ictr_1=1,nelem
+            if(lelec.and.(nn_type_elec.eq.1))then
+                if(nodes_elec(maxnum_layers_elec,ictr_1).eq.0)then ! check if 0 makes sense
+                    write(*,*)'Error: output_nodes_electrostatic is 0'
+                    stop
+                endif
+            endif
+        enddo
+
+        do ictr_1=1,nelem
+            if(lshort.and.(nn_type_short.eq.1))then
+                if(nodes_short_atomic(0,ictr_1).eq.0)then ! check if 0 makes sense
+                    write(*,*)'Error: input_nodes_short is 0'
+                    stop
+                endif
+            endif
+        enddo
+
+        do ictr_1=1,nelem
+            if(lshort.and.(nn_type_short.eq.1))then
+                if(nodes_short_atomic(0,ictr_1).ne.num_funcvalues_short_atomic(ictr_1))then
+                    write(*,*)'Error: num_funcvalues_short_atomic .ne. nodes_short_atomic(0)',&
+                        num_funcvalues_short_atomic(ictr_1),nodes_short_atomic(0,ictr_1)
+                    write(*,*)'Did you set the right number of input nodes?'
+                    stop
+                endif
+            endif
+        enddo
+
+        do ictr_1=1,nelem
+            if(lelec.and.(nn_type_elec.eq.1))then
+                if(nodes_elec(0,ictr_1).eq.0)then ! check if 0 makes sense
+                    write(*,*)'Error: input_nodes_electrostatic is 0'
+                    stop
+                endif
+            endif
+        enddo
+
+        do ictr_1=1,nelem
+            if(lelec.and.(nn_type_elec.eq.1))then
+                if(nodes_elec(0,ictr_1).ne.num_funcvalues_elec(ictr_1))then
+                    write(*,*)'Error: num_funcvalues_elec .ne. nodes_elec(0)',&
+                        num_funcvalues_elec(ictr_1),nodes_elec(0,ictr_1)
+                    write(*,*)'Did you set the right number of input nodes?'
+                    stop
+                endif
+            endif
+        enddo
+
+        if(lshort.and.(nn_type_short.eq.1))then
+            if(any(actfunc_short_atomic == default_string))then
+                write(*,*)'Error: global_activation_short is not specified'
+                stop
+            endif
+        endif
+
+        if(lelec.and.(nn_type_elec.eq.1))then
+            if(any(actfunc_elec == default_string))then
+                write(*,*)'Error: global_activation_ewald is not specified'
+                stop
+            endif
+        endif
+
+        if(lelec.and.(ewaldalpha.eq.0.0d0))then ! this is correct
+            write(*,*)'Error: ewald_alpha must be specified for electrostatic NN'
+            stop
+        endif
+
+        if(lelec.and.(ewaldalpha.le.0.0d0))then ! this is correct
+            write(*,*)'Error: ewald_alpha must be positive ',ewaldalpha
+            stop
+        endif
+
+        if(lelec.and.(ewaldcutoff.eq.0.0d0))then ! this is correct
+            write(*,*)'Error: ewald_cutoff must be specified for electrostatic NN'
+            stop
+        endif
+
+        if(lelec.and.(ewaldcutoff.le.0.0d0))then ! this is correct
+            write(*,*)'Error: ewald_cutoff must be positive ',ewaldcutoff
+            stop
+        endif
+
+        if(lelec.and.(ewaldkmax.eq.0))then ! this is correct
+            write(*,*)'Error: ewald_kmax must be specified for electrostatic NN'
+            stop
+        endif
+
+        if((.not.lshort).and.(luseforces))then
+            write(*,*)'### WARNING ### switching off use_short_forces because no short range NN is used'
+            luseforces=.false.
+        endif
+
+        if(lelec.and.(.not.luseatomcharges))then
+            write(*,*)'### WARNING ### use_atom_charges is switched on for electrostatic NN'
+            luseatomcharges=.true.
+        endif
+
+        if(lshort.and.(luseatomenergies))then
+            write(*,*)'### WARNING ### use_atom_energies is switched off (not implemented)'
+            luseatomenergies=.false.
+        endif
+
+        if((.not.lshort).and.(lremoveatomenergies))then
+            write(*,*)'### WARNING ### remove_atom_energies is switched on without short range NN'
+        endif
+
+        if(lelec.and.(lchargeconstraint))then
+            write(*,'(a)')' ### WARNING ### use_charge_constraint is not maintained at the moment and might fail'
+        endif
+
+        if(iseed.eq.200)then
+            write(*,*)'### WARNING ### no random_seed specified, set to default value 200'
+        endif
+
+        if(nenergygroup.gt.nblock)then
+            nenergygroup=nblock
+            write(*,*)'### WARNING ### reducing nenergygroup to nblock'
+        endif
+
+        if(nelem.eq.default_int)then ! this is correct
+            write(*,*)'Error: number_of_elements not specified'
+            stop
+        endif
+
+        if(any(element.eq.default_string))then
+            write(*,*)'Error: elements not specified'
+            stop
+        endif
+
+        if(lcentersym.and.(scmin_short_atomic.ne.0.0d0))then
+            write(*,'(a)')'Error: center_symmetry_functions cannot be combined with scale_min_short_atomic keyword'
+            stop
+        endif
+
+        if(lcentersym.and.(scmax_short_atomic.ne.1.0d0))then
+            write(*,'(a)')'Error: center_symmetry_functions cannot be combined with scale_max_short_atomic keyword'
+            stop
+        endif
+
+        if(lcentersym.and.(scmin_elec.ne.0.0d0))then
+            write(*,'(a)')'Error: center_symmetry_functions cannot be combined with scale_min_elec keyword'
+            stop
+        endif
+
+        if(lcentersym.and.(scmax_elec.ne.1.0d0))then
+            write(*,'(a)')'Error: center_symmetry_functions cannot be combined with scale_max_elec keyword'
+            stop
+        endif
+
+        if((scmin_short_atomic.ne.0.0d0).and.(.not.lscalesym))then
+            write(*,*)'Error: scale_min_short requires keyword scale_symmetry_functions'
+            stop
+        endif
+
+        if((scmax_short_atomic.ne.1.0d0).and.(.not.lscalesym))then
+            write(*,*)'Error: scale_max_short requires keyword scale_symmetry_functions'
+            stop
+        endif
+
+        if((scmin_elec.ne.0.0d0).and.(.not.lscalesym))then
+            write(*,*)'Error: scale_min_elec requires keyword scale_symmetry_functions'
+            stop
+        endif
+
+        if((scmax_elec.ne.1.0d0).and.(.not.lscalesym))then
+            write(*,*)'Error: scale_max_elec requires keyword scale_symmetry_functions'
+            stop
+        endif
+
+        if(scmin_short_atomic.ge.scmax_short_atomic)then
+            write(*,'(a)')'Error: scale_min_short .ge. scale_max_short'
+            stop
+        endif
+
+        if(scmin_elec.ge.scmax_elec)then
+            write(*,'(a)')'Error: scale_min_elec .ge. scale_max_elec'
+            stop
+        endif
+
+        if(lupdatebyelement.and.lchargeconstraint)then
+            lchargeconstraint=.false.
+        endif
+
+        if(luseworste.and.lshort.and.(energyrnd.lt.1.0d0))then
+            energyrnd=1.0d0
+            write(*,*)'### WARNING ### luseworste overrides energyrnd: ',energyrnd
+        endif
+
+        if(luseworstf.and.lshort.and.luseforces.and.(forcernd.lt.1.0d0))then
+            forcernd=1.0d0
+            write(*,*)'### WARNING ### luseworstf overrides forcernd: ',forcernd
+        endif
+
+        if(luseworstq.and.lelec.and.(nn_type_elec.eq.1).and.(chargernd.lt.1.0d0))then
+            chargernd=1.0d0
+            write(*,*)'### WARNING ### luseworstq overrides chargernd: ',chargernd
+        endif
+
+        if(dampw.gt.1.0d0)then
+            write(*,*)'Error: dampw must not be larger than 1.0d0 ',dampw
+            stop
+        endif
+
+        if(ldostress.and.(.not.ldoforces))then
+            write(*,*)'### WARNING ### Analytic stress is requested without forces'
+            write(*,*)'Switching on calculation of analytic forces'
+            ldoforces=.true.
+        endif
+
+        if(ldohessian.and.(.not.ldoforces))then
+            write(*,*)'### WARNING ### Analytic Hessian is requested without forces'
+            write(*,*)'Switching on calculation of analytic forces'
+            ldoforces=.true.
+        endif
+
+        if((count_wconstraint.gt.0).and.(.not.lfixweights))then
+            write(*,*)'ERROR: weight constraints are specified without fix_weights keyword'
+            stop
+        endif
+
+        if((count_wconstrainte.gt.0).and.(.not.lfixweights))then
+            write(ounit,*)'Error: electrostatic weight constraints are specified without fix_weights keyword'
+            stop
+        endif
+
+        if((count_wconstraint.eq.0).and.(lfixweights))then
+            write(*,*)'ERROR: no short range weights constrained but keyword fix_weights has been selected'
+            stop
+        endif
+
+        if((count_wconstrainte.eq.0).and.(lfixweights))then
+            write(*,*)'ERROR: no electrostatic weights constrained but keyword fix_weights has been selected'
+            stop
+        endif
+
+        if(weights_min.ge.weights_max)then
+            write(*,*)'ERROR: weights_min > weights_max'
+            stop
+        endif
+
+        if(biasweights_min.ge.biasweights_max)then
+            write(*,*)'ERROR: biasweights_min > biasweights_max'
+            stop
+        endif
+
+        if(weightse_min.ge.weightse_max)then
+            write(*,*)'ERROR: weightse_min > weightse_max'
+            stop
+        endif
+
+        if(kalman_dampe.lt.0.0d0)then
+            write(*,*)'ERROR: kalman_damp_short must be non-negative ',kalman_dampe
+            stop
+        endif
+
+        if(kalman_dampf.lt.0.0d0)then
+            write(*,*)'ERROR: kalman_damp_force must be non-negative ',kalman_dampf
+            stop
+        endif
+
+        if(kalman_dampq.lt.0.0d0)then
+            write(*,*)'ERROR: kalman_damp_charge must be non-negative ',kalman_dampq
+            stop
+        endif
+
+        if(ljointefupdate.and.lelec)then
+            write(*,*)'ERROR: joint_energy_force_update is not implemented for lelec and nn_type_elec 2'
+            stop
+        endif
+
+        if(ljointefupdate)then
+            if(optmodee.ne.optmodef)then
+                write(*,*)'ERROR: joint_energy_force_update requires to use the'
+                write(*,*)'same optimization algorithm for energy and forces'
+                stop
+            endif
+            if(.not.luseforces)then
+                write(*,*)'ERROR: switch on use_short_forces for joint_energy_force_update'
+                stop
+            endif
+            if(lrepeate)then
+                write(*,*)'ERROR: repeated energy update cannot be combined with joint energy and force update'
+                stop
+            endif
+            if(forcernd.lt.1.0d0)then
+                write(*,*)'ERROR: joint energy and force update requires force_fraction = 1.0d0'
+                stop
+            endif
+            if(luseworste)then
+                write(*,*)'ERROR: joint energy and force update cannot be combined with update_worst_short_energies'
+                stop
+            endif
+            if(luseworstf)then
+                write(*,*)'ERROR: joint energy and force update cannot be combined with update_worst_short_forces'
+                stop
+            endif
+            if(nenergygroup.gt.1)then
+                write(*,*)'ERROR: joint energy and force update cannot be combined with short_energy_group > 1'
+                stop
+            endif
+            if(nforcegroup.gt.1)then
+                write(*,*)'ERROR: joint energy and force update cannot be combined with short_force_group > 1'
+                stop
+            endif
+            if(kalmanthresholdf.gt.0.0d0)then
+                write(*,*)'ERROR: joint energy and force update cannot be combined with short_force_error_threshold > 0.0'
+                stop
+            endif
+        endif
+
+        if(maxforce.le.0.0d0)then
+            write(*,*)'ERROR: max_force must not be negative ',maxforce
+            stop
+        endif
+
+        if(lshort.and.(nn_type_short.eq.1))then
+            do ictr_1=1,nelem
+                if(num_funcvalues_short_atomic(ictr_1).ne.nodes_short_atomic(0,ictr_1))then
+                    write(*,*)'ERROR: num_funcvalues_short_atomic .ne. nodes_short_atomic(0)'
+                    write(*,*)ictr_1,num_funcvalues_short_atomic(ictr_1),nodes_short_atomic(0,ictr_1)
+                    stop
+                endif
+            enddo
+        endif
+
+        if(lelec.and.(nn_type_elec.eq.1))then
+            do ictr_1=1,nelem
+                if(num_funcvalues_elec(ictr_1).ne.nodes_elec(0,ictr_1))then
+                    write(*,*)'ERROR: num_funcvalues_elec .ne. nodes_elec(0)'
+                    write(*,*)ictr_1,num_funcvalues_elec(ictr_1),nodes_elec(0,ictr_1)
+                    stop
+                endif
+            enddo
+        endif
+
+        if((mode.eq.3).and.(max_num_atoms.lt.nblock).and.(nn_type_short.eq.1).and.lshort)then
+            write(*,*) 'WARNING: reducing points_in_memory to max_num_atoms ',max_num_atoms
+            nblock=max_num_atoms
+        endif
+
+        print *, '============================================================='
 
     end subroutine checkinputnn
 
@@ -5955,7 +5968,7 @@ module pes_nene_mod
             write(*,*)'vdW corrections switched off'
         endif
 
-        write(*,*)'-------------------------------------------------------------'
+        print *, '-------------------------------------------------------------'
 
         if(lshort)then
             if(nn_type_short.le.2)then
@@ -5967,18 +5980,7 @@ module pes_nene_mod
             endif
         endif
 
-        if(mode.eq.1)then
-            write(*,*)'Error: RuNNer is started in mode for symmetry function calculation (1); this mode is not implemented, aborting'
-            stop
-        elseif(mode.eq.2)then
-            write(*,*)'Error: RuNNer is started in mode for fitting (2); this mode is not implemented, aborting'
-            stop
-        elseif(mode.eq.3)then
-            write(*,*)'RuNNer is started in mode for prediction (3)' ! is it really necessary to write this?
-        else
-            write(*,*)'ERROR: Unknown runner_mode: ',mode
-            stop
-        endif
+        write(*,*)'RuNNer is started in mode for prediction: ',mode
 
         write(*,'(a,l)')' debugging mode is                                       ',ldebug
 
@@ -5986,185 +5988,163 @@ module pes_nene_mod
 
         write(*,'(a,l)')' enable detailed time measurement                        ',lfinetime
 
-
-
         write(*,'(a,l)')' silent mode                                             ',lsilent
 
-        if((mode.eq.2).or.(mode.eq.3))then
-            write(*,'(a,l)')' NN force check                                          ',lcheckf
-        endif
+        write(*,'(a,l)')' NN force check                                          ',lcheckf
 
-      if(nelem.lt.ielem)then
-        write(*,*)'ERROR: number of elements in structure(s) is larger than '
-        write(*,*)'number of elements in input.nn ',ielem,nelem
-        stop
-      else
-        write(*,'(a,i4)')' number of elements                                    ',nelem
-      endif
-
-      write(*,*)'elements (sorted):'
-      do ictr_1=1,nelem
-        write(*,'(i3,x,a2)')nucelem(ictr_1),element(ictr_1)
-      enddo
-
-
-      write(*,'(a,i10)')' seed for random number generator                ',iseed
-
-      if((nran.lt.0).or.(nran.gt.5))then
-        write(*,*)'ERROR: Unknown random number generator ',nran
-        stop
-      endif
-      write(*,'(a,i10)')' random number generator type                    ',nran
-
-      write(*,'(a,l)')' remove free atom reference energies                     ',lremoveatomenergies
-
-
-
-      write(*,'(a,f8.3)')' shortest allowed bond in structure                ',rmin
-
-      if(lnormnodes)then
-        write(*,*)'Linear combinations at nodes are normalized'
-      endif
-
-      write(*,'(a,i3)')' Cutoff_type for symmetry function is                   ',cutoff_type
-      write(*,'(a,f7.3)')' Cutoff_alpha for inner cutoff radius is            ',cutoff_alpha
-
-      if(lenforcemaxnumneighborsatomic)then
-        write(*,'(a,i3)')&
-        ' Enforcing global max_num_neighors_atomic               ',max_num_neighbors_atomic_input
-      endif
-
-      if(lshort.and.(mode.ne.1))then
-        write(*,*)'-------------------------------------------------------------'
-        write(*,*)'Short range NN specifications:'
-        write(*,*)'-------------------------------------------------------------'
-      endif
-
-      if(lshort.and.(nn_type_short.eq.1).and.(mode.ne.1))then
-        write(*,'(a,10i5)')' global hidden layers short range NN                  ',maxnum_layers_short_atomic-1
-        write(*,'(a,10i5)')' global nodes hidden layers short NN             ',&
-          (nodes_short_atomic_temp(i1),i1=1,maxnum_layers_short_atomic-1)
-      endif
-
-      if(lshort.and.(nn_type_short.eq.1).and.(mode.ne.1))then
-        write(*,'(a,x,10a)')' global activation functions short                     ',&
-          (actfunc_short_atomic_dummy(i),i=1,maxnum_layers_short_atomic)
-      endif
-
-      if(lelec)then
-        write(*,*)'-------------------------------------------------------------'
-        write(*,*)'Electrostatic specifications:'
-        write(*,*)'-------------------------------------------------------------'
-      endif
-
-      if(lelec)then
-        write(*,'(a,i5)')' electrostatic_type (nn_type_elec)                    ',nn_type_elec
-        if(nn_type_elec.eq.1)then
-          write(*,'(a)')' Using separate set of atomic NNs for atomic charges'
-        elseif(nn_type_elec.eq.2)then
-          write(*,'(a)')' Constructing atomic charges from short range NN'
-        elseif(nn_type_elec.eq.3)then
-          write(*,'(a)')' Fixed atomic charges are used:'
-          do ictr_1=1,nelem
-            write(*,'(a1,a2,x,f14.3)')' ',element(ictr_1),fixedcharge(ictr_1)
-          enddo
-        elseif(nn_type_elec.eq.4)then
-          write(*,'(a)')' Using atomic charges from charges.in file'
+        if(nelem.lt.ielem)then
+            write(*,*)'ERROR: number of elements in structure(s) is larger than '
+            write(*,*)'number of elements in input.nn ',ielem,nelem
+            stop
         else
-          write(*,*)'ERROR: Unknown electrostatic_type ',nn_type_elec
-          stop
+            write(*,'(a,i4)')' number of elements                                    ',nelem
         endif
-      endif
 
-      if(lelec.and.(nn_type_elec.eq.1))then
-        write(*,'(a,10i5)')' global hidden layers electrostatic NN                ',maxnum_layers_elec-1
-        write(*,'(a,10i5)')' global nodes hidden layers electrostatic NN     ',&
-          (nodes_elec_temp(ictr_1),ictr_1=1,maxnum_layers_elec-1)
-      endif
+        write(*,*)'elements (sorted):'
+        do ictr_1=1,nelem
+            write(*,'(i3,x,a2)')nucelem(ictr_1),element(ictr_1)
+        enddo
 
-      if(lelec.and.(nn_type_elec.eq.1))then
-        write(*,'(a,x,10a)')' global activation functions electrostatic             ',&
-          (actfunc_elec_dummy(ictr_2),ictr_2=1,maxnum_layers_elec)
-      endif
 
-      if(lelec)then
-        write(*,'(a,f8.3)')' Ewald alpha                                       ',ewaldalpha
-        write(*,'(a,f8.3)')' Ewald cutoff                                      ',ewaldcutoff
-        write(*,'(a,i6)')' Ewald kmax                                          ',ewaldkmax
-      endif
+        write(*,'(a,i10)')' seed for random number generator                ',iseed
 
-      if(lelec.and.(mode.eq.0))then
-        write(*,'(a,i4)')' Enforce total charge                                ',enforcetotcharge
-      endif
-
-      if(lelec)then
-        if(lscreen)then
-          write(*,'(a,2f14.6)')' Screening electrostatics                            ',rscreen_onset,rscreen_cut
-        else
-          write(*,'(a)')' No screening of electrostatics requested                '
+        if(nran.ne.5)then
+            write(*,*)'ERROR: Unknown random number generator ',nran
+            stop
         endif
-      endif
+        write(*,'(a,i10)')' random number generator type                    ',nran
 
-      if(lelec)then
-        if(mode.eq.3)then
-          if(nn_type_elec.eq.4)then
-            write(*,'(a)')' Using atomic charges from file charges.in!'
-          endif
+        write(*,'(a,l)')' remove free atom reference energies                     ',lremoveatomenergies
+
+        write(*,'(a,f8.3)')' shortest allowed bond in structure                ',rmin
+
+        if(lnormnodes)then
+            write(*,*)'Linear combinations at nodes are normalized'
         endif
-      endif
+
+        write(*,'(a,i3)')' Cutoff_type for symmetry function is                   ',cutoff_type
+        write(*,'(a,f7.3)')' Cutoff_alpha for inner cutoff radius is            ',cutoff_alpha
+
+        if(lenforcemaxnumneighborsatomic)then
+            write(*,'(a,i3)')&
+            ' Enforcing global max_num_neighors_atomic               ',max_num_neighbors_atomic_input
+        endif
+
+        if(lshort)then
+            write(*,*)'-------------------------------------------------------------'
+            write(*,*)'Short range NN specifications:'
+            write(*,*)'-------------------------------------------------------------'
+        endif
+
+        if(lshort.and.(nn_type_short.eq.1))then
+            write(*,'(a,10i5)')' global hidden layers short range NN                  ',maxnum_layers_short_atomic-1
+            write(*,'(a,10i5)')' global nodes hidden layers short NN             ',&
+                (nodes_short_atomic_temp(i1),i1=1,maxnum_layers_short_atomic-1)
+        endif
+
+        if(lshort.and.(nn_type_short.eq.1))then
+            write(*,'(a,x,10a)')' global activation functions short                     ',&
+                (actfunc_short_atomic_dummy(i),i=1,maxnum_layers_short_atomic)
+        endif
+
+        if(lelec)then
+            write(*,*)'-------------------------------------------------------------'
+            write(*,*)'Electrostatic specifications:'
+            write(*,*)'-------------------------------------------------------------'
+        endif
+
+        if(lelec)then
+            write(*,'(a,i5)')' electrostatic_type (nn_type_elec)                    ',nn_type_elec
+            if(nn_type_elec.eq.1)then
+                write(*,'(a)')' Using separate set of atomic NNs for atomic charges'
+            elseif(nn_type_elec.eq.2)then
+                write(*,'(a)')' Constructing atomic charges from short range NN'
+            elseif(nn_type_elec.eq.3)then
+                write(*,'(a)')' Fixed atomic charges are used:'
+                do ictr_1=1,nelem
+                    write(*,'(a1,a2,x,f14.3)')' ',element(ictr_1),fixedcharge(ictr_1)
+                enddo
+            elseif(nn_type_elec.eq.4)then
+                write(*,'(a)')' Using atomic charges from charges.in file'
+            else
+                write(*,*)'ERROR: Unknown electrostatic_type ',nn_type_elec
+                stop
+            endif
+        endif
+
+        if(lelec.and.(nn_type_elec.eq.1))then
+            write(*,'(a,10i5)')' global hidden layers electrostatic NN                ',maxnum_layers_elec-1
+            write(*,'(a,10i5)')' global nodes hidden layers electrostatic NN     ',&
+                (nodes_elec_temp(ictr_1),ictr_1=1,maxnum_layers_elec-1)
+        endif
+
+        if(lelec.and.(nn_type_elec.eq.1))then
+            write(*,'(a,x,10a)')' global activation functions electrostatic             ',&
+                (actfunc_elec_dummy(ictr_2),ictr_2=1,maxnum_layers_elec)
+        endif
+
+        if(lelec)then
+            write(*,'(a,f8.3)')' Ewald alpha                                       ',ewaldalpha
+            write(*,'(a,f8.3)')' Ewald cutoff                                      ',ewaldcutoff
+            write(*,'(a,i6)')' Ewald kmax                                          ',ewaldkmax
+        endif
+
+        if(lelec.and.(mode.eq.0))then
+            write(*,'(a,i4)')' Enforce total charge                                ',enforcetotcharge
+        endif
+
+        if(lelec)then
+            if(lscreen)then
+                write(*,'(a,2f14.6)')' Screening electrostatics                            ',rscreen_onset,rscreen_cut
+            else
+                write(*,'(a)')' No screening of electrostatics requested                '
+            endif
+        endif
+
+        if(lelec)then
+            if(nn_type_elec.eq.4)then
+                write(*,'(a)')' Using atomic charges from file charges.in!'
+            endif
+        endif
 
 
-      if(lvdw)then
-        write(*,*)'-------------------------------------------------------------'
-        write(*,*)'vdW specifications:'
-        write(*,*)'-------------------------------------------------------------'
-      endif
+        if(lvdw)then
+            write(*,*)'-------------------------------------------------------------'
+            write(*,*)'vdW specifications:'
+            write(*,*)'-------------------------------------------------------------'
+        endif
 
-      if(lvdw)then
-        write(*,'(a,i4)')' vdW type                                            ',nn_type_vdw
-      endif
-      if(lvdw.and.(nn_type_vdw.eq.1))then
-        write(*,'(a,2f14.6)')' vdw screening                                       ',vdw_screening(1),vdw_screening(2)
-      endif
+        if(lvdw)then
+            write(*,'(a,i4)')' vdW type                                            ',nn_type_vdw
+        endif
+        if(lvdw.and.(nn_type_vdw.eq.1))then
+            write(*,'(a,2f14.6)')' vdw screening                                       ',vdw_screening(1),vdw_screening(2)
+        endif
 
-      if(mode.eq.3)then
         write(*,*)'-------------------------------------------------------------'
         write(*,*)'Options for prediction mode:'
         write(*,*)'-------------------------------------------------------------'
-      endif
+        write(*,'(a,l)')' rescale symmetry functions                              ',lscalesym
+        write(*,'(a,l)')' remove CMS from symmetry functions                      ',lcentersym
 
-      if(mode.eq.3)write(*,'(a,l)')' rescale symmetry functions                              ',lscalesym
-
-      if(mode.eq.3)write(*,'(a,l)')' remove CMS from symmetry functions                      ',lcentersym
-
-      if(mode.eq.3)then
         if(lreadunformatted)then
           write(*,'(a)')' Reading unformatted files '
         else
           write(*,'(a)')' Reading formatted files '
         endif
-      endif
 
-      if(mode.eq.3)&
         write(*,'(a,l)')' calculation of analytic forces                          ',ldoforces
-
-      if(mode.eq.3)&
         write(*,'(a,l)')' calculation of analytic Hessian                         ',ldohessian
-
-      if(mode.eq.3)&
         write(*,'(a,l)')' calculation of analytic stress                          ',ldostress
 
-      if((mode.eq.3).and.ldohessian)&
-        write(*,'(a,l)')' calculation of analytic hessian                         ',ldohessian
+        if(ldohessian) write(*,'(a,l)')' calculation of analytic hessian                         ',ldohessian
 
-      if(mode.eq.3)&
         write(*,'(a,l)')' write symmetry functions                                ',lwritesymfunctions
 
-      if((mode.eq.3).and.lsens    )write(*,'(a,l)')' calculation of NN sensitivity                           ',lsens
+        if(lsens) write(*,'(a,l)')' calculation of NN sensitivity                           ',lsens
 
-      if(mode.eq.3)write(*,'(a,l)')' prepare md                                              ',lpreparemd
-
-      write(*,*)'============================================================='
+        write(*,'(a,l)')' prepare md                                              ',lpreparemd
+        write(*,*)'============================================================='
 
     end subroutine printinputnn
 
