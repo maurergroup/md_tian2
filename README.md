@@ -22,7 +22,7 @@ List of modules: -> maybe also here, but put in manual!
 	open_file.f90		input/output routines
 	output_mod.f90		output format routines
 	pes_emt_mod.f90		contains the EMT potential
-	pes_ho_mod.f90		contains the
+	pes_ho_mod.f90		contains the harmonic oscillator potential
 	pes_lj_mod.f90		contains the Lennard-Jones potential
 	pes_nene_mod.f90	contains the high-dimensional neural network potential (external call of RuNNer)
 	pes_non_mod.f90		contains the non-interaction potential

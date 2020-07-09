@@ -633,7 +633,7 @@ the "copyright" line and a pointer to where the full notice is found.
 
     md_tian2 (Molecular Dynamics Tian Xia 2; program for simulating the
 	      scattering of atoms and molecules from a surface)
-    Copyright (C) 2020 Dan J. Auerbach, Svenja M. Janke, Marvin Kammler,
+    Copyright (C) 2020 Daniel J. Auerbach, Svenja M. Janke, Marvin Kammler,
 		       Sascha Kandratsenka, Sebastian Wille
 
     This program is free software: you can redistribute it and/or modify
