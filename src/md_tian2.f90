@@ -34,11 +34,11 @@ program md_tian2
     use output_mod, only : output
     use trajectory_info
     use geometry_opt
+    use useful_things, only : ran_seed
 
     implicit none
 
-    integer :: itraj, istep, i
-    integer*8 :: seed
+    integer :: itraj, istep, i, seed
     real(dp) :: tmp
     type(universe) :: atoms
 
@@ -77,10 +77,6 @@ program md_tian2
 
                 do istep = 1, simparams%nsteps
 
-                    if (simparams%details == .true.) then 
-                        print *, "MD step ", istep
-                    end if
-
                     ! core propagation
                     call propagate_1(atoms)
                     if (atoms%nbeads > 1) call do_ring_polymer_step(atoms)
@@ -104,16 +100,11 @@ program md_tian2
                 if (any(simparams%output_type == output_id_scatter)) call output(atoms, itraj, istep, "scatter_final")
 
                 if (itraj < simparams%start+simparams%ntrajs-1) then
-                    !call random_seed(put=randseed)  ! Seed random number generator
-                    !do i = 1, 100*(itraj+1)
-                    !    call random_number(tmp)   ! rotate it according to trajectory number
-                    !end do
+                    
                     seed = itraj + 1
-                    !call random_seed(get=tmp)
-                    !print *, tmp_int
-                    tmp = ranx(simparams%nran,seed,0) ! new seed for RNG
+                    call ran_seed(simparams%nran, seed)
 
-                    call prepare_next_traj(atoms, seed)
+                    call prepare_next_traj(atoms)
                 end if
 
             end do

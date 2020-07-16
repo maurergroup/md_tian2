@@ -83,7 +83,7 @@ contains
                         ! pass
 
                     case (output_id_nene)
-                        simparams%details = .true.
+                        print *, "MD step ", istep
 
                     case default
                         print *, err // "unknown output format", simparams%output_type(i)

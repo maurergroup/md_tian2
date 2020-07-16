@@ -74,223 +74,57 @@ contains
 !        return
 !    end function normal
 
-    function ranx(nran, seed, switch) result(rnd)
+    subroutine ran_seed(nran,seed)
 
-        implicit none
+        integer,intent(in) :: nran
+        integer,intent(in) :: seed ! the seed will be the trajectory id
 
-        integer  :: nran ! set which rng to use
-        real(dp) :: rnd
-        integer*8, intent(inout) :: seed ! the seed will be the trajectory id
-        integer :: switch, i
         integer, dimension(1) :: putseed
+        integer :: randk, i
 
-        integer :: randk
-
+        real(dp) :: tmp
 
         select case (nran)
 
-            case (1)
+            case (1) ! fixed seed, rotation according to trajectory id
 
-                select case (switch)
+                ! size of seed for random number generator
+                randk=size(randseed)
+                call random_seed(size=randk)
+                call random_seed(put=randseed)
 
-                    case (0) ! fixed seed, rotation according to traj id
+                ! rotate random number generator
+                do i = 1, 100*seed
+                    call random_number(tmp)
+                end do
 
-                        ! size of seed for random number generator
-                        randk=size(randseed)
-                        call random_seed(size=randk)
-                        call random_seed(put=randseed)
+            case (2) ! seed is trajectory id
 
-                        ! rotate rng
-                        do i = 1, 100*seed
-                            call random_number(rnd)
-                        end do
+                putseed = (/seed/)
+                call random_seed(put=putseed)
 
-                    case (1)
-
-                        call random_number(rnd)
-
-                    case default
-
-                        print *, 'Unknown value for switch in ranx function'
-                        stop
-                
-                end select
-
-            case (2) ! seed is traj id, without rotation
-
-                select case (switch)
-
-                    case (0)
-
-                        putseed = (/seed/)
-                        call random_seed(put=putseed)
-
-                        !do i = 1, 100*seed
-                            !call random_number(rnd)
-                        !end do
-
-                    case (1)
-
-                        call random_number(rnd)
-
-                    case default
-
-                        print *, 'Unknown value for switch in ranx function'
-                        stop
-
-                end select
-                
-            case (3) ! rng with traj id as seed
-
-                select case (switch)
-
-                    case (0)
-
-                        print *, 'Warning: Reproducability of random numbers not guarenteed when recalculate single trajectory!'
-                        ! just let it pass
-
-                    case (1)
-
-                        rnd = ran3(seed)
-
-                    case default
-                         print *, 'Unknown value for switch in ranx function'
-                         stop
-
-                end select
+                ! the following ensures a uniform distridution of random numbers
+                do i = 1,100
+                    call random_number(tmp)
+                end do
 
             case default
 
-                print *, 'Error: Unknown random number generator type in ranx function'
+                print *, 'Error: Unknown random number generator type in ran_seed subroutine'
                 stop
 
         end select
 
-    end function ranx
+    end subroutine ran_seed
 
-    function ran3(seed) result(rnd)
+    !subroutine ranx(rnd)
 
-        implicit none
+    !    real(dp), intent(out) :: rnd
 
-        real(dp) :: rnd
-        integer*8, intent(inout) :: seed
+    !    call random_number(rnd)
 
-        rnd = xorshift64star(seed)
+    !end subroutine ranx
 
-    end function ran3
-
-    ! xorshift64*
-    ! took implementation of the algorithm in the Spire package as reference (MIT license)
-    ! https://github.com/typelevel/spire/blob/master/extras/src/main/scala/spire/random/rng/XorShift64Star.scala
-    ! has a period of 2**64-1, translated to fortran by JAF
-    function xorshift64star(state) result(rnd)
-
-        implicit none
-
-        real*8 :: rnd
-        integer*8, intent(inout) :: state
-
-        integer*8 :: b(4)
-        integer*8, parameter :: f(4) = [56605, 20332, 62609, 9541] ! 2685821657736338717 in base 2**16
-        integer*8 :: m(4)
-
-        state = ieor(state, ishft(state, -12))
-        state = ieor(state, ishft(state,  25))
-        state = ieor(state, ishft(state, -27))
-
-        ! fortran has no unsigned ints.
-        ! below would be how we convert signed to unsigned (twos complement)
-        ! if (x < 0) then
-        !   x = 2_16**64 + state
-        ! else
-        !   x = state
-        ! end if
-        ! doing the modulo is equivalent however
-        ! BUT: no 128 bit int support from intel compiler
-        ! we therefore use some trickery by transforming the number into base 2**16
-        ! the version below would work with gnu compiler
-        ! x = modulo(state * 2685821657736338717_16, 2_16**64)
-        ! rnd = real(x, 8) / 2_16**64
-        ! write(*,*) rnd
-        ! this is the version for intel
-
-        call toBase16(state, b)
-        call multBase16(b, f, m)
-        ! call fromBase16(m, xx)
-        ! to return a double we divide by 2^64
-        rnd = m(4) / 2.d0**16 + m(3) / 2.d0**32 + m(2) / 2.d0**48 + m(1) / 2.d0**64
-
-    end function xorshift64star
-
-    ! becaus we cannot use 128 bit ints in ifort we represent our number using 4 ints in base 2**16
-    ! x = sum_i b(i) * 2**(16*(i-1))
-    ! treats x as unsigned int
-    subroutine toBase16(x, b)
-
-        implicit none
-
-        integer*8, intent(in) :: x
-        integer*8, intent(out) :: b(4)
-        integer :: i
-        integer*8 :: t
-
-        b(:) = 0
-        if (x<0) then
-            t = (9223372036854775807_8 + x) + 1
-            b(4) = 2_8**15
-        else
-            t = x
-        end if
-
-        do i=1,4
-            b(i) = b(i) + modulo(t, 2_8**16)
-            t = t / 2_8**16
-        end do
-
-    end subroutine
-
-    ! also treats x as unsigned int
-    subroutine fromBase16(b, x) ! not needed, but left in for support information
-
-        implicit none
-
-        integer*8, intent(in) :: b(4)
-        integer*8, intent(out) :: x
-        integer*8 :: t
-        integer :: i
-
-        x = 0
-        do i=1,3
-            x = x + b(i) * 2_8**(16*(i-1))
-        end do
-        x = x + modulo(b(4), 2_8**16) * 2_8**(16*3)
-
-    end subroutine
-
-    ! does multiplication mod 2**64 of two numbers in the base of 2**16
-    subroutine multBase16(a, b, c)
-
-        implicit none
-
-        integer*8, intent(in) :: a(4), b(4)
-        integer*8, intent(out) :: c(4)
-
-        integer :: i,j
-
-        c(:) = 0
-        do i=1,4
-            do j=1,5-i
-                c(i+j-1) = c(i+j-1) + a(i) * b(j)
-            end do
-        end do
-
-        do i=1,3
-            c(i+1) = c(i+1) + c(i) / 2_8**16
-            c(i) = modulo(c(i), 2_8**16)
-        end do
-        c(4) = modulo(c(4), 2_8**16)
-
-    end subroutine multBase16
 
     subroutine normal_deviate_0d(mu, sigma, nrml_dvt)
 
@@ -347,8 +181,6 @@ contains
     end subroutine normal_deviate_3d
 
 
-
-
     subroutine lower_case(str)
         character(*), intent(in out) :: str
         integer :: i
@@ -360,8 +192,6 @@ contains
             end select
         end do
     end subroutine lower_case
-
-
 
 
     subroutine split_string ( line, words, nw )
@@ -406,7 +236,6 @@ contains
     end subroutine norm_dist
 
 
-
     subroutine pbc_dist(a, b, cmat, cimat, r)
             !
             ! Purpose: Distance between atoms a and b
@@ -432,7 +261,6 @@ contains
         r =  sqrt(sum(r3temp*r3temp))               ! distance
 
     end subroutine pbc_dist
-
 
 
     function lines_in_file(lunit, file_name)
@@ -464,7 +292,6 @@ contains
     end function file_exists
 
 
-
     logical function dir_exists(fname) result(exists)
 
         character(len=*), intent(in) :: fname
@@ -472,7 +299,6 @@ contains
         inquire(directory=fname, exist=exists)
 
     end function dir_exists
-
 
 
     function invert_matrix(A) result(B)
@@ -503,7 +329,6 @@ contains
     end function
 
 
-
     function cro_pro(r1, r2)
 
         real(dp), intent(in) :: r1(:,:), r2(:,:)
@@ -526,7 +351,6 @@ contains
     end function cro_pro
 
 
-
     subroutine check_and_set_fit(vary, idx1, idx2, arr)
 
         character(len=3), intent(in) :: vary
@@ -539,7 +363,6 @@ contains
         end if
 
     end subroutine check_and_set_fit
-
 
 
     subroutine timestamp(out_unit)
