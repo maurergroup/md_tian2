@@ -1,7 +1,7 @@
 !############################################################################
 ! This routine is part of
 ! md_tian2 (Molecular Dynamics Tian Xia 2)
-! (c) 2014-2020 Dan J. Auerbach, Svenja M. Janke, Marvin Kammler,
+! (c) 2014-2020 Daniel J. Auerbach, Svenja M. Janke, Marvin Kammler,
 !               Sascha Kandratsenka, Sebastian Wille
 ! Dynamics at Surfaces Department
 ! MPI for Biophysical Chemistry Goettingen, Germany
@@ -25,7 +25,6 @@
 module useful_things
 
     use constants
-    use run_config, only : simparams
 
     implicit none
 
@@ -75,64 +74,48 @@ contains
 !        return
 !    end function normal
 
-    subroutine ran_seed(nran,seed)
+    subroutine rnd_seed(nran,seed)
 
         integer,intent(in) :: nran
         integer,intent(in) :: seed ! the seed will be the trajectory id
 
         integer, dimension(1) :: putseed
-        integer :: randk
+        integer :: randk, i
 
         real(dp) :: tmp
 
         select case (nran)
 
-            case (1) ! fixed seed, rotation according to traj id
+            case (1) ! fixed seed, rotation according to trajectory id
 
                 ! size of seed for random number generator
                 randk=size(randseed)
                 call random_seed(size=randk)
                 call random_seed(put=randseed)
 
-                ! rotate rng
+                ! rotate random number generator
                 do i = 1, 100*seed
                     call random_number(tmp)
                 end do
 
-            case (2) ! seed is traj id
+            case (2) ! seed is trajectory id
 
                 putseed = (/seed/)
                 call random_seed(put=putseed)
 
+                ! the following ensures a uniform distridution of random numbers
+                do i = 1,100
+                    call random_number(tmp)
+                end do
+
             case default
 
-                print *, 'Error: Unknown random number generator type in ran_seed function'
+                print *, 'Error: Unknown random number generator type in rnd_seed subroutine'
                 stop
 
         end select
 
-    end subroutine ran_seed
-
-
-    subroutine ranx(nran,rnd)
-
-        integer,intent(in)    :: nran
-        real(dp), intent(out) :: rnd
-
-        select case (nran)
-
-            case (1,2)
-
-                call random_number(rnd)
-
-            case default
-
-                print *, 'Error: Unknown random number generator type in ranx function'
-                stop
-
-        end select
-
-    end subroutine ranx
+    end subroutine rnd_seed
 
 
     subroutine normal_deviate_0d(mu, sigma, nrml_dvt)
@@ -141,8 +124,8 @@ contains
         real(dp), intent(out) :: nrml_dvt
         real(dp)              :: rnd1, rnd2
 
-        call ranx(simparams%nran,rnd1)
-        call ranx(simparams%nran,rnd2)
+        call random_number(rnd1)
+        call random_number(rnd2)
         nrml_dvt = sqrt(-2*log(rnd1)) * cos(2*pi*rnd2) * sigma + mu
 
     end subroutine normal_deviate_0d
@@ -154,8 +137,8 @@ contains
         real(dp), intent(out)               :: nrml_dvt(:)
         real(dp), dimension(size(nrml_dvt)) :: rnd1, rnd2
 
-        call ranx(simparams%nran,rnd1)
-        call ranx(simparams%nran,rnd2)
+        call random_number(rnd1)
+        call random_number(rnd2)
         nrml_dvt = sqrt(-2*log(rnd1)) * cos(2*pi*rnd2) * sigma + mu
 
     end subroutine normal_deviate_1d
@@ -168,8 +151,8 @@ contains
         real(dp), dimension(size(nrml_dvt, dim=1), &
                             size(nrml_dvt, dim=2)) :: rnd1, rnd2
 
-        call ranx(simparams%nran,rnd1)
-        call ranx(simparams%nran,rnd2)
+        call random_number(rnd1)
+        call random_number(rnd2)
         nrml_dvt = sqrt(-2*log(rnd1)) * cos(2*pi*rnd2) * sigma + mu
 
     end subroutine normal_deviate_2d
@@ -183,13 +166,11 @@ contains
                             size(nrml_dvt, dim=2), &
                             size(nrml_dvt, dim=3)) :: rnd1, rnd2
 
-        call ranx(simparams%nran,rnd1)
-        call ranx(simparams%nran,rnd2)
+        call random_number(rnd1)
+        call random_number(rnd2)
         nrml_dvt = sqrt(-2*log(rnd1)) * cos(2*pi*rnd2) * sigma + mu
 
     end subroutine normal_deviate_3d
-
-
 
 
     subroutine lower_case(str)
@@ -203,8 +184,6 @@ contains
             end select
         end do
     end subroutine lower_case
-
-
 
 
     subroutine split_string ( line, words, nw )
@@ -249,7 +228,6 @@ contains
     end subroutine norm_dist
 
 
-
     subroutine pbc_dist(a, b, cmat, cimat, r)
             !
             ! Purpose: Distance between atoms a and b
@@ -275,7 +253,6 @@ contains
         r =  sqrt(sum(r3temp*r3temp))               ! distance
 
     end subroutine pbc_dist
-
 
 
     function lines_in_file(lunit, file_name)
@@ -307,7 +284,6 @@ contains
     end function file_exists
 
 
-
     logical function dir_exists(fname) result(exists)
 
         character(len=*), intent(in) :: fname
@@ -315,7 +291,6 @@ contains
         inquire(directory=fname, exist=exists)
 
     end function dir_exists
-
 
 
     function invert_matrix(A) result(B)
@@ -346,7 +321,6 @@ contains
     end function
 
 
-
     function cro_pro(r1, r2)
 
         real(dp), intent(in) :: r1(:,:), r2(:,:)
@@ -369,7 +343,6 @@ contains
     end function cro_pro
 
 
-
     subroutine check_and_set_fit(vary, idx1, idx2, arr)
 
         character(len=3), intent(in) :: vary
@@ -382,7 +355,6 @@ contains
         end if
 
     end subroutine check_and_set_fit
-
 
 
     subroutine timestamp(out_unit)

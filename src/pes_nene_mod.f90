@@ -1,7 +1,7 @@
 !############################################################################
 ! This routine is part of
 ! md_tian2 (Molecular Dynamics Tian Xia 2)
-! (c) 2014-2020 Dan J. Auerbach, Svenja M. Janke, Marvin Kammler,
+! (c) 2014-2020 Daniel J. Auerbach, Svenja M. Janke, Marvin Kammler,
 !               Sascha Kandratsenka, Sebastian Wille
 ! Dynamics at Surfaces Department
 ! MPI for Biophysical Chemistry Goettingen, Germany
@@ -492,6 +492,7 @@ module pes_nene_mod
 
 
         pstring                             = default_string
+        lvdw                                = default_bool
 
 
         !call initnn(iseed)
@@ -1676,6 +1677,14 @@ module pes_nene_mod
                         !case ('global_pairsymfunction_short') !in readkeywords.f90
                             ! done before, not needed here anymore
 
+                        case ('vdw_type', 'vdW_type')
+                            if (nn_type_vdw /= default_int) stop err // err_inpnn // 'Multiple use of the vdw_type / vdW_type key'
+                            if (nwords == 2) then
+                                read(words(2),'(i1000)', iostat=ios) nn_type_vdw
+                                if (ios /= 0) stop err // err_inpnn // "vdw_type / vdW_type value must be integer"
+                            else
+                                print *, err, err_inpnn, "vdw_type / vdW_type key needs a single argument"; stop
+                            end if
 
                         case ('check_input_forces')
                             if (inputforcethreshold /= default_real) stop err // err_inpnn // 'Multiple use of the check_input_forces key'
@@ -1837,6 +1846,14 @@ module pes_nene_mod
                                 if (ios /= 0) stop err // err_inpnn // "find_contradictions second argument value must be a number"
                             else
                                 print *, err, err_inpnn, "find_contradictions key needs two arguments"; stop
+                            end if
+
+                        case ('use_vdw', 'use_vdW')
+                            if (lvdw /= default_bool) stop err // err_inpnn // 'Multiple use of the use_vdw / use_vdW key'
+                            if (nwords == 1) then
+                                lvdw = .true.
+                            else
+                                print *, err, err_inpnn, "use_vdw / use_vdW key needs no argument(s)"; stop
                             end if
 
                         case ('use_old_scaling')
@@ -2612,7 +2629,7 @@ module pes_nene_mod
                                 read(words(3),'(i1000)', iostat=ios) growthstep
                                 if (ios /= 0) stop err // err_inpnn // "growth_mode second argument must be integer"
                             else
-                                print *, err, err_inpnn, "growth_mode key needs a single argument"; stop
+                                print *, err, err_inpnn, "growth_mode key needs 2 arguments"; stop
                             end if
 
                         case ('use_damping')
@@ -2665,6 +2682,17 @@ module pes_nene_mod
                                 if (ios /= 0) stop err // err_inpnn // "enforce_max_num_neighbors_atomic value must be integer"
                             else
                                 print *, err, err_inpnn, "enforce_max_num_neighbors_atomic key needs a single argument"; stop
+                            end if
+
+                        case ('vdw_screening', 'vdW_screening')
+                            if (any(vdw_screening /= default_real)) stop err // err_inpnn // 'Multiple use of the vdw_screening / vdW_screening key'
+                            if (nwords == 3) then
+                                read(words(2),*, iostat=ios) vdw_screening(1)
+                                if (ios /= 0) stop err // err_inpnn // "vdw_screening / vdW_screening first value must be a number"
+                                read(words(3),*, iostat=ios) vdw_screening(2)
+                                if (ios /= 0) stop err // err_inpnn // "vdw_screening / vdW_screening second value must be a number"
+                            else
+                                print *, err, err_inpnn, "vdw_screening / vdW_screening key needs 2 arguments"; stop
                             end if
 
                         case ('detailed_timing')
@@ -2766,6 +2794,9 @@ module pes_nene_mod
                             end if
 
                         case ('atom_energy')
+                            ! just let it pass
+
+                        case ('vdw_coefficient', 'vdW_coefficient')
                             ! just let it pass
 
                         case ('weight_constraint')
@@ -5637,14 +5668,14 @@ module pes_nene_mod
         enddo
 
         if(lshort.and.(nn_type_short.eq.1))then
-            if(any(actfunc_short_atomic == default_string))then
+            if(any(actfunc_short_atomic .eq. default_string))then
                 write(*,*)'Error: global_activation_short is not specified'
                 stop
             endif
         endif
 
         if(lelec.and.(nn_type_elec.eq.1))then
-            if(any(actfunc_elec == default_string))then
+            if(any(actfunc_elec .eq. default_string))then
                 write(*,*)'Error: global_activation_ewald is not specified'
                 stop
             endif
@@ -6127,11 +6158,11 @@ module pes_nene_mod
         write(*,'(a,l)')' rescale symmetry functions                              ',lscalesym
         write(*,'(a,l)')' remove CMS from symmetry functions                      ',lcentersym
 
-        if(lreadunformatted)then
-          write(*,'(a)')' Reading unformatted files '
-        else
-          write(*,'(a)')' Reading formatted files '
-        endif
+        !if(lreadunformatted)then
+        !  write(*,'(a)')' Reading unformatted files '
+        !else
+        !  write(*,'(a)')' Reading formatted files '
+        !endif
 
         write(*,'(a,l)')' calculation of analytic forces                          ',ldoforces
         write(*,'(a,l)')' calculation of analytic Hessian                         ',ldohessian
@@ -6466,7 +6497,10 @@ module pes_nene_mod
 
     end subroutine cleanup_nene
 
-    subroutine read_vdw_coefficients_type_1()
+    subroutine read_vdw_coefficients_type_1() ! maybe move this to read_nene?
+
+        use open_file, only : open_for_read
+        use useful_things, only : split_string
 
         integer :: ictr_1
         integer :: ictr_2
@@ -6507,7 +6541,6 @@ module pes_nene_mod
                             read(words(3),'(A)', iostat=ios) elementtemp2
                             call nuccharge(elementtemp1,ztemp1)
                             call nuccharge(elementtemp2,ztemp2)
-
                             do ictr_1=1,nelem
                                 if(ztemp1 == nucelem(ictr_1))then
                                     do ictr_2=1,nelem
@@ -6516,20 +6549,15 @@ module pes_nene_mod
                                             if(vdw_coefficients(ictr_1,ictr_2).ne.0.0d0)then
                                                 print *, '### ERROR ### vdw_coefficient for pair ', elementtemp1, '- ', elementtemp2, 'has been specified twice. ', vdw_coefficients(ictr_1,ictr_2)
                                                 stop
-
-
                                             else
-
                                                 read(words(2),'(A)', iostat=ios) elementsymbol1(ictr_1)
                                                 read(words(3),'(A)', iostat=ios) elementsymbol2(ictr_2)
                                                 read(words(4),'(A)', iostat=ios) vdw_coefficients(ictr_1,ictr_2)
                                                 lfound(ictr_1,ictr_2)=.true.
-
                                                 if(ztemp1.ne.ztemp2)then
                                                     vdw_coefficients(ictr_2,ictr_1)=vdw_coefficients(ictr_1,ictr_2)
                                                     lfound(ictr_2,ictr_1)=.true.
                                                 endif
-
                                             endif
                                         endif
                                     enddo
@@ -6626,7 +6654,7 @@ module pes_nene_mod
 
         ! convert position units, commit element symbols and set corresponding RuNNer variables
         do atctr = 1,num_atoms
-            xyzstruct(:,atctr) = atoms%r(:,:,atctr) * ang2bohr
+            xyzstruct(:,atctr) = atoms%r(:,1,atctr) * ang2bohr
             !elementsymbol(j) = atoms%name(atoms%idx(j)) ! this is already set
             !call nuccharge(elementsymbol(j),zelem(j)) ! this is already set
             !lelement(zelem(j)) = .true. ! this is already set

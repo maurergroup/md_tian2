@@ -1,7 +1,7 @@
 !############################################################################
 ! This routine is part of
 ! md_tian2 (Molecular Dynamics Tian Xia 2)
-! (c) 2014-2020 Dan J. Auerbach, Svenja M. Janke, Marvin Kammler,
+! (c) 2014-2020 Daniel J. Auerbach, Svenja M. Janke, Marvin Kammler,
 !               Sascha Kandratsenka, Sebastian Wille
 ! Dynamics at Surfaces Department
 ! MPI for Biophysical Chemistry Goettingen, Germany
@@ -27,7 +27,7 @@ subroutine write_info()
 
       print *, '--------------------------------------------------------------------------'
       print *, '                md_tian2 (Molecular Dynamics Tian Xia 2)                  '
-      print *, '---------  (c) 2014-2020 Dan J. Auerbach, Svenja M. Janke,       ---------'
+      print *, '---------  (c) 2014-2020 Daniel J. Auerbach, Svenja M. Janke,       ---------'
       print *, '---------  Marvin Kammler, Sascha Kandratsenka, Sebastian Wille  ---------'
       print *, '---------            Dynamics at Surfaces Department             ---------'
       print *, '---------    MPI for Biophysical Chemistry Goettingen, Germany   ---------'

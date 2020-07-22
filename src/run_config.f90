@@ -1,7 +1,7 @@
 !############################################################################
 ! This routine is part of
 ! md_tian2 (Molecular Dynamics Tian Xia 2)
-! (c) 2014-2020 Dan J. Auerbach, Svenja M. Janke, Marvin Kammler,
+! (c) 2014-2020 Daniel J. Auerbach, Svenja M. Janke, Marvin Kammler,
 !               Sascha Kandratsenka, Sebastian Wille
 ! Dynamics at Surfaces Department
 ! MPI for Biophysical Chemistry Goettingen, Germany
@@ -26,7 +26,7 @@ module run_config
 
     use constants
     use universe_mod, only : universe
-    use useful_things, only : lower_case, split_string
+    use useful_things, only : lower_case, split_string, rnd_seed
     use open_file, only : open_for_read
 
     implicit none
@@ -74,7 +74,6 @@ module run_config
         integer  :: maxit                                           ! maximum number of iteration during fit
         integer  :: nthreads                                        ! number of threads used for fitting
         integer  :: nran                                            ! type of the random number genreator
-        logical  :: details                                         ! if true a lot of information is written during each md step in RuNNer
         logical  :: pes_nene                                        ! in case of the nene pes this variable is needed to call the subroutine for deallocation of variables
 
     end type
@@ -125,7 +124,6 @@ contains
         new_simulation_parameters%maxit = 30
         new_simulation_parameters%nthreads = 1
         new_simulation_parameters%nran = default_int
-        new_simulation_parameters%details = default_bool
         new_simulation_parameters%pes_nene = default_bool
 
     end function
@@ -193,7 +191,7 @@ contains
             simparams%nran = 1
         end if
 
-        call ran_seed(simparams%nran,simparams%start) ! seed the RNG
+        call rnd_seed(simparams%nran,simparams%start) ! seed the RNG
 
         ! read rest of the input file
         call open_for_read(inp_unit, input_file); ios = 0
@@ -450,7 +448,7 @@ contains
                                     if (nwords == 4) then
                                         read(words(4),'(i1000)',iostat=ios) simparams%nconfs
                                         if (ios /= 0) stop err // 'conf key - mxt argument must be integer'
-                                        call ranx(simparams%nran,rnd)
+                                        call random_number(rnd)
                                         write(simparams%confname_file, '(2a, i8.8, a)') trim(simparams%confname_file), "/mxt_", int(rnd*simparams%nconfs)+1, ".dat"
                                     end if
                                     if (nwords < 3) stop err // 'conf key - too few mxt arguments'
@@ -464,7 +462,7 @@ contains
                                     read(words(3),'(A)') simparams%merge_proj_file
                                     read(words(4),'(i1000)',iostat=ios) simparams%merge_proj_nconfs
                                     if (ios /= 0) stop err // "conf key - number of configurations must be integer"
-                                    call ranx(simparams%nran,rnd)
+                                    call random_number(rnd)
                                     write(simparams%merge_proj_file, '(2a, i8.8, a)') &
                                         trim(simparams%merge_proj_file), "/mxt_", int(rnd*simparams%merge_proj_nconfs)+1, ".dat"
 
@@ -472,7 +470,7 @@ contains
                                     read(words(5),'(A)') simparams%confname_file
                                     read(words(6),'(i1000)',iostat=ios) simparams%nconfs
                                     if (ios /= 0) stop err // "conf key - number of configurations must be integer"
-                                    call ranx(simparams%nran,rnd)
+                                    call random_number(rnd)
                                     write(simparams%confname_file, '(2a, i8.8, a)') &
                                         trim(simparams%confname_file), "/mxt_", int(rnd*simparams%nconfs)+1, ".dat"
 

@@ -1,7 +1,7 @@
 !############################################################################
 ! This routine is part of
 ! md_tian2 (Molecular Dynamics Tian Xia 2)
-! (c) 2014-2020 Dan J. Auerbach, Svenja M. Janke, Marvin Kammler,
+! (c) 2014-2020 Daniel J. Auerbach, Svenja M. Janke, Marvin Kammler,
 !               Sascha Kandratsenka, Sebastian Wille
 ! Dynamics at Surfaces Department
 ! MPI for Biophysical Chemistry Goettingen, Germany
@@ -83,7 +83,7 @@ contains
                         ! pass
 
                     case (output_id_nene)
-                        simparams%details = .true.
+                        print *, "MD step ", istep
 
                     case default
                         print *, err // "unknown output format", simparams%output_type(i)

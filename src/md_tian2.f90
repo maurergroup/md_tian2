@@ -1,7 +1,7 @@
 !############################################################################
 ! This routine is part of
 ! md_tian2 (Molecular Dynamics Tian Xia 2)
-! (c) 2014-2020 Dan J. Auerbach, Svenja M. Janke, Marvin Kammler,
+! (c) 2014-2020 Daniel J. Auerbach, Svenja M. Janke, Marvin Kammler,
 !               Sascha Kandratsenka, Sebastian Wille
 ! Dynamics at Surfaces Department
 ! MPI for Biophysical Chemistry Goettingen, Germany
@@ -35,7 +35,7 @@ program md_tian2
     use trajectory_info
     use geometry_opt
     use pes_nene_mod, only : cleanup_nene
-    use useful_things, only ; ran_seed
+    use useful_things, only : rnd_seed
 
     implicit none
 
@@ -78,8 +78,6 @@ program md_tian2
 
                 do istep = 1, simparams%nsteps
 
-                    if (simparams%details) print *, "MD step ", istep
-
                     ! core propagation
                     call propagate_1(atoms)
                     if (atoms%nbeads > 1) call do_ring_polymer_step(atoms)
@@ -105,7 +103,7 @@ program md_tian2
                 if (itraj < simparams%start+simparams%ntrajs-1) then
 
                     seed = itraj + 1
-                    call ran_seed(simparams%nran,seed)
+                    call rnd_seed(simparams%nran,seed)
 
                     call prepare_next_traj(atoms)
 

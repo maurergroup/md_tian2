@@ -1,7 +1,7 @@
 !############################################################################
 ! This routine is part of
 ! md_tian2 (Molecular Dynamics Tian Xia 2)
-! (c) 2014-2020 Dan J. Auerbach, Svenja M. Janke, Marvin Kammler,
+! (c) 2014-2020 Daniel J. Auerbach, Svenja M. Janke, Marvin Kammler,
 !               Sascha Kandratsenka, Sebastian Wille
 ! Dynamics at Surfaces Department
 ! MPI for Biophysical Chemistry Goettingen, Germany
@@ -507,7 +507,7 @@ contains
         do k = 1, dimensionality
             ! draw random number from direct coordinates, then convert to cartesian
             if (simparams%pip(k) == random_position) then
-                call ranx(simparams%nran,target_position)
+                call random_number(target_position)
                 target_position = target_position * sum(atoms%simbox(:,k))
 
             else
@@ -822,7 +822,7 @@ contains
 
         ! set the azimuth angle
         if (simparams%azimuth == random_position) then
-            call ranx(simparams%nran,chosen_azimuth)
+            call random_number(chosen_azimuth)
             chosen_azimuth = 2 * pi * chosen_azimuth
         else
             read(simparams%azimuth, *, iostat=ios) chosen_azimuth
@@ -878,7 +878,7 @@ contains
             mxt_idx = index(simparams%merge_proj_file, "mxt_")
             dat_idx = index(simparams%merge_proj_file, ".dat")
             if (mxt_idx /= 0 .and. dat_idx /= 0 .and. dat_idx == mxt_idx+12) then
-                call ranx(simparams%nran,rnd)
+                call random_number(rnd)
                 new_conf = int(rnd*simparams%merge_proj_nconfs)+1
                 write(simparams%merge_proj_file, '(a, i8.8, a)') simparams%merge_proj_file(:mxt_idx+3), new_conf, ".dat"
             else
@@ -889,7 +889,7 @@ contains
             mxt_idx = index(simparams%confname_file, "mxt_")
             dat_idx = index(simparams%confname_file, ".dat")
             if (mxt_idx /= 0 .and. dat_idx /= 0 .and. dat_idx == mxt_idx+12) then
-                call ranx(simparams%nran,rnd)
+                call random_number(rnd)
                 new_conf = int(rnd*simparams%nconfs)+1
                 write(simparams%confname_file, '(a, i8.8, a)') simparams%confname_file(:mxt_idx+3), new_conf, ".dat"
             else
