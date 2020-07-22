@@ -74,7 +74,7 @@ contains
 !        return
 !    end function normal
 
-    subroutine ran_seed(nran,seed)
+    subroutine rnd_seed(nran,seed)
 
         integer,intent(in) :: nran
         integer,intent(in) :: seed ! the seed will be the trajectory id
@@ -110,20 +110,12 @@ contains
 
             case default
 
-                print *, 'Error: Unknown random number generator type in ran_seed subroutine'
+                print *, 'Error: Unknown random number generator type in rnd_seed subroutine'
                 stop
 
         end select
 
-    end subroutine ran_seed
-
-    !subroutine ranx(rnd)
-
-    !    real(dp), intent(out) :: rnd
-
-    !    call random_number(rnd)
-
-    !end subroutine ranx
+    end subroutine rnd_seed
 
 
     subroutine normal_deviate_0d(mu, sigma, nrml_dvt)

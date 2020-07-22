@@ -34,7 +34,7 @@ program md_tian2
     use output_mod, only : output
     use trajectory_info
     use geometry_opt
-    use useful_things, only : ran_seed
+    use useful_things, only : rnd_seed
 
     implicit none
 
@@ -102,7 +102,7 @@ program md_tian2
                 if (itraj < simparams%start+simparams%ntrajs-1) then
                     
                     seed = itraj + 1
-                    call ran_seed(simparams%nran, seed)
+                    call rnd_seed(simparams%nran, seed)
 
                     call prepare_next_traj(atoms)
                 end if

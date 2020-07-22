@@ -26,7 +26,7 @@ module run_config
 
     use constants
     use universe_mod, only : universe
-    use useful_things, only : lower_case, split_string, ran_seed
+    use useful_things, only : lower_case, split_string, rnd_seed
     use open_file, only : open_for_read
 
     implicit none
@@ -194,7 +194,7 @@ contains
 
 
 
-        call ran_seed(simparams%nran,simparams%start) ! seed the RNG
+        call rnd_seed(simparams%nran,simparams%start) ! seed the RNG
 
         ! read rest of the input file
         call open_for_read(inp_unit, input_file); ios = 0
