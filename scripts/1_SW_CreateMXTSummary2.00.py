@@ -145,9 +145,31 @@ def write_summary():
 
 	outfile.close()
 
-traj_list = read_in_mxt_fins()
-#traj_list,traj_id = read_in_mxt_fins()
-#traj_id = read_traj_id()
-write_summary()
+def remove_unfinished_traj():
+    os.chdir("traj/")
+    traj_dir = os.getcwd()
+    folder_list = sorted(glob.glob('mxt_*'))
+    num_folders = len(folder_list)
+    print("Found {} trajs".format(num_folders))
+    count_files = 0
+    for folder in folder_list:
+        inpfile = open(folder, 'r')
+        count_line = 0
+        for line in inpfile:
+            count_line += 1
+        if count_line != 20:
+            count_files += 1
+            print("WARNING: the unfinished trajectory {} was removed".format(folder))
+            os.remove(folder)
 
-#print("MXT2Summary.txt creation was successful, {} trajectories range from {} to {} ".format(len(traj_id), traj_id[0], traj_id[-1]))
+        inpfile.close()
+
+    print("In total, {} trajectories were removed".format(count_files))
+
+    os.chdir("../")
+
+# check if unfinished trajectories are there and remove them
+remove_unfinished_traj()
+
+traj_list = read_in_mxt_fins()
+write_summary()
