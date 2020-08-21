@@ -1,4 +1,17 @@
-#!/usr/bin/python/
+#!/usr/bin/env python
+
+# Original version 2.09 was done by Marvin Kammler
+# This version is modified by Sebastian Wille
+
+# Modifications:
+# traj_id added in Traj class
+# logfile will be written
+# set readfile name
+# fast and slow component analysis added (H@Gr)
+
+# intention: analyze compressed traj file to generate data files needed for plotting
+
+# use like: python <scriptname>
 
 import os, sys, math, copy, numpy, time
 
@@ -7,16 +20,20 @@ import os, sys, math, copy, numpy, time
 #METAL_TYPE = "Pd"
 #SHOT_THRU_LIMIT = -6.8256    # yes, this should be a negative number
 
-METAL_TYPE = "Au"
-SHOT_THRU_LIMIT = -7.27636607765
+#METAL_TYPE = "Au"
+#SHOT_THRU_LIMIT = -7.27636607765
 
-#METAL_TYPE = "C"
-#SHOT_THRU_LIMIT = 0.0
+METAL_TYPE = "C"
+SHOT_THRU_LIMIT = 0.0 
 
-SPECULAR_RADIUS = 5 # the angle detectable by the detector (resolution of detector)
-### do not edit anything below this line ###
+SPECULAR_RADIUS = 1.5
 
-VERSION_ID = 2.07
+mxt_file_name = "MXT2Summary.txt"
+logfilename = "AnalyzePESTrajectory.log"
+
+### NO CHANGES BELOW THIS LINE ###
+
+VERSION_ID = 2.10
 
 class Point3D:
 	def __init__(self,x,y,z):
@@ -86,7 +103,7 @@ class Traj:
 	def __init__(self, ekin_p_i, ekin_l_i, epot_i, etotal_i,\
 			r_p_i, polar_i, azi_i, ekin_p_f, ekin_l_f, epot_f,   \
                         etotal_f, r_p_f, polar_f, azi_f, time, turn_pnts,    \
-			cl_appr, r_p_min):
+			cl_appr, r_p_min, traj_id):
 		self.ekin_p_i = ekin_p_i
 		self.ekin_l_i = ekin_l_i
 		self.epot_i   = epot_i
@@ -105,6 +122,7 @@ class Traj:
 		self.turn_pnts = turn_pnts
 		self.cl_appr  = cl_appr
 		self.r_p_min  = r_p_min
+                self.traj_id  = traj_id
 		self.eloss    = ekin_p_i - ekin_p_f
 		self.has_scattered = r_p_f.z > r_p_i.z
 		self.has_transmitted = r_p_f.z < SHOT_THRU_LIMIT
@@ -182,11 +200,11 @@ def matmul(mat, vec):
 	v3 = mat[2][0]*vec[0] + mat[2][1]*vec[1] + mat[2][2]*vec[2]
 	return [v1, v2, v3]
 
-def initialize():
-	ntrajs = sum(1 for line in open("MXT2Summary.txt", "r")) -1 	# first line is commment
+def initialize(mxt_file_name):
+	ntrajs = sum(1 for line in open(mxt_file_name, "r")) -1 	# first line is commment
 	print "Reading %d trajectories" % ntrajs
 	traj_list = []					# init list
-	mxt_file = open("MXT2Summary.txt", "r")
+	mxt_file = open(mxt_file_name, "r")
 	counter = 0
 	scattered = 0
 	absorbed = 0
@@ -197,30 +215,31 @@ def initialize():
 		if (counter % (ntrajs/10) == 0):
                         print (100*counter+1)/ntrajs, "%"
 		sl = line.strip("\n\t\r ").split()
-		ekin_p_i = float(sl[0])						#	e_kin_p_i = 3.33000
-		ekin_l_i = float(sl[1])						#	e_kin_l_i = 4.07264
-		epot_i   = float(sl[2])						#	epot_i    = 30.09554
-		etotal_i = float(sl[3])						#       e_total_i = 37.49818
-		r_p_i    = Point3D(float(sl[4]), float(sl[5]), float(sl[6]))	#	r_i       = 14.88455  -2.57611  6.00000
-		polar_i  = float(sl[7])                                         #       polar_i   = 50.00000
-		azi_i    = float(sl[8])                                         #       azi_i     = 0.000000
+                traj_id  = str(sl[0])                                           #       traj_id   = 00000001
+		ekin_p_i = float(sl[1])						#	e_kin_p_i = 3.33000
+		ekin_l_i = float(sl[2])						#	e_kin_l_i = 4.07264
+		epot_i   = float(sl[3])						#	epot_i    = 30.09554
+		etotal_i = float(sl[4])						#       e_total_i = 37.49818
+		r_p_i    = Point3D(float(sl[5]), float(sl[6]), float(sl[7]))	#	r_i       = 14.88455  -2.57611  6.00000
+		polar_i  = float(sl[8])                                         #       polar_i   = 50.00000
+		azi_i    = float(sl[9])                                         #       azi_i     = 0.000000
 
-		ekin_p_f = float(sl[9])						#	ekin_p_f  = 0.05978
-		ekin_l_f = float(sl[10])					#	ekin_l_f  = 5.26957
-		epot_f   = float(sl[11])					#	epot_f    = 28.73945
-		etotal_f = float(sl[12])					#	etotal_f  = 34.06880
-		r_p_f    = Point3D(float(sl[13]), float(sl[14]), float(sl[15]))	#	r_f       = 13.70619  1.33464  -1.07431
-		polar_f  = float(sl[16])                                        #       polar_f   = 27.23457
-                azi_f    = float(sl[17])                                        # 	azi_f     = 4.23478	
+		ekin_p_f = float(sl[10])					#	ekin_p_f  = 0.05978
+		ekin_l_f = float(sl[11])					#	ekin_l_f  = 5.26957
+		epot_f   = float(sl[12])					#	epot_f    = 28.73945
+		etotal_f = float(sl[13])					#	etotal_f  = 34.06880
+		r_p_f    = Point3D(float(sl[14]), float(sl[15]), float(sl[16]))	#	r_f       = 13.70619  1.33464  -1.07431
+		polar_f  = float(sl[17])                                        #       polar_f   = 27.23457
+                azi_f    = float(sl[18])                                        # 	azi_f     = 4.23478	
 		
-		time     = float(sl[18])					#	time      = 978.70000
-		turn_pnts = int(sl[19])						#       turn_pnts = 14
-		cl_appr  = float(sl[20])					#	cl_appr  =      0.9846501
-		r_p_min  = Point3D(float(sl[21]), float(sl[22]), float(sl[23])) #	r_min_p  = 33.4630699  31.9529501  0.9322836
+		time     = float(sl[19])					#	time      = 978.70000
+		turn_pnts = int(sl[20])						#       turn_pnts = 14
+		cl_appr  = float(sl[21])					#	cl_appr  =      0.9846501
+		r_p_min  = Point3D(float(sl[22]), float(sl[23]), float(sl[24])) #	r_min_p  = 33.4630699  31.9529501  0.9322836
 	
 		this_traj = Traj(ekin_p_i, ekin_l_i, epot_i, etotal_i, r_p_i, polar_i, azi_i, ekin_p_f, \
 					ekin_l_f, epot_f, etotal_f, r_p_f, polar_f, azi_f, time, turn_pnts, \
-					cl_appr, r_p_min)
+					cl_appr, r_p_min, traj_id)
 
 		traj_list.append(this_traj)
 		counter += 1
@@ -358,9 +377,48 @@ def analyze(trajs):
 	in_plane_mul_b     = []
 
 	# LOOP
-	for traj in trajs:	# List comprehension simply need too much time. This is ugly, but fast.
+	for ind,traj in enumerate(trajs):	# List comprehension simply need too much time. This is ugly, but fast.
 		if traj.in_plane and traj.has_scattered:
+                        if traj.cl_appr < 1.4:
+                            outfile_string = "slow_component.log"
+                        else:
+                            outfile_string = "fast_component.log"
+
+                        outfile = open(outfile_string,'a+')
+                        if 14 <= traj.polar_f <= 16: # SW mod starts here
+                            if 1.44 <= traj.ekin_p_f:
+                                outfile.write("15+-1, 1.44 <= E_s: trajid {} and closest approach {}\n".format(traj.traj_id,traj.cl_appr))
+                            if 0.960 <= traj.ekin_p_f < 1.44:
+                                outfile.write("15+-1, 0.96 <= E_s < 1.44: trajid {} and closest approach {}\n".format(traj.traj_id,traj.cl_appr))
+                            if traj.ekin_p_f < 0.960:
+                                outfile.write("15+-1, E_s < 0.96: trajid {} and closest approach {}\n".format(traj.traj_id,traj.cl_appr))
+                        if 29 <= traj.polar_f <= 31: # SW mod starts here
+                            if 1.44 <= traj.ekin_p_f:
+                                outfile.write("30+-1, 1.44 <= E_s: trajid {} and closest approach {}\n".format(traj.traj_id,traj.cl_appr))
+                            if 0.960 <= traj.ekin_p_f < 1.44:
+                                outfile.write("30+-1, 0.96 <= E_s < 1.44: trajid {} and closest approach {}\n".format(traj.traj_id,traj.cl_appr))
+                            if traj.ekin_p_f < 0.960:
+                                outfile.write("30+-1, E_s < 0.96: trajid {} and closest approach {}\n".format(traj.traj_id,traj.cl_appr))
+                        if 44 <= traj.polar_f <= 46:
+                            if 1.44 <= traj.ekin_p_f:
+                                outfile.write("45+-1, 1.44 <= E_s: trajid {} and closest approach {}\n".format(traj.traj_id,traj.cl_appr))
+                            if 0.960 <= traj.ekin_p_f < 1.44:
+                                outfile.write("45+-1, 0.96 <= E_s < 1.44: trajid {} and closest approach {}\n".format(traj.traj_id,traj.cl_appr))
+                            if traj.ekin_p_f < 0.960:
+                                outfile.write("45+-1, E_s < 0.96: trajid {} and closest approach {}\n".format(traj.traj_id,traj.cl_appr))
+                        if 59 <= traj.polar_f <= 61: # SW mod starts here
+                            if 1.44 <= traj.ekin_p_f:
+                                outfile.write("60+-1, 1.44 <= E_s: trajid {} and closest approach {}\n".format(traj.traj_id,traj.cl_appr))
+                            if 0.960 <= traj.ekin_p_f < 1.44:
+                                outfile.write("60+-1, 0.96 <= E_s < 1.44: trajid {} and closest approach {}\n".format(traj.traj_id,traj.cl_appr))
+                            if traj.ekin_p_f < 0.960:
+                                outfile.write("60+-1, E_s < 0.96: trajid {} and closest approach {}\n".format(traj.traj_id,traj.cl_appr))
+
+                        outfile.close()
+
+
 			in_plane_all_eloss.append(traj.eloss)
+
 			if traj.turn_pnts == 1:
 				in_plane_one_b.append(traj.eloss)
 			elif traj.turn_pnts == 3:
@@ -441,22 +499,68 @@ def analyze(trajs):
 				angle_collect.append(traj.polar_f)
 				ps_dist_collect.append(traj.cl_appr)
 
-	ang_dist_file = open("analysis/ang_res_eloss.txt", "w")
+	ang_dist_file     = open("analysis/ang_res_eloss.txt", "w")
+	ang_dist_mat_file = open("analysis/ang_res_eloss_matrix.txt", "w")
+	occurence_file    = open("analysis/ang_res_occurrence.txt", "w")
 	if len(energy_collect) != 0:
 		angle_eloss_hist, xedges, yedges = numpy.histogram2d(energy_collect, angle_collect,  bins=(numbins(energy_collect)), normed=False)
-			
+		occurence_hist, occ_edges = numpy.histogram(angle_collect, bins=numpy.arange(91), normed=False)
+
 		# OUTPUT
 		for i in range(len(angle_eloss_hist)):
 			for j in range(len(angle_eloss_hist[i])):
 				ang_dist_file.write("%f %f %d\n" % (0.5*(xedges[i]+xedges[i+1]), 0.5*(yedges[j]+yedges[j+1]), angle_eloss_hist[i][j]))
 			ang_dist_file.write("\n")
+
+		ang_dist_mat_file.write("# x-range describing energy loss in eV (left to right) from %f to %f in steps of %f\n" % (0.5*(xedges[0]+xedges[1]), 0.5*(xedges[-2]+xedges[-1]), abs(xedges[0]-xedges[1])))
+        	ang_dist_mat_file.write("# y-range describing scattering angle in degrees (top to bottom) from %f to %f in steps of %f\n" % (0.5*(yedges[0]+yedges[1]), 0.5*(yedges[-2]+yedges[-1]), abs(yedges[0]-yedges[1])))
+	        ang_dist_mat_file.write("# specular scattering angle is %f degrees and detector radius is %f\n" % (trajs[0].polar_i, SPECULAR_RADIUS))
+		ang_dist_mat_file.write("0.0 "); [ang_dist_mat_file.write("%f " % (0.5*(xedges[i]+xedges[i+1]))) for i in range(len(xedges)-1)]; ang_dist_mat_file.write("\n")
+		for i in range(len(angle_eloss_hist[0])):
+			ang_dist_mat_file.write("%f " % (0.5*(yedges[i]+yedges[i+1])))
+                        for j in range(len(angle_eloss_hist)):
+				ang_dist_mat_file.write("%d " % angle_eloss_hist[j][i])
+			ang_dist_mat_file.write("\n")
+				
+
+		occurence_file.write("# number of trajs in plane in unit polar angle, unit azimuthal angle\n")
+		for i in range(len(occurence_hist)):
+			this_angle = 0.5*(occ_edges[i]+occ_edges[i+1])
+			occurence_file.write("%f %f\n" % (this_angle, 1.0*occurence_hist[i]/sum(occurence_hist)))
 	else:
 		ang_dist_file.write("%f %f %d\n"   % (0.1, 0.5, 0))
                 ang_dist_file.write("%f %f %d\n\n" % (0.1, 1.0, 1))
 		ang_dist_file.write("%f %f %d\n"   % (0.2, 1.0, 1))
 		ang_dist_file.write("%f %f %d\n"   % (0.2, 0.5, 2))
-		
+
+		occurence_file.write("%f %f\n" % (0.1, 0.1))
+
+	occurence_file.close()
 	ang_dist_file.close()
+	ang_dist_mat_file.close()
+
+
+
+	# Graphene bounce events #
+	print "Calculating graphene bounce events"
+	fast_c = open("analysis/component_fast.txt", "w")
+        slow_c_sb = open("analysis/component_slow_single.txt", "w")
+        slow_c_mb = open("analysis/component_slow_multi.txt", "w")
+	for traj in trajs:
+		if traj.has_scattered and traj.in_plane:
+			if traj.turn_pnts == 1:
+				if traj.cl_appr > 1.4:
+					fast_c.write("%f %f\n" % (traj.ekin_p_f/traj.ekin_p_i, traj.polar_f))
+				if traj.cl_appr < 1.4:
+					slow_c_sb.write("%f %f\n" % (traj.ekin_p_f/traj.ekin_p_i, traj.polar_f))
+			elif traj.turn_pnts > 1 and traj.cl_appr < 1.4:
+					slow_c_mb.write("%f %f\n" % (traj.ekin_p_f/traj.ekin_p_i, traj.polar_f))
+	slow_c_mb.close(); slow_c_sb.close(); fast_c.close()
+				
+				
+				
+
+
 
 	# INTERGRATED OVER ALL AZIMUTH ANGLES #
 	polar_scatt_azi_file = open("analysis/polar_scatt_azi_int.txt", "w")
@@ -663,7 +767,7 @@ def analyze(trajs):
 
 
 ### READ IN TRAJS ###
-traj_collection, SCATTERED, ABSORBED, TRANSMITTED = initialize()
+traj_collection, SCATTERED, ABSORBED, TRANSMITTED = initialize(mxt_file_name)
 
 ### CALCULATE USEFUL CONSTANTS ###
 NTRAJS = len(traj_collection)
