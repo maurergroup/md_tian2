@@ -245,7 +245,7 @@ def initialize(mxt_file_name):
 		counter += 1
 
 		if this_traj.ekin_p_f > 1.4*this_traj.ekin_p_i:
-			print "Warning: a projectile gained more than 40% of its initial kinetic energy", this_traj.ekin_p_f
+			print "Warning in traj_id {}: a projectile with final kinetic energy of {} gained more than 40% of its initial kinetic energy!".format(this_traj.traj_id,this_traj.ekin_p_f)
 
 
 	mxt_file.close()
@@ -514,7 +514,7 @@ def analyze(trajs):
 
 		ang_dist_mat_file.write("# x-range describing energy loss in eV (left to right) from %f to %f in steps of %f\n" % (0.5*(xedges[0]+xedges[1]), 0.5*(xedges[-2]+xedges[-1]), abs(xedges[0]-xedges[1])))
         	ang_dist_mat_file.write("# y-range describing scattering angle in degrees (top to bottom) from %f to %f in steps of %f\n" % (0.5*(yedges[0]+yedges[1]), 0.5*(yedges[-2]+yedges[-1]), abs(yedges[0]-yedges[1])))
-	        ang_dist_mat_file.write("# specular scattering angle is %f degrees and detector radius is %f\n" % (trajs[0].polar_i, SPECULAR_RADIUS))
+	        ang_dist_mat_file.write("# specular scattering angle is %f degrees and detector radius is %f degrees\n" % (trajs[0].polar_i, SPECULAR_RADIUS))
 		ang_dist_mat_file.write("0.0 "); [ang_dist_mat_file.write("%f " % (0.5*(xedges[i]+xedges[i+1]))) for i in range(len(xedges)-1)]; ang_dist_mat_file.write("\n")
 		for i in range(len(angle_eloss_hist[0])):
 			ang_dist_mat_file.write("%f " % (0.5*(yedges[i]+yedges[i+1])))

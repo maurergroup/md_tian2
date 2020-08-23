@@ -85,6 +85,12 @@ contains
                     case (output_id_nene)
                         print *, "MD step ", istep
 
+                    case (output_id_aims)
+                        call output_aims(atoms, itraj, istep)
+
+                    case (output_id_runner)
+                        call output_runner(atoms, itraj, istep)
+
                     case default
                         print *, err // "unknown output format", simparams%output_type(i)
                         stop
@@ -321,6 +327,164 @@ contains
 
     end subroutine output_vasp
 
+    !New output format to generate AIMS geometry file
+    subroutine output_aims(atoms, itraj, istep)
+
+        type(universe), intent(in)          :: atoms
+        integer, intent(in)                 :: itraj, istep
+
+        integer :: zero_step
+
+        character(len=max_string_length)    :: fname
+        character(len=8)                    :: traj_id_aims
+        character(len=6)                    :: step_id_aims
+
+        integer                             :: time_vals(8), noccurrences(atoms%ntypes), i, j, k, l
+        real(dp)                            :: cents(3, atoms%natoms) ! for the beads to get center of mass
+
+        logical, dimension(3)               :: lskip
+
+        lskip(:) = .FALSE.
+
+        zero_step = 0 ! write the initial structure to step 0 file
+
+        if (.not. dir_exists('aims')) call system('mkdir aims')
+
+        noccurrences = 0
+        do i = 1, atoms%natoms
+            noccurrences(atoms%idx(i)) = noccurrences(atoms%idx(i)) + 1
+        end do
+
+        if (istep == -1) then ! initial structure
+             write(step_id_aims,'(i6.6)') zero_step
+        else
+             write(step_id_aims,'(i6.6)') istep
+        end if
+        write(traj_id_aims,'(i8.8)') itraj
+        fname = 'aims/'//traj_id_aims//'step'//step_id_aims//'.in'
+        call open_for_write(out_unit, fname)
+
+        ! write date and time as comment line
+        call date_and_time(values=time_vals)
+        write(out_unit, '(a,i4, a, i2.2, a, i2.2, a, i2.2, a, i2.2)') &
+            "# ", time_vals(1), "-", time_vals(2), "-",time_vals(3), " - ",time_vals(5), ".",time_vals(6)
+        
+        ! lattice
+        do l=1,3
+            write(out_unit, '(a,3f23.15)') "lattice_vector",atoms%simbox(:,l)
+        end do
+
+        ! add empty line, for asthetics
+        write(out_unit, '(a)') ""
+
+        cents = calc_centroid_positions(atoms)
+
+        ! positions and velocities
+        do i=1,atoms%natoms ! atoms
+            lskip(:) = .FALSE.
+            write(out_unit, '(a,3f23.15,x,a)') ("atom",(cents(:,i), atoms%name(atoms%idx(i))))
+            do k=1,atoms%nbeads
+                do j=1,3
+                    if (atoms%is_fixed(j,k,i) == .TRUE.) then
+                        lskip(j) = .TRUE.
+                    end if
+                end do
+            end do
+            if (all(lskip) == .TRUE.) then
+                write(out_unit, '(a)') "constrain_relaxation .true."
+            else
+                do j=1,3
+                    if (lskip(j) == .TRUE.) then
+                        if (j == 1) then
+                            write(out_unit, '(a)') "constrain_relaxation x"
+                        else if (j == 2) then
+                            write(out_unit, '(a)') "constrain_relaxation y"
+                        else
+                            write(out_unit, '(a)') "constrain_relaxation z"
+                        end if
+                    end if
+                end do
+                write(out_unit, '(a)',advance='no') "velocity"
+                do j=1,3
+                    if (lskip(j) == .FALSE.) then
+                        write(out_unit, '(f23.15)',advance='no') atoms%v(j,:,i)
+                    end if
+                end do
+                write(out_unit, '(a)') ""
+            end if
+
+        end do ! atoms
+
+        close(out_unit)
+
+    end subroutine output_aims
+
+    !New output format to generate RuNNer input.data file
+    subroutine output_runner(atoms, itraj, istep)
+
+        type(universe), intent(in)          :: atoms
+        integer, intent(in)                 :: itraj, istep
+
+        integer :: zero_step
+
+        character(len=max_string_length)    :: fname
+        character(len=8)                    :: traj_id_vasp
+        character(len=6)                    :: step_id_vasp
+
+        integer                             :: time_vals(8), noccurrences(atoms%ntypes), i, j
+        real(dp)                            :: cents(3, atoms%natoms) ! for the beads to get center of mass
+
+        zero_step = 0 ! write the initial structure to step 0 file
+
+        ! XXX: change system() to execute_command_line() when new compiler is available
+        !if (.not. dir_exists('conf')) call system('mkdir conf')
+        if (.not. dir_exists('poscar')) call system('mkdir poscar')
+
+        ! prepare arrays
+        noccurrences = 0
+        do i = 1, atoms%natoms
+            noccurrences(atoms%idx(i)) = noccurrences(atoms%idx(i)) + 1
+        end do
+
+        ! open file conf/poscar_%08d.dat
+        if (istep == -1) then ! initial structure
+             write(step_id_vasp,'(i6.6)') zero_step
+             !out_id_vasp = 0
+        else
+             write(step_id_vasp,'(i6.6)') istep
+        end if
+        write(traj_id_vasp,'(i8.8)') itraj
+        fname = 'poscar/'//traj_id_vasp//'step'//step_id_vasp//'.POSCAR'
+        call open_for_write(out_unit, fname)
+
+        ! write date and time as comment line
+        call date_and_time(values=time_vals)
+        write(out_unit, '(i4, a, i2.2, a, i2.2, a, i2.2, a, i2.2)') &
+            time_vals(1), "-", time_vals(2), "-",time_vals(3), " - ",time_vals(5), ".",time_vals(6)
+
+        write(out_unit, '(a)')       '1.0'                    ! scaling constant
+        write(out_unit, '(3f23.15)') atoms%simbox
+        write(out_unit, *)           atoms%name
+        write(out_unit, '(100i6)') (noccurrences(i), i=1,atoms%ntypes)
+
+        if (atoms%is_cart) then
+            write(out_unit, '(a)') "Cartesian"
+        else
+            write(out_unit, '(a)') "Direct"
+        end if
+
+
+        cents = calc_centroid_positions(atoms)
+
+        ! positions and velocities
+        write(out_unit, '(3f23.15, 3l)') ((cents(:,i), &
+            .not.atoms%is_fixed(:,j,i), j=1,atoms%nbeads), i=1,atoms%natoms)
+        write(out_unit, '(a)') ""
+        write(out_unit, '(3f23.15)') atoms%v
+
+        close(out_unit)
+
+    end subroutine output_runner
 
 
     subroutine output_mxt(atoms)

@@ -511,6 +511,10 @@ contains
                                     simparams%output_type(i) = output_id_scatter
                                 case (output_key_nene)
                                     simparams%output_type(i) = output_id_nene
+                                case (output_key_aims)
+                                    simparams%output_type(i) = output_id_aims
+                                case (output_key_runner)
+                                    simparams%output_type(i) = output_id_runner
                                 case default
                                     print *, 'Error in the input file: output format ', trim(words(2*i)), ' unknown'
                                     stop
