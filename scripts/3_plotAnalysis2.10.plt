@@ -123,8 +123,8 @@ set output "analysis/polar_psd.png"
 set title "In plane scattering angle vs closest proj-surf approach"
 splot "analysis/polar_psd.txt" notitle
 
-
 ### SPECULAR ###
+reset
 
 set term png enhanced size 1920,1920 font "Computer Modern, 40"
 
@@ -180,7 +180,6 @@ plot -sqrt(3)*x     lc rgb "white" lw 3 # 30°
 plot -(2+sqrt(3))*x lc rgb "white" lw 3	# 15°
 plot 0              lc rgb "black" lw 5 # 0°
 unset multiplot
-
 
 ### OVER ALL AZIMUTH ANGLES ###
 
