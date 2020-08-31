@@ -61,6 +61,7 @@ module pes_nene_mod
     integer, dimension(:), allocatable :: num_atoms_element         ! num_atoms_element(nelem)
     integer :: count_wconstraint    = 0
     integer :: count_wconstrainte   = 0
+    integer :: line = 0
 
     real(dp) :: eshort              = default_real
     real(dp) :: volume              = default_real
@@ -182,9 +183,28 @@ module pes_nene_mod
         logical :: lfound_luseatomcharges   = default_bool
         logical :: lfound_nelem             = default_bool
 
-        real(dp) :: xyzstruct(3,atoms%natoms) = default_real
+        real(dp) :: xyzstruct(3,atoms%natoms) != default_real
+
 
         real(dp), dimension(:), allocatable :: rdummy                   ! rdummy(nelem)
+
+
+        character(len=*) :: actfunc_short_atomic_dummy
+        character(len=*) :: actfunc_elec_dummy
+        character(len=*) :: actfunc
+
+
+        integer :: function_type_temp
+        integer, dimension(:), allocatable :: nodes_short_atomic_temp
+        integer, dimension(:), allocatable :: nodes_elec_temp
+        integer :: layer
+        integer :: node
+
+
+        real(dp) :: funccutoff_local
+        real(dp) :: maxcutoff_local
+        real(dp) :: kalmanlambda_local
+        real(dp) :: kalmanlambdae_local
 
 
 
@@ -279,6 +299,7 @@ module pes_nene_mod
         call mpi_comm_rank(mpi_comm_world,mpirank,mpierror)
 
         ! set default values
+        xyzstruct(:,:)                      = default_real
         listdim                             = 100000
         nn_type_short                       = default_int
         mode                                = default_int
@@ -1564,11 +1585,12 @@ module pes_nene_mod
             !call initializecounters() ! we use default values, but compare with
 
             if(lshort.and.(nn_type_short.eq.1))then
+                allocate(nodes_short_atomic_temp(0:maxnum_layers_short_atomic))
                 nodes_short_atomic_temp(:)    = 0
                 actfunc_short_atomic_dummy(:) = default_string
             endif
-            endif
             if(lelec.and.(nn_type_elec.eq.1))then
+                allocate(nodes_elec_temp(0:maxnum_layers_elec))
                 nodes_elec_temp(:)            = 0
                 actfunc_elec_dummy(:)         = default_string
             endif
@@ -1807,7 +1829,7 @@ module pes_nene_mod
                             if (nwords == 2) then
                                 read(words(2),'(i1000)', iostat=ios) paramode
                                 if (ios /= 0) stop err // err_inpnn // "parallel_mode value must be integer"
-                                if (paramode /= 1) stop err // err_inpnn // "parallel_mode ", paramode, " not implemented, only parallel_mode 1 (serial version) available"
+                                if (paramode /= 1) print *, err // err_inpnn // "parallel_mode ", paramode, " not implemented, only parallel_mode 1 (serial version) available"; stop
                             else
                                 print *, err, err_inpnn, "parallel_mode key needs a single argument"; stop
                             end if
@@ -1881,7 +1903,7 @@ module pes_nene_mod
                                 if (nwords == maxnum_layers_short_atomic) then
                                     do genctr_1 = 1,maxnum_layers_short_atomic-1
                                         read(words(genctr_1+1),'(i1000)', iostat=ios) nodes_short_atomic_temp(genctr_1)
-                                        if (ios /= 0) stop err // err_inpnn // "global_nodes_short argument ", genctr_1, " value must be integer"
+                                        if (ios /= 0) print *, err // err_inpnn // "global_nodes_short argument ", genctr_1, " value must be integer"; stop
                                     end do
                                     do genctr_1 = 1,nelem
                                         do genctr_2 = 1,maxnum_layers_short_atomic
@@ -1898,7 +1920,7 @@ module pes_nene_mod
                                 if (nwords == maxnum_layers_elec) then
                                     do genctr_1 = 1,maxnum_layers_elec-1
                                         read(words(genctr_1+1),'(i1000)', iostat=ios) nodes_elec_temp(genctr_1)
-                                        if (ios /= 0) stop err // err_inpnn // "global_nodes_electrostatic argument ", genctr_1, " value must be integer"
+                                        if (ios /= 0) print *, err // err_inpnn // "global_nodes_electrostatic argument ", genctr_1, " value must be integer"; stop
                                     end do
                                     do genctr_1 = 1,nelem
                                         do genctr_2 = 1,maxnum_layers_elec
@@ -3226,7 +3248,7 @@ module pes_nene_mod
                             if (nwords == maxnum_layers_short_atomic+1) then
                                 do genctr_1 = 1,maxnum_layers_short_atomic
                                     do genctr_3 = 1,nelem
-                                        do genctr_2 = 1,nodes_short_atomic
+                                        do genctr_2 = 1,nodes_short_atomic(genctr_1, genctr_3)
                                             read(words(genctr_1+1),'(A)', iostat=ios) actfunc_short_atomic_dummy(genctr_1)
                                             actfunc_short_atomic(genctr_2, genctr_1, genctr_3) = actfunc_short_atomic_dummy(genctr_1)
                                             !actfunc_short_atomic(genctr_2, genctr_1, genctr_3) = words(genctr_1+1)
@@ -3235,6 +3257,7 @@ module pes_nene_mod
                                             do genctr_2 = nodes_short_atomic(genctr_1, genctr_3)+1,maxnodes_short_atomic
                                                 actfunc_short_atomic(genctr_2, genctr_1, genctr_3) = ' '
                                             enddo
+                                        end if
                                     end do
                                 end do
                             else
@@ -3246,7 +3269,7 @@ module pes_nene_mod
                             if (nwords == maxnum_layers_elec+1) then
                                 do genctr_1 = 1,maxnum_layers_elec
                                     do genctr_3 = 1,nelem
-                                        do genctr_2 = 1,nodes_elec
+                                        do genctr_2 = 1,nodes_elec(genctr_1, genctr_3)
                                             read(words(genctr_1+1),'(A)', iostat=ios) actfunc_elec_dummy(genctr_1)
                                             actfunc_elec(genctr_2, genctr_1, genctr_3) = actfunc_elec_dummy(genctr_1)
                                             !actfunc_elec(genctr_2, genctr_1, genctr_3) = words(genctr_1+1)
@@ -3255,6 +3278,7 @@ module pes_nene_mod
                                             do genctr_2 = nodes_elec(genctr_1, genctr_3)+1,maxnodes_elec
                                                 actfunc_elec(genctr_2, genctr_1, genctr_3) = ' '
                                             enddo
+                                        end if
                                     end do
                                 end do
                             else
@@ -3275,8 +3299,8 @@ module pes_nene_mod
 
             close(inpnn_unit)
 
-            do i=1,nelem
-                call nuccharge(element(i),nucelem(i))
+            do genctr_1=1,nelem
+                call nuccharge(element(genctr_1),nucelem(genctr_1))
             enddo
             call sortelements()
 
@@ -3335,7 +3359,7 @@ module pes_nene_mod
                                 call checkelement(elementtemp)
                                 call nuccharge(elementtemp,ztemp)
                                 read(words(3),'(i1000)', iostat=ios) num_layers_short_atomic(elementindex(ztemp))
-                                if (ios /= 0) stop err // err_inpnn // "element_hidden_layers_short second argument value for element ", ztemp," must be integer"
+                                if (ios /= 0) print *, err // err_inpnn // "element_hidden_layers_short second argument value for element ", ztemp, " must be integer"; stop
                                 num_layers_short_atomic(elementindex(ztemp)) = num_layers_short_atomic(elementindex(ztemp)) + 1
                                 if (num_layers_short_atomic(elementindex(ztemp)) .gt. maxnum_layers_short_atomic) then
                                     print *, err, err_inpnn, "Error when reading element_hidden_layers_short: element ", ztemp, " has too many hidden layers"; stop
@@ -3354,7 +3378,7 @@ module pes_nene_mod
                                 call checkelement(elementtemp)
                                 call nuccharge(elementtemp,ztemp)
                                 read(words(3),'(i1000)', iostat=ios) num_layers_elec(elementindex(ztemp))
-                                if (ios /= 0) stop err // err_inpnn // "element_hidden_layers_electrostatic second argument value for element ", ztemp," must be integer"
+                                if (ios /= 0) print *, err // err_inpnn // "element_hidden_layers_electrostatic second argument value for element ", ztemp," must be integer"; stop
                                 num_layers_elec(elementindex(ztemp)) = num_layers_elec(elementindex(ztemp)) + 1
                                 if (num_layers_elec(elementindex(ztemp)) .gt. maxnum_layers_elec) then
                                     print *, err, err_inpnn, "Error when reading element_hidden_layers_electrostatic: element ", ztemp, " has too many hidden layers"; stop
@@ -3396,9 +3420,9 @@ module pes_nene_mod
                                 call checkelement(elementtemp)
                                 call nuccharge(elementtemp,ztemp)
                                 read(words(3),'(i1000)', iostat=ios) layer
-                                if (ios /= 0) stop err // err_inpnn // "element_nodes_short second argument value for element ", element(elementindex(ztemp)), " must be integer"
+                                if (ios /= 0) print *, err // err_inpnn // "element_nodes_short second argument value for element ", element(elementindex(ztemp)), " must be integer"; stop
                                 read(words(4),'(i1000)', iostat=ios) node
-                                if (ios /= 0) stop err // err_inpnn // "element_nodes_short third argument value for element ", element(elementindex(ztemp)), " must be integer"
+                                if (ios /= 0) print *, err // err_inpnn // "element_nodes_short third argument value for element ", element(elementindex(ztemp)), " must be integer"; stop
                                 if (layer .eq. num_layers_short_atomic(elementindex(ztemp))) then
                                     print *, err, err_inpnn, "Error when reading element_nodes_short: do not modifiy the number of output nodes for element ", element(elementindex(ztemp)); stop
                                 endif
@@ -3419,9 +3443,9 @@ module pes_nene_mod
                                 call checkelement(elementtemp)
                                 call nuccharge(elementtemp,ztemp)
                                 read(words(3),'(i1000)', iostat=ios) layer
-                                if (ios /= 0) stop err // err_inpnn // "element_nodes_electrostatic second argument value for element ", element(elementindex(ztemp)), " must be integer"
+                                if (ios /= 0) print *, err // err_inpnn // "element_nodes_electrostatic second argument value for element ", element(elementindex(ztemp)), " must be integer"; stop
                                 read(words(4),'(i1000)', iostat=ios) node
-                                if (ios /= 0) stop err // err_inpnn // "element_nodes_electrostatic third argument value for element ", element(elementindex(ztemp)), " must be integer"
+                                if (ios /= 0) print *, err // err_inpnn // "element_nodes_electrostatic third argument value for element ", element(elementindex(ztemp)), " must be integer"; stop
                                 if (layer .eq. num_layers_elec(elementindex(ztemp))) then
                                     print *, err, err_inpnn, "Error when reading element_nodes_electrostatic: do not modifiy the number of output nodes for element ", element(elementindex(ztemp)); stop
                                 endif
@@ -3465,9 +3489,9 @@ module pes_nene_mod
                                 call checkelement(elementtemp)
                                 call nuccharge(elementtemp,ztemp)
                                 read(words(3),'(i1000)', iostat=ios) layer
-                                if (ios /= 0) stop err // err_inpnn // "element_activation_short second argument value for element ", element(elementindex(ztemp)), " must be integer"
+                                if (ios /= 0) print *, err // err_inpnn // "element_activation_short second argument value for element ", element(elementindex(ztemp)), " must be integer"; stop
                                 read(words(4),'(i1000)', iostat=ios) node
-                                if (ios /= 0) stop err // err_inpnn // "element_activation_short third argument value for element ", element(elementindex(ztemp)), " must be integer"
+                                if (ios /= 0) print *, err // err_inpnn // "element_activation_short third argument value for element ", element(elementindex(ztemp)), " must be integer"; stop
                                 read(words(5),'(A)', iostat=ios) actfunc
                                 if (layer .gt. num_layers_short_atomic(elementindex(ztemp))) then
                                     print *, err, err_inpnn, "Error when reading element_activation_short: layer is too large for element ", element(elementindex(ztemp)); stop
@@ -3486,9 +3510,9 @@ module pes_nene_mod
                                 call checkelement(elementtemp)
                                 call nuccharge(elementtemp,ztemp)
                                 read(words(3),'(i1000)', iostat=ios) layer
-                                if (ios /= 0) stop err // err_inpnn // "element_activation_electrostatic second argument value for element ", element(elementindex(ztemp)), " must be integer"
+                                if (ios /= 0) print *, err // err_inpnn // "element_activation_electrostatic second argument value for element ", element(elementindex(ztemp)), " must be integer"; stop
                                 read(words(4),'(i1000)', iostat=ios) node
-                                if (ios /= 0) stop err // err_inpnn // "element_activation_electrostatic third argument value for element ", element(elementindex(ztemp)), " must be integer"
+                                if (ios /= 0) print *, err // err_inpnn // "element_activation_electrostatic third argument value for element ", element(elementindex(ztemp)), " must be integer"; stop
                                 read(words(5),'(A)', iostat=ios) actfunc
                                 if (layer .gt. num_layers_elec(elementindex(ztemp))) then
                                     print *, err, err_inpnn, "Error when reading element_activation_electrostatic: layer is too large for element ", element(elementindex(ztemp)); stop
@@ -3550,7 +3574,7 @@ module pes_nene_mod
                                             call checkelement(elementtemp2)
                                             call nuccharge(elementtemp2,ztemp2)
                                             read(words(5),*, iostat=ios) funccutoff_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1))
-                                            if (ios /= 0) stop err // err_inpnn // "symfunction_short type ", words(3), " argument 4 must be a number"
+                                            if (ios /= 0) print *, err // err_inpnn // "symfunction_short type ", words(3), " argument 4 must be a number"; stop
                                             symelement_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),1,elementindex(ztemp1))=ztemp2
                                         else
                                             print *, err, err_inpnn, "symfunction_short type ", words(3), " needs 4 arguments"; stop
@@ -3562,11 +3586,11 @@ module pes_nene_mod
                                             call checkelement(elementtemp2)
                                             call nuccharge(elementtemp2,ztemp2)
                                             read(words(5),*, iostat=ios) eta_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1))
-                                            if (ios /= 0) stop err // err_inpnn // "symfunction_short type ", words(3), " argument 4 must be a number"
+                                            if (ios /= 0) print *, err // err_inpnn // "symfunction_short type ", words(3), " argument 4 must be a number"; stop
                                             read(words(6),*, iostat=ios) rshift_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1))
-                                            if (ios /= 0) stop err // err_inpnn // "symfunction_short type ", words(3), " argument 5 must be a number"
+                                            if (ios /= 0) print *, err // err_inpnn // "symfunction_short type ", words(3), " argument 5 must be a number"; stop
                                             read(words(7),*, iostat=ios) funccutoff_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1))
-                                            if (ios /= 0) stop err // err_inpnn // "symfunction_short type ", words(3), " argument 6 must be a number"
+                                            if (ios /= 0) print *, err // err_inpnn // "symfunction_short type ", words(3), " argument 6 must be a number"; stop
                                             symelement_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),1,elementindex(ztemp1))=ztemp2
                                         else
                                             print *, err, err_inpnn, "symfunction_short type ", words(3), " needs 6 arguments"; stop
@@ -3586,13 +3610,13 @@ module pes_nene_mod
                                                 ztemp3 = itemp
                                             endif
                                             read(words(6),*, iostat=ios) eta_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1))
-                                            if (ios /= 0) stop err // err_inpnn // "symfunction_short type ", words(3), " argument 5 must be a number"
+                                            if (ios /= 0) print *, err // err_inpnn // "symfunction_short type ", words(3), " argument 5 must be a number"; stop
                                             read(words(7),*, iostat=ios) lambda_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1))
-                                            if (ios /= 0) stop err // err_inpnn // "symfunction_short type ", words(3), " argument 6 must be a number"
+                                            if (ios /= 0) print *, err // err_inpnn // "symfunction_short type ", words(3), " argument 6 must be a number"; stop
                                             read(words(8),*, iostat=ios) zeta_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1))
-                                            if (ios /= 0) stop err // err_inpnn // "symfunction_short type ", words(3), " argument 7 must be a number"
+                                            if (ios /= 0) print *, err // err_inpnn // "symfunction_short type ", words(3), " argument 7 must be a number"; stop
                                             read(words(9),*, iostat=ios) funccutoff_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1))
-                                            if (ios /= 0) stop err // err_inpnn // "symfunction_short type ", words(3), " argument 8 must be a number"
+                                            if (ios /= 0) print *, err // err_inpnn // "symfunction_short type ", words(3), " argument 8 must be a number"; stop
                                             symelement_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),1,elementindex(ztemp1))=ztemp2
                                             symelement_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),2,elementindex(ztemp1))=ztemp3
                                         else
@@ -3605,9 +3629,9 @@ module pes_nene_mod
                                             call checkelement(elementtemp2)
                                             call nuccharge(elementtemp2,ztemp2)
                                             read(words(5),*, iostat=ios) eta_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1))
-                                            if (ios /= 0) stop err // err_inpnn // "symfunction_short type ", words(3), " argument 4 must be a number"
+                                            if (ios /= 0) print *, err // err_inpnn // "symfunction_short type ", words(3), " argument 4 must be a number"; stop
                                             read(words(6),*, iostat=ios) funccutoff_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1))
-                                            if (ios /= 0) stop err // err_inpnn // "symfunction_short type ", words(3), " argument 5 must be a number"
+                                            if (ios /= 0) print *, err // err_inpnn // "symfunction_short type ", words(3), " argument 5 must be a number"; stop
                                             symelement_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),1,elementindex(ztemp1))=ztemp2
                                         else
                                             print *, err, err_inpnn, "symfunction_short type ", words(3), " needs 5 arguments"; stop
@@ -3616,7 +3640,7 @@ module pes_nene_mod
                                     case ('5')
                                         if (nwords == 4) then
                                             read(words(4),*, iostat=ios) eta_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1))
-                                            if (ios /= 0) stop err // err_inpnn // "symfunction_short type ", words(3), " argument 3 must be a number"
+                                            if (ios /= 0) print *, err // err_inpnn // "symfunction_short type ", words(3), " argument 3 must be a number"; stop
                                         else
                                             print *, err, err_inpnn, "symfunction_short type ", words(3), " needs 3 arguments"; stop
                                         end if
@@ -3627,7 +3651,7 @@ module pes_nene_mod
                                             call checkelement(elementtemp2)
                                             call nuccharge(elementtemp2,ztemp2)
                                             read(words(5),*, iostat=ios) funccutoff_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1))
-                                            if (ios /= 0) stop err // err_inpnn // "symfunction_short type ", words(3), " argument 4 must be a number"
+                                            if (ios /= 0) print *, err // err_inpnn // "symfunction_short type ", words(3), " argument 4 must be a number"; stop
                                             symelement_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),1,elementindex(ztemp1))=ztemp2
                                         else
                                             print *, err, err_inpnn, "symfunction_short type ", words(3), " needs 4 arguments"; stop
@@ -3647,11 +3671,11 @@ module pes_nene_mod
                                                 ztemp3 = itemp
                                             endif
                                             read(words(6),*, iostat=ios) eta_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1))
-                                            if (ios /= 0) stop err // err_inpnn // "symfunction_short type ", words(3), " argument 5 must be a number"
+                                            if (ios /= 0) print *, err // err_inpnn // "symfunction_short type ", words(3), " argument 5 must be a number"; stop
                                             read(words(7),*, iostat=ios) rshift_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1))
-                                            if (ios /= 0) stop err // err_inpnn // "symfunction_short type ", words(3), " argument 6 must be a number"
+                                            if (ios /= 0) print *, err // err_inpnn // "symfunction_short type ", words(3), " argument 6 must be a number"; stop
                                             read(words(8),*, iostat=ios) funccutoff_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1))
-                                            if (ios /= 0) stop err // err_inpnn // "symfunction_short type ", words(3), " argument 7 must be a number"
+                                            if (ios /= 0) print *, err // err_inpnn // "symfunction_short type ", words(3), " argument 7 must be a number"; stop
                                             symelement_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),1,elementindex(ztemp1))=ztemp2
                                             symelement_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),2,elementindex(ztemp1))=ztemp3
                                         else
@@ -3672,13 +3696,13 @@ module pes_nene_mod
                                                 ztemp3 = itemp
                                             endif
                                             read(words(6),*, iostat=ios) eta_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1))
-                                            if (ios /= 0) stop err // err_inpnn // "symfunction_short type ", words(3), " argument 5 must be a number"
+                                            if (ios /= 0) print *, err // err_inpnn // "symfunction_short type ", words(3), " argument 5 must be a number"; stop
                                             read(words(7),*, iostat=ios) lambda_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1))
-                                            if (ios /= 0) stop err // err_inpnn // "symfunction_short type ", words(3), " argument 6 must be a number"
+                                            if (ios /= 0) print *, err // err_inpnn // "symfunction_short type ", words(3), " argument 6 must be a number"; stop
                                             read(words(8),*, iostat=ios) zeta_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1))
-                                            if (ios /= 0) stop err // err_inpnn // "symfunction_short type ", words(3), " argument 7 must be a number"
+                                            if (ios /= 0) print *, err // err_inpnn // "symfunction_short type ", words(3), " argument 7 must be a number"; stop
                                             read(words(9),*, iostat=ios) funccutoff_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1))
-                                            if (ios /= 0) stop err // err_inpnn // "symfunction_short type ", words(3), " argument 8 must be a number"
+                                            if (ios /= 0) print *, err // err_inpnn // "symfunction_short type ", words(3), " argument 8 must be a number"; stop
                                             symelement_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),1,elementindex(ztemp1))=ztemp2
                                             symelement_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),2,elementindex(ztemp1))=ztemp3
                                         else
@@ -3706,9 +3730,9 @@ module pes_nene_mod
                                     case ('1')
                                         if (nwords == 4) then
                                             read(words(4),*, iostat=ios) funccutoff_temp
-                                            if (ios /= 0) stop err // err_inpnn // "element_symfunction_short type ", words(3), " argument 3 must be a number"
+                                            if (ios /= 0) print *, err // err_inpnn // "element_symfunction_short type ", words(3), " argument 3 must be a number"; stop
                                             do genctr_1 = 1,nelem
-                                                sym_short_atomic_count(elementindex(ztemp1) = sym_short_atomic_count(elementindex(ztemp1) + 1
+                                                sym_short_atomic_count(elementindex(ztemp1)) = sym_short_atomic_count(elementindex(ztemp1)) + 1
                                                 function_type_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1)) = function_type_temp
                                                 funccutoff_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1)) = funccutoff_temp
                                                 symelement_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),1,elementindex(ztemp1)) = nucelem(genctr_1)
@@ -3720,13 +3744,13 @@ module pes_nene_mod
                                     case ('2')
                                         if (nwords == 6) then
                                             read(words(4),*, iostat=ios) eta_temp
-                                            if (ios /= 0) stop err // err_inpnn // "element_symfunction_short type ", words(3), " argument 3 must be a number"
+                                            if (ios /= 0) print *, err // err_inpnn // "element_symfunction_short type ", words(3), " argument 3 must be a number"; stop
                                             read(words(5),*, iostat=ios) rshift_temp
-                                            if (ios /= 0) stop err // err_inpnn // "element_symfunction_short type ", words(3), " argument 4 must be a number"
+                                            if (ios /= 0) print *, err // err_inpnn // "element_symfunction_short type ", words(3), " argument 4 must be a number"; stop
                                             read(words(6),*, iostat=ios) funccutoff_temp
-                                            if (ios /= 0) stop err // err_inpnn // "element_symfunction_short type ", words(3), " argument 5 must be a number"
+                                            if (ios /= 0) print *, err // err_inpnn // "element_symfunction_short type ", words(3), " argument 5 must be a number"; stop
                                             do genctr_1 = 1,nelem
-                                                sym_short_atomic_count(elementindex(ztemp1) = sym_short_atomic_count(elementindex(ztemp1) + 1
+                                                sym_short_atomic_count(elementindex(ztemp1)) = sym_short_atomic_count(elementindex(ztemp1)) + 1
                                                 function_type_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1)) = function_type_temp
                                                 eta_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1)) = eta_temp
                                                 rshift_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1)) = rshift_temp
@@ -3740,15 +3764,15 @@ module pes_nene_mod
                                     case ('3')
                                         if (nwords == 7) then
                                             read(words(4),*, iostat=ios) eta_temp
-                                            if (ios /= 0) stop err // err_inpnn // "element_symfunction_short type ", words(3), " argument 3 must be a number"
+                                            if (ios /= 0) print *, err // err_inpnn // "element_symfunction_short type ", words(3), " argument 3 must be a number"; stop
                                             read(words(5),*, iostat=ios) lambda_temp
-                                            if (ios /= 0) stop err // err_inpnn // "element_symfunction_short type ", words(3), " argument 4 must be a number"
+                                            if (ios /= 0) print *, err // err_inpnn // "element_symfunction_short type ", words(3), " argument 4 must be a number"; stop
                                             read(words(6),*, iostat=ios) zeta_temp
-                                            if (ios /= 0) stop err // err_inpnn // "element_symfunction_short type ", words(3), " argument 5 must be a number"
+                                            if (ios /= 0) print *, err // err_inpnn // "element_symfunction_short type ", words(3), " argument 5 must be a number"; stop
                                             read(words(7),*, iostat=ios) funccutoff_temp
-                                            if (ios /= 0) stop err // err_inpnn // "element_symfunction_short type ", words(3), " argument 6 must be a number"
+                                            if (ios /= 0) print *, err // err_inpnn // "element_symfunction_short type ", words(3), " argument 6 must be a number"; stop
                                             do genctr_1 = 1,nelem
-                                                sym_short_atomic_count(elementindex(ztemp1) = sym_short_atomic_count(elementindex(ztemp1) + 1
+                                                sym_short_atomic_count(elementindex(ztemp1)) = sym_short_atomic_count(elementindex(ztemp1)) + 1
                                                 function_type_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1)) = function_type_temp
                                                 eta_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1)) = eta_temp
                                                 lambda_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1)) = lambda_temp
@@ -3760,7 +3784,7 @@ module pes_nene_mod
                                             do genctr_1 = 1,nelem
                                                 if (nelem .gt. 1) then
                                                     do genctr_2 = 1,genctr_1-1
-                                                        sym_short_atomic_count(elementindex(ztemp1) = sym_short_atomic_count(elementindex(ztemp1) + 1
+                                                        sym_short_atomic_count(elementindex(ztemp1)) = sym_short_atomic_count(elementindex(ztemp1)) + 1
                                                         function_type_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1)) = function_type_temp
                                                         eta_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1)) = eta_temp
                                                         lambda_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1)) = lambda_temp
@@ -3778,11 +3802,11 @@ module pes_nene_mod
                                     case ('4')
                                         if (nwords == 5) then
                                             read(words(4),*, iostat=ios) eta_temp
-                                            if (ios /= 0) stop err // err_inpnn // "element_symfunction_short type ", words(3), " argument 3 must be a number"
+                                            if (ios /= 0) print *, err // err_inpnn // "element_symfunction_short type ", words(3), " argument 3 must be a number"; stop
                                             read(words(5),*, iostat=ios) funccutoff_temp
-                                            if (ios /= 0) stop err // err_inpnn // "element_symfunction_short type ", words(3), " argument 4 must be a number"
+                                            if (ios /= 0) print *, err // err_inpnn // "element_symfunction_short type ", words(3), " argument 4 must be a number"; stop
                                             do genctr_1 = 1,nelem
-                                                sym_short_atomic_count(elementindex(ztemp1) = sym_short_atomic_count(elementindex(ztemp1) + 1
+                                                sym_short_atomic_count(elementindex(ztemp1)) = sym_short_atomic_count(elementindex(ztemp1)) + 1
                                                 function_type_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1)) = function_type_temp
                                                 eta_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1)) = eta_temp
                                                 funccutoff_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1)) = funccutoff_temp
@@ -3795,8 +3819,8 @@ module pes_nene_mod
                                     case ('5')
                                         if (nwords == 4) then
                                             read(words(4),*, iostat=ios) eta_temp
-                                            if (ios /= 0) stop err // err_inpnn // "element_symfunction_short type ", words(3), " argument 3 must be a number"
-                                            sym_short_atomic_count(elementindex(ztemp1) = sym_short_atomic_count(elementindex(ztemp1) + 1
+                                            if (ios /= 0) print *, err // err_inpnn // "element_symfunction_short type ", words(3), " argument 3 must be a number"; stop
+                                            sym_short_atomic_count(elementindex(ztemp1)) = sym_short_atomic_count(elementindex(ztemp1)) + 1
                                             function_type_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1)) = function_type_temp
                                             eta_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1)) = eta_temp
                                         else
@@ -3806,8 +3830,8 @@ module pes_nene_mod
                                     case ('6')
                                         if (nwords == 4) then
                                             read(words(4),*, iostat=ios) funccutoff_temp
-                                            if (ios /= 0) stop err // err_inpnn // "element_symfunction_short type ", words(3), " argument 3 must be a number"
-                                            sym_short_atomic_count(elementindex(ztemp1) = sym_short_atomic_count(elementindex(ztemp1) + 1
+                                            if (ios /= 0) print *, err // err_inpnn // "element_symfunction_short type ", words(3), " argument 3 must be a number"; stop
+                                            sym_short_atomic_count(elementindex(ztemp1)) = sym_short_atomic_count(elementindex(ztemp1)) + 1
                                             function_type_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1)) = function_type_temp
                                         else
                                             print *, err, err_inpnn, "element_symfunction_short type ", words(3), " needs 3 arguments"; stop
@@ -3816,13 +3840,13 @@ module pes_nene_mod
                                     case ('8')
                                         if (nwords == 6) then
                                             read(words(4),*, iostat=ios) eta_temp
-                                            if (ios /= 0) stop err // err_inpnn // "element_symfunction_short type ", words(3), " argument 3 must be a number"
+                                            if (ios /= 0) print *, err // err_inpnn // "element_symfunction_short type ", words(3), " argument 3 must be a number"; stop
                                             read(words(5),*, iostat=ios) rshift_temp
-                                            if (ios /= 0) stop err // err_inpnn // "element_symfunction_short type ", words(3), " argument 4 must be a number"
+                                            if (ios /= 0) print *, err // err_inpnn // "element_symfunction_short type ", words(3), " argument 4 must be a number"; stop
                                             read(words(6),*, iostat=ios) funccutoff_temp
-                                            if (ios /= 0) stop err // err_inpnn // "element_symfunction_short type ", words(3), " argument 5 must be a number"
+                                            if (ios /= 0) print *, err // err_inpnn // "element_symfunction_short type ", words(3), " argument 5 must be a number"; stop
                                             do genctr_1 = 1,nelem
-                                                sym_short_atomic_count(elementindex(ztemp1) = sym_short_atomic_count(elementindex(ztemp1) + 1
+                                                sym_short_atomic_count(elementindex(ztemp1)) = sym_short_atomic_count(elementindex(ztemp1)) + 1
                                                 function_type_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1)) = function_type_temp
                                                 eta_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1)) = eta_temp
                                                 rshift_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1)) = rshift_temp
@@ -3833,7 +3857,7 @@ module pes_nene_mod
                                             do genctr_1 = 1,nelem
                                                 if (nelem .gt. 1) then
                                                     do genctr_2 = 1,genctr_1-1
-                                                        sym_short_atomic_count(elementindex(ztemp1) = sym_short_atomic_count(elementindex(ztemp1) + 1
+                                                        sym_short_atomic_count(elementindex(ztemp1)) = sym_short_atomic_count(elementindex(ztemp1)) + 1
                                                         function_type_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1)) = function_type_temp
                                                         eta_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1)) = eta_temp
                                                         rshift_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1)) = rshift_temp
@@ -3850,15 +3874,15 @@ module pes_nene_mod
                                     case ('9')
                                         if (nwords == 7) then
                                             read(words(4),*, iostat=ios) eta_temp
-                                            if (ios /= 0) stop err // err_inpnn // "element_symfunction_short type ", words(3), " argument 3 must be a number"
+                                            if (ios /= 0) print *, err // err_inpnn // "element_symfunction_short type ", words(3), " argument 3 must be a number"; stop
                                             read(words(5),*, iostat=ios) lambda_temp
-                                            if (ios /= 0) stop err // err_inpnn // "element_symfunction_short type ", words(3), " argument 4 must be a number"
+                                            if (ios /= 0) print *, err // err_inpnn // "element_symfunction_short type ", words(3), " argument 4 must be a number"; stop
                                             read(words(6),*, iostat=ios) zeta_temp
-                                            if (ios /= 0) stop err // err_inpnn // "element_symfunction_short type ", words(3), " argument 5 must be a number"
+                                            if (ios /= 0) print *, err // err_inpnn // "element_symfunction_short type ", words(3), " argument 5 must be a number", stop
                                             read(words(7),*, iostat=ios) funccutoff_temp
-                                            if (ios /= 0) stop err // err_inpnn // "element_symfunction_short type ", words(3), " argument 6 must be a number"
+                                            if (ios /= 0) print *, err // err_inpnn // "element_symfunction_short type ", words(3), " argument 6 must be a number"; stop
                                             do genctr_1 = 1,nelem
-                                                sym_short_atomic_count(elementindex(ztemp1) = sym_short_atomic_count(elementindex(ztemp1) + 1
+                                                sym_short_atomic_count(elementindex(ztemp1)) = sym_short_atomic_count(elementindex(ztemp1)) + 1
                                                 function_type_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1)) = function_type_temp
                                                 eta_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1)) = eta_temp
                                                 lambda_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1)) = lambda_temp
@@ -3869,7 +3893,7 @@ module pes_nene_mod
                                             do genctr_1 = 1,nelem
                                                 if (nelem .gt. 1) then
                                                     do genctr_2 = 1,genctr_1-1
-                                                        sym_short_atomic_count(elementindex(ztemp1) = sym_short_atomic_count(elementindex(ztemp1) + 1
+                                                        sym_short_atomic_count(elementindex(ztemp1)) = sym_short_atomic_count(elementindex(ztemp1)) + 1
                                                         function_type_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1)) = function_type_temp
                                                         eta_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1)) = eta_temp
                                                         lambda_short_atomic(sym_short_atomic_count(elementindex(ztemp1)),elementindex(ztemp1)) = lambda_temp
@@ -3902,7 +3926,7 @@ module pes_nene_mod
                                     case ('1')
                                         if (nwords == 3) then
                                             read(words(3),*, iostat=ios) funccutoff_temp
-                                            if (ios /= 0) stop err // err_inpnn // "global_symfunction_short type ", words(2), " argument 2 must be a number"
+                                            if (ios /= 0) print *, err // err_inpnn // "global_symfunction_short type ", words(2), " argument 2 must be a number"; stop
                                             do genctr_1 = 1,nelem
                                                 do genctr_2 = 1,nelem
                                                     sym_short_atomic_count(genctr_1) = sym_short_atomic_count(genctr_1) + 1
@@ -3918,11 +3942,11 @@ module pes_nene_mod
                                     case ('2')
                                         if (nwords == 5) then
                                             read(words(3),*, iostat=ios) eta_temp
-                                            if (ios /= 0) stop err // err_inpnn // "global_symfunction_short type ", words(2), " argument 2 must be a number"
+                                            if (ios /= 0) print *, err // err_inpnn // "global_symfunction_short type ", words(2), " argument 2 must be a number"; stop
                                             read(words(4),*, iostat=ios) rshift_temp
-                                            if (ios /= 0) stop err // err_inpnn // "global_symfunction_short type ", words(2), " argument 3 must be a number"
+                                            if (ios /= 0) print *, err // err_inpnn // "global_symfunction_short type ", words(2), " argument 3 must be a number"; stop
                                             read(words(5),*, iostat=ios) funccutoff_temp
-                                            if (ios /= 0) stop err // err_inpnn // "global_symfunction_short type ", words(2), " argument 4 must be a number"
+                                            if (ios /= 0) print *, err // err_inpnn // "global_symfunction_short type ", words(2), " argument 4 must be a number"; stop
                                             do genctr_1 = 1,nelem
                                                 do genctr_2 = 1,nelem
                                                     sym_short_atomic_count(genctr_1) = sym_short_atomic_count(genctr_1) + 1
@@ -3940,13 +3964,13 @@ module pes_nene_mod
                                     case ('3')
                                         if (nwords == 6) then
                                             read(words(3),*, iostat=ios) eta_temp
-                                            if (ios /= 0) stop err // err_inpnn // "global_symfunction_short type ", words(2), " argument 2 must be a number"
+                                            if (ios /= 0) print *, err // err_inpnn // "global_symfunction_short type ", words(2), " argument 2 must be a number"; stop
                                             read(words(4),*, iostat=ios) lambda_temp
-                                            if (ios /= 0) stop err // err_inpnn // "global_symfunction_short type ", words(2), " argument 3 must be a number"
+                                            if (ios /= 0) print *, err // err_inpnn // "global_symfunction_short type ", words(2), " argument 3 must be a number"; stop
                                             read(words(5),*, iostat=ios) zeta_temp
-                                            if (ios /= 0) stop err // err_inpnn // "global_symfunction_short type ", words(2), " argument 4 must be a number"
+                                            if (ios /= 0) print *, err // err_inpnn // "global_symfunction_short type ", words(2), " argument 4 must be a number"; stop
                                             read(words(6),*, iostat=ios) funccutoff_temp
-                                            if (ios /= 0) stop err // err_inpnn // "global_symfunction_short type ", words(2), " argument 5 must be a number"
+                                            if (ios /= 0) print *, err // err_inpnn // "global_symfunction_short type ", words(2), " argument 5 must be a number"; stop
                                             do genctr_3 = 1,nelem
                                                 do genctr_1 = 1,nelem
                                                     sym_short_atomic_count(genctr_3) = sym_short_atomic_count(genctr_3) + 1
@@ -3980,9 +4004,9 @@ module pes_nene_mod
                                     case ('4')
                                         if (nwords == 4) then
                                             read(words(3),*, iostat=ios) eta_temp
-                                            if (ios /= 0) stop err // err_inpnn // "global_symfunction_short type ", words(2), " argument 2 must be a number"
+                                            if (ios /= 0) print *, err // err_inpnn // "global_symfunction_short type ", words(2), " argument 2 must be a number"; stop
                                             read(words(4),*, iostat=ios) funccutoff_temp
-                                            if (ios /= 0) stop err // err_inpnn // "global_symfunction_short type ", words(2), " argument 3 must be a number"
+                                            if (ios /= 0) print *, err // err_inpnn // "global_symfunction_short type ", words(2), " argument 3 must be a number"; stop
                                             do genctr_3 = 1,nelem
                                                 do genctr_1 = 1,nelem
                                                     sym_short_atomic_count(genctr_3) = sym_short_atomic_count(genctr_3) + 1
@@ -3999,7 +4023,7 @@ module pes_nene_mod
                                     case ('5')
                                         if (nwords == 3) then
                                             read(words(3),*, iostat=ios) eta_temp
-                                            if (ios /= 0) stop err // err_inpnn // "global_symfunction_short type ", words(2), " argument 2 must be a number"
+                                            if (ios /= 0) print *, err // err_inpnn // "global_symfunction_short type ", words(2), " argument 2 must be a number"; stop
                                             do genctr_3 = 1,nelem
                                                 sym_short_atomic_count(genctr_3) = sym_short_atomic_count(genctr_3) + 1
                                                 function_type_short_atomic(sym_short_atomic_count(genctr_3),genctr_3) = function_type_temp
@@ -4013,7 +4037,7 @@ module pes_nene_mod
                                     case ('6')
                                         if (nwords == 3) then
                                             read(words(3),*, iostat=ios) funccutoff_temp
-                                            if (ios /= 0) stop err // err_inpnn // "global_symfunction_short type ", words(2), " argument 2 must be a number"
+                                            if (ios /= 0) print *, err // err_inpnn // "global_symfunction_short type ", words(2), " argument 2 must be a number"; stop
                                             do genctr_3 = 1,nelem
                                                 sym_short_atomic_count(genctr_3) = sym_short_atomic_count(genctr_3) + 1
                                                 function_type_short_atomic(sym_short_atomic_count(genctr_3),genctr_3) = function_type_temp
@@ -4027,11 +4051,11 @@ module pes_nene_mod
                                     case ('8')
                                         if (nwords == 5) then
                                             read(words(3),*, iostat=ios) eta_temp
-                                            if (ios /= 0) stop err // err_inpnn // "global_symfunction_short type ", words(2), " argument 2 must be a number"
+                                            if (ios /= 0) print *, err // err_inpnn // "global_symfunction_short type ", words(2), " argument 2 must be a number"; stop
                                             read(words(4),*, iostat=ios) rshift_temp
-                                            if (ios /= 0) stop err // err_inpnn // "global_symfunction_short type ", words(2), " argument 3 must be a number"
+                                            if (ios /= 0) print *, err // err_inpnn // "global_symfunction_short type ", words(2), " argument 3 must be a number"; stop
                                             read(words(5),*, iostat=ios) funccutoff_temp
-                                            if (ios /= 0) stop err // err_inpnn // "global_symfunction_short type ", words(2), " argument 4 must be a number"
+                                            if (ios /= 0) print *, err // err_inpnn // "global_symfunction_short type ", words(2), " argument 4 must be a number"; stop
                                             do genctr_3 = 1,nelem
                                                 do genctr_1 = 1,nelem
                                                     sym_short_atomic_count(genctr_3) = sym_short_atomic_count(genctr_3) + 1
@@ -4063,13 +4087,13 @@ module pes_nene_mod
                                     case ('9')
                                         if (nwords == 6) then
                                             read(words(3),*, iostat=ios) eta_temp
-                                            if (ios /= 0) stop err // err_inpnn // "global_symfunction_short type ", words(2), " argument 2 must be a number"
+                                            if (ios /= 0) print *, err // err_inpnn // "global_symfunction_short type ", words(2), " argument 2 must be a number"; stop
                                             read(words(4),*, iostat=ios) lambda_temp
-                                            if (ios /= 0) stop err // err_inpnn // "global_symfunction_short type ", words(2), " argument 3 must be a number"
+                                            if (ios /= 0) print *, err // err_inpnn // "global_symfunction_short type ", words(2), " argument 3 must be a number"; stop
                                             read(words(5),*, iostat=ios) zeta_temp
-                                            if (ios /= 0) stop err // err_inpnn // "global_symfunction_short type ", words(2), " argument 4 must be a number"
+                                            if (ios /= 0) print *, err // err_inpnn // "global_symfunction_short type ", words(2), " argument 4 must be a number"; stop
                                             read(words(6),*, iostat=ios) funccutoff_temp
-                                            if (ios /= 0) stop err // err_inpnn // "global_symfunction_short type ", words(2), " argument 5 must be a number"
+                                            if (ios /= 0) print *, err // err_inpnn // "global_symfunction_short type ", words(2), " argument 5 must be a number"; stop
                                             do genctr_3 = 1,nelem
                                                 do genctr_1 = 1,nelem
                                                     sym_short_atomic_count(genctr_3) = sym_short_atomic_count(genctr_3) + 1
@@ -4126,7 +4150,7 @@ module pes_nene_mod
                                             call checkelement(elementtemp2)
                                             call nuccharge(elementtemp2,ztemp2)
                                             read(words(5),*, iostat=ios) funccutoff_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1))
-                                            if (ios /= 0) stop err // err_inpnn // "symfunction_electrostatic type ", words(3), " argument 4 must be a number"
+                                            if (ios /= 0) print *, err // err_inpnn // "symfunction_electrostatic type ", words(3), " argument 4 must be a number"; stop
                                             symelement_elec(sym_elec_count(elementindex(ztemp1)),1,elementindex(ztemp1))=ztemp2
                                         else
                                             print *, err, err_inpnn, "symfunction_electrostatic type ", words(3), " needs 4 arguments"; stop
@@ -4138,11 +4162,11 @@ module pes_nene_mod
                                             call checkelement(elementtemp2)
                                             call nuccharge(elementtemp2,ztemp2)
                                             read(words(5),*, iostat=ios) eta_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1))
-                                            if (ios /= 0) stop err // err_inpnn // "symfunction_electrostatic type ", words(3), " argument 4 must be a number"
+                                            if (ios /= 0) print *, err // err_inpnn // "symfunction_electrostatic type ", words(3), " argument 4 must be a number"; stop
                                             read(words(6),*, iostat=ios) rshift_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1))
-                                            if (ios /= 0) stop err // err_inpnn // "symfunction_electrostatic type ", words(3), " argument 5 must be a number"
+                                            if (ios /= 0) print *, err // err_inpnn // "symfunction_electrostatic type ", words(3), " argument 5 must be a number"; stop
                                             read(words(7),*, iostat=ios) funccutoff_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1))
-                                            if (ios /= 0) stop err // err_inpnn // "symfunction_electrostatic type ", words(3), " argument 6 must be a number"
+                                            if (ios /= 0) print *, err // err_inpnn // "symfunction_electrostatic type ", words(3), " argument 6 must be a number"; stop
                                             symelement_elec(sym_elec_count(elementindex(ztemp1)),1,elementindex(ztemp1))=ztemp2
                                         else
                                             print *, err, err_inpnn, "symfunction_electrostatic type ", words(3), " needs 6 arguments"; stop
@@ -4162,13 +4186,13 @@ module pes_nene_mod
                                                 ztemp3 = itemp
                                             endif
                                             read(words(6),*, iostat=ios) eta_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1))
-                                            if (ios /= 0) stop err // err_inpnn // "symfunction_electrostatic type ", words(3), " argument 5 must be a number"
+                                            if (ios /= 0) print *, err // err_inpnn // "symfunction_electrostatic type ", words(3), " argument 5 must be a number"; stop
                                             read(words(7),*, iostat=ios) lambda_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1))
-                                            if (ios /= 0) stop err // err_inpnn // "symfunction_electrostatic type ", words(3), " argument 6 must be a number"
+                                            if (ios /= 0) print *, err // err_inpnn // "symfunction_electrostatic type ", words(3), " argument 6 must be a number"; stop
                                             read(words(8),*, iostat=ios) zeta_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1))
-                                            if (ios /= 0) stop err // err_inpnn // "symfunction_electrostatic type ", words(3), " argument 7 must be a number"
+                                            if (ios /= 0) print *, err // err_inpnn // "symfunction_electrostatic type ", words(3), " argument 7 must be a number"; stop
                                             read(words(9),*, iostat=ios) funccutoff_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1))
-                                            if (ios /= 0) stop err // err_inpnn // "symfunction_electrostatic type ", words(3), " argument 8 must be a number"
+                                            if (ios /= 0) print *, err // err_inpnn // "symfunction_electrostatic type ", words(3), " argument 8 must be a number"; stop
                                             symelement_elec(sym_elec_count(elementindex(ztemp1)),1,elementindex(ztemp1))=ztemp2
                                             symelement_elec(sym_elec_count(elementindex(ztemp1)),2,elementindex(ztemp1))=ztemp3
                                         else
@@ -4181,9 +4205,9 @@ module pes_nene_mod
                                             call checkelement(elementtemp2)
                                             call nuccharge(elementtemp2,ztemp2)
                                             read(words(5),*, iostat=ios) eta_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1))
-                                            if (ios /= 0) stop err // err_inpnn // "symfunction_electrostatic type ", words(3), " argument 4 must be a number"
+                                            if (ios /= 0) print *, err // err_inpnn // "symfunction_electrostatic type ", words(3), " argument 4 must be a number"; stop
                                             read(words(6),*, iostat=ios) funccutoff_elecc(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1))
-                                            if (ios /= 0) stop err // err_inpnn // "symfunction_electrostatic type ", words(3), " argument 5 must be a number"
+                                            if (ios /= 0) print *, err // err_inpnn // "symfunction_electrostatic type ", words(3), " argument 5 must be a number"; stop
                                             symelement_elec(sym_elec_count(elementindex(ztemp1)),1,elementindex(ztemp1))=ztemp2
                                         else
                                             print *, err, err_inpnn, "symfunction_electrostatic type ", words(3), " needs 5 arguments"; stop
@@ -4192,7 +4216,7 @@ module pes_nene_mod
                                     case ('5')
                                         if (nwords == 4) then
                                             read(words(4),*, iostat=ios) eta_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1))
-                                            if (ios /= 0) stop err // err_inpnn // "symfunction_electrostatic type ", words(3), " argument 3 must be a number"
+                                            if (ios /= 0) print *, err // err_inpnn // "symfunction_electrostatic type ", words(3), " argument 3 must be a number"; stop
                                         else
                                             print *, err, err_inpnn, "symfunction_electrostatic type ", words(3), " needs 3 arguments"; stop
                                         end if
@@ -4203,7 +4227,7 @@ module pes_nene_mod
                                             call checkelement(elementtemp2)
                                             call nuccharge(elementtemp2,ztemp2)
                                             read(words(5),*, iostat=ios) funccutoff_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1))
-                                            if (ios /= 0) stop err // err_inpnn // "symfunction_electrostatic type ", words(3), " argument 4 must be a number"
+                                            if (ios /= 0) print *, err // err_inpnn // "symfunction_electrostatic type ", words(3), " argument 4 must be a number"; stop
                                             symelement_elec(sym_elec_count(elementindex(ztemp1)),1,elementindex(ztemp1))=ztemp2
                                         else
                                             print *, err, err_inpnn, "symfunction_electrostatic type ", words(3), " needs 4 arguments"; stop
@@ -4223,11 +4247,11 @@ module pes_nene_mod
                                                 ztemp3 = itemp
                                             endif
                                             read(words(6),*, iostat=ios) eta_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1))
-                                            if (ios /= 0) stop err // err_inpnn // "symfunction_electrostatic type ", words(3), " argument 5 must be a number"
+                                            if (ios /= 0) print *, err // err_inpnn // "symfunction_electrostatic type ", words(3), " argument 5 must be a number"; stop
                                             read(words(7),*, iostat=ios) rshift_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1))
-                                            if (ios /= 0) stop err // err_inpnn // "symfunction_electrostatic type ", words(3), " argument 6 must be a number"
+                                            if (ios /= 0) print *, err // err_inpnn // "symfunction_electrostatic type ", words(3), " argument 6 must be a number"; stop
                                             read(words(8),*, iostat=ios) funccutoff_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1))
-                                            if (ios /= 0) stop err // err_inpnn // "symfunction_electrostatic type ", words(3), " argument 7 must be a number"
+                                            if (ios /= 0) print *, err // err_inpnn // "symfunction_electrostatic type ", words(3), " argument 7 must be a number"; stop
                                             symelement_elec(sym_elec_count(elementindex(ztemp1)),1,elementindex(ztemp1))=ztemp2
                                             symelement_elec(sym_elec_count(elementindex(ztemp1)),2,elementindex(ztemp1))=ztemp3
                                         else
@@ -4248,13 +4272,13 @@ module pes_nene_mod
                                                 ztemp3 = itemp
                                             endif
                                             read(words(6),*, iostat=ios) eta_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1))
-                                            if (ios /= 0) stop err // err_inpnn // "symfunction_electrostatic type ", words(3), " argument 5 must be a number"
+                                            if (ios /= 0) print *, err // err_inpnn // "symfunction_electrostatic type ", words(3), " argument 5 must be a number"; stop
                                             read(words(7),*, iostat=ios) lambda_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1))
-                                            if (ios /= 0) stop err // err_inpnn // "symfunction_electrostatic type ", words(3), " argument 6 must be a number"
+                                            if (ios /= 0) print *, err // err_inpnn // "symfunction_electrostatic type ", words(3), " argument 6 must be a number"; stop
                                             read(words(8),*, iostat=ios) zeta_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1))
-                                            if (ios /= 0) stop err // err_inpnn // "symfunction_electrostatic type ", words(3), " argument 7 must be a number"
+                                            if (ios /= 0) print *, err // err_inpnn // "symfunction_electrostatic type ", words(3), " argument 7 must be a number"; stop
                                             read(words(9),*, iostat=ios) funccutoff_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1))
-                                            if (ios /= 0) stop err // err_inpnn // "symfunction_electrostatic type ", words(3), " argument 8 must be a number"
+                                            if (ios /= 0) print *, err // err_inpnn // "symfunction_electrostatic type ", words(3), " argument 8 must be a number"; stop
                                             symelement_elec(sym_elec_count(elementindex(ztemp1)),1,elementindex(ztemp1))=ztemp2
                                             symelement_elec(sym_elec_count(elementindex(ztemp1)),2,elementindex(ztemp1))=ztemp3
                                         else
@@ -4282,9 +4306,9 @@ module pes_nene_mod
                                     case ('1')
                                         if (nwords == 4) then
                                             read(words(4),*, iostat=ios) funccutoff_temp
-                                            if (ios /= 0) stop err // err_inpnn // "element_symfunction_electrostatic type ", words(3), " argument 3 must be a number"
+                                            if (ios /= 0) print *, err // err_inpnn // "element_symfunction_electrostatic type ", words(3), " argument 3 must be a number"; stop
                                             do genctr_1 = 1,nelem
-                                                sym_elec_count(elementindex(ztemp1) = sym_elec_count(elementindex(ztemp1) + 1
+                                                sym_elec_count(elementindex(ztemp1)) = sym_elec_count(elementindex(ztemp1)) + 1
                                                 function_type_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1)) = function_type_temp
                                                 funccutoff_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1)) = funccutoff_temp
                                                 symelement_elec(sym_elec_count(elementindex(ztemp1)),1,elementindex(ztemp1)) = nucelem(genctr_1)
@@ -4296,13 +4320,13 @@ module pes_nene_mod
                                     case ('2')
                                         if (nwords == 6) then
                                             read(words(4),*, iostat=ios) eta_temp
-                                            if (ios /= 0) stop err // err_inpnn // "element_symfunction_electrostatic type ", words(3), " argument 3 must be a number"
+                                            if (ios /= 0) print *, err // err_inpnn // "element_symfunction_electrostatic type ", words(3), " argument 3 must be a number"; stop
                                             read(words(5),*, iostat=ios) rshift_temp
-                                            if (ios /= 0) stop err // err_inpnn // "element_symfunction_electrostatic type ", words(3), " argument 4 must be a number"
+                                            if (ios /= 0) print *, err // err_inpnn // "element_symfunction_electrostatic type ", words(3), " argument 4 must be a number"; stop
                                             read(words(6),*, iostat=ios) funccutoff_temp
-                                            if (ios /= 0) stop err // err_inpnn // "element_symfunction_electrostatic type ", words(3), " argument 5 must be a number"
+                                            if (ios /= 0) print *, err // err_inpnn // "element_symfunction_electrostatic type ", words(3), " argument 5 must be a number"; stop
                                             do genctr_1 = 1,nelem
-                                                sym_elec_count(elementindex(ztemp1) = sym_elec_count(elementindex(ztemp1) + 1
+                                                sym_elec_count(elementindex(ztemp1)) = sym_elec_count(elementindex(ztemp1)) + 1
                                                 function_type_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1)) = function_type_temp
                                                 eta_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1)) = eta_temp
                                                 rshift_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1)) = rshift_temp
@@ -4316,15 +4340,15 @@ module pes_nene_mod
                                     case ('3')
                                         if (nwords == 7) then
                                             read(words(4),*, iostat=ios) eta_temp
-                                            if (ios /= 0) stop err // err_inpnn // "element_symfunction_electrostatic type ", words(3), " argument 3 must be a number"
+                                            if (ios /= 0) print *, err // err_inpnn // "element_symfunction_electrostatic type ", words(3), " argument 3 must be a number"; stop
                                             read(words(5),*, iostat=ios) lambda_temp
-                                            if (ios /= 0) stop err // err_inpnn // "element_symfunction_electrostatic type ", words(3), " argument 4 must be a number"
+                                            if (ios /= 0) print *, err // err_inpnn // "element_symfunction_electrostatic type ", words(3), " argument 4 must be a number"; stop
                                             read(words(6),*, iostat=ios) zeta_temp
-                                            if (ios /= 0) stop err // err_inpnn // "element_symfunction_electrostatic type ", words(3), " argument 5 must be a number"
+                                            if (ios /= 0) print *, err // err_inpnn // "element_symfunction_electrostatic type ", words(3), " argument 5 must be a number"; stop
                                             read(words(7),*, iostat=ios) funccutoff_temp
-                                            if (ios /= 0) stop err // err_inpnn // "element_symfunction_electrostatic type ", words(3), " argument 6 must be a number"
+                                            if (ios /= 0) print *, err // err_inpnn // "element_symfunction_electrostatic type ", words(3), " argument 6 must be a number"; stop
                                             do genctr_1 = 1,nelem
-                                                sym_elec_count(elementindex(ztemp1) = sym_elec_count(elementindex(ztemp1) + 1
+                                                sym_elec_count(elementindex(ztemp1)) = sym_elec_count(elementindex(ztemp1)) + 1
                                                 function_type_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1)) = function_type_temp
                                                 eta_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1)) = eta_temp
                                                 lambda_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1)) = lambda_temp
@@ -4336,7 +4360,7 @@ module pes_nene_mod
                                             do genctr_1 = 1,nelem
                                                 if (nelem .gt. 1) then
                                                     do genctr_2 = 1,genctr_1-1
-                                                        sym_elec_count(elementindex(ztemp1) = sym_elec_count(elementindex(ztemp1) + 1
+                                                        sym_elec_count(elementindex(ztemp1)) = sym_elec_count(elementindex(ztemp1)) + 1
                                                         function_type_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1)) = function_type_temp
                                                         eta_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1)) = eta_temp
                                                         lambda_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1)) = lambda_temp
@@ -4354,11 +4378,11 @@ module pes_nene_mod
                                     case ('4')
                                         if (nwords == 5) then
                                             read(words(4),*, iostat=ios) eta_temp
-                                            if (ios /= 0) stop err // err_inpnn // "element_symfunction_electrostatic type ", words(3), " argument 3 must be a number"
+                                            if (ios /= 0) print *, err // err_inpnn // "element_symfunction_electrostatic type ", words(3), " argument 3 must be a number"; stop
                                             read(words(5),*, iostat=ios) funccutoff_temp
-                                            if (ios /= 0) stop err // err_inpnn // "element_symfunction_electrostatic type ", words(3), " argument 4 must be a number"
+                                            if (ios /= 0) print *, err // err_inpnn // "element_symfunction_electrostatic type ", words(3), " argument 4 must be a number"; stop
                                             do genctr_1 = 1,nelem
-                                                sym_elec_count(elementindex(ztemp1) = sym_elec_count(elementindex(ztemp1) + 1
+                                                sym_elec_count(elementindex(ztemp1)) = sym_elec_count(elementindex(ztemp1)) + 1
                                                 function_type_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1)) = function_type_temp
                                                 eta_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1)) = eta_temp
                                                 funccutoff_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1)) = funccutoff_temp
@@ -4371,8 +4395,8 @@ module pes_nene_mod
                                     case ('5')
                                         if (nwords == 4) then
                                             read(words(4),*, iostat=ios) eta_temp
-                                            if (ios /= 0) stop err // err_inpnn // "element_symfunction_electrostatic type ", words(3), " argument 3 must be a number"
-                                            sym_elec_count(elementindex(ztemp1) = sym_elec_count(elementindex(ztemp1) + 1
+                                            if (ios /= 0) print *, err // err_inpnn // "element_symfunction_electrostatic type ", words(3), " argument 3 must be a number"; stop
+                                            sym_elec_count(elementindex(ztemp1)) = sym_elec_count(elementindex(ztemp1)) + 1
                                             function_type_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1)) = function_type_temp
                                             eta_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1)) = eta_temp
                                         else
@@ -4382,8 +4406,8 @@ module pes_nene_mod
                                     case ('6')
                                         if (nwords == 4) then
                                             read(words(4),*, iostat=ios) funccutoff_temp
-                                            if (ios /= 0) stop err // err_inpnn // "element_symfunction_electrostatic type ", words(3), " argument 3 must be a number"
-                                            sym_elec_count(elementindex(ztemp1) = sym_elec_count(elementindex(ztemp1) + 1
+                                            if (ios /= 0) print *, err // err_inpnn // "element_symfunction_electrostatic type ", words(3), " argument 3 must be a number"; stop
+                                            sym_elec_count(elementindex(ztemp1)) = sym_elec_count(elementindex(ztemp1)) + 1
                                             function_type_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1)) = function_type_temp
                                         else
                                             print *, err, err_inpnn, "element_symfunction_electrostatic type ", words(3), " needs 3 arguments"; stop
@@ -4392,13 +4416,13 @@ module pes_nene_mod
                                     case ('8')
                                         if (nwords == 6) then
                                             read(words(4),*, iostat=ios) eta_temp
-                                            if (ios /= 0) stop err // err_inpnn // "element_symfunction_electrostatic type ", words(3), " argument 3 must be a number"
+                                            if (ios /= 0) print *, err // err_inpnn // "element_symfunction_electrostatic type ", words(3), " argument 3 must be a number"; stop
                                             read(words(5),*, iostat=ios) rshift_temp
-                                            if (ios /= 0) stop err // err_inpnn // "element_symfunction_electrostatic type ", words(3), " argument 4 must be a number"
+                                            if (ios /= 0) print *, err // err_inpnn // "element_symfunction_electrostatic type ", words(3), " argument 4 must be a number"; stop
                                             read(words(6),*, iostat=ios) funccutoff_temp
-                                            if (ios /= 0) stop err // err_inpnn // "element_symfunction_electrostatic type ", words(3), " argument 5 must be a number"
+                                            if (ios /= 0) print *, err // err_inpnn // "element_symfunction_electrostatic type ", words(3), " argument 5 must be a number"; stop
                                             do genctr_1 = 1,nelem
-                                                sym_elec_count(elementindex(ztemp1) = sym_elec_count(elementindex(ztemp1) + 1
+                                                sym_elec_count(elementindex(ztemp1)) = sym_elec_count(elementindex(ztemp1)) + 1
                                                 function_type_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1)) = function_type_temp
                                                 eta_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1)) = eta_temp
                                                 rshift_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1)) = rshift_temp
@@ -4409,7 +4433,7 @@ module pes_nene_mod
                                             do genctr_1 = 1,nelem
                                                 if (nelem .gt. 1) then
                                                     do genctr_2 = 1,genctr_1-1
-                                                        sym_elec_count(elementindex(ztemp1) = sym_elec_count(elementindex(ztemp1) + 1
+                                                        sym_elec_count(elementindex(ztemp1)) = sym_elec_count(elementindex(ztemp1)) + 1
                                                         function_type_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1)) = function_type_temp
                                                         eta_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1)) = eta_temp
                                                         rshift_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1)) = rshift_temp
@@ -4426,15 +4450,15 @@ module pes_nene_mod
                                     case ('9')
                                         if (nwords == 7) then
                                             read(words(4),*, iostat=ios) eta_temp
-                                            if (ios /= 0) stop err // err_inpnn // "element_symfunction_electrostatic type ", words(3), " argument 3 must be a number"
+                                            if (ios /= 0) print *, err // err_inpnn // "element_symfunction_electrostatic type ", words(3), " argument 3 must be a number"; stop
                                             read(words(5),*, iostat=ios) lambda_temp
-                                            if (ios /= 0) stop err // err_inpnn // "element_symfunction_electrostatic type ", words(3), " argument 4 must be a number"
+                                            if (ios /= 0) print *, err // err_inpnn // "element_symfunction_electrostatic type ", words(3), " argument 4 must be a number"; stop
                                             read(words(6),*, iostat=ios) zeta_temp
-                                            if (ios /= 0) stop err // err_inpnn // "element_symfunction_electrostatic type ", words(3), " argument 5 must be a number"
+                                            if (ios /= 0) print *, err // err_inpnn // "element_symfunction_electrostatic type ", words(3), " argument 5 must be a number"; stop
                                             read(words(7),*, iostat=ios) funccutoff_temp
-                                            if (ios /= 0) stop err // err_inpnn // "element_symfunction_electrostatic type ", words(3), " argument 6 must be a number"
+                                            if (ios /= 0) print *, err // err_inpnn // "element_symfunction_electrostatic type ", words(3), " argument 6 must be a number"; stop
                                             do genctr_1 = 1,nelem
-                                                sym_elec_count(elementindex(ztemp1) = sym_elec_count(elementindex(ztemp1) + 1
+                                                sym_elec_count(elementindex(ztemp1)) = sym_elec_count(elementindex(ztemp1)) + 1
                                                 function_type_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1)) = function_type_temp
                                                 eta_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1)) = eta_temp
                                                 lambda_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1)) = lambda_temp
@@ -4445,7 +4469,7 @@ module pes_nene_mod
                                             do genctr_1 = 1,nelem
                                                 if (nelem .gt. 1) then
                                                     do genctr_2 = 1,genctr_1-1
-                                                        sym_elec_count(elementindex(ztemp1) = sym_elec_count(elementindex(ztemp1) + 1
+                                                        sym_elec_count(elementindex(ztemp1)) = sym_elec_count(elementindex(ztemp1)) + 1
                                                         function_type_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1)) = function_type_temp
                                                         eta_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1)) = eta_temp
                                                         lambda_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1)) = lambda_temp
@@ -4478,7 +4502,7 @@ module pes_nene_mod
                                     case ('1')
                                         if (nwords == 3) then
                                             read(words(3),*, iostat=ios) funccutoff_temp
-                                            if (ios /= 0) stop err // err_inpnn // "global_symfunction_electrostatic type ", words(2), " argument 2 must be a number"
+                                            if (ios /= 0) print *, err // err_inpnn // "global_symfunction_electrostatic type ", words(2), " argument 2 must be a number"; stop
                                             do genctr_1 = 1,nelem
                                                 do genctr_2 = 1,nelem
                                                     sym_elec_count(genctr_1) = sym_elec_count(genctr_1) + 1
@@ -4494,11 +4518,11 @@ module pes_nene_mod
                                     case ('2')
                                         if (nwords == 5) then
                                             read(words(3),*, iostat=ios) eta_temp
-                                            if (ios /= 0) stop err // err_inpnn // "global_symfunction_electrostatic type ", words(2), " argument 2 must be a number"
+                                            if (ios /= 0) print *, err // err_inpnn // "global_symfunction_electrostatic type ", words(2), " argument 2 must be a number"; stop
                                             read(words(4),*, iostat=ios) rshift_temp
-                                            if (ios /= 0) stop err // err_inpnn // "global_symfunction_electrostatic type ", words(2), " argument 3 must be a number"
+                                            if (ios /= 0) print *, err // err_inpnn // "global_symfunction_electrostatic type ", words(2), " argument 3 must be a number"; stop
                                             read(words(5),*, iostat=ios) funccutoff_temp
-                                            if (ios /= 0) stop err // err_inpnn // "global_symfunction_electrostatic type ", words(2), " argument 4 must be a number"
+                                            if (ios /= 0) print *, err // err_inpnn // "global_symfunction_electrostatic type ", words(2), " argument 4 must be a number"; stop
                                             do genctr_1 = 1,nelem
                                                 do genctr_2 = 1,nelem
                                                     sym_elec_count(genctr_1) = sym_elec_count(genctr_1) + 1
@@ -4516,13 +4540,13 @@ module pes_nene_mod
                                     case ('3')
                                         if (nwords == 6) then
                                             read(words(3),*, iostat=ios) eta_temp
-                                            if (ios /= 0) stop err // err_inpnn // "global_symfunction_electrostatic type ", words(2), " argument 2 must be a number"
+                                            if (ios /= 0) print *, err // err_inpnn // "global_symfunction_electrostatic type ", words(2), " argument 2 must be a number"; stop
                                             read(words(4),*, iostat=ios) lambda_temp
-                                            if (ios /= 0) stop err // err_inpnn // "global_symfunction_electrostatic type ", words(2), " argument 3 must be a number"
+                                            if (ios /= 0) print *, err // err_inpnn // "global_symfunction_electrostatic type ", words(2), " argument 3 must be a number"; stop
                                             read(words(5),*, iostat=ios) zeta_temp
-                                            if (ios /= 0) stop err // err_inpnn // "global_symfunction_electrostatic type ", words(2), " argument 4 must be a number"
+                                            if (ios /= 0) print *, err // err_inpnn // "global_symfunction_electrostatic type ", words(2), " argument 4 must be a number"; stop
                                             read(words(6),*, iostat=ios) funccutoff_temp
-                                            if (ios /= 0) stop err // err_inpnn // "global_symfunction_electrostatic type ", words(2), " argument 5 must be a number"
+                                            if (ios /= 0) print *, err // err_inpnn // "global_symfunction_electrostatic type ", words(2), " argument 5 must be a number"; stop
                                             do genctr_3 = 1,nelem
                                                 do genctr_1 = 1,nelem
                                                     sym_elec_count(genctr_3) = sym_elec_count(genctr_3) + 1
@@ -4556,9 +4580,9 @@ module pes_nene_mod
                                     case ('4')
                                         if (nwords == 4) then
                                             read(words(3),*, iostat=ios) eta_temp
-                                            if (ios /= 0) stop err // err_inpnn // "global_symfunction_electrostatic type ", words(2), " argument 2 must be a number"
+                                            if (ios /= 0) print *, err // err_inpnn // "global_symfunction_electrostatic type ", words(2), " argument 2 must be a number"; stop
                                             read(words(4),*, iostat=ios) funccutoff_temp
-                                            if (ios /= 0) stop err // err_inpnn // "global_symfunction_electrostatic type ", words(2), " argument 3 must be a number"
+                                            if (ios /= 0) print *, err // err_inpnn // "global_symfunction_electrostatic type ", words(2), " argument 3 must be a number"; stop
                                             do genctr_3 = 1,nelem
                                                 do genctr_1 = 1,nelem
                                                     sym_elec_count(genctr_3) = sym_elec_count(genctr_3) + 1
@@ -4575,7 +4599,7 @@ module pes_nene_mod
                                     case ('5')
                                         if (nwords == 3) then
                                             read(words(3),*, iostat=ios) eta_temp
-                                            if (ios /= 0) stop err // err_inpnn // "global_symfunction_electrostatic type ", words(2), " argument 2 must be a number"
+                                            if (ios /= 0) print *, err // err_inpnn // "global_symfunction_electrostatic type ", words(2), " argument 2 must be a number"; stop
                                             do genctr_3 = 1,nelem
                                                 sym_elec_count(genctr_3) = sym_elec_count(genctr_3) + 1
                                                 function_type_elec(sym_elec_count(genctr_3),genctr_3) = function_type_temp
@@ -4589,7 +4613,7 @@ module pes_nene_mod
                                     case ('6')
                                         if (nwords == 3) then
                                             read(words(3),*, iostat=ios) funccutoff_temp
-                                            if (ios /= 0) stop err // err_inpnn // "global_symfunction_electrostatic type ", words(2), " argument 2 must be a number"
+                                            if (ios /= 0) print *, err // err_inpnn // "global_symfunction_electrostatic type ", words(2), " argument 2 must be a number"; stop
                                             do genctr_3 = 1,nelem
                                                 sym_elec_count(genctr_3) = sym_elec_count(genctr_3) + 1
                                                 function_type_elec(sym_elec_count(genctr_3),genctr_3) = function_type_temp
@@ -4603,11 +4627,11 @@ module pes_nene_mod
                                     case ('8')
                                         if (nwords == 5) then
                                             read(words(3),*, iostat=ios) eta_temp
-                                            if (ios /= 0) stop err // err_inpnn // "global_symfunction_electrostatic type ", words(2), " argument 2 must be a number"
+                                            if (ios /= 0) print *, err // err_inpnn // "global_symfunction_electrostatic type ", words(2), " argument 2 must be a number"; stop
                                             read(words(4),*, iostat=ios) rshift_temp
-                                            if (ios /= 0) stop err // err_inpnn // "global_symfunction_electrostatic type ", words(2), " argument 3 must be a number"
+                                            if (ios /= 0) print *, err // err_inpnn // "global_symfunction_electrostatic type ", words(2), " argument 3 must be a number"; stop
                                             read(words(5),*, iostat=ios) funccutoff_temp
-                                            if (ios /= 0) stop err // err_inpnn // "global_symfunction_electrostatic type ", words(2), " argument 4 must be a number"
+                                            if (ios /= 0) print *, err // err_inpnn // "global_symfunction_electrostatic type ", words(2), " argument 4 must be a number"; stop
                                             do genctr_3 = 1,nelem
                                                 do genctr_1 = 1,nelem
                                                     sym_elec_count(genctr_3) = sym_elec_count(genctr_3) + 1
@@ -4639,13 +4663,13 @@ module pes_nene_mod
                                     case ('9')
                                         if (nwords == 6) then
                                             read(words(3),*, iostat=ios) eta_temp
-                                            if (ios /= 0) stop err // err_inpnn // "global_symfunction_electrostatic type ", words(2), " argument 2 must be a number"
+                                            if (ios /= 0) print *, err // err_inpnn // "global_symfunction_electrostatic type ", words(2), " argument 2 must be a number"; stop
                                             read(words(4),*, iostat=ios) lambda_temp
-                                            if (ios /= 0) stop err // err_inpnn // "global_symfunction_electrostatic type ", words(2), " argument 3 must be a number"
+                                            if (ios /= 0) print *, err // err_inpnn // "global_symfunction_electrostatic type ", words(2), " argument 3 must be a number"; stop
                                             read(words(5),*, iostat=ios) zeta_temp
-                                            if (ios /= 0) stop err // err_inpnn // "global_symfunction_electrostatic type ", words(2), " argument 4 must be a number"
+                                            if (ios /= 0) print *, err // err_inpnn // "global_symfunction_electrostatic type ", words(2), " argument 4 must be a number"; stop
                                             read(words(6),*, iostat=ios) funccutoff_temp
-                                            if (ios /= 0) stop err // err_inpnn // "global_symfunction_electrostatic type ", words(2), " argument 5 must be a number"
+                                            if (ios /= 0) print *, err // err_inpnn // "global_symfunction_electrostatic type ", words(2), " argument 5 must be a number"; stop
                                             do genctr_3 = 1,nelem
                                                 do genctr_1 = 1,nelem
                                                     sym_elec_count(genctr_3) = sym_elec_count(genctr_3) + 1
@@ -4822,7 +4846,7 @@ module pes_nene_mod
                                             atom_energy_counter = atom_energy_counter + 1
                                             read(words(2),'(A)', iostat=ios) elementtemp(atom_energy_counter)
                                             read(words(3),*, iostat=ios) atomrefenergies(atom_energy_counter)
-                                            if (ios /= 0) stop err // err_inpnn // "atom_energy key in line ", line, " second argument value must be a number"
+                                            if (ios /= 0) print *, err // err_inpnn // "atom_energy key in line ", line, " second argument value must be a number"; stop
                                         else
                                             print *, warn_inpnn, 'atom_energy for element ',elementtemp,' is ignored'
                                         end if
@@ -5335,7 +5359,7 @@ module pes_nene_mod
         if (nran == default_int) then
             nran = 5
         end if
-        if (enforcetotcharge = default_int) then
+        if (enforcetotcharge == default_int) then
             enforcetotcharge = 0
         end if
         if (all(fixedcharge == default_real)) then
@@ -5840,7 +5864,7 @@ module pes_nene_mod
         endif
 
         if((count_wconstrainte.gt.0).and.(.not.lfixweights))then
-            write(ounit,*)'Error: electrostatic weight constraints are specified without fix_weights keyword'
+            write(*,*)'Error: electrostatic weight constraints are specified without fix_weights keyword'
             stop
         endif
 
@@ -6222,15 +6246,15 @@ module pes_nene_mod
 
                     if (nwords == 5) then
                         read(words(1),'(i1000)', iostat=ios) counter_3
-                        if (ios /= 0) stop err // err_inpnn // "Error in line " // line // ", 1st argument value must be integer"
+                        if (ios /= 0) print *, err // err_inpnn // "Error in line " // line // ", 1st argument value must be integer"; stop
                         read(words(2),'(i1000)', iostat=ios) counter_3
-                        if (ios /= 0) stop err // err_inpnn // "Error in line " // line // ", 2nd argument value must be integer"
+                        if (ios /= 0) print *, err // err_inpnn // "Error in line " // line // ", 2nd argument value must be integer"; stop
                         read(words(3),*, iostat=ios) minvalue_local(counter_1,counter_2)
-                        if (ios /= 0) stop err // err_inpnn // "Error in line " // line // ", 3rd argument value must be integer"
+                        if (ios /= 0) print *, err // err_inpnn // "Error in line " // line // ", 3rd argument value must be integer"; stop
                         read(words(4),*, iostat=ios) maxvalue_local(counter_1,counter_2)
-                        if (ios /= 0) stop err // err_inpnn // "Error in line " // line // ", 4th argument value must be integer"
+                        if (ios /= 0) print *, err // err_inpnn // "Error in line " // line // ", 4th argument value must be integer"; stop
                         read(words(5),*, iostat=ios) avvalue_local(counter_1,counter_2)
-                        if (ios /= 0) stop err // err_inpnn // "Error in line " // line // ", 5th argument value must be integer"
+                        if (ios /= 0) print *, err // err_inpnn // "Error in line " // line // ", 5th argument value must be integer"; stop
                     else
                         print *, err, filename_error, "Error in line: ", line, "; need exactly 5 arguments"
                         stop
@@ -6251,9 +6275,9 @@ module pes_nene_mod
             if (iswitch == 1) then
                 if (nwords == 2) then
                     read(words(1),*, iostat=ios) eshortmin
-                    if (ios /= 0) stop err // err_inpnn // "Error in last line: " // "first argument value must be a number"
+                    if (ios /= 0) print *, err // err_inpnn // "Error in last line: " // "first argument value must be a number"; stop
                     read(words(2),*, iostat=ios) eshortmax
-                    if (ios /= 0) stop err // err_inpnn // "Error in last line: " // "second argument value must be a number"
+                    if (ios /= 0) print *, err // err_inpnn // "Error in last line: " // "second argument value must be a number"; stop
                 else
                     print *, err, filename_error, "Error in last line: need exactly 2 arguments"
                     stop
@@ -6263,9 +6287,9 @@ module pes_nene_mod
                     line = line + 1
                     if (nwords == 2) then
                         read(words(1),*, iostat=ios) chargemin(counter_2)
-                        if (ios /= 0) stop err // err_inpnn // "Error in line: " // line // ", first argument value must be a number"
+                        if (ios /= 0) print *, err // err_inpnn // "Error in line: " // line // ", first argument value must be a number"; stop
                         read(words(2),*, iostat=ios) chargemax(counter_2)
-                        if (ios /= 0) stop err // err_inpnn // "Error in line: " // line // ", second argument value must be a number"
+                        if (ios /= 0) print *, err // err_inpnn // "Error in line: " // line // ", second argument value must be a number"; stop
                     else
                         print *, err, filename_error, "Error in line: ", line, " need exactly 2 arguments"
                         stop
@@ -6622,7 +6646,8 @@ module pes_nene_mod
 
         integer :: atctr, ictr_1, ictr_2, ictr_3
 
-        real(dp) :: xyzstruct(3,num_atoms) = default_real
+        real(dp) :: xyzstruct(3,atoms%natoms) != default_real
+        xyzstruct(:,:) = default_real
 
         ! is the following needed?
         eshort              = 0.0d0
