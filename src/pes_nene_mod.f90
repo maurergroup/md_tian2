@@ -105,6 +105,8 @@ module pes_nene_mod
     real(dp), dimension(:,:), allocatable :: sens                   ! ; already deallocated in cleanup
     real(dp), dimension(:,:), allocatable :: sense                  ! ; already deallocated in cleanup
 
+    integer, parameter  :: inpnn_unit = 61
+
 
     contains
 
@@ -139,8 +141,6 @@ module pes_nene_mod
 
         character(len=max_string_length) :: filename_inpnn, filename_scaling, filename_scalinge
 
-        integer, parameter  :: inpnn_unit = 61
-
         integer  :: idx1, idx2
 
         character(len=*), parameter :: err              = "Error in read_nene: "
@@ -160,11 +160,14 @@ module pes_nene_mod
         integer :: lattctr, atctr
         integer :: ictr_1, ictr_2, ictr_3
 
+        integer :: itemp = default_int
         integer :: ztemp  = default_int
         integer :: ztemp1 = default_int
         integer :: ztemp2 = default_int
+        integer :: ztemp3 = default_int
         integer :: function_type_local = default_int
         integer :: atom_energy_counter = default_int
+        integer :: wcount
 
         integer, dimension(:)  , allocatable :: nodes_short_local
         integer, dimension(:)  , allocatable :: nodes_ewald_local
@@ -176,6 +179,9 @@ module pes_nene_mod
         character(len=2) :: elementtemp2    = default_string
         character(len=2) :: elementtemp3    = default_string
 
+        character(len=2), dimension(:), allocatable :: elementsymbol_dummy
+
+        logical, dimension(:), allocatable :: lfound
         logical :: lfounddebug              = default_bool
         logical :: lfound_num_layersshort   = default_bool
         logical :: lfound_num_layersewald   = default_bool
@@ -187,16 +193,20 @@ module pes_nene_mod
 
 
         real(dp), dimension(:), allocatable :: rdummy                   ! rdummy(nelem)
+        real(dp) :: dummy
 
 
-        character(len=*) :: actfunc_short_atomic_dummy
-        character(len=*) :: actfunc_elec_dummy
-        character(len=*) :: actfunc
+        character(len=1), dimension(:), allocatable :: actfunc_short_atomic_dummy
+        character(len=1), dimension(:), allocatable :: actfunc_elec_dummy
+        character(len=1) :: actfunc
+        !character(len=1) :: actfunc_short_pair_dummy
 
 
         integer :: function_type_temp
         integer, dimension(:), allocatable :: nodes_short_atomic_temp
         integer, dimension(:), allocatable :: nodes_elec_temp
+        integer, dimension(:), allocatable :: sym_short_atomic_count
+        integer, dimension(:), allocatable :: sym_elec_count
         integer :: layer
         integer :: node
 
@@ -205,6 +215,13 @@ module pes_nene_mod
         real(dp) :: maxcutoff_local
         real(dp) :: kalmanlambda_local
         real(dp) :: kalmanlambdae_local
+        real(dp) :: chargetemp
+        real(dp) :: funccutoff_temp
+        real(dp) :: eta_temp
+        real(dp) :: rshift_temp
+        real(dp) :: lambda_temp
+        real(dp) :: zeta_temp
+        real(dp) :: etemp
 
 
 
@@ -3540,10 +3557,12 @@ module pes_nene_mod
             close(inpnn_unit)
 
             if (lshort .and. (nn_type_short == 1)) then
+                allocate(sym_short_atomic_count(nelem))
                 sym_short_atomic_count(:)=0
                 num_funcvalues_short_atomic(:)=0
             endif
             if (lelec .and. (nn_type_elec == 1)) then
+                allocate(sym_elec_count(nelem))
                 sym_elec_count(:)=0
                 num_funcvalues_elec(:)=0
             endif
@@ -3878,7 +3897,7 @@ module pes_nene_mod
                                             read(words(5),*, iostat=ios) lambda_temp
                                             if (ios /= 0) print *, err // err_inpnn // "element_symfunction_short type ", words(3), " argument 4 must be a number"; stop
                                             read(words(6),*, iostat=ios) zeta_temp
-                                            if (ios /= 0) print *, err // err_inpnn // "element_symfunction_short type ", words(3), " argument 5 must be a number", stop
+                                            if (ios /= 0) print *, err // err_inpnn // "element_symfunction_short type ", words(3), " argument 5 must be a number"; stop
                                             read(words(7),*, iostat=ios) funccutoff_temp
                                             if (ios /= 0) print *, err // err_inpnn // "element_symfunction_short type ", words(3), " argument 6 must be a number"; stop
                                             do genctr_1 = 1,nelem
@@ -4206,7 +4225,7 @@ module pes_nene_mod
                                             call nuccharge(elementtemp2,ztemp2)
                                             read(words(5),*, iostat=ios) eta_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1))
                                             if (ios /= 0) print *, err // err_inpnn // "symfunction_electrostatic type ", words(3), " argument 4 must be a number"; stop
-                                            read(words(6),*, iostat=ios) funccutoff_elecc(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1))
+                                            read(words(6),*, iostat=ios) funccutoff_elec(sym_elec_count(elementindex(ztemp1)),elementindex(ztemp1))
                                             if (ios /= 0) print *, err // err_inpnn // "symfunction_electrostatic type ", words(3), " argument 5 must be a number"; stop
                                             symelement_elec(sym_elec_count(elementindex(ztemp1)),1,elementindex(ztemp1))=ztemp2
                                         else
@@ -4760,7 +4779,8 @@ module pes_nene_mod
 
             call checkinputnn() ! own subroutine
 
-            call printinputnn(nodes_short_atomic_temp,nodes_elec_temp,nodes_short_pair_temp,kalmanlambda_local,kalmanlambdae_local,actfunc_short_atomic_dummy,actfunc_elec_dummy,actfunc_short_pair_dummy) ! own subroutine
+            call printinputnn(nodes_short_atomic_temp,nodes_elec_temp,kalmanlambda_local,kalmanlambdae_local,actfunc_short_atomic_dummy,actfunc_elec_dummy) ! own subroutine
+            !call printinputnn(nodes_short_atomic_temp,nodes_elec_temp,nodes_short_pair_temp,kalmanlambda_local,kalmanlambdae_local,actfunc_short_atomic_dummy,actfunc_elec_dummy,actfunc_short_pair_dummy) ! own subroutine
 
             !write(*,'(a15,i4,a30)')' Element pairs: ',npairs,' , shortest distance (Bohr)'
             !icount=0
@@ -4821,6 +4841,7 @@ module pes_nene_mod
             endif
 
             if(lremoveatomenergies)then
+                allocate(elementsymbol_dummy(nelem))
                 !call readatomenergies()
 
                 ! start readout of input.nn according to readatomenergies.f90
@@ -4843,10 +4864,14 @@ module pes_nene_mod
                                     call nuccharge(elementtemp,ztemp)
                                     do genctr_1 = 1,nelem
                                         if (ztemp.eq.nucelem(genctr_1)) then
-                                            atom_energy_counter = atom_energy_counter + 1
-                                            read(words(2),'(A)', iostat=ios) elementtemp(atom_energy_counter)
-                                            read(words(3),*, iostat=ios) atomrefenergies(atom_energy_counter)
-                                            if (ios /= 0) print *, err // err_inpnn // "atom_energy key in line ", line, " second argument value must be a number"; stop
+                                            if (atomrefenergies(genctr_1) == 0.0d0) then
+                                                atom_energy_counter = atom_energy_counter + 1
+                                                read(words(2),'(A)', iostat=ios) elementsymbol_dummy(atom_energy_counter)
+                                                read(words(3),*, iostat=ios) atomrefenergies(atom_energy_counter)
+                                                if (ios /= 0) print *, err // err_inpnn // "atom_energy key in line ", line, " second argument value must be a number"; stop
+                                            else
+                                                print *, err, err_inpnn, '#Atomic reference energy for atom ', elementtemp, ' has been specified before. ', atomrefenergies(genctr_1); stop
+                                            end if
                                         else
                                             print *, warn_inpnn, 'atom_energy for element ',elementtemp,' is ignored'
                                         end if
@@ -4886,6 +4911,7 @@ module pes_nene_mod
                     enddo
                 endif
 
+                allocate(lfound(nelem))
                 lfound(:)=.false.
                 do atom_energy_counter=1,nelem
                     lfound(elementindex(zelem(atom_energy_counter)))=.true.
@@ -4910,7 +4936,7 @@ module pes_nene_mod
             if (lvdw) then
                 if (nn_type_vdw == 1) then
 
-                    call read_vdw_coefficients_type_1() ! own subroutine
+                    call read_vdw_coefficients_type_1(filename_inpnn) ! own subroutine
 
                 else
                     print *, err, err_inpnn, 'Error: unknown nn_type_vdw'
@@ -4981,7 +5007,7 @@ module pes_nene_mod
                     do ictr_1=1,itemp ! loop over all lines with hidden nodes
                         if(ictr_1.le.nodes_elec(0,ictr_3))then ! still input node to be printed
                             if(ictr_1.le.maxnodes_elec)then ! still hidden nodes present
-                                write(*,'(i4,x,9a3)')i1,'  G',(actfunc_elec(ictr_1,ictr_2,ictr_3),ictr_2=1,num_layers_elec(ictr_3))
+                                write(*,'(i4,x,9a3)')ictr_1,'  G',(actfunc_elec(ictr_1,ictr_2,ictr_3),ictr_2=1,num_layers_elec(ictr_3))
                             else
                                 write(*,'(i4,x,a3)')ictr_1,'  G'
                             endif
@@ -5485,7 +5511,7 @@ module pes_nene_mod
 
         if(lvdw)then
             if (nn_type_vdw .eq. 1) then
-                if (count_vdwscreening .eq. 0) then ! check counter
+                if (any(vdw_screening == default_real)) then ! check counter
                     print *, err, err_inpnn, err_check, 'please specify keyword vdw_screening'
                     stop
                 endif
@@ -5568,15 +5594,15 @@ module pes_nene_mod
             stop
         endif
 
-        if((count_kalmanthreshold.eq.1).and.(count_lfixederrore.eq.1))then ! check counter
-            print *, err, err_inpnn, err_check, 'short_energy_error_threshold cannot be used in combination with fixed_short_energy_error_threshold'
-            stop
-        endif
+        !if((count_kalmanthreshold.eq.1).and.(count_lfixederrore.eq.1))then ! check counter
+        !    print *, err, err_inpnn, err_check, 'short_energy_error_threshold cannot be used in combination with fixed_short_energy_error_threshold'
+        !    stop
+        !endif
 
-        if((count_kalmanthresholdf.eq.1).and.(count_lfixederrorf.eq.1))then ! check counter
-            print *, err, err_inpnn, err_check, 'short_force_error_thresholdf cannot be used in combination with fixed_short_force_error_threshold'
-            stop
-        endif
+        !if((count_kalmanthresholdf.eq.1).and.(count_lfixederrorf.eq.1))then ! check counter
+        !    print *, err, err_inpnn, err_check, 'short_force_error_thresholdf cannot be used in combination with fixed_short_force_error_threshold'
+        !    stop
+        !endif
 
         if(mode.eq.default_int)then
             print *, err, err_inpnn, err_check, 'runner_mode is not specified'
@@ -5598,17 +5624,17 @@ module pes_nene_mod
             stop
         endif
 
-        if(lelec.and.(nn_type_elec.eq.1).and.(maxnum_layers_elec.eq.0))then ! check counter
+        if(lelec.and.(nn_type_elec.eq.1).and.(maxnum_layers_elec.eq.0))then
             write(*,*)'Error: global_hidden_layers_electrostatic is not specified'
             stop
         endif
 
-        if(lshort.and.(count_nodes_short_atomic.eq.0).and.(nn_type_short.eq.1))then ! check counter
+        if(lshort.and.(any(nodes_short_atomic == 0)).and.(nn_type_short.eq.1))then
             write(*,*)'Error: global_nodes_short is not specified'
             stop
         endif
 
-        if(lelec.and.(nn_type_elec.eq.1).and.(count_nodes_elec.eq.0))then ! check counter
+        if(lelec.and.(nn_type_elec.eq.1).and.(any(nodes_elec == 0)))then
             write(*,*)'Error: global_nodes_electrostatic is not specified'
             stop
         endif
@@ -6094,12 +6120,12 @@ module pes_nene_mod
         if(lshort.and.(nn_type_short.eq.1))then
             write(*,'(a,10i5)')' global hidden layers short range NN                  ',maxnum_layers_short_atomic-1
             write(*,'(a,10i5)')' global nodes hidden layers short NN             ',&
-                (nodes_short_atomic_temp(i1),i1=1,maxnum_layers_short_atomic-1)
+                (nodes_short_atomic_temp(ictr_1),ictr_1=1,maxnum_layers_short_atomic-1)
         endif
 
         if(lshort.and.(nn_type_short.eq.1))then
             write(*,'(a,x,10a)')' global activation functions short                     ',&
-                (actfunc_short_atomic_dummy(i),i=1,maxnum_layers_short_atomic)
+                (actfunc_short_atomic_dummy(ictr_1),ictr_1=1,maxnum_layers_short_atomic)
         endif
 
         if(lelec)then
@@ -6205,12 +6231,20 @@ module pes_nene_mod
 
     subroutine readscale(filename,filename_error,ndim,iswitch,maxnum_funcvalues_local,num_funcvalues_local,minvalue_local,maxvalue_local,avvalue_local,eshortmin,eshortmax,chargemin,chargemax)
 
+        use open_file, only : open_for_read
+        use useful_things, only : lower_case, split_string, file_exists
+
+
+        integer :: nwords, ios = 0
+        character(len=max_string_length) :: buffer
+        character(len=max_string_length) :: words(100)
 
         integer             :: ndim
         integer             :: maxnum_funcvalues_local
         integer             :: num_funcvalues_local(ndim)
         integer             :: counter_1, counter_2, counter_3
         integer             :: iswitch
+        integer             :: line = 0
 
         real(dp)            :: avvalue_local(ndim,maxnum_funcvalues_local)
         real(dp)            :: maxvalue_local(ndim,maxnum_funcvalues_local)
@@ -6246,21 +6280,21 @@ module pes_nene_mod
 
                     if (nwords == 5) then
                         read(words(1),'(i1000)', iostat=ios) counter_3
-                        if (ios /= 0) print *, err // err_inpnn // "Error in line " // line // ", 1st argument value must be integer"; stop
+                        if (ios /= 0) print *, err, filename_error, "Error in line ", line, ", 1st argument value must be integer"; stop
                         read(words(2),'(i1000)', iostat=ios) counter_3
-                        if (ios /= 0) print *, err // err_inpnn // "Error in line " // line // ", 2nd argument value must be integer"; stop
+                        if (ios /= 0) print *, err, filename_error, "Error in line ", line, ", 2nd argument value must be integer"; stop
                         read(words(3),*, iostat=ios) minvalue_local(counter_1,counter_2)
-                        if (ios /= 0) print *, err // err_inpnn // "Error in line " // line // ", 3rd argument value must be integer"; stop
+                        if (ios /= 0) print *, err, filename_error, "Error in line ", line, ", 3rd argument value must be integer"; stop
                         read(words(4),*, iostat=ios) maxvalue_local(counter_1,counter_2)
-                        if (ios /= 0) print *, err // err_inpnn // "Error in line " // line // ", 4th argument value must be integer"; stop
+                        if (ios /= 0) print *, err, filename_error, "Error in line ", line, ", 4th argument value must be integer"; stop
                         read(words(5),*, iostat=ios) avvalue_local(counter_1,counter_2)
-                        if (ios /= 0) print *, err // err_inpnn // "Error in line " // line // ", 5th argument value must be integer"; stop
+                        if (ios /= 0) print *, err, filename_error, "Error in line ", line, ", 5th argument value must be integer"; stop
                     else
                         print *, err, filename_error, "Error in line: ", line, "; need exactly 5 arguments"
                         stop
                     end if
                 else
-                    print *, err // filename_error // 'iostat = ', ios
+                    print *, err, filename_error, 'iostat = ', ios
                     stop
                 end if
 
@@ -6275,9 +6309,9 @@ module pes_nene_mod
             if (iswitch == 1) then
                 if (nwords == 2) then
                     read(words(1),*, iostat=ios) eshortmin
-                    if (ios /= 0) print *, err // err_inpnn // "Error in last line: " // "first argument value must be a number"; stop
+                    if (ios /= 0) print *, err, filename_error, "Error in last line, 1st argument value must be a number"; stop
                     read(words(2),*, iostat=ios) eshortmax
-                    if (ios /= 0) print *, err // err_inpnn // "Error in last line: " // "second argument value must be a number"; stop
+                    if (ios /= 0) print *, err, filename_error, "Error in last line, 2nd argument value must be a number"; stop
                 else
                     print *, err, filename_error, "Error in last line: need exactly 2 arguments"
                     stop
@@ -6287,9 +6321,9 @@ module pes_nene_mod
                     line = line + 1
                     if (nwords == 2) then
                         read(words(1),*, iostat=ios) chargemin(counter_2)
-                        if (ios /= 0) print *, err // err_inpnn // "Error in line: " // line // ", first argument value must be a number"; stop
+                        if (ios /= 0) print *, err, filename_error, "Error in line: ", line, ", 1st argument value must be a number"; stop
                         read(words(2),*, iostat=ios) chargemax(counter_2)
-                        if (ios /= 0) print *, err // err_inpnn // "Error in line: " // line // ", second argument value must be a number"; stop
+                        if (ios /= 0) print *, err, filename_error, "Error in line: ", line, ", second argument value must be a number"; stop
                     else
                         print *, err, filename_error, "Error in line: ", line, " need exactly 2 arguments"
                         stop
@@ -6297,7 +6331,7 @@ module pes_nene_mod
                 end do
             end if
         else
-            write(*,*) err // filename_error // 'iostat = ', ios
+            write(*,*) err, filename_error, 'iostat = ', ios
             stop
         end if
 
@@ -6306,20 +6340,20 @@ module pes_nene_mod
         do counter_1 = 1,ndim
             do counter_3 = 1,num_funcvalues_local(counter_1)
                 if (minvalue_local(counter_1,counter_3) .gt. maxvalue_local(counter_1,counter_3)) then
-                    print *, err // filename_error // 'No pairs of this type have been present in training set'
+                    print *, err, filename_error, 'No pairs of this type have been present in training set'
                 else
                     if (abs(minvalue_local(counter_1,counter_3) - maxvalue_local(counter_1,counter_3)) .lt. thres) then
                         if (iswitch == 1) then
-                            print *, err // filename_error // '### WARNING ###: minvalue=maxvalue ',counter_1,counter_3,nucelem(counter_1)
+                            print *, err, filename_error, '### WARNING ###: minvalue=maxvalue ',counter_1,counter_3,nucelem(counter_1)
                         else if (iswitch == 3) then
-                            print *, err // filename_error // '### WARNING ###: minvalue_elec=maxvalue_elec ',counter_1,counter_3,nucelem(counter_1)
+                            print *, err, filename_error, '### WARNING ###: minvalue_elec=maxvalue_elec ',counter_1,counter_3,nucelem(counter_1)
                         end if
                         if (lscalesym) then
                             if (iswitch == 1) then
-                                print *, err // filename_error // 'scaling symmetry functions cannot be used with minvalue=maxvalue'
+                                print *, err, filename_error, 'scaling symmetry functions cannot be used with minvalue=maxvalue'
                                 stop
                             else if (iswitch == 3) then
-                                print *, err // filename_error // 'scaling symmetry functions cannot be used with minvalue_elec=maxvalue_elec'
+                                print *, err, filename_error, 'scaling symmetry functions cannot be used with minvalue_elec=maxvalue_elec'
                                 stop
                             end if
                         end if
@@ -6331,6 +6365,14 @@ module pes_nene_mod
     end subroutine readscale
 
     subroutine readweights(directory,iswitch,ndim,maxnum_weights_local,num_weights_local,weights_local)
+
+        use open_file, only : open_for_read
+        use useful_things, only : split_string, file_exists
+
+        integer :: nwords, ios = 0
+        integer :: line = 0
+        character(len=max_string_length) :: buffer
+        character(len=max_string_length) :: words(100)
 
 
         integer             :: ndim
@@ -6353,6 +6395,7 @@ module pes_nene_mod
         integer, parameter  :: weighte_unit = 65
 
         if (iswitch == 0) then
+            line = 0
             do counter_1 = 1,ndim
                 filename = 'weights.000.data'
                 if (nucelem(counter_1) .gt. 99) then
@@ -6363,7 +6406,7 @@ module pes_nene_mod
                     write(filename(11:11),'(i1)') nucelem(counter_1)
                 end if
                 filename_weight = trim(directory) // trim(filename)
-                if (.not. file_exists(filename_weight)) stop err // err_weight // trim(filename) // 'file does not exist'
+                if (.not. file_exists(filename_weight)) print *, err, err_weight, trim(filename), ' file does not exist'; stop
 
                 call open_for_read(weight_unit, filename_weight); ios = 0
 
@@ -6376,13 +6419,13 @@ module pes_nene_mod
 
                         if (nwords == 1) then
                             read(words(1),*, iostat=ios) weights_local(counter_2,counter_1)
-                            if (ios /= 0) stop err // err_weight // trim(filename) // "Error in line " // line // ", first argument value must be a number"
+                            if (ios /= 0) print *, err, err_weight, trim(filename), " Error in line ", line, ", first argument value must be a number"; stop
                         else
-                            print *, err, err_weight, trim(filename), "Error in line ", line, "need exactly 1 argument"
+                            print *, err, err_weight, trim(filename), "Error in line ", line, ", need exactly 1 argument"
                             stop
                         end if
                     else
-                         write(*,*) err // err_weight // trim(filename) // 'iostat = ', ios
+                         write(*,*) err, err_weight, trim(filename), 'iostat = ', ios
                          stop
                     end if
                 end do
@@ -6391,6 +6434,7 @@ module pes_nene_mod
 
             end do
         else if (iswitch == 1) then
+            line = 0
             do counter_1 = 1,ndim
                 filename = 'weightse.000.data'
                 if (nucelem(counter_1) .gt. 99) then
@@ -6401,7 +6445,7 @@ module pes_nene_mod
                     write(filename(11:11),'(i1)') nucelem(counter_1)
                 end if
                 filename_weighte = trim(directory) // trim(filename)
-                if (.not. file_exists(filename_weighte)) stop err // err_weighte // trim(filename) // 'file does not exist'
+                if (.not. file_exists(filename_weighte)) print *, err, err_weighte, trim(filename), 'file does not exist'; stop
 
                 call open_for_read(weighte_unit, filename_weighte); ios = 0
 
@@ -6414,13 +6458,13 @@ module pes_nene_mod
 
                         if (nwords == 1) then
                             read(words(1),*, iostat=ios) weights_local(counter_2,counter_1)
-                            if (ios /= 0) stop err // err_weighte // trim(filename) // "Error in line " // line // ", first argument value must be a number"
+                            if (ios /= 0) print *, err, err_weighte, trim(filename), "Error in line ", line, ", first argument value must be a number"; stop
                         else
                             print *, err, err_weighte, trim(filename), "Error in line ", line, "need exactly 1 argument"
                             stop
                         end if
                     else
-                         write(*,*) err // err_weighte // trim(filename) // 'iostat = ', ios
+                         write(*,*) err, err_weighte, trim(filename), 'iostat = ', ios
                          stop
                     end if
                 end do
@@ -6429,7 +6473,7 @@ module pes_nene_mod
 
             end do
         else
-            write(*,*) err // "Error: unknown iswitch value ", iswitch
+            write(*,*) err, "Error: unknown iswitch value ", iswitch
             stop
         end if
 
@@ -6453,19 +6497,19 @@ module pes_nene_mod
             deallocate(minvalue_elec)
             deallocate(maxvalue_elec)
             deallocate(avvalue_elec)
-            deallocate(totalforce)
+            !deallocate(totalforce)
             deallocate(nnshortforce)
             deallocate(nntotalforce)
             deallocate(nnelecforce)
 
             if(lshort.and.(nn_type_short.eq.1))then
                 deallocate(sens)
-                deallocate(atomenergy)
+                !deallocate(atomenergy)
             end if
 
             if(lelec.and.(nn_type_elec.eq.1).or.(nn_type_elec.eq.3).or.(nn_type_elec.eq.4))then
                 deallocate(sense)
-                deallocate(atomcharge)
+                !deallocate(atomcharge)
                 deallocate(chargemin)
                 deallocate(chargemax)
             end if
@@ -6521,10 +6565,12 @@ module pes_nene_mod
 
     end subroutine cleanup_nene
 
-    subroutine read_vdw_coefficients_type_1() ! maybe move this to read_nene?
+    subroutine read_vdw_coefficients_type_1(filename) ! maybe move this to read_nene?
 
         use open_file, only : open_for_read
         use useful_things, only : split_string
+
+        character(len=*) :: filename
 
         integer :: ictr_1
         integer :: ictr_2
@@ -6548,7 +6594,7 @@ module pes_nene_mod
 
         lfound(:,:) = .false.
 
-        call open_for_read(inpnn_unit, filename_inpnn); ios = 0
+        call open_for_read(inpnn_unit, filename); ios = 0
 
         do while (ios == 0)
             read(inpnn_unit, '(A)', iostat=ios) buffer
@@ -6741,7 +6787,7 @@ module pes_nene_mod
         atoms%f(:,1,:) = nntotalforce(:,:) * habohr2evang
 
         ! calculate the volume, needed also for stress
-        if (simparams%details == .true.) then
+        if (simparams%detail == .true.) then
 
             if (lperiodic) then ! not needed in every step
                 volume=0.0d0
@@ -6786,9 +6832,10 @@ module pes_nene_mod
                 write(*,*)'-------------------------------------------------------------'
                 if(nn_type_short.eq.1)then
                 !write(*,*)'NN atomenergies with configuration ',i4
-                do ictr_1=1,num_atoms
-                    write(*,*)'NNatomenergy ',ictr_1,elementsymbol(ictr_1),nnatomenergy(ictr_1) * timestep_ha2ev
-                enddo
+                    do ictr_1=1,num_atoms
+                        write(*,*)'NNatomenergy ',ictr_1,elementsymbol(ictr_1),nnatomenergy(ictr_1) * timestep_ha2ev
+                    enddo
+                end if
             endif
             write(*,*)'-------------------------------------------------------------'
 

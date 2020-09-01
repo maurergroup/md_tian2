@@ -75,6 +75,7 @@ module run_config
         integer  :: nthreads                                        ! number of threads used for fitting
         integer  :: nran                                            ! type of the random number genreator
         logical  :: pes_nene                                        ! in case of the nene pes this variable is needed to call the subroutine for deallocation of variables
+        logical  :: detail                                         ! in case of the nene pes this variable is needed to turn on a more detailed printing of informations in the trajectory
 
     end type
 
@@ -125,6 +126,7 @@ contains
         new_simulation_parameters%nthreads = 1
         new_simulation_parameters%nran = default_int
         new_simulation_parameters%pes_nene = default_bool
+        new_simulation_parameters%detail = default_bool
 
     end function
 

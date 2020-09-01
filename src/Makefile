@@ -25,7 +25,7 @@ DEBUG  = -fpe0 -traceback -O0 -g -check all -check bounds -check uninit -ftrapuv
 
 RUNNER_SRC_DIR = RuNNer_src/
 
-SUBROUTINES = 	md_tian.o \
+SUBROUTINES = 	md_tian2.o \
 		abstime.o \
 		addatoms.o \
 		atomsymfunction1.o \
@@ -37,8 +37,8 @@ SUBROUTINES = 	md_tian.o \
 		atomsymfunction6.o \
 		atomsymfunction8.o \
 		atomsymfunction9.o \
+		checkelement.o \
 		calconenn.o \
-		checkinputnn.o \
 		getatomsymfunctions.o \
 		getcutoff.o \
 		getdnodes_values.o \
@@ -47,14 +47,10 @@ SUBROUTINES = 	md_tian.o \
 		getneighborsatomic_para.o \
 		getshortatomic.o \
 		getvolume.o \
-		initializecounters.o \
-		inputnndefaults.o \
-		mpi_dummy_routines.o \
 		mpifitdistribution.o \
 		neighbor_para_short.o \
 		nuccharge.o \
 		predictionshortatomic.o \
-		printinputnn.o \
 		sortelements.o \
 		sortsymfunctions.o \
 		translate.o \
@@ -280,8 +276,8 @@ atomsymfunction9.o: $(RUNNER_SRC_DIR)atomsymfunction9.f90
 calconenn.o: $(RUNNER_SRC_DIR)calconenn.f90
 	$(FC) $(FFLAGS) -c $(RUNNER_SRC_DIR)calconenn.f90
 
-checkinputnn.o: $(RUNNER_SRC_DIR)checkinputnn.f90
-	$(FC) $(FFLAGS) -c $(RUNNER_SRC_DIR)checkinputnn.f90
+checkelement.o: $(RUNNER_SRC_DIR)checkelement.f90
+	$(FC) $(FFLAGS) -c $(RUNNER_SRC_DIR)checkelement.f90
 
 getatomsymfunctions.o: $(RUNNER_SRC_DIR)getatomsymfunctions.f90
 	$(FC) $(FFLAGS) -c $(RUNNER_SRC_DIR)getatomsymfunctions.f90
