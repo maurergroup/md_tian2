@@ -152,6 +152,8 @@ module pes_nene_mod
 
         character(len=*), parameter :: warn_inpnn       = "Warning when reading input.nn: "
 
+        logical :: found_keyword = default_bool
+        logical :: read_files = default_bool
 
 
         integer :: pairctr_1, pairctr_2, elemctr, nodesctr ! replace
@@ -281,6 +283,7 @@ module pes_nene_mod
 
                     if (inp_path /= default_string) stop err // err_pes // 'Multiple use of the inp_dir key'
                     read(words(2), '(A)') inp_path
+                    found_keyword = .true.
 
                 case default
 
@@ -290,6 +293,10 @@ module pes_nene_mod
             end select
 
         end do
+
+        if (found_keyword == default_bool) return
+
+        if (read_files == .true.) return
 
         ! set name strings for RuNNer related files
         filename_inpnn      = trim(inp_path) // "input.nn"
@@ -5226,6 +5233,9 @@ module pes_nene_mod
           allocate(sense(nelem,maxnum_funcvalues_elec))
         endif
         ! end according to predict.f90
+
+        ! set variable true to avoid multiple read cycles in md_init.f90
+        read_files = .true.
 
         ! all things have been read and set up, ready for compute_nene()!!
 
