@@ -15,7 +15,7 @@
 # ifort and mkl library
 FC     = ifort 
 #FFLAGS = -O3 -mkl -xcore-avx2 -fp-model precise -132
-FFLAGS = -O0 -mkl -traceback
+FFLAGS = -O0 -mkl -traceback -g -check all -heap-arrays -fp-stack-check -check bounds -std08 -standard-semantics -fstack-protector-all
 #FFLAGS = $(DEBUG)
 LIB    =
 
@@ -338,8 +338,6 @@ translate.o: $(RUNNER_SRC_DIR)translate.f90
 
 write_info.o: write_info.f90
 	$(FC) $(FFLAGS) -c write_info.f90
-
-
 
 
 serial: ./md_tian2.serial.x

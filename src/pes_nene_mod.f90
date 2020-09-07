@@ -50,7 +50,7 @@ module pes_nene_mod
     logical   :: lelement(102) = default_bool
 
     ! from and needed in predict.f90
-    character(len=2), dimension(:), allocatable :: elementsymbol    ! elementsymbol(max_num_atoms) hint: in our case num_atoms = max_num_atoms!!
+    character(len=2), dimension(:), allocatable :: elementsymbol    ! elementsymbol(max_num_atoms)
 
     logical :: lperiodic = .true. ! we always assume a periodic structure
 
@@ -167,23 +167,23 @@ module pes_nene_mod
         integer :: ztemp1 = default_int
         integer :: ztemp2 = default_int
         integer :: ztemp3 = default_int
-        integer :: function_type_local = default_int
+        integer :: function_type_local
         integer :: atom_energy_counter = default_int
         integer :: wcount
 
-        integer, dimension(:)  , allocatable :: nodes_short_local
-        integer, dimension(:)  , allocatable :: nodes_ewald_local
-        integer, dimension(:)  , allocatable :: num_funcvalues_local
-        integer, dimension(:)  , allocatable :: num_funcvaluese_local
+        integer, dimension(:)  , allocatable :: nodes_short_local ! nodes_short_local(0:maxnum_layers_short_atomic)
+        integer, dimension(:)  , allocatable :: nodes_ewald_local ! nodes_ewald_local(0:maxnum_layers_elec)
+        integer :: num_funcvalues_local(102)
+        integer :: num_funcvaluese_local(102)
 
         character(len=2) :: elementtemp     = default_string
         character(len=2) :: elementtemp1    = default_string
         character(len=2) :: elementtemp2    = default_string
         character(len=2) :: elementtemp3    = default_string
 
-        character(len=2), dimension(:), allocatable :: elementsymbol_dummy
+        character(len=2), dimension(:), allocatable :: elementsymbol_dummy ! elementsymbol_dummy(nelem)
 
-        logical, dimension(:), allocatable :: lfound
+        logical, dimension(:), allocatable :: lfound       ! lfound(nelem)
         logical :: lfounddebug              = default_bool
         logical :: lfound_num_layersshort   = default_bool
         logical :: lfound_num_layersewald   = default_bool
@@ -198,17 +198,17 @@ module pes_nene_mod
         real(dp) :: dummy
 
 
-        character(len=1), dimension(:), allocatable :: actfunc_short_atomic_dummy
-        character(len=1), dimension(:), allocatable :: actfunc_elec_dummy
+        character(len=1), dimension(:), allocatable :: actfunc_short_atomic_dummy ! actfunc_short_atomic_dummy(maxnum_layers_short_atomic)
+        character(len=1), dimension(:), allocatable :: actfunc_elec_dummy         ! actfunc_elec_dummy(maxnum_layers_elec)
         character(len=1) :: actfunc
         !character(len=1) :: actfunc_short_pair_dummy
 
 
         integer :: function_type_temp
-        integer, dimension(:), allocatable :: nodes_short_atomic_temp
-        integer, dimension(:), allocatable :: nodes_elec_temp
-        integer, dimension(:), allocatable :: sym_short_atomic_count
-        integer, dimension(:), allocatable :: sym_elec_count
+        integer, dimension(:), allocatable :: nodes_short_atomic_temp ! nodes_short_atomic_temp(0:maxnum_layers_short_atomic)
+        integer, dimension(:), allocatable :: nodes_elec_temp         ! nodes_elec_temp(0:maxnum_layers_elec)
+        integer, dimension(:), allocatable :: sym_short_atomic_count  ! sym_short_atomic_count(nelem)
+        integer, dimension(:), allocatable :: sym_elec_count          ! sym_elec_count(nelem)
         integer :: layer
         integer :: node
 
@@ -344,7 +344,7 @@ module pes_nene_mod
         vdw_screening(1)                    = default_real
         vdw_screening(2)                    = default_real
         nn_type_vdw                         = default_int
-        vdw_coefficients(:,:)               = default_real
+
         lvdw                                = default_bool
 
 
@@ -388,8 +388,8 @@ module pes_nene_mod
         deltafthres                         = default_real
         luseoldscaling                      = default_bool
         lmd                                 = default_bool
-        nodes_short_atomic_temp             = default_int
-        nodes_elec_temp                     = default_int
+        !nodes_short_atomic_temp             = default_int
+        !nodes_elec_temp                     = default_int
         ewaldalpha                          = default_real
         ewaldcutoff                         = default_real
         ewaldkmax                           = default_int
@@ -832,8 +832,8 @@ module pes_nene_mod
 
         if (lfound_nelem == default_bool) stop err // err_inpnn // "number_of_elements key not found"
 
-        allocate(num_funcvalues_local(102))
-        allocate(num_funcvaluese_local(102))
+        !allocate(num_funcvalues_local(102))
+        !allocate(num_funcvaluese_local(102))
         num_funcvalues_local(:) = 0
         num_funcvaluese_local(:) = 0
 
@@ -1074,21 +1074,30 @@ module pes_nene_mod
             maxnum_funcvalues_elec = max(maxnum_funcvalues_elec, num_funcvaluese_local(genctr_1))
         end do
 
-        deallocate(num_funcvalues_local)
-        deallocate(num_funcvaluese_local)
+        !deallocate(num_funcvalues_local)
+        !deallocate(num_funcvaluese_local)
 
-        deallocate(nucelem)
-        deallocate(element)
+        !deallocate(nucelem)
+        !deallocate(element)
         !end readout according to getdimensions.f90
 
         ! start readout according to structurecount.f90
         max_num_atoms = atoms%natoms
+
         ! end readout according to structurecount.f90
 
         !start readout according to paircount.f90
+
+        print *, "loop 5a and 5b"
+
         if (nn_type_short == 1) then
 
-            print *, "loop 5"
+            allocate(nnatomenergy(max_num_atoms))
+            nnatomenergy(:) = default_real
+            allocate(nnshortforce(3,max_num_atoms))
+            nnshortforce(:,:) = default_real
+
+            print *, "loop 5a"
 
             call open_for_read(inpnn_unit, filename_inpnn); ios = 0
 
@@ -1350,11 +1359,16 @@ module pes_nene_mod
 
             close(inpnn_unit)
 
-            print *, "loop 5 done"
+            print *, "loop 5a done"
 
         end if
 
         if ((nn_type_elec == 1) .or. (nn_type_elec == 3) .or. (nn_type_elec == 4)) then
+
+            allocate(nnatomcharge(max_num_atoms))
+            nnatomcharge(:) = default_real
+            allocate(nnelecforce(3,max_num_atoms))
+            nnelecforce(:,:) = default_real
 
             print *, "loop 5b"
 
@@ -1615,7 +1629,10 @@ module pes_nene_mod
 
         end if
 
-        print *, "loop 5 and 5b done"
+        print *, "loop 5a and 5b done"
+
+        allocate(nntotalforce(3,max_num_atoms))
+        nntotalforce(:,:) = default_real
 
         if (maxcutoff_local == 0.0d0) then
             print *, err, err_inpnn, "maxcutoff_local is not set, specify symmetry functions"
@@ -1643,7 +1660,7 @@ module pes_nene_mod
 
         print *, "lelement", lelement
 
-        allocate(elementsymbol(nelem))
+        allocate(elementsymbol(max_num_atoms))
         elementsymbol(:) = default_string
         allocate(zelem(num_atoms))
         zelem(:) = default_int
@@ -1761,8 +1778,8 @@ module pes_nene_mod
 
         allocate (fixedcharge(nelem))
         fixedcharge(:)=0.0d0
-        allocate (nucelem(nelem))
-        allocate (element(nelem))
+        !allocate (nucelem(nelem))
+        !allocate (element(nelem))
         allocate (atomrefenergies(nelem))
         atomrefenergies = default_real
         !allocate (elempair(npairs,2))
@@ -1771,6 +1788,7 @@ module pes_nene_mod
         print *, "vdw_coefficients start"
 
         allocate (vdw_coefficients(nelem,nelem))
+        vdw_coefficients(:,:) = default_real
 
         print *, "vdw_coefficients end"
 
@@ -1790,11 +1808,13 @@ module pes_nene_mod
             if(lshort.and.(nn_type_short.eq.1))then
                 allocate(nodes_short_atomic_temp(0:maxnum_layers_short_atomic))
                 nodes_short_atomic_temp(:)    = 0
+                allocate(actfunc_short_atomic_dummy(maxnum_layers_short_atomic))
                 actfunc_short_atomic_dummy(:) = default_string
             endif
             if(lelec.and.(nn_type_elec.eq.1))then
                 allocate(nodes_elec_temp(0:maxnum_layers_elec))
                 nodes_elec_temp(:)            = 0
+                allocate(actfunc_elec_dummy(maxnum_layers_short_atomic))
                 actfunc_elec_dummy(:)         = default_string
             endif
             kalmanlambda_local =0.98000d0
@@ -1954,6 +1974,7 @@ module pes_nene_mod
                         case ('cutoff_type')
                             if (cutoff_type /= default_int) stop err // err_inpnn // 'Multiple use of the cutoff_type key'
                             if (nwords == 2) then
+                                print *, "cutoff_type"
                                 read(words(2),'(i1000)', iostat=ios) cutoff_type
                                 if (ios /= 0) stop err // err_inpnn // "cutoff_type value must be integer"
                             else
@@ -2035,7 +2056,9 @@ module pes_nene_mod
                             if (nwords == 2) then
                                 read(words(2),'(i1000)', iostat=ios) paramode
                                 if (ios /= 0) stop err // err_inpnn // "parallel_mode value must be integer"
-                                if (paramode /= 1) print *, err // err_inpnn // "parallel_mode ", paramode, " not implemented, only parallel_mode 1 (serial version) available"; stop
+                                if (paramode /= 1) then
+                                    print *, err // err_inpnn // "parallel_mode ", paramode, " not implemented, only parallel_mode 1 (serial version) available"; stop
+                                end if
                             else
                                 print *, err, err_inpnn, "parallel_mode key needs a single argument"; stop
                             end if
@@ -2619,7 +2642,7 @@ module pes_nene_mod
                             end if
 
                         case ('kalman_lambda_short')
-                            if (kalmanlambda_local /= default_real) stop err // err_inpnn // 'Multiple use of the kalman_lambda_short key'
+                            if (kalmanlambda_local /= 0.98000d0) stop err // err_inpnn // 'Multiple use of the kalman_lambda_short key'
                             if (nwords == 2) then
                                 read(words(2),*, iostat=ios) kalmanlambda_local
                                 if (ios /= 0) stop err // err_inpnn // "kalman_lambda_short value must be a number"
@@ -2628,7 +2651,7 @@ module pes_nene_mod
                             end if
 
                         case ('kalman_lambda_charge')
-                            if (kalmanlambdae_local /= default_real) stop err // err_inpnn // 'Multiple use of the kalman_lambda_charge key'
+                            if (kalmanlambdae_local /= 0.98000d0) stop err // err_inpnn // 'Multiple use of the kalman_lambda_charge key'
                             if (nwords == 2) then
                                 read(words(2),*, iostat=ios) kalmanlambdae_local
                                 if (ios /= 0) stop err // err_inpnn // "kalman_lambda_charge value must be a number"
@@ -3425,9 +3448,13 @@ module pes_nene_mod
 
             close(inpnn_unit)
 
-            print *, "loop 7 done"
+            print *, "loop 6 done"
+
+            print *, "inputnndefaults"
 
             call inputnndefaults() ! own subroutine
+
+            print *, "inputnndefaults done"
 
             ! end of readout according to readkeywords.f90
 
@@ -3446,6 +3473,8 @@ module pes_nene_mod
                 enddo
             endif
 
+            print *, "loop 7"
+
             call open_for_read(inpnn_unit, filename_inpnn); ios = 0
 
             do while (ios == 0)
@@ -3456,7 +3485,7 @@ module pes_nene_mod
                     select case (words(1))
 
                         case ('global_activation_short')
-                            if (any(actfunc_short_atomic /= default_string)) stop err // err_inpnn // 'Multiple use of the global_activation_short key'
+                            if (not(all(actfunc_short_atomic /= default_string))) stop err // err_inpnn // 'Multiple use of the global_activation_short key'
                             if (nwords == maxnum_layers_short_atomic+1) then
                                 do genctr_1 = 1,maxnum_layers_short_atomic
                                     do genctr_3 = 1,nelem
@@ -3477,7 +3506,7 @@ module pes_nene_mod
                             end if
 
                         case ('global_activation_electrostatic')
-                            if (any(actfunc_elec /= default_string)) stop err // err_inpnn // 'Multiple use of the global_activation_electrostatic key'
+                            if (not(all(actfunc_elec /= default_string))) stop err // err_inpnn // 'Multiple use of the global_activation_electrostatic key'
                             if (nwords == maxnum_layers_elec+1) then
                                 do genctr_1 = 1,maxnum_layers_elec
                                     do genctr_3 = 1,nelem
@@ -3511,10 +3540,17 @@ module pes_nene_mod
 
             close(inpnn_unit)
 
-            do genctr_1=1,nelem
-                call nuccharge(element(genctr_1),nucelem(genctr_1))
-            enddo
-            call sortelements()
+            print *, "loop 7 done"
+
+            !do genctr_1=1,nelem
+            !    call nuccharge(element(genctr_1),nucelem(genctr_1))
+            !enddo
+
+            !print *, "sortelements"
+            !call sortelements()
+            !print *, "sortelements done"
+
+            print *, "loop elec"
 
             if(lelec.and.(nn_type_elec.eq.3))then
                 call open_for_read(inpnn_unit, filename_inpnn); ios = 0
@@ -3549,12 +3585,16 @@ module pes_nene_mod
 
                 close(inpnn_unit)
 
+                print *, "loop elec"
+
                 do genctr_1 = 1,nelem
                     if (fixedcharge(genctr_1) .gt. 10.0d0) then
                         print *, err, err_inpnn, "Error when reading fixed_charge: No fixed charge specified for element ",element(genctr_1); stop
                     endif
                 enddo
             endif
+
+            print *, "loop 8"
 
             call open_for_read(inpnn_unit, filename_inpnn); ios = 0
 
@@ -3620,6 +3660,10 @@ module pes_nene_mod
             end do
 
             close(inpnn_unit)
+
+            print *, "loop 8 done"
+
+            print *, "loop 9"
 
             call open_for_read(inpnn_unit, filename_inpnn); ios = 0
 
@@ -3698,6 +3742,10 @@ module pes_nene_mod
 
             close(inpnn_unit)
 
+            print *, "loop 9"
+
+            print *, "loop 10"
+
             call open_for_read(inpnn_unit, filename_inpnn); ios = 0
 
             do while (ios == 0)
@@ -3771,6 +3819,8 @@ module pes_nene_mod
 
             close(inpnn_unit)
 
+            print *, "loop 10 done"
+
             if (lshort .and. (nn_type_short == 1)) then
                 allocate(sym_short_atomic_count(nelem))
                 sym_short_atomic_count(:)=0
@@ -3781,6 +3831,8 @@ module pes_nene_mod
                 sym_elec_count(:)=0
                 num_funcvalues_elec(:)=0
             endif
+
+            print *, "loop 11"
 
             call open_for_read(inpnn_unit, filename_inpnn); ios = 0
 
@@ -5190,6 +5242,8 @@ module pes_nene_mod
 
             close(inpnn_unit)
 
+            print *, "loop 11 done"
+
             do ictr_1=1,nelem
                 if(lshort.and.(nn_type_short.eq.1))then
                     num_funcvalues_short_atomic(ictr_1)=sym_short_atomic_count(ictr_1)
@@ -5220,9 +5274,23 @@ module pes_nene_mod
 
             ! call set_runner_counters() ! to avoid unwanted error messages in checkinputnn() subroutine
 
+            print *, "checkinputnn"
+
             call checkinputnn() ! own subroutine
 
+            print *, "checkinputnn done"
+
+            print *, "printinputnn"
+
+            if (not(allocated(nodes_short_atomic_temp))) allocate(nodes_short_atomic_temp(0))        ! dummy allocation when not allocated beforehand to account for dummy variables!!
+            if (not(allocated(nodes_elec_temp))) allocate(nodes_elec_temp(0))                        ! dummy allocation when not allocated beforehand to account for dummy variables!!
+            if (not(allocated(actfunc_short_atomic_dummy))) allocate(actfunc_short_atomic_dummy(0))  ! dummy allocation when not allocated beforehand to account for dummy variables!!
+            if (not(allocated(actfunc_elec_dummy))) allocate(actfunc_elec_dummy(0))                  ! dummy allocation when not allocated beforehand to account for dummy variables!!
+
             call printinputnn(nodes_short_atomic_temp,nodes_elec_temp,kalmanlambda_local,kalmanlambdae_local,actfunc_short_atomic_dummy,actfunc_elec_dummy) ! own subroutine
+
+            print *, "printinputnn done"
+
             !call printinputnn(nodes_short_atomic_temp,nodes_elec_temp,nodes_short_pair_temp,kalmanlambda_local,kalmanlambdae_local,actfunc_short_atomic_dummy,actfunc_elec_dummy,actfunc_short_pair_dummy) ! own subroutine
 
             !write(*,'(a15,i4,a30)')' Element pairs: ',npairs,' , shortest distance (Bohr)'
@@ -5283,6 +5351,8 @@ module pes_nene_mod
                 maxnum_weights_elec=1
             endif
 
+            print *, "lremoveatomenergies"
+
             if(lremoveatomenergies)then
                 allocate(elementsymbol_dummy(nelem))
                 !call readatomenergies()
@@ -5336,6 +5406,8 @@ module pes_nene_mod
 
                 close(inpnn_unit)
 
+                deallocate(elementsymbol_dummy)
+
                 do genctr_1 = 1,atom_energy_counter
                     call nuccharge(elementsymbol(atom_energy_counter),zelem(atom_energy_counter))
                 end do
@@ -5357,7 +5429,7 @@ module pes_nene_mod
                 endif
 
                 allocate(lfound(nelem))
-                lfound(:)=.false.
+                lfound(:) = default_bool
                 do atom_energy_counter=1,nelem
                     lfound(elementindex(zelem(atom_energy_counter)))=.true.
                 enddo
@@ -5378,6 +5450,8 @@ module pes_nene_mod
 
             endif
 
+            print *, "lremoveatomenergies done"
+
             if (lvdw) then
                 if (nn_type_vdw == 1) then
 
@@ -5388,6 +5462,8 @@ module pes_nene_mod
                     stop
                 endif
             endif
+
+            print *, "loop 12"
 
             call open_for_read(inpnn_unit, filename_inpnn); ios = 0
 
@@ -5415,6 +5491,10 @@ module pes_nene_mod
 
             close(inpnn_unit)
 
+            print *, "loop 12 done"
+
+            print *, "writing short NN"
+
             if(lshort.and.(nn_type_short.eq.1).and.(mode.ne.1))then
                 do ictr_3=1,nelem
                     write(*,*)'-------------------------------------------------'
@@ -5439,6 +5519,10 @@ module pes_nene_mod
                 enddo
             endif
 
+            print *, "writing short NN done"
+
+            print *, "writing elec NN"
+
             if(lelec.and.(nn_type_elec.eq.1).and.(mode.ne.1))then
                 do ictr_3=1,nelem
                     write(*,*)'---------------------------------------------------'
@@ -5462,16 +5546,36 @@ module pes_nene_mod
                     enddo
                 enddo
             endif
+
+            print *, "writing elec NN done"
+
             write(*,*)'-------------------------------------------------------------'
 
+            print *, "sortsymfunctions short"
+
             if((nn_type_short.eq.1).and.lshort)then
+                print *, "maxnum_funcvalues_short_atomic", maxnum_funcvalues_short_atomic
+                print *, "num_funcvalues_short_atomic", num_funcvalues_short_atomic
+                print *, "function_type_short_atomic", function_type_short_atomic
+                print *, "symelement_short_atomic", symelement_short_atomic
+                print *, "eta_short_atomic", eta_short_atomic
+                print *, "zeta_short_atomic", zeta_short_atomic
+                print *, "rshift_short_atomic", rshift_short_atomic
+                print *, "lambda_short_atomic", lambda_short_atomic
+                print *, "funccutoff_short_atomic", funccutoff_short_atomic
                 call sortsymfunctions(maxnum_funcvalues_short_atomic,num_funcvalues_short_atomic,function_type_short_atomic,symelement_short_atomic,eta_short_atomic,zeta_short_atomic,rshift_short_atomic,lambda_short_atomic,funccutoff_short_atomic)
             endif
+
+            print *, "sortsymfunctions short done"
+
+            print *, "sortsymfunctions elec"
 
             if(lelec.and.(nn_type_elec.eq.1))then
                 call sortsymfunctions(&
                   maxnum_funcvalues_elec,num_funcvalues_elec,function_type_elec,symelement_elec,eta_elec,zeta_elec,rshift_elec,lambda_elec,funccutoff_elec)
             endif
+
+            print *, "sortsymfunctions elec done"
 
             if(lshort.and.(nn_type_short.eq.1))then
                 do ictr_1=1,nelem
@@ -5644,6 +5748,12 @@ module pes_nene_mod
             if (.not. file_exists(filename_scaling)) stop err // err_scaling // 'file does not exist'
             ! read in all data from scaling.data
             allocate(rdummy(nelem))
+            allocate(minvalue_short_atomic(nelem,maxnum_funcvalues_short_atomic))
+            minvalue_short_atomic(:,:) = default_real
+            allocate(maxvalue_short_atomic(nelem,maxnum_funcvalues_short_atomic))
+            maxvalue_short_atomic(:,:) = default_real
+            allocate(avvalue_short_atomic(nelem,maxnum_funcvalues_short_atomic))
+            avvalue_short_atomic(:,:) = default_real
             call readscale(filename_scaling,err_scaling,nelem,1,maxnum_funcvalues_short_atomic,num_funcvalues_short_atomic,minvalue_short_atomic,maxvalue_short_atomic,avvalue_short_atomic,eshortmin,eshortmax,rdummy,rdummy)
             deallocate(rdummy)
             ! read in all data from all weight files
@@ -5655,6 +5765,16 @@ module pes_nene_mod
             ! check existance of scalinge.data
             if (.not. file_exists(filename_scalinge)) stop err // err_scalinge // 'file does not exist'
             ! read in all data from scalinge.data
+            allocate(chargemin(nelem))
+            chargemin(:) = default_real
+            allocate(chargemax(nelem))
+            chargemax(:) = default_real
+            allocate(minvalue_elec(nelem,maxnum_funcvalues_elec))
+            minvalue_elec(:,:) = default_real
+            allocate(maxvalue_elec(nelem,maxnum_funcvalues_elec))
+            maxvalue_elec(:,:) = default_real
+            allocate(avvalue_elec(nelem,maxnum_funcvalues_elec))
+            avvalue_elec(:,:) = default_real
             call readscale(filename_scalinge,err_scalinge,nelem,3,maxnum_funcvalues_elec,num_funcvalues_elec,minvalue_elec,maxvalue_elec,avvalue_elec,dummy,dummy,chargemin,chargemax)
             ! read in all data from all weighte files
             call readweights(inp_path,1,nelem,maxnum_weights_elec,num_weights_elec,weights_elec)
@@ -5933,6 +6053,11 @@ module pes_nene_mod
         character(len=*), parameter :: err_check        = "Error in checkinputnn: "
 
 
+        if (not(allocated(nodes_elec))) allocate(nodes_elec(0,0))
+        if (not(allocated(nodes_short_atomic))) allocate(nodes_short_atomic(0,0))
+
+
+
         if (nran .ne. 5) then
             print *, err, err_inpnn, err_check, "random_number_type not implemented, only 5 available"
         end if
@@ -6166,14 +6291,14 @@ module pes_nene_mod
         enddo
 
         if(lshort.and.(nn_type_short.eq.1))then
-            if(any(actfunc_short_atomic .eq. default_string))then
+            if (all(actfunc_short_atomic .eq. default_string)) then ! rethink this check
                 write(*,*)'Error: global_activation_short is not specified'
                 stop
             endif
         endif
 
         if(lelec.and.(nn_type_elec.eq.1))then
-            if(any(actfunc_elec .eq. default_string))then
+            if (all(actfunc_elec .eq. default_string)) then ! rethink this check
                 write(*,*)'Error: global_activation_ewald is not specified'
                 stop
             endif
