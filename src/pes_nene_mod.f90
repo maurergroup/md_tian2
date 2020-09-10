@@ -141,10 +141,7 @@ module pes_nene_mod
         integer                         :: ios, eios, cios, j, k, nwords, index_counter
         real(dp)                        :: dummy_ce
 
-        ios = 0
-        eios = 0
-        cios = 0
-        dummy_ce = 0.00000000_dp
+        dummy_ce = 0.0_dp
         index_counter = 0
 
         !write input.data for RuNNer
