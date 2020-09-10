@@ -5812,12 +5812,54 @@ module pes_nene_mod
         ! end according to initmode3.f90
 
         ! start according to predict.f90
+        if (not(allocated(nnatomenergy))) allocate(nnatomenergy(max_num_atoms), stat=array_status)
+        if (array_status /= 0) then
+            print *, "nnatomenergy allocation failed; status = ", array_status; stop
+        end if
+
+        if (not(allocated(nntotalforce))) allocate(nntotalforce(3,max_num_atoms), stat=array_status)
+        if (array_status /= 0) then
+            print *, "nntotalforce allocation failed; status = ", array_status; stop
+        end if
+
+        if (not(allocated(nnshortforce))) allocate(nnshortforce(3,max_num_atoms), stat=array_status)
+        if (array_status /= 0) then
+            print *, "nnshortforce allocation failed; status = ", array_status; stop
+        end if
+
+        if (not(allocated(nnelecforce))) allocate(nnelecforce(3,max_num_atoms), stat=array_status)
+        if (array_status /= 0) then
+            print *, "nnelecforce allocation failed; status = ", array_status; stop
+        end if
+
+        if (not(allocated(nnatomcharge))) allocate(nnatomcharge(max_num_atoms), stat=array_status)
+        if (array_status /= 0) then
+            print *, "nnatomcharge allocation failed; status = ", array_status; stop
+        end if
+
+
+        !if (not(allocated(nnstress_short))) allocate(nnstress_short(), stat=array_stat)
+        !if (array_status /= 0) then
+        !    print *, "nnstress_short allocation failed; status = ", array_status; stop
+        !end if
+
+        !if (not(allocated(nnstress_elec))) allocate(nnstress_elec(), stat=array_stat)
+        !if (array_status /= 0) then
+        !    print *, "nnstress_elec allocation failed; status = ", array_status; stop
+        !end if
+
         if(lshort.and.(nn_type_short.eq.1))then
-            allocate(sens(nelem,maxnum_funcvalues_short_atomic))
+            allocate(sens(nelem,maxnum_funcvalues_short_atomic), stat=array_status)
+            if (array_status /= 0) then
+                print *, "sens allocation failed; status = ", array_status
+            end if
         endif
 
         if(lelec.and.(nn_type_elec.eq.1).or.(nn_type_elec.eq.3).or.(nn_type_elec.eq.4))then
-          allocate(sense(nelem,maxnum_funcvalues_elec))
+            allocate(sense(nelem,maxnum_funcvalues_elec), stat=array_status)
+            if (array_status /= 0) then
+                print *, "sense allocation failed; status = ", array_status
+            end if
         endif
         ! end according to predict.f90
 
@@ -7026,9 +7068,12 @@ module pes_nene_mod
                     write(filename(11:11),'(i1)') nucelem(counter_1)
                 end if
                 filename_weight = trim(directory) // filename
-                print *, "filename", filename
-                print *, "filename-weight", filename_weight
-                if (.not. file_exists(filename_weight)) print *, err, err_weight, trim(filename), ' file does not exist'; stop
+                print *, "filename ", filename
+                print *, "filename-weight ", filename_weight
+                print *, "nucelem (ctr)", nucelem(counter_1)
+                if (.not. file_exists(filename_weight)) then
+                    print *, err, err_weight, trim(filename), ' file does not exist'; stop
+                end if
 
                 call open_for_read(weight_unit, filename_weight); ios = 0
 
@@ -7107,6 +7152,8 @@ module pes_nene_mod
 
     subroutine cleanup_nene()
 
+            print *, "cleanup"
+
 
             ! according to compute_nene (based on predict.f90) and set allocatable in module:
             deallocate(elementsymbol)
@@ -7140,6 +7187,8 @@ module pes_nene_mod
                 deallocate(chargemax)
             end if
 
+            print *, "short done"
+
             ! according to cleanup.f90
             if(lshort.and.(nn_type_short.eq.1))then
                 deallocate(weights_short_atomic)
@@ -7157,7 +7206,11 @@ module pes_nene_mod
                 deallocate(zeta_short_atomic)
                 deallocate(lambda_short_atomic)
                 deallocate(rshift_short_atomic)
-            endif
+            end if
+
+            print *, "short done"
+
+            print *, "elec"
 
             if(lelec.and.(nn_type_elec.eq.1))then
                 deallocate(weights_elec)
@@ -7176,6 +7229,8 @@ module pes_nene_mod
                 deallocate(lambda_elec)
                 deallocate(rshift_elec)
             endif
+
+            print *, "elec done"
 
             deallocate(nucelem)
             deallocate(element)
@@ -7357,7 +7412,7 @@ module pes_nene_mod
             !lelement(zelem(j)) = .true. ! this is already set
         end do
 
-        if(lperiodic)then ! we always assume a periodic structure
+        if(lperiodic)then ! we always assume a periodic structure -> this can be removed?
             call translate(num_atoms,lattice,xyzstruct)
         endif
         ! end according to getstructure_mode3.f90
@@ -7405,7 +7460,7 @@ module pes_nene_mod
 
 
         ! combination of short-range and electrostatic forces
-        if(ldoforces)then
+        if(ldoforces)then ! we always need forces!
           nntotalforce(:,:)=nnshortforce(:,:)+nnelecforce(:,:)
         endif
 
