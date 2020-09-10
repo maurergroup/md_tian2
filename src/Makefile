@@ -15,7 +15,7 @@
 # ifort and mkl library
 FC     = ifort 
 #FFLAGS = -O3 -mkl -xcore-avx2 -fp-model precise -132
-FFLAGS = -O0 -mkl -traceback -g -check all -heap-arrays -fp-stack-check -check bounds -std08 -standard-semantics -fstack-protector-all
+FFLAGS = -O0 -mkl -traceback -g -check all -heap-arrays -fp-stack-check -check bounds 
 #FFLAGS = $(DEBUG)
 LIB    =
 

@@ -347,6 +347,8 @@ module pes_nene_mod
 
         lvdw                                = default_bool
 
+        dummy                               = default_real
+
 
 
 
@@ -1658,7 +1660,7 @@ module pes_nene_mod
 
         !print *, "num_atoms", num_atoms
 
-        print *, "lelement", lelement
+        !print *, "lelement", lelement
 
         allocate(elementsymbol(max_num_atoms))
         elementsymbol(:) = default_string
@@ -1723,45 +1725,45 @@ module pes_nene_mod
         print *, "start allocation"
 
         if (lshort == .true. .and. (nn_type_short.eq.1) ) then
-            print *, "short"
+            !print *, "short"
             allocate(num_funcvalues_short_atomic(nelem), stat=array_status)
             if (array_status /= 0) stop "1 not successfull"
-            print *, array_status
-            print *, "1 done, set"
+            !print *, array_status
+            !print *, "1 done, set"
             num_funcvalues_short_atomic(:)=0
-            print *, "1 done, set done"
-            print *, maxnum_layers_short_atomic
+            !print *, "1 done, set done"
+            !print *, maxnum_layers_short_atomic
             allocate (windex_short_atomic(2*maxnum_layers_short_atomic,nelem), stat=array_status)
             if (array_status /= 0) stop "2 not successfull"
-            print *, array_status
-            print *, shape(windex_short_atomic)
-            print *, "2 done"
-            print *, nelem
+            !print *, array_status
+            !print *, shape(windex_short_atomic)
+            !print *, "2 done"
+            !print *, nelem
             allocate(num_layers_short_atomic(int(nelem)), stat=array_status)
             if (array_status /= 0) stop "3 not successfull"
-            print *, array_status
-            print *, "3 done, set"
+            !print *, array_status
+            !print *, "3 done, set"
             num_layers_short_atomic(:)=maxnum_layers_short_atomic
-            print *, "3 done, set done"
+            !print *, "3 done, set done"
             allocate (actfunc_short_atomic(maxnodes_short_atomic,maxnum_layers_short_atomic,nelem), stat=array_status)
             if (array_status /= 0) stop "4 not successfull"
-            print *, array_status
-            print *, "4 done"
+            !print *, array_status
+            !print *, "4 done"
             allocate (nodes_short_atomic(0:maxnum_layers_short_atomic,nelem), stat=array_status)
             if (array_status /= 0) stop "5 not successfull"
-            print *, array_status
+            !print *, array_status
             nodes_short_atomic(:,:)=0
-            print *, "5 done"
+            !print *, "5 done"
             allocate (num_weights_short_atomic(nelem), stat=array_status)
             if (array_status /= 0) stop "6 not successfull"
-            print *, array_status
+            !print *, array_status
             num_weights_short_atomic(:)=0
-            print *, num_weights_short_atomic
-            print *, "6 done"
+            !print *, num_weights_short_atomic
+            !print *, "6 done"
         end if
 
         if(lelec.and.(nn_type_elec.eq.1))then
-            print *, "elec"
+            !print *, "elec"
             allocate (num_funcvalues_elec(nelem))
             num_funcvalues_elec(:)=0
             allocate (windex_elec(2*maxnum_layers_elec,nelem))
@@ -3824,12 +3826,12 @@ module pes_nene_mod
             if (lshort .and. (nn_type_short == 1)) then
                 allocate(sym_short_atomic_count(nelem))
                 sym_short_atomic_count(:)=0
-                num_funcvalues_short_atomic(:)=0
+                !num_funcvalues_short_atomic(:)=0
             endif
             if (lelec .and. (nn_type_elec == 1)) then
                 allocate(sym_elec_count(nelem))
                 sym_elec_count(:)=0
-                num_funcvalues_elec(:)=0
+                !num_funcvalues_elec(:)=0
             endif
 
             print *, "loop 11"
@@ -3897,7 +3899,7 @@ module pes_nene_mod
                                             call checkelement(elementtemp2)
                                             call checkelement(elementtemp3)
                                             call nuccharge(elementtemp2,ztemp2)
-                                            call nuccharge(elementtemp2,ztemp3)
+                                            call nuccharge(elementtemp3,ztemp3)
                                             if (ztemp2 .gt. ztemp3) then
                                                 itemp = ztemp2
                                                 ztemp2 = ztemp3
@@ -3974,7 +3976,7 @@ module pes_nene_mod
                                             call checkelement(elementtemp2)
                                             call checkelement(elementtemp3)
                                             call nuccharge(elementtemp2,ztemp2)
-                                            call nuccharge(elementtemp2,ztemp3)
+                                            call nuccharge(elementtemp3,ztemp3)
                                             if (ztemp2 .gt. ztemp3) then
                                                 itemp = ztemp2
                                                 ztemp2 = ztemp3
@@ -4005,7 +4007,7 @@ module pes_nene_mod
                                             call checkelement(elementtemp2)
                                             call checkelement(elementtemp3)
                                             call nuccharge(elementtemp2,ztemp2)
-                                            call nuccharge(elementtemp2,ztemp3)
+                                            call nuccharge(elementtemp3,ztemp3)
                                             if (ztemp2 .gt. ztemp3) then
                                                 itemp = ztemp2
                                                 ztemp2 = ztemp3
@@ -4587,7 +4589,7 @@ module pes_nene_mod
                                             call checkelement(elementtemp2)
                                             call checkelement(elementtemp3)
                                             call nuccharge(elementtemp2,ztemp2)
-                                            call nuccharge(elementtemp2,ztemp3)
+                                            call nuccharge(elementtemp3,ztemp3)
                                             if (ztemp2 .gt. ztemp3) then
                                                 itemp = ztemp2
                                                 ztemp2 = ztemp3
@@ -5554,15 +5556,6 @@ module pes_nene_mod
             print *, "sortsymfunctions short"
 
             if((nn_type_short.eq.1).and.lshort)then
-                print *, "maxnum_funcvalues_short_atomic", maxnum_funcvalues_short_atomic
-                print *, "num_funcvalues_short_atomic", num_funcvalues_short_atomic
-                print *, "function_type_short_atomic", function_type_short_atomic
-                print *, "symelement_short_atomic", symelement_short_atomic
-                print *, "eta_short_atomic", eta_short_atomic
-                print *, "zeta_short_atomic", zeta_short_atomic
-                print *, "rshift_short_atomic", rshift_short_atomic
-                print *, "lambda_short_atomic", lambda_short_atomic
-                print *, "funccutoff_short_atomic", funccutoff_short_atomic
                 call sortsymfunctions(maxnum_funcvalues_short_atomic,num_funcvalues_short_atomic,function_type_short_atomic,symelement_short_atomic,eta_short_atomic,zeta_short_atomic,rshift_short_atomic,lambda_short_atomic,funccutoff_short_atomic)
             endif
 
@@ -5576,6 +5569,8 @@ module pes_nene_mod
             endif
 
             print *, "sortsymfunctions elec done"
+
+
 
             if(lshort.and.(nn_type_short.eq.1))then
                 do ictr_1=1,nelem
@@ -5697,7 +5692,9 @@ module pes_nene_mod
         ! end of readout according to readinput.f90
 
         ! further readout according to initnn.f90
+        print *, "getlistdim"
         call getlistdim()
+        print *, "getlistdim done"
 
         !call distribute_predictionoptions() ! only mpi dummy routines
 
@@ -5705,19 +5702,35 @@ module pes_nene_mod
 
         !call distribute_globaloptions() ! only mpi dummy routines
 
+        print *, "allocate weights"
+
         if (lshort .and. (nn_type_short.eq.1)) then
-            allocate (weights_short_atomic(maxnum_weights_short_atomic,nelem))
+            allocate(weights_short_atomic(maxnum_weights_short_atomic,nelem), stat=array_status)
+            if (array_status /= 0) then
+                print *, "weights_short_atomic allocation failed; status = ", array_status; stop
+            end if
             weights_short_atomic(:,:)=0.0d0
-            allocate (symfunction_short_atomic_list(maxnum_funcvalues_short_atomic,max_num_atoms,nblock))
+            allocate(symfunction_short_atomic_list(maxnum_funcvalues_short_atomic,max_num_atoms,nblock), stat=array_status)
+            if (array_status /= 0) then
+                print *, "symfunction_short_atomic_list allocation failed; status = ", array_status; stop
+            end if
             symfunction_short_atomic_list(:,:,:)=0.0d0
         end if
 
         if(lelec.and.(nn_type_elec.eq.1))then
-            allocate (weights_elec(maxnum_weights_elec,nelem))
+            allocate(weights_elec(maxnum_weights_elec,nelem), stat=array_status)
+            if (array_status /= 0) then
+                print *, "weights_elec allocation failed; status = ", array_status; stop
+            end if
             weights_elec(:,:)=0.0d0
-            allocate (symfunction_elec_list(maxnum_funcvalues_elec,max_num_atoms,nblock))
+            allocate (symfunction_elec_list(maxnum_funcvalues_elec,max_num_atoms,nblock), stat=array_status)
+            if (array_status /= 0) then
+                print *, "symfunction_elec_list allocation failed; status = ", array_status; stop
+            end if
             symfunction_elec_list(:,:,:)=0.0d0
         end if
+
+         print *, "allocate weights done"
 
         ! end of readout according to initnn.f90
 
@@ -5742,22 +5755,36 @@ module pes_nene_mod
             enddo
         endif
 
+        print *, "read biases and weights"
+
         ! read in biases and weights for short part
         if(lshort.and.(nn_type_short.eq.1))then ! allocate arrays before calling readscale/readweights
             ! check existance of scaling.data
             if (.not. file_exists(filename_scaling)) stop err // err_scaling // 'file does not exist'
             ! read in all data from scaling.data
-            allocate(rdummy(nelem))
-            allocate(minvalue_short_atomic(nelem,maxnum_funcvalues_short_atomic))
+            allocate(rdummy(nelem), stat=array_status)
+            if (array_status /= 0) then
+                print *, "rdummy allocation failed; status = ", array_status
+            end if
+            allocate(minvalue_short_atomic(nelem,maxnum_funcvalues_short_atomic), stat=array_status)
+            if (array_status /= 0) then
+                print *, "minvalue_short_atomic allocation failed; status = ", array_status
+            end if
             minvalue_short_atomic(:,:) = default_real
-            allocate(maxvalue_short_atomic(nelem,maxnum_funcvalues_short_atomic))
+            allocate(maxvalue_short_atomic(nelem,maxnum_funcvalues_short_atomic), stat=array_status)
+
             maxvalue_short_atomic(:,:) = default_real
-            allocate(avvalue_short_atomic(nelem,maxnum_funcvalues_short_atomic))
+            allocate(avvalue_short_atomic(nelem,maxnum_funcvalues_short_atomic), stat=array_status)
             avvalue_short_atomic(:,:) = default_real
+            print *, "all allocation done"
+            print *, "readscale"
             call readscale(filename_scaling,err_scaling,nelem,1,maxnum_funcvalues_short_atomic,num_funcvalues_short_atomic,minvalue_short_atomic,maxvalue_short_atomic,avvalue_short_atomic,eshortmin,eshortmax,rdummy,rdummy)
+            print *, "readscale done"
             deallocate(rdummy)
             ! read in all data from all weight files
+            print *, "readweights"
             call readweights(inp_path,0,nelem,maxnum_weights_short_atomic,num_weights_short_atomic,weights_short_atomic)
+            print *, "readweights done"
         end if
 
         ! read in biases and weights for electrostatic part
@@ -5779,6 +5806,8 @@ module pes_nene_mod
             ! read in all data from all weighte files
             call readweights(inp_path,1,nelem,maxnum_weights_elec,num_weights_elec,weights_elec)
         end if
+
+        print *, "read biases and weights done"
 
         ! end according to initmode3.f90
 
@@ -6980,7 +7009,7 @@ module pes_nene_mod
         character(len=*), parameter         :: err_weighte = "Error when reading the following weighte file: "
 
         character(len=max_string_length)    :: directory, filename_weight, filename_weighte
-        character*40                        :: filename
+        character(len=16)                   :: filename
 
         integer, parameter  :: weight_unit  = 64
         integer, parameter  :: weighte_unit = 65
@@ -6996,7 +7025,9 @@ module pes_nene_mod
                 else
                     write(filename(11:11),'(i1)') nucelem(counter_1)
                 end if
-                filename_weight = trim(directory) // trim(filename)
+                filename_weight = trim(directory) // filename
+                print *, "filename", filename
+                print *, "filename-weight", filename_weight
                 if (.not. file_exists(filename_weight)) print *, err, err_weight, trim(filename), ' file does not exist'; stop
 
                 call open_for_read(weight_unit, filename_weight); ios = 0
