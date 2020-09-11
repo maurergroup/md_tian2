@@ -21,6 +21,10 @@ conf/latt
 traj/
 # poscar folder
 poscar/
+aims/
+energy/
+mxt/
+runner/
 # Manual
 *.aux
 *.bbl

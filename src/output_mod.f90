@@ -263,7 +263,7 @@ contains
 
         character(len=max_string_length)    :: fname
         character(len=8)                    :: traj_id_vasp
-        character(len=8)                    :: step_id_vasp
+        character(len=6)                    :: step_id_vasp
 
         integer                             :: time_vals(8), noccurrences(atoms%ntypes), i, j
         real(dp)                            :: cents(3, atoms%natoms) ! for the beads to get center of mass
@@ -280,9 +280,9 @@ contains
 
         ! open file poscar_/poscar_%08d.dat
         if (istep == -1) then
-             write(step_id_vasp,'(i8.8)') zero_step
+             write(step_id_vasp,'(i6.6)') zero_step
         else
-             write(step_id_vasp,'(i8.8)') istep
+             write(step_id_vasp,'(i6.6)') istep
         end if
         write(traj_id_vasp,'(i8.8)') itraj
         fname = 'poscar/'//traj_id_vasp//'step'//step_id_vasp//'.POSCAR'
@@ -338,7 +338,7 @@ contains
 
         zero_step = 0 ! write the initial structure to step 0 file
 
-        if (.not. dir_exists('aims')) call system('mkdir aims')
+        if (.not. dir_exists('aims')) call execute_command_line('mkdir aims')
 
         noccurrences = 0
         do i = 1, atoms%natoms
@@ -410,7 +410,7 @@ contains
     end subroutine output_aims
 
 
-    subroutine output_runner(atoms, itraj, istep) ! this format has to be finished!
+    subroutine output_runner(atoms, itraj, istep)
 
         type(universe), intent(in)          :: atoms
         integer, intent(in)                 :: itraj, istep
@@ -418,11 +418,9 @@ contains
         integer :: zero_step
 
         character(len=max_string_length)    :: fname
-        character(len=8)                    :: traj_id_vasp
-        character(len=6)                    :: step_id_vasp
 
         integer                             :: time_vals(8), noccurrences(atoms%ntypes)
-        integer                             :: i, j, k
+        integer                             :: j, k
         real(dp)                            :: cents(3, atoms%natoms) ! for the beads to get center of mass
 
         real(dp)                            :: dummy_ce
