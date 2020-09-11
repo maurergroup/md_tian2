@@ -26,6 +26,7 @@ file_list = \
         atomsymfunction8.f90 \
         atomsymfunction9.f90 \
         calconenn.f90 \
+        checkelement.f90 \
         fileunits.f90 \
         fittingoptions.f90 \
         getatomsymfunctions.f90 \
