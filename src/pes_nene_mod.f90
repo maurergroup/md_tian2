@@ -46,7 +46,7 @@ module pes_nene_mod
 
     ! initnn.f90
     integer   :: ielem = default_int
-    integer*8 :: iseed = default_int
+    integer(dp) :: iseed = default_int
     logical   :: lelement(102) = default_bool
 
     ! from and needed in predict.f90
@@ -111,17 +111,8 @@ module pes_nene_mod
     contains
 
 !   2do in the whole module:
-!   variable declarations concerning RuNNer in the corresponding modules, but set to (our) default values has to be done before reading out keywords (own subroutine called in compute_nene)
-!
-!   check how many call mpi subroutines have to stay in the code, at least set the few default values so that no error will occur due to wrong default mpi settings
-!   declare all needed variables which are not declared in modules (especially look at main, initnn, predict)
-!
-!   check if every useful information concerning RuNNer setup is written (like printinputnn etc.)
+!   add counter for extrapolation warning and also a switch (therefore, change RuNNer code to put that outside the subroutines we call)
 !   add things concerning extrapolation warnings like in the RuNNer-LAMMPS interface -> test in RuNNer source code, then copy files
-!   check latest version of RuNNer files if all cases for symmetry functions (5,6 as debug functions etc.) are still included
-!   check latest version of RuNNer files if any keyword changed, removed or added (maybe not, because this takes quite some time)
-!   change all declarations to our standard (real*8 -> real(dp), char*2 -> char(len=2) etc.)
-!   have a look if variables have to be declared in module or subroutines!
 
 
     ! Here all necessary files and keywords are read in for the high-dimensional neural network potentials (HDNNPs)
@@ -278,7 +269,7 @@ module pes_nene_mod
 
             call lower_case(words(1))
 
-            ! readout of folder with RuNNer related files
+            ! get the folder with NN related files
             select case (words(1))
 
                 case ('inp_dir')
@@ -304,9 +295,6 @@ module pes_nene_mod
         filename_inpnn      = trim(inp_path) // "input.nn"
         filename_scaling    = trim(inp_path) // "scaling.data"
         filename_scalinge   = trim(inp_path) // "scalinge.data"
-
-        ! make sure to call cleanup_nene in md_tian2.f90
-        simparams%pes_nene = .true.
 
 
         ! in case of the HDNNPs several additional input files have to be read
@@ -340,32 +328,17 @@ module pes_nene_mod
         nelem                               = default_int
         npairs                              = default_int
         max_num_pairs                       = default_int
-
-        vdw_screening(1)                    = default_real
-        vdw_screening(2)                    = default_real
-        nn_type_vdw                         = default_int
-
         lvdw                                = default_bool
-
-        dummy                               = default_real
-
-
-
-
-
         maxnum_funcvalues_short_atomic      = 0 ! needed so that the max function will work
         maxnum_funcvalues_elec              = 0 ! needed so that the max function will work
         function_type_local                 = default_int
         function_type_temp                  = default_int
         funccutoff_local                    = 0.0d0 ! needed so that the max function will work
         maxcutoff_local                     = 0.0d0 ! needed so that the max function will work
-
         maxnodes_short_atomic               = 0 ! needed so that the max function will work
         maxnodes_elec                       = 0 ! needed so that the max function will work
-
         lcheckinputforces                   = default_bool
         inputforcethreshold                 = default_real
-
         lprintforcecomponents               = default_bool
         lionforcesonly                      = default_bool
         cutoff_type                         = default_int
@@ -390,8 +363,6 @@ module pes_nene_mod
         deltafthres                         = default_real
         luseoldscaling                      = default_bool
         lmd                                 = default_bool
-        !nodes_short_atomic_temp             = default_int
-        !nodes_elec_temp                     = default_int
         ewaldalpha                          = default_real
         ewaldcutoff                         = default_real
         ewaldkmax                           = default_int
@@ -532,16 +503,15 @@ module pes_nene_mod
         luseedkalman                        = default_bool
         ledforcesv2                         = default_bool
         lanalyzecomposition                 = default_bool
-        !actfunc_short_atomic_dummy          = default_string
-        !actfunc_elec_dummy                  = default_string
-        !fixedcharge                         = default_real
         layer                               = default_int
         node                                = default_int
         actfunc                             = default_string
-
-
         pstring                             = default_string
         lvdw                                = default_bool
+        num_funcvalues_local(:)             = 0
+        num_funcvaluese_local(:)            = 0
+        maxcutoff_short_atomic              = 0.0d0 ! needed
+        maxcutoff_elec                      = 0.0d0 ! needed
 
 
         !call initnn(iseed)
@@ -560,8 +530,6 @@ module pes_nene_mod
 
         ! check existance of input.nn
         if (.not. file_exists(filename_inpnn)) stop err // err_inpnn // "file does not exist"
-
-        print *, "loop 1"
 
         call open_for_read(inpnn_unit, filename_inpnn); ios = 0
 
@@ -653,11 +621,6 @@ module pes_nene_mod
         end do
 
         close(inpnn_unit)
-
-        print *, "loop 1 done"
-
-
-        print *, "loop 2"
 
         call open_for_read(inpnn_unit, filename_inpnn); ios = 0
 
@@ -758,21 +721,22 @@ module pes_nene_mod
 
         close(inpnn_unit)
 
-        print *, "loop 2 done"
-
         if (lshort .and. (nn_type_short == 1) .and. (maxnum_layers_short_atomic == default_int)) stop err // err_inpnn // 'global_hidden_layers_short key not set'
         if (lelec .and. (nn_type_elec == 1) .and. (maxnum_layers_elec == default_int)) stop err // err_inpnn // 'global_hidden_layers_electrostatic key not set'
 
-        allocate(nucelem(nelem))
-        allocate(element(nelem))
-        !allocate(dmin_element(nelem*(nelem+1)/2))
-
+        allocate(nucelem(nelem), stat=array_status)
+        if (array_status /= 0) then
+            print *, "nucelem allocation failed, status = ", array_status; stop
+        end if
         nucelem(:)      = default_int
+        allocate(element(nelem), stat=array_status)
+        if (array_status /= 0) then
+            print *, "element allocation failed, status = ", array_status; stop
+        end if
         element(:)      = default_string
+        !allocate(dmin_element(nelem*(nelem+1)/2))
         !dmin_element = default_real
 
-
-        print *, "loop 3"
 
         call open_for_read(inpnn_unit, filename_inpnn); ios = 0
 
@@ -791,22 +755,17 @@ module pes_nene_mod
                         if (any(element /= default_string)) stop err // err_inpnn // 'Multiple use of the elements key'
                         if (nwords == nelem+1) then
                             do elemctr = 1,nelem
-                                read(words(elemctr+1),'(A)') element(elemctr) !! check for valid name will be done later!
+                                read(words(elemctr+1),'(A)') element(elemctr)
                                 if (all(atoms%name /= element(elemctr))) then
                                     print *, err, err_inpnn, "element names in input.nn and in input structure file differ: found ", element(elemctr), " which is not in ", atoms%name
                                     stop
                                 end if
                             end do
-                            !if (any(element /= atoms%name)) then
-                                !print *, err, err_inpnn, "element names in input.nn and in input structure file differ", " found ", element, " not ", atoms%name
-                                !stop
-                            !end if
                         else
                             print *, err // err_inpnn // "elements key does not match with number of element types"; stop
                         end if
 
                     case default
-                        !print *, "skip"
                         ! for every other keyword pass here, check for unrecognized keywords later
 
                 end select
@@ -816,8 +775,6 @@ module pes_nene_mod
         end do
 
         close(inpnn_unit)
-
-        print *, "loop 3 done"
 
         do nucctr=1,nelem
             call nuccharge(element(nucctr),nucelem(nucctr))
@@ -834,29 +791,27 @@ module pes_nene_mod
 
         if (lfound_nelem == default_bool) stop err // err_inpnn // "number_of_elements key not found"
 
-        !allocate(num_funcvalues_local(102))
-        !allocate(num_funcvaluese_local(102))
-        num_funcvalues_local(:) = 0
-        num_funcvaluese_local(:) = 0
-
         if (maxnum_layers_short_atomic .gt. 0) then
-            allocate(nodes_short_local(0:maxnum_layers_short_atomic))
+            allocate(nodes_short_local(0:maxnum_layers_short_atomic), stat=array_status)
+            if (array_status /= 0) then
+                print *, "nodes_short_local allocation failed; status = ", array_status; stop
+            end if
             nodes_short_local(:) = 0
         end if
         if (maxnum_layers_elec .gt. 0) then
-            allocate(nodes_ewald_local(0:maxnum_layers_elec))
+            allocate(nodes_ewald_local(0:maxnum_layers_elec), stat=array_status)
+            if (array_status /= 0) then
+                print *, "nodes_ewald_local allocation failed; status = ", array_status; stop
+            end if
             nodes_ewald_local(:) = 0
         end if
-
-
-        print *, "loop 4"
 
         call open_for_read(inpnn_unit, filename_inpnn); ios = 0
 
         do while (ios == 0)
             read(inpnn_unit, '(A)', iostat=ios) buffer
             if (ios == 0) then
-                !line = line + 1
+
                 call split_string(buffer, words, nwords)
 
                 select case (words(1))
@@ -865,7 +820,6 @@ module pes_nene_mod
 
                         if (any(nodes_short_local /= 0)) stop err // err_inpnn // 'Multiple use of the global_nodes_short key'
                         if (nwords == maxnum_layers_short_atomic) then
-                            !print *, nwords, maxnum_layers_short_atomic
                             do nodesctr = 1,maxnum_layers_short_atomic-1
                                 read(words(nodesctr+1),'(i1000)', iostat=ios) nodes_short_local(nodesctr)
                                 if (ios /= 0) then
@@ -954,7 +908,6 @@ module pes_nene_mod
                     case ('global_symfunction_short','global_symfunction_short_atomic')
                         read(words(2),'(i1000)', iostat=ios) function_type_local
                         if (ios /= 0) stop err // err_inpnn // "global_symfunction_short / global_symfunction_short_atomic second argument value must be integer"
-                        !call nuccharge(elementtemp, ztemp)
 
                         select case (words(2))
 
@@ -1040,9 +993,6 @@ module pes_nene_mod
                     case ('global_pairsymfunction_short')
                         print *, err, err_inpnn, "global_pairsymfunction_short key is not supported, Pair NN not implemented"
 
-                    !case ('global_symfunction_short_pair') ! not included anymore
-                        !print *, err, err_inpnn, "global_symfunction_short_pair key is not supported, Pair NN not implemented"
-
                     case default
                         ! for every other keyword pass here, check for unrecognized keywords later
 
@@ -1053,8 +1003,6 @@ module pes_nene_mod
         end do
 
         close(inpnn_unit)
-
-        print *, "loop 4 done"
 
         if (maxnum_layers_short_atomic .gt. 0) then
             do genctr_1 = 1,maxnum_layers_short_atomic
@@ -1076,30 +1024,26 @@ module pes_nene_mod
             maxnum_funcvalues_elec = max(maxnum_funcvalues_elec, num_funcvaluese_local(genctr_1))
         end do
 
-        !deallocate(num_funcvalues_local)
-        !deallocate(num_funcvaluese_local)
-
-        !deallocate(nucelem)
-        !deallocate(element)
         !end readout according to getdimensions.f90
 
         ! start readout according to structurecount.f90
-        max_num_atoms = atoms%natoms
+        max_num_atoms = atoms%natoms ! set this variable helps to keep track of variable dependencies from RuNNer source files
 
         ! end readout according to structurecount.f90
 
         !start readout according to paircount.f90
-
-        print *, "loop 5a and 5b"
-
         if (nn_type_short == 1) then
 
-            allocate(nnatomenergy(max_num_atoms))
+            allocate(nnatomenergy(max_num_atoms), stat=array_status)
+            if (array_status /= 0) then
+                print *, "nnatomenergy allocation failed; status = ", array_status; stop
+            end if
             nnatomenergy(:) = default_real
-            allocate(nnshortforce(3,max_num_atoms))
+            allocate(nnshortforce(3,max_num_atoms), stat=array_status)
+            if (array_status /= 0) then
+                print *, "nnshortforce allocation failed; status = ", array_status; stop
+            end if
             nnshortforce(:,:) = default_real
-
-            print *, "loop 5a"
 
             call open_for_read(inpnn_unit, filename_inpnn); ios = 0
 
@@ -1348,8 +1292,6 @@ module pes_nene_mod
 
                         case default
                             ! for every other keyword pass here, check for unrecognized keywords later
-                            !if (trim(words(1)) /= '' .and. words(1)(1:1) /= '#') & ! check for empty and comment lines
-                                !print *, warn_inpnn, 'Skipping invalid label ', trim(words(1)),' in line ', line
 
                     end select
 
@@ -1361,25 +1303,26 @@ module pes_nene_mod
 
             close(inpnn_unit)
 
-            print *, "loop 5a done"
-
         end if
 
         if ((nn_type_elec == 1) .or. (nn_type_elec == 3) .or. (nn_type_elec == 4)) then
 
-            allocate(nnatomcharge(max_num_atoms))
+            allocate(nnatomcharge(max_num_atoms), stat=array_status)
+            if (array_status /= 0) then
+                print *, "nnatomcharge allocation failed; status = ", array_status; stop
+            end if
             nnatomcharge(:) = default_real
-            allocate(nnelecforce(3,max_num_atoms))
+            allocate(nnelecforce(3,max_num_atoms), stat=array_status)
+            if (array_status /= 0) then
+                print *, "nnelecforce allocation failed; status = ", array_status; stop
+            end if
             nnelecforce(:,:) = default_real
-
-            print *, "loop 5b"
 
             call open_for_read(inpnn_unit, filename_inpnn); ios = 0
 
             do while (ios == 0)
                 read(inpnn_unit, '(A)', iostat=ios) buffer
                 if (ios == 0) then
-                    !line = line + 1
                     call split_string(buffer, words, nwords)
 
                     select case (words(1))
@@ -1618,22 +1561,18 @@ module pes_nene_mod
 
                     maxcutoff_local = max(maxcutoff_local, funccutoff_local)
 
-                !else
-                !    print *, err, err_inpnn, 'iostat = ', ios
-                !    stop
                 end if
 
             end do
 
             close(inpnn_unit)
 
-            print *, "loop 5b done"
-
         end if
 
-        print *, "loop 5a and 5b done"
-
-        allocate(nntotalforce(3,max_num_atoms))
+        allocate(nntotalforce(3,max_num_atoms), stat=array_status)
+        if (array_status /= 0) then
+            print *, "nntotalforce allocation failed; status = ", array_status; stop
+        end if
         nntotalforce(:,:) = default_real
 
         if (maxcutoff_local == 0.0d0) then
@@ -1646,52 +1585,40 @@ module pes_nene_mod
 
         ! start readout according to checkstructures.f90
 
-        !call checkonestructure(i1,lelement)
-
-        ! start readout according to checkonestructure.f90
-
         do lattctr = 1,3
             lattice(lattctr,:) = atoms%simbox(:,lattctr) * ang2bohr
         end do
 
-        print *, "lattice done"
-
         num_atoms = atoms%natoms
 
-        !print *, "num_atoms", num_atoms
-
-        !print *, "lelement", lelement
-
-        allocate(elementsymbol(max_num_atoms))
+        allocate(elementsymbol(max_num_atoms), stat=array_status)
+        if (array_status /= 0) then
+            print *, "elementsymbol allocation failed; status = ", array_status; stop
+        end if
         elementsymbol(:) = default_string
-        allocate(zelem(num_atoms))
+        allocate(zelem(num_atoms), stat=array_status)
+        if (array_status /= 0) then
+            print *, "zelem allocation failed; status = ", array_status; stop
+        end if
         zelem(:) = default_int
 
         do atctr = 1,atoms%natoms ! this is done here to check if it is a valid structure
-            !print *, "counter", atctr
             xyzstruct(:,atctr) = atoms%r(:,1,atctr) * ang2bohr
-            !print *, "runner",xyzstruct(:,atctr), "mdt2", atoms%r(:,1,atctr)
-            !print *, elementsymbol(atctr), atoms%name(atoms%idx(atctr))
             elementsymbol(atctr) = atoms%name(atoms%idx(atctr))
-            !print *, elementsymbol(atctr), atoms%name(atoms%idx(atctr))
             call nuccharge(elementsymbol(atctr),zelem(atctr))
-            !print *, zelem(atctr)
-            !print *, lelement(zelem(atctr))
             lelement(zelem(atctr)) = .true.
-            !print *, lelement(zelem(atctr))
         end do
-
-        print *, "atoms done"
 
         if(lperiodic)then
             call translate(num_atoms,lattice,xyzstruct)
         endif
 
-        print *, "translate done"
-
-        ! according to readonestructure.f90
-        allocate (num_atoms_element(nelem))
-        do ictr_1=1,num_atoms ! this should move to read_nene
+        ! start according to readonestructure.f90
+        allocate (num_atoms_element(nelem), stat=array_status)
+        if (array_status /= 0) then
+            print *, "num_atoms_element allocation failed; status = ", array_status; stop
+        end if
+        do ictr_1=1,num_atoms
             num_atoms_element(elementindex(zelem(ictr_1))) = num_atoms_element(elementindex(zelem(ictr_1))) + 1
         enddo
         ! end according to readonestructure.f90
@@ -1704,119 +1631,124 @@ module pes_nene_mod
                 stop
             endif
         endif
-
-        print *, "periodic done"
         ! end readout according to checkonestructure.f90
 
         ielem=0
         do elemctr=1,102
             if(lelement(elemctr)) ielem=ielem+1
         enddo
-
-        print *, "element done"
         ! end readout according to checkstructures.f90
 
         ! end readout according to initialization.f90
 
         ! further readout according to initnn.f90
 
-        !call distribute_nnflags() ! only mpi dummy routines
-
-        print *, "start allocation"
-
         if (lshort == .true. .and. (nn_type_short.eq.1) ) then
-            !print *, "short"
             allocate(num_funcvalues_short_atomic(nelem), stat=array_status)
-            if (array_status /= 0) stop "1 not successfull"
-            !print *, array_status
-            !print *, "1 done, set"
+            if (array_status /= 0) then
+                print *, "num_funcvalues_short_atomic allocation failed; status = ", array_status; stop
+            end if
             num_funcvalues_short_atomic(:)=0
-            !print *, "1 done, set done"
-            !print *, maxnum_layers_short_atomic
             allocate (windex_short_atomic(2*maxnum_layers_short_atomic,nelem), stat=array_status)
-            if (array_status /= 0) stop "2 not successfull"
-            !print *, array_status
-            !print *, shape(windex_short_atomic)
-            !print *, "2 done"
-            !print *, nelem
+            if (array_status /= 0) then
+                print *, "windex_short_atomic allocation failed; status = ", array_status; stop
+            end if
             allocate(num_layers_short_atomic(int(nelem)), stat=array_status)
-            if (array_status /= 0) stop "3 not successfull"
-            !print *, array_status
-            !print *, "3 done, set"
+            if (array_status /= 0) then
+                print *, "num_layers_short_atomic allocation failed; status = ", array_status; stop
+            end if
             num_layers_short_atomic(:)=maxnum_layers_short_atomic
-            !print *, "3 done, set done"
             allocate (actfunc_short_atomic(maxnodes_short_atomic,maxnum_layers_short_atomic,nelem), stat=array_status)
-            if (array_status /= 0) stop "4 not successfull"
-            !print *, array_status
-            !print *, "4 done"
+            if (array_status /= 0) then
+                print *, "actfunc_short_atomic allocation failed; status = ", array_status; stop
+            end if
             allocate (nodes_short_atomic(0:maxnum_layers_short_atomic,nelem), stat=array_status)
-            if (array_status /= 0) stop "5 not successfull"
-            !print *, array_status
+            if (array_status /= 0) then
+                print *, "nodes_short_atomic allocation failed; status = ", array_status; stop
+            end if
             nodes_short_atomic(:,:)=0
-            !print *, "5 done"
             allocate (num_weights_short_atomic(nelem), stat=array_status)
-            if (array_status /= 0) stop "6 not successfull"
-            !print *, array_status
+            if (array_status /= 0) then
+                print *, "num_weights_short_atomic allocation failed; status = ", array_status; stop
+            end if
             num_weights_short_atomic(:)=0
-            !print *, num_weights_short_atomic
-            !print *, "6 done"
         end if
 
         if(lelec.and.(nn_type_elec.eq.1))then
             !print *, "elec"
-            allocate (num_funcvalues_elec(nelem))
+            allocate (num_funcvalues_elec(nelem), stat=array_status)
+            if (array_status /= 0) then
+                print *, "num_funcvalues_elec allocation failed; status = ", array_status; stop
+            end if
             num_funcvalues_elec(:)=0
-            allocate (windex_elec(2*maxnum_layers_elec,nelem))
-            allocate (num_layers_elec(nelem))
+            allocate (windex_elec(2*maxnum_layers_elec,nelem), stat=array_status)
+            if (array_status /= 0) then
+                print *, "windex_elec allocation failed; status = ", array_status; stop
+            end if
+            allocate (num_layers_elec(nelem), stat=array_status)
+            if (array_status /= 0) then
+                print *, "num_layers_elec allocation failed; status = ", array_status; stop
+            end if
             num_layers_elec(:)=maxnum_layers_elec
-            allocate (actfunc_elec(maxnodes_elec,maxnum_layers_elec,nelem))
-            allocate (nodes_elec(0:maxnum_layers_elec,nelem))
+            allocate (actfunc_elec(maxnodes_elec,maxnum_layers_elec,nelem), stat=array_status)
+            if (array_status /= 0) then
+                print *, "actfunc_elec allocation failed; status = ", array_status; stop
+            end if
+            allocate (nodes_elec(0:maxnum_layers_elec,nelem), stat=array_status)
+            if (array_status /= 0) then
+                print *, "nodes_elec allocation failed; status = ", array_status; stop
+            end if
             nodes_elec(:,:)=0
-            allocate (num_weights_elec(nelem))
+            allocate (num_weights_elec(nelem), stat=array_status)
+            if (array_status /= 0) then
+                print *, "num_weights_elec allocation failed; status = ", array_status; stop
+            end if
             num_weights_elec(:)=0
-        endif
+        end if
 
-        print *, "next allocate"
-
-        allocate (fixedcharge(nelem))
+        allocate (fixedcharge(nelem), stat=array_status)
+        if (array_status /= 0) then
+                print *, "fixedcharge allocation failed; status = ", array_status; stop
+            end if
         fixedcharge(:)=0.0d0
-        !allocate (nucelem(nelem))
-        !allocate (element(nelem))
-        allocate (atomrefenergies(nelem))
+        allocate (atomrefenergies(nelem), stat=array_status)
+        if (array_status /= 0) then
+                print *, "atomrefenergies allocation failed; status = ", array_status; stop
+            end if
         atomrefenergies = default_real
-        !allocate (elempair(npairs,2))
-        !elempair(:,:)=0
 
-        print *, "vdw_coefficients start"
-
-        allocate (vdw_coefficients(nelem,nelem))
+        allocate (vdw_coefficients(nelem,nelem), stat=array_status)
+        if (array_status /= 0) then
+                print *, "vdw_coefficients allocation failed; status = ", array_status; stop
+            end if
         vdw_coefficients(:,:) = default_real
 
-        print *, "vdw_coefficients end"
-
-        print *, "allocation done"
-
-        print *, "allocatesymfunctions start"
-
-        call allocatesymfunctions() !2DO: up to this point everything is fine, just check if all variables are declared and default values are set!!
-
-        print *, "allocatesymfunctions done"
+        call allocatesymfunctions()
 
         ! start readout of input.nn according to readinput.f90
 
-
-            !call initializecounters() ! we use default values, but compare with
-
             if(lshort.and.(nn_type_short.eq.1))then
-                allocate(nodes_short_atomic_temp(0:maxnum_layers_short_atomic))
+                allocate(nodes_short_atomic_temp(0:maxnum_layers_short_atomic), stat=array_status)
+                if (array_status /= 0) then
+                    print *, "nodes_short_atomic_temp allocation failed; status = ", array_status; stop
+                end if
                 nodes_short_atomic_temp(:)    = 0
-                allocate(actfunc_short_atomic_dummy(maxnum_layers_short_atomic))
+                allocate(actfunc_short_atomic_dummy(maxnum_layers_short_atomic), stat=array_status)
+                if (array_status /= 0) then
+                    print *, "actfunc_short_atomic_dummy allocation failed; status = ", array_status; stop
+                end if
                 actfunc_short_atomic_dummy(:) = default_string
             endif
             if(lelec.and.(nn_type_elec.eq.1))then
-                allocate(nodes_elec_temp(0:maxnum_layers_elec))
+                allocate(nodes_elec_temp(0:maxnum_layers_elec), stat=array_status)
+                if (array_status /= 0) then
+                    print *, "nodes_elec_temp allocation failed; status = ", array_status; stop
+                end if
                 nodes_elec_temp(:)            = 0
-                allocate(actfunc_elec_dummy(maxnum_layers_short_atomic))
+                allocate(actfunc_elec_dummy(maxnum_layers_short_atomic), stat=array_status)
+                if (array_status /= 0) then
+                    print *, "actfunc_elec_dummy allocation failed; status = ", array_status; stop
+                end if
                 actfunc_elec_dummy(:)         = default_string
             endif
             kalmanlambda_local =0.98000d0
@@ -1839,7 +1771,7 @@ module pes_nene_mod
 
             ! start readout according to readkeywords.f90
 
-            print *, "loop 6"
+            ! In the following a complete readout of the input.nn file, here we check for wrong keywords
 
             call open_for_read(inpnn_unit, filename_inpnn); ios = 0
 
@@ -1851,7 +1783,6 @@ module pes_nene_mod
 
                     select case (words(1))
 
-                        ! add already read keywords here so that a keyword which is NOT related to RuNNer will be recognized!!
                         case ('nn_type_short') !in readkeywords.f90
                             ! do nothing here, just let it pass
 
@@ -3450,13 +3381,7 @@ module pes_nene_mod
 
             close(inpnn_unit)
 
-            print *, "loop 6 done"
-
-            print *, "inputnndefaults"
-
             call inputnndefaults() ! own subroutine
-
-            print *, "inputnndefaults done"
 
             ! end of readout according to readkeywords.f90
 
@@ -3475,8 +3400,6 @@ module pes_nene_mod
                 enddo
             endif
 
-            print *, "loop 7"
-
             call open_for_read(inpnn_unit, filename_inpnn); ios = 0
 
             do while (ios == 0)
@@ -3494,7 +3417,6 @@ module pes_nene_mod
                                         do genctr_2 = 1,nodes_short_atomic(genctr_1, genctr_3)
                                             read(words(genctr_1+1),'(A)', iostat=ios) actfunc_short_atomic_dummy(genctr_1)
                                             actfunc_short_atomic(genctr_2, genctr_1, genctr_3) = actfunc_short_atomic_dummy(genctr_1)
-                                            !actfunc_short_atomic(genctr_2, genctr_1, genctr_3) = words(genctr_1+1)
                                         end do
                                         if(nodes_short_atomic(genctr_1, genctr_3) .lt. maxnodes_short_atomic)then
                                             do genctr_2 = nodes_short_atomic(genctr_1, genctr_3)+1,maxnodes_short_atomic
@@ -3515,7 +3437,6 @@ module pes_nene_mod
                                         do genctr_2 = 1,nodes_elec(genctr_1, genctr_3)
                                             read(words(genctr_1+1),'(A)', iostat=ios) actfunc_elec_dummy(genctr_1)
                                             actfunc_elec(genctr_2, genctr_1, genctr_3) = actfunc_elec_dummy(genctr_1)
-                                            !actfunc_elec(genctr_2, genctr_1, genctr_3) = words(genctr_1+1)
                                         end do
                                         if (nodes_elec(genctr_1, genctr_3) .lt. maxnodes_elec) then
                                             do genctr_2 = nodes_elec(genctr_1, genctr_3)+1,maxnodes_elec
@@ -3541,18 +3462,6 @@ module pes_nene_mod
             end do
 
             close(inpnn_unit)
-
-            print *, "loop 7 done"
-
-            !do genctr_1=1,nelem
-            !    call nuccharge(element(genctr_1),nucelem(genctr_1))
-            !enddo
-
-            !print *, "sortelements"
-            !call sortelements()
-            !print *, "sortelements done"
-
-            print *, "loop elec"
 
             if(lelec.and.(nn_type_elec.eq.3))then
                 call open_for_read(inpnn_unit, filename_inpnn); ios = 0
@@ -3587,16 +3496,12 @@ module pes_nene_mod
 
                 close(inpnn_unit)
 
-                print *, "loop elec"
-
                 do genctr_1 = 1,nelem
                     if (fixedcharge(genctr_1) .gt. 10.0d0) then
                         print *, err, err_inpnn, "Error when reading fixed_charge: No fixed charge specified for element ",element(genctr_1); stop
                     endif
                 enddo
             endif
-
-            print *, "loop 8"
 
             call open_for_read(inpnn_unit, filename_inpnn); ios = 0
 
@@ -3662,10 +3567,6 @@ module pes_nene_mod
             end do
 
             close(inpnn_unit)
-
-            print *, "loop 8 done"
-
-            print *, "loop 9"
 
             call open_for_read(inpnn_unit, filename_inpnn); ios = 0
 
@@ -3744,10 +3645,6 @@ module pes_nene_mod
 
             close(inpnn_unit)
 
-            print *, "loop 9"
-
-            print *, "loop 10"
-
             call open_for_read(inpnn_unit, filename_inpnn); ios = 0
 
             do while (ios == 0)
@@ -3821,20 +3718,14 @@ module pes_nene_mod
 
             close(inpnn_unit)
 
-            print *, "loop 10 done"
-
             if (lshort .and. (nn_type_short == 1)) then
                 allocate(sym_short_atomic_count(nelem))
                 sym_short_atomic_count(:)=0
-                !num_funcvalues_short_atomic(:)=0
             endif
             if (lelec .and. (nn_type_elec == 1)) then
                 allocate(sym_elec_count(nelem))
                 sym_elec_count(:)=0
-                !num_funcvalues_elec(:)=0
             endif
-
-            print *, "loop 11"
 
             call open_for_read(inpnn_unit, filename_inpnn); ios = 0
 
@@ -3845,7 +3736,7 @@ module pes_nene_mod
 
                     select case (words(1))
 
-                        case ('symfunction_short') ! allocation of arrays is done in allocatesymfunctions() from module symfunctions.f90 when called in initnn.f90!
+                        case ('symfunction_short')
                             if (lshort .and. (nn_type_short == 1)) then
                                 read(words(2),'(A)', iostat=ios) elementtemp1
                                 call checkelement(elementtemp1)
@@ -5244,8 +5135,6 @@ module pes_nene_mod
 
             close(inpnn_unit)
 
-            print *, "loop 11 done"
-
             do ictr_1=1,nelem
                 if(lshort.and.(nn_type_short.eq.1))then
                     num_funcvalues_short_atomic(ictr_1)=sym_short_atomic_count(ictr_1)
@@ -5274,15 +5163,7 @@ module pes_nene_mod
                 enddo
             endif
 
-            ! call set_runner_counters() ! to avoid unwanted error messages in checkinputnn() subroutine
-
-            print *, "checkinputnn"
-
             call checkinputnn() ! own subroutine
-
-            print *, "checkinputnn done"
-
-            print *, "printinputnn"
 
             if (not(allocated(nodes_short_atomic_temp))) allocate(nodes_short_atomic_temp(0))        ! dummy allocation when not allocated beforehand to account for dummy variables!!
             if (not(allocated(nodes_elec_temp))) allocate(nodes_elec_temp(0))                        ! dummy allocation when not allocated beforehand to account for dummy variables!!
@@ -5291,21 +5172,6 @@ module pes_nene_mod
 
             call printinputnn(nodes_short_atomic_temp,nodes_elec_temp,kalmanlambda_local,kalmanlambdae_local,actfunc_short_atomic_dummy,actfunc_elec_dummy) ! own subroutine
 
-            print *, "printinputnn done"
-
-            !call printinputnn(nodes_short_atomic_temp,nodes_elec_temp,nodes_short_pair_temp,kalmanlambda_local,kalmanlambdae_local,actfunc_short_atomic_dummy,actfunc_elec_dummy,actfunc_short_pair_dummy) ! own subroutine
-
-            !write(*,'(a15,i4,a30)')' Element pairs: ',npairs,' , shortest distance (Bohr)'
-            !icount=0
-            !do i=1,nelem
-            !    do j=i,nelem
-            !        icount=icount+1
-            !        if(dmin_element(icount).lt.9999.d0)then
-            !            write(*,'(a6,i4,2a3,1x,f10.3)')' pair ',&
-            !            icount,element(i),element(j),dmin_element(icount)
-            !        endif
-            !    enddo
-            !enddo
             print *, '============================================================='
 
             if(lshort.and.(nn_type_short.eq.1))then
@@ -5353,11 +5219,11 @@ module pes_nene_mod
                 maxnum_weights_elec=1
             endif
 
-            print *, "lremoveatomenergies"
-
             if(lremoveatomenergies)then
-                allocate(elementsymbol_dummy(nelem))
-                !call readatomenergies()
+                allocate(elementsymbol_dummy(nelem), stat=array_status)
+                if (array_status /= 0) then
+                    print *, "elementsymbol_dummy allocation failed; status = ", array_status; stop
+                end if
 
                 ! start readout of input.nn according to readatomenergies.f90
                 call open_for_read(inpnn_unit, filename_inpnn); ios = 0
@@ -5430,7 +5296,10 @@ module pes_nene_mod
                     enddo
                 endif
 
-                allocate(lfound(nelem))
+                allocate(lfound(nelem), stat=array_status)
+                if (array_status /= 0) then
+                    print *, "lfound allocation failed; status = ", array_status; stop
+                end if
                 lfound(:) = default_bool
                 do atom_energy_counter=1,nelem
                     lfound(elementindex(zelem(atom_energy_counter)))=.true.
@@ -5452,20 +5321,16 @@ module pes_nene_mod
 
             endif
 
-            print *, "lremoveatomenergies done"
-
             if (lvdw) then
                 if (nn_type_vdw == 1) then
-
-                    call read_vdw_coefficients_type_1(filename_inpnn) ! own subroutine
+                    print *, "vdw treatment not implemented"; stop
+                    !call read_vdw_coefficients_type_1(filename_inpnn) ! own subroutine
 
                 else
                     print *, err, err_inpnn, 'Error: unknown nn_type_vdw'
                     stop
                 endif
             endif
-
-            print *, "loop 12"
 
             call open_for_read(inpnn_unit, filename_inpnn); ios = 0
 
@@ -5478,8 +5343,6 @@ module pes_nene_mod
                     select case (words(1))
 
                         case ('node_activation_short')
-                            !if ( lnode_activation_short /= default_bool) stop err // err_inpnn // 'Multiple use of the node_activation_short key'
-                            !lnode_activation_short = .true.
                             print *, err, err_inpnn, "node_activation_short key was found, read activation functions of individual nodes is not implemented"; stop
 
                         case default
@@ -5492,10 +5355,6 @@ module pes_nene_mod
             end do
 
             close(inpnn_unit)
-
-            print *, "loop 12 done"
-
-            print *, "writing short NN"
 
             if(lshort.and.(nn_type_short.eq.1).and.(mode.ne.1))then
                 do ictr_3=1,nelem
@@ -5521,10 +5380,6 @@ module pes_nene_mod
                 enddo
             endif
 
-            print *, "writing short NN done"
-
-            print *, "writing elec NN"
-
             if(lelec.and.(nn_type_elec.eq.1).and.(mode.ne.1))then
                 do ictr_3=1,nelem
                     write(*,*)'---------------------------------------------------'
@@ -5549,26 +5404,16 @@ module pes_nene_mod
                 enddo
             endif
 
-            print *, "writing elec NN done"
-
             write(*,*)'-------------------------------------------------------------'
-
-            print *, "sortsymfunctions short"
 
             if((nn_type_short.eq.1).and.lshort)then
                 call sortsymfunctions(maxnum_funcvalues_short_atomic,num_funcvalues_short_atomic,function_type_short_atomic,symelement_short_atomic,eta_short_atomic,zeta_short_atomic,rshift_short_atomic,lambda_short_atomic,funccutoff_short_atomic)
             endif
 
-            print *, "sortsymfunctions short done"
-
-            print *, "sortsymfunctions elec"
-
             if(lelec.and.(nn_type_elec.eq.1))then
                 call sortsymfunctions(&
                   maxnum_funcvalues_elec,num_funcvalues_elec,function_type_elec,symelement_elec,eta_elec,zeta_elec,rshift_elec,lambda_elec,funccutoff_elec)
             endif
-
-            print *, "sortsymfunctions elec done"
 
 
 
@@ -5692,17 +5537,7 @@ module pes_nene_mod
         ! end of readout according to readinput.f90
 
         ! further readout according to initnn.f90
-        print *, "getlistdim"
         call getlistdim()
-        print *, "getlistdim done"
-
-        !call distribute_predictionoptions() ! only mpi dummy routines
-
-        !call distribute_symfunctions() ! in symfunctions.f90, only mpi dummy routines
-
-        !call distribute_globaloptions() ! only mpi dummy routines
-
-        print *, "allocate weights"
 
         if (lshort .and. (nn_type_short.eq.1)) then
             allocate(weights_short_atomic(maxnum_weights_short_atomic,nelem), stat=array_status)
@@ -5730,15 +5565,9 @@ module pes_nene_mod
             symfunction_elec_list(:,:,:)=0.0d0
         end if
 
-         print *, "allocate weights done"
-
         ! end of readout according to initnn.f90
 
         ! start according to initmode3.f90
-
-        maxcutoff_short_atomic       = 0.0d0
-        maxcutoff_elec               = 0.0d0
-
         if(lshort.and.(nn_type_short.eq.1))then
             do ictr_2=1,nelem
                 do ictr_1=1,num_funcvalues_short_atomic(ictr_2)
@@ -5755,59 +5584,82 @@ module pes_nene_mod
             enddo
         endif
 
-        print *, "read biases and weights"
-
         ! read in biases and weights for short part
-        if(lshort.and.(nn_type_short.eq.1))then ! allocate arrays before calling readscale/readweights
+        if(lshort.and.(nn_type_short.eq.1))then
+
             ! check existance of scaling.data
             if (.not. file_exists(filename_scaling)) stop err // err_scaling // 'file does not exist'
-            ! read in all data from scaling.data
-            allocate(rdummy(nelem), stat=array_status)
-            if (array_status /= 0) then
-                print *, "rdummy allocation failed; status = ", array_status
-            end if
+
+            ! allocate and initialize needed arrays
             allocate(minvalue_short_atomic(nelem,maxnum_funcvalues_short_atomic), stat=array_status)
             if (array_status /= 0) then
-                print *, "minvalue_short_atomic allocation failed; status = ", array_status
+                print *, "minvalue_short_atomic allocation failed; status = ", array_status; stop
             end if
             minvalue_short_atomic(:,:) = default_real
             allocate(maxvalue_short_atomic(nelem,maxnum_funcvalues_short_atomic), stat=array_status)
-
+            if (array_status /= 0) then
+                print *, "maxvalue_short_atomic allocation failed; status = ", array_status; stop
+            end if
             maxvalue_short_atomic(:,:) = default_real
             allocate(avvalue_short_atomic(nelem,maxnum_funcvalues_short_atomic), stat=array_status)
+            if (array_status /= 0) then
+                print *, "avvalue_short_atomic allocation failed; status = ", array_status; stop
+            end if
             avvalue_short_atomic(:,:) = default_real
-            print *, "all allocation done"
-            print *, "readscale"
+            allocate(rdummy(nelem), stat=array_status)
+            if (array_status /= 0) then
+                print *, "rdummy allocation failed; status = ", array_status; stop
+            end if
+
+            ! read in all data from scaling.data
             call readscale(filename_scaling,err_scaling,nelem,1,maxnum_funcvalues_short_atomic,num_funcvalues_short_atomic,minvalue_short_atomic,maxvalue_short_atomic,avvalue_short_atomic,eshortmin,eshortmax,rdummy,rdummy)
-            print *, "readscale done"
             deallocate(rdummy)
+
             ! read in all data from all weight files
-            print *, "readweights"
             call readweights(inp_path,0,nelem,maxnum_weights_short_atomic,num_weights_short_atomic,weights_short_atomic)
-            print *, "readweights done"
+
         end if
 
         ! read in biases and weights for electrostatic part
         if(lelec.and.(nn_type_elec.eq.1))then
+
             ! check existance of scalinge.data
             if (.not. file_exists(filename_scalinge)) stop err // err_scalinge // 'file does not exist'
-            ! read in all data from scalinge.data
-            allocate(chargemin(nelem))
+
+            ! allocate and initialize needed arrays
+            allocate(chargemin(nelem), stat=array_status)
+            if (array_status /= 0) then
+                print *, "minvalue_short_atomic allocation failed; status = ", array_status; stop
+            end if
             chargemin(:) = default_real
-            allocate(chargemax(nelem))
+            allocate(chargemax(nelem), stat=array_status)
+            if (array_status /= 0) then
+                print *, "minvalue_short_atomic allocation failed; status = ", array_status; stop
+            end if
             chargemax(:) = default_real
-            allocate(minvalue_elec(nelem,maxnum_funcvalues_elec))
+            allocate(minvalue_elec(nelem,maxnum_funcvalues_elec), stat=array_status)
+            if (array_status /= 0) then
+                print *, "minvalue_short_atomic allocation failed; status = ", array_status; stop
+            end if
             minvalue_elec(:,:) = default_real
-            allocate(maxvalue_elec(nelem,maxnum_funcvalues_elec))
+            allocate(maxvalue_elec(nelem,maxnum_funcvalues_elec), stat=array_status)
+            if (array_status /= 0) then
+                print *, "minvalue_short_atomic allocation failed; status = ", array_status; stop
+            end if
             maxvalue_elec(:,:) = default_real
-            allocate(avvalue_elec(nelem,maxnum_funcvalues_elec))
+            allocate(avvalue_elec(nelem,maxnum_funcvalues_elec), stat=array_status)
+            if (array_status /= 0) then
+                print *, "minvalue_short_atomic allocation failed; status = ", array_status; stop
+            end if
             avvalue_elec(:,:) = default_real
+
+            ! read in all data from scalinge.data
             call readscale(filename_scalinge,err_scalinge,nelem,3,maxnum_funcvalues_elec,num_funcvalues_elec,minvalue_elec,maxvalue_elec,avvalue_elec,dummy,dummy,chargemin,chargemax)
+
             ! read in all data from all weighte files
             call readweights(inp_path,1,nelem,maxnum_weights_elec,num_weights_elec,weights_elec)
-        end if
 
-        print *, "read biases and weights done"
+        end if
 
         ! end according to initmode3.f90
 
@@ -5838,27 +5690,17 @@ module pes_nene_mod
         end if
 
 
-        !if (not(allocated(nnstress_short))) allocate(nnstress_short(), stat=array_stat)
-        !if (array_status /= 0) then
-        !    print *, "nnstress_short allocation failed; status = ", array_status; stop
-        !end if
-
-        !if (not(allocated(nnstress_elec))) allocate(nnstress_elec(), stat=array_stat)
-        !if (array_status /= 0) then
-        !    print *, "nnstress_elec allocation failed; status = ", array_status; stop
-        !end if
-
         if(lshort.and.(nn_type_short.eq.1))then
             allocate(sens(nelem,maxnum_funcvalues_short_atomic), stat=array_status)
             if (array_status /= 0) then
-                print *, "sens allocation failed; status = ", array_status
+                print *, "sens allocation failed; status = ", array_status; stop
             end if
         endif
 
         if(lelec.and.(nn_type_elec.eq.1).or.(nn_type_elec.eq.3).or.(nn_type_elec.eq.4))then
             allocate(sense(nelem,maxnum_funcvalues_elec), stat=array_status)
             if (array_status /= 0) then
-                print *, "sense allocation failed; status = ", array_status
+                print *, "sense allocation failed; status = ", array_status; stop
             end if
         endif
         ! end according to predict.f90
@@ -6112,6 +5954,15 @@ module pes_nene_mod
             kalman_qmin = 0.0d0
         end if
 
+        ! following our defaults
+        if (ldoforces == default_bool) then
+            ldoforces = .true. ! we always need forces
+        end if
+        if (lperiodic == default_bool) then
+            lperiodic = .true. ! we always assume a periodic structure
+        end if
+
+
     end subroutine inputnndefaults
 
     subroutine checkinputnn()
@@ -6237,16 +6088,6 @@ module pes_nene_mod
             print *, err, err_inpnn, err_check, 'Unknown fitmode in readinput ', fitmode
             stop
         endif
-
-        !if((count_kalmanthreshold.eq.1).and.(count_lfixederrore.eq.1))then ! check counter
-        !    print *, err, err_inpnn, err_check, 'short_energy_error_threshold cannot be used in combination with fixed_short_energy_error_threshold'
-        !    stop
-        !endif
-
-        !if((count_kalmanthresholdf.eq.1).and.(count_lfixederrorf.eq.1))then ! check counter
-        !    print *, err, err_inpnn, err_check, 'short_force_error_thresholdf cannot be used in combination with fixed_short_force_error_threshold'
-        !    stop
-        !endif
 
         if(mode.eq.default_int)then
             print *, err, err_inpnn, err_check, 'runner_mode is not specified'
@@ -7068,9 +6909,6 @@ module pes_nene_mod
                     write(filename(11:11),'(i1)') nucelem(counter_1)
                 end if
                 filename_weight = trim(directory) // filename
-                print *, "filename ", filename
-                print *, "filename-weight ", filename_weight
-                print *, "nucelem (ctr)", nucelem(counter_1)
                 if (.not. file_exists(filename_weight)) then
                     print *, err, err_weight, trim(filename), ' file does not exist'; stop
                 end if
@@ -7114,7 +6952,9 @@ module pes_nene_mod
                     write(filename(11:11),'(i1)') nucelem(counter_1)
                 end if
                 filename_weighte = trim(directory) // trim(filename)
-                if (.not. file_exists(filename_weighte)) print *, err, err_weighte, trim(filename), 'file does not exist'; stop
+                if (.not. file_exists(filename_weighte)) then
+                    print *, err, err_weighte, trim(filename), 'file does not exist'; stop
+                end if
 
                 call open_for_read(weighte_unit, filename_weighte); ios = 0
 
@@ -7150,103 +6990,9 @@ module pes_nene_mod
 
     end subroutine readweights
 
-    subroutine cleanup_nene()
 
-            print *, "cleanup"
-
-
-            ! according to compute_nene (based on predict.f90) and set allocatable in module:
-            deallocate(elementsymbol)
-            deallocate(zelem)
-            deallocate(num_atoms_element)
-
-
-
-            deallocate(nnatomcharge)
-            deallocate(nnatomenergy)
-            deallocate(minvalue_short_atomic)
-            deallocate(maxvalue_short_atomic)
-            deallocate(avvalue_short_atomic)
-            deallocate(minvalue_elec)
-            deallocate(maxvalue_elec)
-            deallocate(avvalue_elec)
-            !deallocate(totalforce)
-            deallocate(nnshortforce)
-            deallocate(nntotalforce)
-            deallocate(nnelecforce)
-
-            if(lshort.and.(nn_type_short.eq.1))then
-                deallocate(sens)
-                !deallocate(atomenergy)
-            end if
-
-            if(lelec.and.(nn_type_elec.eq.1).or.(nn_type_elec.eq.3).or.(nn_type_elec.eq.4))then
-                deallocate(sense)
-                !deallocate(atomcharge)
-                deallocate(chargemin)
-                deallocate(chargemax)
-            end if
-
-            print *, "short done"
-
-            ! according to cleanup.f90
-            if(lshort.and.(nn_type_short.eq.1))then
-                deallocate(weights_short_atomic)
-                deallocate(symfunction_short_atomic_list)
-                deallocate(num_funcvalues_short_atomic)
-                deallocate(windex_short_atomic)
-                deallocate(num_layers_short_atomic)
-                deallocate(actfunc_short_atomic)
-                deallocate(nodes_short_atomic)
-                deallocate(num_weights_short_atomic)
-                deallocate(function_type_short_atomic)
-                deallocate(symelement_short_atomic)
-                deallocate(funccutoff_short_atomic)
-                deallocate(eta_short_atomic)
-                deallocate(zeta_short_atomic)
-                deallocate(lambda_short_atomic)
-                deallocate(rshift_short_atomic)
-            end if
-
-            print *, "short done"
-
-            print *, "elec"
-
-            if(lelec.and.(nn_type_elec.eq.1))then
-                deallocate(weights_elec)
-                deallocate(symfunction_elec_list)
-                deallocate(num_funcvalues_elec)
-                deallocate(windex_elec)
-                deallocate(num_layers_elec)
-                deallocate(actfunc_elec)
-                deallocate(nodes_elec)
-                deallocate(num_weights_elec)
-                deallocate(function_type_elec)
-                deallocate(symelement_elec)
-                deallocate(funccutoff_elec)
-                deallocate(eta_elec)
-                deallocate(zeta_elec)
-                deallocate(lambda_elec)
-                deallocate(rshift_elec)
-            endif
-
-            print *, "elec done"
-
-            deallocate(nucelem)
-            deallocate(element)
-            !deallocate(dmin_element)
-            if(allocated(atomrefenergies))deallocate(atomrefenergies)
-            if(allocated(fixedcharge))deallocate(fixedcharge)
-            !if(allocated(elempair))deallocate(elempair)
-
-            call mpi_barrier(mpi_comm_world,mpierror)
-
-            ! according to main.f90
-            call mpi_finalize(mpierror)
-
-    end subroutine cleanup_nene
-
-    subroutine read_vdw_coefficients_type_1(filename) ! maybe move this to read_nene?
+    ! the following subroutine is not needed, maybe this will become important later
+    subroutine read_vdw_coefficients_type_1(filename)
 
         use open_file, only : open_for_read
         use useful_things, only : split_string
@@ -7359,7 +7105,6 @@ module pes_nene_mod
 
     subroutine compute_nene(atoms, flag)
 
-
         ! Calculates energy and forces with HDNNPs
 
         use constants, only : habohr2evang, timestep_ha2ev => ha2ev ! think about better way to realize that here we need our more precise ha2ev variable!!; conflict due to ha2ev from nnconstants.f90 and constants.f90
@@ -7373,10 +7118,10 @@ module pes_nene_mod
 
         integer :: atctr, ictr_1, ictr_2, ictr_3
 
-        real(dp) :: xyzstruct(3,atoms%natoms) != default_real
+        real(dp) :: xyzstruct(3,atoms%natoms)
         xyzstruct(:,:) = default_real
 
-        ! is the following needed?
+        ! re-initialize similar to force module
         eshort              = 0.0d0
         nnshortenergy       = 0.0d0
         nntotalenergy       = 0.0d0
@@ -7390,29 +7135,14 @@ module pes_nene_mod
         nnstress_short(:,:) = 0.0d0
         nnstress_elec(:,:)  = 0.0d0
 
-
-
-        ! 2do in compute_nene:
-        ! the elements have to be sorted according to RuNNer before calling the prediction -> better way than calling sortelements in every MD step -> do that once in read_nene subroutine
-        ! convert the lattice just once in read_nene and not in every MD step
-        ! print symmetry function values, volume, NN sum, atomic energies, atomic forces only if keyword is given (simparams%details) every MD step, default is false and only warnings should be printed!
-        ! include the cleanup function in the md_tian2 source code after the loop over trajectories
-        ! compare initnn and initmode3!!
-
-
-        !call getstructure_mode3(i4,num_atoms,num_pairs,zelem,num_atoms_element,lattice,xyzstruct,totalenergy,totalcharge,totalforce,atomenergy,atomcharge,elementsymbol,lperiodic)
-
         ! start according to getstructure_mode3.f90
 
-        ! convert position units, commit element symbols and set corresponding RuNNer variables
+        ! update coordinates and convert to internal RuNNer units (Ang -> Bohr)
         do atctr = 1,num_atoms
             xyzstruct(:,atctr) = atoms%r(:,1,atctr) * ang2bohr
-            !elementsymbol(j) = atoms%name(atoms%idx(j)) ! this is already set
-            !call nuccharge(elementsymbol(j),zelem(j)) ! this is already set
-            !lelement(zelem(j)) = .true. ! this is already set
         end do
 
-        if(lperiodic)then ! we always assume a periodic structure -> this can be removed?
+        if(lperiodic)then
             call translate(num_atoms,lattice,xyzstruct)
         endif
         ! end according to getstructure_mode3.f90
@@ -7420,14 +7150,10 @@ module pes_nene_mod
         ! further according to predict.f90
 
         if(lshort .and. nn_type_short == 1) then
-            call predictionshortatomic(&
-              num_atoms,num_atoms_element,zelem,&
-              lattice,xyzstruct,&
-              minvalue_short_atomic,maxvalue_short_atomic,avvalue_short_atomic,&
-              eshortmin,eshortmax,&
-              nntotalenergy,nnshortforce,&
-              nnatomenergy,nnshortenergy,nnstress_short,&
-              atomenergysum,sens,lperiodic)
+            call predictionshortatomic(num_atoms,num_atoms_element,zelem,&
+                lattice,xyzstruct,minvalue_short_atomic,maxvalue_short_atomic,&
+                avvalue_short_atomic,eshortmin,eshortmax,nntotalenergy,nnshortforce,&
+                nnatomenergy,nnshortenergy,nnstress_short,atomenergysum,sens,lperiodic)
         endif
 
         if(lelec .and. ((nn_type_elec == 1) .or. (nn_type_elec == 3) .or. (nn_type_elec == 4))) then
@@ -7448,27 +7174,26 @@ module pes_nene_mod
         nntotalenergy=nnshortenergy+nnelecenergy
 
         ! add energies of free atoms
-        if(lremoveatomenergies.and.lshort)then
-          call addatoms(num_atoms,&
-            zelem,num_atoms_element,&
-            atomenergysum,nnatomenergy)
-          nntotalenergy=nntotalenergy+atomenergysum
+        if (lremoveatomenergies.and.lshort) then
+            call addatoms(num_atoms,&
+                zelem,num_atoms_element,&
+                atomenergysum,nnatomenergy)
+            nntotalenergy=nntotalenergy+atomenergysum
         endif
 
-        ! convert calculated energy from RuNNer to MDT2
+        ! update and convert energy from RuNNer to MDT2 unit
         atoms%epot = nntotalenergy * timestep_ha2ev
 
 
         ! combination of short-range and electrostatic forces
-        if(ldoforces)then ! we always need forces!
-          nntotalforce(:,:)=nnshortforce(:,:)+nnelecforce(:,:)
-        endif
+        nntotalforce(:,:)=nnshortforce(:,:)+nnelecforce(:,:)
 
-        ! convert calculated forces from RuNNer to MDT2
+
+        ! update and convert forces from RuNNer to MDT2 unit
         atoms%f(:,1,:) = nntotalforce(:,:) * habohr2evang
 
         ! calculate the volume, needed also for stress
-        if (simparams%detail == .true.) then
+        if (simparams%detailed_step == .true.) then
 
             if (lperiodic) then ! not needed in every step
                 volume=0.0d0

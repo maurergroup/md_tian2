@@ -74,8 +74,7 @@ module run_config
         integer  :: maxit                                           ! maximum number of iteration during fit
         integer  :: nthreads                                        ! number of threads used for fitting
         integer  :: nran                                            ! type of the random number genreator
-        logical  :: pes_nene                                        ! in case of the nene pes this variable is needed to call the subroutine for deallocation of variables
-        logical  :: detail                                         ! in case of the nene pes this variable is needed to turn on a more detailed printing of informations in the trajectory
+        logical  :: detailed_step                                   ! in case of the nene pes this variable is needed to turn on a more detailed printing of informations in the trajectory
 
     end type
 
@@ -125,8 +124,7 @@ contains
         new_simulation_parameters%maxit = 30
         new_simulation_parameters%nthreads = 1
         new_simulation_parameters%nran = default_int
-        new_simulation_parameters%pes_nene = default_bool
-        new_simulation_parameters%detail = default_bool
+        new_simulation_parameters%detailed_step = default_bool
 
     end function
 
@@ -508,6 +506,10 @@ contains
                                     simparams%output_type(i) = output_id_scatter
                                 case (output_key_nene)
                                     simparams%output_type(i) = output_id_nene
+                                case (output_key_aims)
+                                    simparams%output_type(i) = output_id_aims
+                                case (output_key_runner)
+                                    simparams%output_type(i) = output_id_runner
                                 case default
                                     print *, 'Error in the input file: output format ', trim(words(2*i)), ' unknown'
                                     stop

@@ -34,7 +34,6 @@ program md_tian2
     use output_mod, only : output
     use trajectory_info
     use geometry_opt
-    use pes_nene_mod, only : cleanup_nene
     use useful_things, only : rnd_seed
 
     implicit none
@@ -110,8 +109,6 @@ program md_tian2
                 end if
 
             end do
-
-            if (simparams%pes_nene) call cleanup_nene() ! in case of pes_nene some variables had to be deallocated, really needed? -> compare with pes_rebo_mod.f90
 
         case default
             call abort

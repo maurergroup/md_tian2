@@ -15,15 +15,14 @@
 # ifort and mkl library
 FC     = ifort 
 #FFLAGS = -O3 -mkl -xcore-avx2 -fp-model precise -132
-FFLAGS = -O0 -mkl -traceback -g -check all -heap-arrays -fp-stack-check -check bounds 
-#FFLAGS = $(DEBUG)
+FFLAGS = -O0 -mkl -g -check all -traceback -fp-stack-check -fstack-protector-all -heap-arrays
 LIB    =
 
 ###############################################
 # Changes below this line developers only
 ###############################################
 
-#DEBUG  = -fpe0 -O0 -mkl -g -check all -check bounds -check uninit -ftrapuv -debug all -gen-interfaces -warn interfaces -traceback -warn all -extend-source 132 -fp-stack-check -fstack-protector-all -no-ftz -std08 -standard-semantics -fpe-all=0 -heap-arrays
+DEBUG_FULL  = -fpe0 -O0 -mkl -g -check all -check bounds -check uninit -ftrapuv -debug all -gen-interfaces -warn interfaces -traceback -warn all -extend-source 132 -fp-stack-check -fstack-protector-all -no-ftz -std08 -standard-semantics -fpe-all=0 -heap-arrays
 DEBUG  = -O0 -mkl -traceback -fp-stack-check -fstack-protector-all -no-ftz -std08 -standard-semantics -heap-arrays
 
 RUNNER_SRC_DIR = RuNNer_src/

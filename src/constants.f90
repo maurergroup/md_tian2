@@ -115,6 +115,8 @@ module constants
     character(len=*), parameter :: output_key_mxt       = "mxt"
     character(len=*), parameter :: output_key_scatter   = "scatter"
     character(len=*), parameter :: output_key_nene      = "nene"
+    character(len=*), parameter :: output_key_aims      = "aims"
+    character(len=*), parameter :: output_key_runner    = "runner"
 
     integer, parameter :: output_id_xyz     = 1
     integer, parameter :: output_id_energy  = 2
@@ -123,6 +125,8 @@ module constants
     integer, parameter :: output_id_mxt     = 5
     integer, parameter :: output_id_scatter = 6
     integer, parameter :: output_id_nene    = 7
+    integer, parameter :: output_id_aims    = 8
+    integer, parameter :: output_id_runner  = 9
 
     ! Conversion constants to program units
     !
