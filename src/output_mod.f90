@@ -560,6 +560,8 @@ contains
             write(fin_unit) atoms%r, atoms%v, atoms%is_cart, atoms%is_fixed, &
                 atoms%idx, atoms%name, atoms%is_proj, atoms%simbox, atoms%isimbox
 
+            close(fin_unit)
+
         else
             print *, err, "unknown flag", flag
             stop

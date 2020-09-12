@@ -871,6 +871,8 @@ contains
         integer :: mxt_idx, dat_idx, new_conf
         real(dp) :: rnd
         type(universe) :: proj, slab
+        character(len=*) :: dummy_merge_proj_file
+        character(len=*) :: dummy_confname_file
 
         if (simparams%confname == "merge") then
 
@@ -880,7 +882,8 @@ contains
             if (mxt_idx /= 0 .and. dat_idx /= 0 .and. dat_idx == mxt_idx+12) then
                 call random_number(rnd)
                 new_conf = int(rnd*simparams%merge_proj_nconfs)+1
-                write(simparams%merge_proj_file, '(a, i8.8, a)') simparams%merge_proj_file(:mxt_idx+3), new_conf, ".dat"
+                write(dummy_merge_proj_file, '(a, i8.8, a)') simparams%merge_proj_file(:mxt_idx+3), new_conf, ".dat"
+                simparams%merge_proj_file = trim(dummy_merge_proj_file)
             else
                 print *, err, "projectile confname_file has wrong format. It needs to end on /mxt_%08d.dat"; stop
             end if
@@ -891,7 +894,8 @@ contains
             if (mxt_idx /= 0 .and. dat_idx /= 0 .and. dat_idx == mxt_idx+12) then
                 call random_number(rnd)
                 new_conf = int(rnd*simparams%nconfs)+1
-                write(simparams%confname_file, '(a, i8.8, a)') simparams%confname_file(:mxt_idx+3), new_conf, ".dat"
+                write(dummy_confname_file, '(a, i8.8, a)') simparams%confname_file(:mxt_idx+3), new_conf, ".dat"
+                simparams%confname_file = trim(dummy_confname_file)
             else
                 print *, err, "lattice confname_file has wrong format. It needs to end on /mxt_%08d.dat"; stop
             end if
