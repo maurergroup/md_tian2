@@ -871,8 +871,8 @@ contains
         integer :: mxt_idx, dat_idx, new_conf
         real(dp) :: rnd
         type(universe) :: proj, slab
-        character(len=*) :: dummy_merge_proj_file
-        character(len=*) :: dummy_confname_file
+        character(len=max_string_length) :: dummy_merge_proj_file
+        character(len=max_string_length) :: dummy_confname_file
 
         if (simparams%confname == "merge") then
 
