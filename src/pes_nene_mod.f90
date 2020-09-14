@@ -3410,7 +3410,7 @@ module pes_nene_mod
                     select case (words(1))
 
                         case ('global_activation_short')
-                            if (not(all(actfunc_short_atomic /= default_string))) stop err // err_inpnn // 'Multiple use of the global_activation_short key'
+                            if (all(actfunc_short_atomic /= default_string)) stop err // err_inpnn // 'Multiple use of the global_activation_short key'
                             if (nwords == maxnum_layers_short_atomic+1) then
                                 do genctr_1 = 1,maxnum_layers_short_atomic
                                     do genctr_3 = 1,nelem
@@ -3430,7 +3430,7 @@ module pes_nene_mod
                             end if
 
                         case ('global_activation_electrostatic')
-                            if (not(all(actfunc_elec /= default_string))) stop err // err_inpnn // 'Multiple use of the global_activation_electrostatic key'
+                            if (all(actfunc_elec /= default_string)) stop err // err_inpnn // 'Multiple use of the global_activation_electrostatic key'
                             if (nwords == maxnum_layers_elec+1) then
                                 do genctr_1 = 1,maxnum_layers_elec
                                     do genctr_3 = 1,nelem
