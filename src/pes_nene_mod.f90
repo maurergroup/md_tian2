@@ -175,6 +175,8 @@ module pes_nene_mod
         character(len=2), dimension(:), allocatable :: elementsymbol_dummy ! elementsymbol_dummy(nelem)
 
         logical, dimension(:), allocatable :: lfound       ! lfound(nelem)
+        logical :: lfound_glob_act_s        = default_bool
+        logical :: lfound_glob_act_e        = default_bool
         logical :: lfounddebug              = default_bool
         logical :: lfound_num_layersshort   = default_bool
         logical :: lfound_num_layersewald   = default_bool
@@ -217,6 +219,7 @@ module pes_nene_mod
         real(dp) :: etemp
 
         integer :: array_status
+        integer :: unique_nelem
 
 
 
@@ -326,6 +329,7 @@ module pes_nene_mod
         luseatomenergies                    = default_bool
         luseatomcharges                     = default_bool
         nelem                               = default_int
+        unique_nelem                        = default_int
         npairs                              = default_int
         max_num_pairs                       = default_int
         lvdw                                = default_bool
@@ -699,9 +703,8 @@ module pes_nene_mod
                             lfound_nelem = .true.
                             read(words(2),'(i1000)', iostat=ios) nelem
                             if (ios /= 0) stop err // err_inpnn // "number_of_elements value must be integer"
-                            print *, "nelem", nelem
-                            print *, "atoms name length", len(atoms%name)
-                            if (nelem /= len(atoms%name)) stop err // err_inpnn // "number of elements in input.nn and in structure file differ"
+                            call get_nelem(atoms,unique_nelem)
+                            if (nelem /= unique_nelem) stop err // err_inpnn // "number of elements in input.nn and in structure file differ" ! this will not work if an element is in proj AND latt!!
                             npairs = 0
                             do pairctr_1 = 1,nelem
                                 do pairctr_2 = pairctr_1,nelem
@@ -3412,7 +3415,7 @@ module pes_nene_mod
                     select case (words(1))
 
                         case ('global_activation_short')
-                            if (all(actfunc_short_atomic /= default_string)) stop err // err_inpnn // 'Multiple use of the global_activation_short key'
+                            if (lfound_glob_act_s /= default_bool) stop err // err_inpnn // 'Multiple use of the global_activation_short key'
                             if (nwords == maxnum_layers_short_atomic+1) then
                                 do genctr_1 = 1,maxnum_layers_short_atomic
                                     do genctr_3 = 1,nelem
@@ -3427,12 +3430,13 @@ module pes_nene_mod
                                         end if
                                     end do
                                 end do
+                                lfound_glob_act_s = .true.
                             else
                                 print *, err, err_inpnn, "global_activation_short key needs ", maxnum_layers_short_atomic, " arguments according to maxnum_layers_short_atomic value"; stop
                             end if
 
                         case ('global_activation_electrostatic')
-                            if (all(actfunc_elec /= default_string)) stop err // err_inpnn // 'Multiple use of the global_activation_electrostatic key'
+                            if (lfound_glob_act_e /= default_bool) stop err // err_inpnn // 'Multiple use of the global_activation_electrostatic key'
                             if (nwords == maxnum_layers_elec+1) then
                                 do genctr_1 = 1,maxnum_layers_elec
                                     do genctr_3 = 1,nelem
@@ -3447,6 +3451,7 @@ module pes_nene_mod
                                         end if
                                     end do
                                 end do
+                                lfound_glob_act_e = .true.
                             else
                                 print *, err, err_inpnn, "global_activation_electrostatic key needs ", maxnum_layers_elec, " arguments according to maxnum_layers_elec value"; stop
                             end if
@@ -7290,5 +7295,37 @@ module pes_nene_mod
         endif
 
     end subroutine compute_nene
+
+    subroutine get_nelem(atoms,elem_num) ! this is needed so that the check for number of elements in MDT2 and RuNNer makes sense
+
+        type(universe), intent(in) :: atoms
+
+        !integer, intent(in)     :: element_int_arr(size(atoms%names))
+        integer, intent(out)    :: elem_num ! The number of unique elements
+        integer                 :: nucelemarr(size(atoms%name))
+        integer :: res(size(atoms%name))
+        integer :: e, i, j
+
+        ! first translate element symbol to number (check nuccharge)
+        do e=1,size(atoms%name)
+            call nuccharge(atoms%name(e),nucelemarr(e))
+        end do
+
+        elem_num = 1
+        res(1) = nucelemarr(1)
+        outer: do i=2,size(nucelemarr)
+            do j=1,elem_num
+                if (res(j) == nucelemarr(i)) then
+                ! Found a match so start looking again
+                    cycle outer
+                end if
+            end do
+            ! No match found so add it to the output
+            elem_num = elem_num + 1
+            res(elem_num) = nucelemarr(i)
+        end do outer
+
+
+    end subroutine get_nelem
 
 end module pes_nene_mod
