@@ -699,7 +699,7 @@ module pes_nene_mod
                             lfound_nelem = .true.
                             read(words(2),'(i1000)', iostat=ios) nelem
                             if (ios /= 0) stop err // err_inpnn // "number_of_elements value must be integer"
-                            if (nelem /= atoms%ntypes) stop err // err_inpnn // "number of elements in input.nn and in structure file differ" ! is ntypes always number of elements?
+                            if (nelem /= len(atoms%name)) stop err // err_inpnn // "number of elements in input.nn and in structure file differ"
                             npairs = 0
                             do pairctr_1 = 1,nelem
                                 do pairctr_2 = pairctr_1,nelem
