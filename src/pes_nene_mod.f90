@@ -5906,9 +5906,9 @@ module pes_nene_mod
         if (lperiodic == default_bool) then
             lperiodic = .true. ! we always assume a periodic structure
         end if
-        if (lmd == default_bool) then
-            lmd = .true. ! we always do MD, helps to suppress unwanted output in predictionshortatomic
-        end if
+        !if (lmd == default_bool) then
+        !    lmd = .true.
+        !end if
 
 
     end subroutine inputnndefaults

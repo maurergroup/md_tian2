@@ -27,8 +27,8 @@ Tproj 300
 !annealing 1000 25 5
 
 !conf poscar 'conf/example.POSCAR'
-conf merge 'conf/proj/' 1 'conf/latt/' 1
-!conf merge 'conf/proj/' 1 'conf/latt/' 1000
+!conf merge 'conf/proj/' 1 'conf/latt/' 1
+conf merge 'conf/proj/' 1 'conf/latt/' 1000
 
 
 !pes definition
