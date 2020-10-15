@@ -7081,22 +7081,22 @@ module pes_nene_mod
             xyzstruct(:,atctr) = atoms%r(:,1,atctr) * ang2bohr
         end do
 
-        if(lperiodic)then
+        !if(lperiodic)then
             call translate(num_atoms,lattice,xyzstruct)
-        endif
+        !endif
         ! end according to getstructure_mode3.f90
 
         ! further according to predict.f90
 
-        if(lshort .and. nn_type_short == 1) then
+        !if(lshort .and. nn_type_short == 1) then
             call predictionshortatomic(num_atoms,num_atoms_element,zelem,&
                 lattice,xyzstruct,minvalue_short_atomic,maxvalue_short_atomic,&
                 avvalue_short_atomic,eshortmin,eshortmax,nntotalenergy,nnshortforce,&
                 nnatomenergy,nnshortenergy,nnstress_short,atomenergysum,sens,lperiodic)
-        endif
+        !endif
 
         if(lelec .and. ((nn_type_elec == 1) .or. (nn_type_elec == 3) .or. (nn_type_elec == 4))) then
-            print *, err, "electrostatic NN prediction not implemented yet, be patient you must"
+            print *, err, "electrostatic NN prediction not implemented yet" !be patient you must, not work it will
             stop
             !call predictionelectrostatic(&
               !num_atoms,zelem,&
