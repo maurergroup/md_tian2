@@ -21,17 +21,18 @@ List of modules: -> maybe also here, but put in manual!
 	md_tian.f90		main program
 	open_file.f90		input/output routines
 	output_mod.f90		output format routines
-	pes_emt_mod.f90		contains the EMT potential
+	pes_emt_mod.f90		contains the effective medium theory potential
 	pes_ho_mod.f90		contains the harmonic oscillator potential
 	pes_lj_mod.f90		contains the Lennard-Jones potential
 	pes_nene_mod.f90	contains the high-dimensional neural network potential (external call of RuNNer)
 	pes_non_mod.f90		contains the non-interaction potential
-	pes_rebo_mod.f90	contains the empirical reactive bond order potential
+	pes_rebo_mod.f90	contains the reactive empirical bond order potential
 	rpmd.f90		contains the ring-polymer molecular dynamics simulation routine
 	run_config.f90		initialize simulation parameters, read in input files
 	trajectory_info.f90	collect information from the calculated trajectories
 	universe_mod.f90	contains definitions of user types and all constants
 	useful_things.f90	useful math routines
+        write_info.f90          write header and information concerning program routine
 
 
 
