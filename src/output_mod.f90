@@ -33,8 +33,9 @@ module output_mod
 
     implicit none
 
-    logical :: overwrite_xyz       = .true.
+    !logical :: overwrite_xyz       = .true.
     logical :: overwrite_nrg       = .true.
+    logical :: overwrite_ads       = .true.
     logical :: overwrite_runner    = .true.
     integer, parameter :: out_unit = 86
     integer, parameter :: fin_unit = 87
@@ -64,7 +65,7 @@ contains
                 select case (simparams%output_type(i))
 
                     case (output_id_xyz)
-                        call output_xyz(atoms, itraj)
+                        call output_xyz(atoms, itraj, istep)
 
                     case (output_id_energy)
                         call output_nrg(atoms, itraj, istep)
@@ -82,6 +83,9 @@ contains
 
                     case (output_id_scatter)
                         ! pass
+
+                    case (output_id_is_adsorbed)
+                        call output_adsorption_status(atoms, itraj, istep)
 
                     case (output_id_nene)
                         print *, "MD step ", istep
@@ -102,10 +106,10 @@ contains
     end subroutine output
 
 
-    subroutine output_xyz(atoms, itraj)
+    subroutine output_xyz(atoms, itraj, istep)
 
         type(universe), intent(in) :: atoms
-        integer, intent(in) :: itraj
+        integer, intent(in) :: itraj, istep
 
         character(len=*), parameter :: xyz_format = '(a, 3e18.8e3)'
 
@@ -120,13 +124,20 @@ contains
         forall (i = 1 : atoms%natoms) dir_coords(:,:,i) = matmul(atoms%isimbox, atoms%r(:,:,i))
         dir_coords = dir_coords - anint(dir_coords-0.5)
         forall (i = 1 : atoms%natoms) cart_coords(:,:,i) = matmul(atoms%simbox, dir_coords(:,:,i))
+        where (cart_coords(3,:,:) > 0.5*atoms%simbox(3,3)) &
+            cart_coords(3,:,:) = cart_coords(3,:,:) - atoms%simbox(3,3)
 
         write(traj_id,'(i8.8)') itraj
         fname = 'conf/mxt_conf'//traj_id//'.xyz'
 
-        if (overwrite_xyz) then
+        ! if this is the first call to this subroutine during a trajectory, find ID index
+        ! super ugly, but the findloc intrinsic is not implement in ifort 2013
+        do i=1, size(simparams%output_type)
+            if (simparams%output_type(i) == output_id_xyz) j = i
+        end do
+
+        if (simparams%output_interval(j) == istep) then
             call open_for_write(out_unit, fname)
-            overwrite_xyz = .false.
         else
             call open_for_append(out_unit,fname)
         end if
@@ -517,6 +528,7 @@ contains
         proj_v = sum(atoms%v(:,:,1), dim=2)/atoms%nbeads
         bead_epot = calc_bead_epot(atoms)
         call bead_ekin(atoms, b_ekin_p, b_ekin_l)
+        call finalize_bounces()
 
         if (flag == "scatter_initial") then
 
@@ -547,6 +559,8 @@ contains
             write(out_unit, '(a11, i)')     "turn_pnts = ", nturning_points
             write(out_unit, '(a11, f14.7)') "cl_appr  = ", closest_approach
             write(out_unit, '(a11, 3f14.7)')"r_min_p  = ", lowest_z
+            !write(out_unit, '(a11, i)')     "bounces  = ", bounces
+            !write(out_unit, '(a11, f14.7)') "time_int = ", interaction_time
 
             ! to make sure that a configuration file is written even if no format keyword is given:
             if (.not. dir_exists('mxt')) call execute_command_line('mkdir mxt')
@@ -630,5 +644,38 @@ contains
         close(out_unit)
 
     end subroutine output_pes
+
+
+
+
+    subroutine output_adsorption_status(atoms, itraj, istep)
+
+        type(universe), intent(in) :: atoms
+        integer, intent(in)        :: itraj, istep
+
+        character(len=max_string_length) :: fname
+        character(len=8)                 :: traj_id
+        integer                          :: ads_output_step
+
+        ! XXX: change system() to execute_command_line() when new compiler is available
+        if (.not. dir_exists('conf')) call system('mkdir conf')
+
+        ! open file conf/ads_%08d.dat
+        write(traj_id,'(i8.8)') itraj
+        fname = 'conf/ads_'//traj_id//'.dat'
+
+        ! overwrite file on first write
+        if (overwrite_ads) then
+            call open_for_write(out_unit, fname)
+            overwrite_ads = .false.
+        else
+            call open_for_append(out_unit, fname)
+        end if
+
+        write(out_unit, '(e13.6e2, L)') (istep-1)*simparams%step, is_adsorbed
+
+        close(out_unit)
+
+    end subroutine output_adsorption_status
 
 end module output_mod

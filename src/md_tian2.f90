@@ -79,7 +79,7 @@ program md_tian2
 
                     ! core propagation
                     call propagate_1(atoms)
-                    if (atoms%nbeads > 1) call do_ring_polymer_step(atoms)
+                    !if (atoms%nbeads > 1) call do_ring_polymer_step(atoms) commented due to nils' src
                     call calc_force(atoms, energy_and_force)
                     call propagate_2(atoms)
 
@@ -90,7 +90,7 @@ program md_tian2
                         .and. any(simparams%output_type == output_id_scatter)) exit
 
                     ! record bounces, lowest position, etc.
-                    call collect_trajectory_characteristics(atoms, istep)
+                    call collect_trajectory_characteristics(atoms, itraj, istep)
 
                     !if (mod(istep, 10)) print *, sum(sum(atoms%r(:,:,:), dim=2), dim=2)/atoms%natoms/atoms%nbeads
 

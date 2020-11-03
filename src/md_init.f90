@@ -21,7 +21,7 @@
 ! with this program. If not, see http://www.gnu.org/licenses.
 !############################################################################
 
-! Initialize molecular dynamics simulation
+! Initialize molecular dynamics simulations
 module md_init
 
     use universe_mod
@@ -435,6 +435,13 @@ contains
                 simparams%Tsurf == default_real .and. simparams%Tproj == default_real) &
                 stop err // "projectile and/or slab temperature required for rpmd"
 
+            if (simparams%nprojectiles > 0) then
+                if( any(simparams%md_algo_p == prop_id_andersen) .and. simparams%Tproj == default_real) stop err // "Projectile temperature not set"
+            end if
+
+            if (any(simparams%output_type == output_id_is_adsorbed) .and. &
+                any([simparams%adsorption_start, simparams%adsorption_end] == default_real)) &
+                stop err // "cannot output adsorption status when adsorption distance is not provided"
 
                 ! TODO: to be completed
 

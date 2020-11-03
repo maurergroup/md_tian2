@@ -369,4 +369,14 @@ contains
 
     end subroutine timestamp
 
+    subroutine normalize(vec)
+
+        real(dp), intent(inout) :: vec(3)
+
+        real(dp) :: length
+
+        if (any(vec /= 0)) vec = vec / sqrt(sum(vec*vec))
+
+    end subroutine normalize
+
 end module useful_things

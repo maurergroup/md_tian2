@@ -73,6 +73,7 @@ module run_config
         real(dp) :: evasp                                           ! reference energy for fit
         integer  :: maxit                                           ! maximum number of iteration during fit
         integer  :: nthreads                                        ! number of threads used for fitting
+        real(dp) :: adsorption_start, adsorption_end                ! define adsorption start and end. it starts when below 'start' and ends when above 'end'
         integer  :: nran                                            ! type of the random number genreator
         logical  :: detailed_step                                   ! in case of the nene pes this variable is needed to turn on a more detailed printing of informations in the trajectory
 
@@ -123,6 +124,8 @@ contains
         new_simulation_parameters%evasp = default_real
         new_simulation_parameters%maxit = 30
         new_simulation_parameters%nthreads = 1
+        new_simulation_parameters%adsorption_start = default_real
+        new_simulation_parameters%adsorption_end = default_real
         new_simulation_parameters%nran = default_int
         new_simulation_parameters%detailed_step = default_bool
 
@@ -504,6 +507,8 @@ contains
                                     simparams%output_type(i) = output_id_mxt
                                 case (output_key_scatter)
                                     simparams%output_type(i) = output_id_scatter
+                                case (output_key_is_adsorbed)
+                                    simparams%output_type(i) = output_id_is_adsorbed
                                 case (output_key_nene)
                                     simparams%output_type(i) = output_id_nene
                                 case (output_key_aims)
@@ -600,6 +605,12 @@ contains
                         read(words(2), *, iostat=ios) simparams%nthreads
                         if (ios /= 0) stop err // "Error reading number of threads"
 
+                    case ('adsorption_distance')
+
+                        if (nwords /= 3) stop err // "adsorption_distance key needs 2 arguments"
+                        read(words(2), *, iostat=ios) simparams%adsorption_start
+                        read(words(3), *, iostat=ios) simparams%adsorption_end
+                        if (ios /= 0) stop err // "Error reading the adsorption distance"
 
                     case default
                         if (trim(words(1)) /= '' .and. words(1)(1:1) /= '!') &

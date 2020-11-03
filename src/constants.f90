@@ -108,15 +108,16 @@ module constants
 
 
     ! Output
-    character(len=*), parameter :: output_key_xyz       = "xyz"
-    character(len=*), parameter :: output_key_energy    = "energy"
-    character(len=*), parameter :: output_key_poscar    = "poscar"
-    character(len=*), parameter :: output_key_vasp      = "vasp"
-    character(len=*), parameter :: output_key_mxt       = "mxt"
-    character(len=*), parameter :: output_key_scatter   = "scatter"
-    character(len=*), parameter :: output_key_nene      = "nene"
-    character(len=*), parameter :: output_key_aims      = "aims"
-    character(len=*), parameter :: output_key_runner    = "runner"
+    character(len=*), parameter :: output_key_xyz         = "xyz"
+    character(len=*), parameter :: output_key_energy      = "energy"
+    character(len=*), parameter :: output_key_poscar      = "poscar"
+    character(len=*), parameter :: output_key_vasp        = "vasp"
+    character(len=*), parameter :: output_key_mxt         = "mxt"
+    character(len=*), parameter :: output_key_scatter     = "scatter"
+    character(len=*), parameter :: output_key_nene        = "nene"
+    character(len=*), parameter :: output_key_aims        = "aims"
+    character(len=*), parameter :: output_key_runner      = "runner"
+    character(len=*), parameter :: output_key_is_adsorbed = "adsorption_status"
 
     integer, parameter :: output_id_xyz     = 1
     integer, parameter :: output_id_energy  = 2
@@ -127,6 +128,7 @@ module constants
     integer, parameter :: output_id_nene    = 7
     integer, parameter :: output_id_aims    = 8
     integer, parameter :: output_id_runner  = 9
+    integer, parameter :: output_id_is_adsorbed = 10
 
     ! Conversion constants to program units
     !

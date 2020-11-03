@@ -14,7 +14,10 @@
 
 # ifort and mkl library
 FC     = ifort 
-FFLAGS = -O3 -mkl -xcore-avx2 -fp-model precise -132
+FFLAGS = -O3 -mkl -xhost
+#FFLAGS = -O2 -mkl -xhost
+#FFLAGS = -O3 -mkl -xcore-avx2 -fp-model precise -132
+#FFLAGS = -O3 -mkl -xcore-avx512 -fp-model precise -132
 LIB    =
 
 ###############################################
@@ -84,8 +87,8 @@ MODULES      =	constants.o \
 		timings.o \
 		fittingoptions.o \
 	        pes_nene_mod.o \
-	        force.o \
 	        rpmd.o \
+	        force.o \
 	        md_init.o \
 	        md_algo.o \
 	        trajectory_info.o \

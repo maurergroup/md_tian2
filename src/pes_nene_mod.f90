@@ -137,6 +137,7 @@ module pes_nene_mod
         character(len=*), parameter :: err_scaling      = "Error when reading scaling.data: "
         character(len=*), parameter :: err_scalinge     = "Error when reading scalinge.data: "
 
+        character(len=*), parameter :: warn             = "Warning in read_nene: "
         character(len=*), parameter :: warn_inpnn       = "Warning when reading input.nn: "
 
         logical :: found_keyword = default_bool
@@ -703,7 +704,7 @@ module pes_nene_mod
                             read(words(2),'(i1000)', iostat=ios) nelem
                             if (ios /= 0) stop err // err_inpnn // "number_of_elements value must be integer"
                             call get_nelem(atoms,unique_nelem)
-                            if (nelem /= unique_nelem) stop err // err_inpnn // "number of elements in input.nn and in structure file differ"
+                            if (nelem /= unique_nelem) print *, warn // warn_inpnn // "number of elements in input.nn and in structure file differ " ! here only a warning is given, because otherwise it is not possible to simply simulate the slab alone!
                             npairs = 0
                             do pairctr_1 = 1,nelem
                                 do pairctr_2 = pairctr_1,nelem
@@ -762,8 +763,8 @@ module pes_nene_mod
                             do elemctr = 1,nelem
                                 read(words(elemctr+1),'(A)') element(elemctr)
                                 if (all(atoms%name /= element(elemctr))) then
-                                    print *, err, err_inpnn, "element names in input.nn and in input structure file differ: found ", element(elemctr), " which is not in ", atoms%name
-                                    stop
+                                    print *, warn, warn_inpnn, "element names in input.nn and in input structure file differ: found ", element(elemctr), " which is not in ", atoms%name ! here only a warning is given, because otherwise it is not possible to simply simulate the slab alone!
+                                    !stop
                                 end if
                             end do
                         else
@@ -7046,7 +7047,7 @@ module pes_nene_mod
 
         ! Calculates energy and forces with HDNNPs
 
-        use constants, only : habohr2evang, timestep_ha2ev => ha2ev ! think about better way to realize that here we need our more precise ha2ev variable!!; conflict due to ha2ev from nnconstants.f90 and constants.f90
+        use constants, only : habohr2evang, hatoev => ha2ev ! think about better way to realize that here we need our more precise ha2ev variable!!; conflict due to ha2ev from nnconstants.f90
         use run_config, only : simparams
 
 
@@ -7055,172 +7056,178 @@ module pes_nene_mod
 
         character(len=*), parameter :: err = "Error in compute_nene: "
 
-        integer :: atctr, ictr_1, ictr_2, ictr_3
+        integer :: ictr_1, ictr_2, ictr_3
+        integer :: bead
 
         real(dp) :: xyzstruct(3,atoms%natoms)
-        xyzstruct(:,:) = default_real
-
-        ! re-initialize similar to force module
-        eshort              = 0.0d0
-        nnshortenergy       = 0.0d0
-        nntotalenergy       = 0.0d0
-        nnelecenergy        = 0.0d0
-        nnatomenergy(:)     = 0.0d0
-        nntotalforce(:,:)   = 0.0d0
-        nnshortforce(:,:)   = 0.0d0
-        nnelecforce(:,:)    = 0.0d0
-        nntotalcharge       = 0.0d0
-        atomenergysum       = 0.0d0
-        nnstress_short(:,:) = 0.0d0
-        nnstress_elec(:,:)  = 0.0d0
-
-        ! start according to getstructure_mode3.f90
-
-        ! update coordinates and convert to internal RuNNer units (Ang -> Bohr)
-        do atctr = 1,num_atoms
-            xyzstruct(:,atctr) = atoms%r(:,1,atctr) * ang2bohr
-        end do
-
-        !if(lperiodic)then
-            call translate(num_atoms,lattice,xyzstruct)
-        !endif
-        ! end according to getstructure_mode3.f90
-
-        ! further according to predict.f90
-
-        !if(lshort .and. nn_type_short == 1) then
-            call predictionshortatomic(num_atoms,num_atoms_element,zelem,&
-                lattice,xyzstruct,minvalue_short_atomic,maxvalue_short_atomic,&
-                avvalue_short_atomic,eshortmin,eshortmax,nntotalenergy,nnshortforce,&
-                nnatomenergy,nnshortenergy,nnstress_short,atomenergysum,sens,lperiodic)
-        !endif
-
-        if(lelec .and. ((nn_type_elec == 1) .or. (nn_type_elec == 3) .or. (nn_type_elec == 4))) then
-            print *, err, "electrostatic NN prediction not implemented yet" !be patient you must, not work it will
-            stop
-            !call predictionelectrostatic(&
-              !num_atoms,zelem,&
-              !minvalue_elec,maxvalue_elec,avvalue_elec,&
-              !lattice,xyzstruct,&
-              !nntotalcharge,nnatomcharge,&
-              !chargemin,chargemax,nnelecenergy,&
-              !nnelecforce,nnstress_elec,sense,lperiodic)
-        else
-          nnatomcharge(:)=0.0d0
-        endif
-
-        ! combine short range and electrostatic energies
-        nntotalenergy=nnshortenergy+nnelecenergy
-
-        ! add energies of free atoms
-        if (lremoveatomenergies.and.lshort) then
-            call addatoms(num_atoms,&
-                zelem,num_atoms_element,&
-                atomenergysum,nnatomenergy)
-            nntotalenergy=nntotalenergy+atomenergysum
-        endif
-
-        ! update and convert energy from RuNNer to MDT2 unit
-        atoms%epot = nntotalenergy * timestep_ha2ev
 
 
-        ! combination of short-range and electrostatic forces
-        nntotalforce(:,:)=nnshortforce(:,:)+nnelecforce(:,:)
+        do bead = 1,atoms%nbeads ! loop over all beads
+
+            ! re-initialize similar to force module
+            xyzstruct(:,:)      = 0.0d0
+            eshort              = 0.0d0
+            nnshortenergy       = 0.0d0
+            nntotalenergy       = 0.0d0
+            nnelecenergy        = 0.0d0
+            nnatomenergy(:)     = 0.0d0
+            nntotalforce(:,:)   = 0.0d0
+            nnshortforce(:,:)   = 0.0d0
+            nnelecforce(:,:)    = 0.0d0
+            nntotalcharge       = 0.0d0
+            atomenergysum       = 0.0d0
+            nnstress_short(:,:) = 0.0d0
+            nnstress_elec(:,:)  = 0.0d0
+
+            ! start according to getstructure_mode3.f90
+
+            ! update coordinates and convert to internal RuNNer units
+            xyzstruct(:,:) = atoms%r(:,bead,:) * ang2bohr
+
+            if(lperiodic)then
+                call translate(num_atoms,lattice,xyzstruct)
+            endif
+            ! end according to getstructure_mode3.f90
+
+            ! further according to predict.f90
+
+            if(lshort .and. nn_type_short == 1) then
+                call predictionshortatomic(num_atoms,num_atoms_element,zelem,&
+                    lattice,xyzstruct,minvalue_short_atomic,maxvalue_short_atomic,&
+                    avvalue_short_atomic,eshortmin,eshortmax,nntotalenergy,nnshortforce,&
+                    nnatomenergy,nnshortenergy,nnstress_short,atomenergysum,sens,lperiodic)
+            endif
+
+            if(lelec .and. ((nn_type_elec == 1) .or. (nn_type_elec == 3) .or. (nn_type_elec == 4))) then
+                print *, err, "electrostatic NN prediction not implemented yet" ! be patient you must, not work it will
+                stop
+                !call predictionelectrostatic(&
+                  !num_atoms,zelem,&
+                  !minvalue_elec,maxvalue_elec,avvalue_elec,&
+                  !lattice,xyzstruct,&
+                  !nntotalcharge,nnatomcharge,&
+                  !chargemin,chargemax,nnelecenergy,&
+                  !nnelecforce,nnstress_elec,sense,lperiodic)
+            else
+              nnatomcharge(:) = 0.0d0
+            endif
+
+            ! combine short range and electrostatic energies
+            nntotalenergy = nnshortenergy + nnelecenergy
+
+            ! add energies of free atoms
+            if (lremoveatomenergies.and.lshort) then
+                call addatoms(num_atoms,&
+                    zelem,num_atoms_element,&
+                    atomenergysum,nnatomenergy)
+                nntotalenergy = nntotalenergy + atomenergysum
+            endif
+
+            ! update and convert energy from RuNNer to MDT2 unit
+            atoms%epot(bead) = nntotalenergy * hatoev
 
 
-        ! update and convert forces from RuNNer to MDT2 unit
-        atoms%f(:,1,:) = nntotalforce(:,:) * habohr2evang
+            ! combination of short-range and electrostatic forces
+            nntotalforce(:,:) = nnshortforce(:,:) + nnelecforce(:,:)
 
-        ! calculate the volume, needed also for stress
-        if (simparams%detailed_step == .true.) then
 
-            if (lperiodic) then ! not needed in every step
-                volume=0.0d0
-                call getvolume(lattice,volume)
+            ! update and convert forces from RuNNer to MDT2 unit
+            atoms%f(:,bead,:) = nntotalforce(:,:) * habohr2evang
+
+            ! more information and checks for debugging/analysis
+            if (simparams%detailed_step) then
+
+                print *, "bead: ", bead
+
+                ! calculate the volume, needed also for stress
+                if (lperiodic) then ! not needed in every step
+                    volume=0.0d0
+                    call getvolume(lattice,volume)
+                    if (.not.lmd) then
+                        write(*,*)'-------------------------------------------------------------'
+                        write(*,*)'volume ',volume * bohr2ang**3,' Ang^3'
+                    endif
+                endif
+
+                ! combination of short-range and electrostatic stress
+                if(ldostress.and.lperiodic)then !  not needed in every step?
+                    nnstress(:,:)=nnstress_short(:,:)+nnstress_elec(:,:)
+                    nnstress(:,:)=nnstress(:,:)/volume
+                endif
+
+                ! check if sum of forces is zero
+                if (lcheckf) then
+                    forcesum(:)=0.0d0
+                    do ictr_3=1,num_atoms
+                        do ictr_2=1,3
+                            forcesum(ictr_2)=forcesum(ictr_2)+nntotalforce(ictr_2,ictr_3)
+                        enddo
+                    enddo
+                    write(*,'(3A25)') 'Sum of Fx(eV/Ang)', 'Sum of Fy(eV/Ang)','Sum of Fz(eV/Ang)'
+                    write(*,'(3f25.8)') forcesum(1) * habohr2evang, forcesum(2) * habohr2evang, forcesum(3) * habohr2evang
+                    do ictr_2=1,3
+                        if(abs(forcesum(ictr_2)).gt.0.000001d0)then
+                            write(*,'(A20,I10,f25.8)')'Error in forces ',ictr_2,forcesum(ictr_2) * habohr2evang
+                            stop
+                        endif
+                    enddo
+                endif
+
                 if (.not.lmd) then
                     write(*,*)'-------------------------------------------------------------'
-                    write(*,*)'volume ',volume * bohr2ang**3,' Ang^3'
+                    write(*,'(a30,f18.8,a3)')' NN sum of free atom energies ',atomenergysum * timestep_ha2ev,' eV'
+                    write(*,'(a30,f18.8,a3)')' NN short range energy        ',(nntotalenergy-nnelecenergy-atomenergysum) * hatoev,' eV'
+                    write(*,'(a30,f18.8,a3)')' NN electrostatic energy      ',nnelecenergy * hatoev,' eV'
+                    write(*,'(a30,f18.8,a3)')' NNenergy                     ',nntotalenergy * hatoev,' eV'
+                    write(*,*)'-------------------------------------------------------------'
+                    if(nn_type_short.eq.1)then
+                        do ictr_1=1,num_atoms
+                            write(*,*)'NNatomenergy ',ictr_1,elementsymbol(ictr_1),nnatomenergy(ictr_1) * timestep_ha2ev
+                        enddo
+                    end if
                 endif
-            endif
-
-            ! combination of short-range and electrostatic stress
-            if(ldostress.and.lperiodic)then !  not needed in every step?
-                nnstress(:,:)=nnstress_short(:,:)+nnstress_elec(:,:)
-                nnstress(:,:)=nnstress(:,:)/volume
-            endif
-
-            ! check sum of forces if requested
-            if (lcheckf) then ! not needed in every step; check if forces are zero
-                forcesum(:)=0.0d0
-                do ictr_3=1,num_atoms
-                    do ictr_2=1,3
-                        forcesum(ictr_2)=forcesum(ictr_2)+nntotalforce(ictr_2,ictr_3)
-                    enddo
-                enddo
-                write(*,'(3A25)') 'Sum of Fx(eV/Ang)', 'Sum of Fy(eV/Ang)','Sum of Fz(eV/Ang)'
-                write(*,'(3f25.8)') forcesum(1) * habohr2evang, forcesum(2) * habohr2evang, forcesum(3) * habohr2evang
-                do ictr_2=1,3
-                    if(abs(forcesum(ictr_2)).gt.0.000001d0)then
-                        write(*,'(A20,I10,f25.8)')'Error in forces ',ictr_2,forcesum(ictr_2) * habohr2evang
-                        stop
-                    endif
-                enddo
-            endif
-
-            if (.not.lmd) then ! do we need this in each step?
                 write(*,*)'-------------------------------------------------------------'
-                !write(*,"(A84, I10)")'NN sum of free atom energies,short range and electrostatic energy for configuration',i4
-                write(*,'(a30,f18.8,a3)')' NN sum of free atom energies ',atomenergysum * timestep_ha2ev,' eV'
-                write(*,'(a30,f18.8,a3)')' NN short range energy        ',(nntotalenergy-nnelecenergy-atomenergysum) * timestep_ha2ev,' eV'
-                write(*,'(a30,f18.8,a3)')' NN electrostatic energy      ',nnelecenergy * timestep_ha2ev,' eV'
-                write(*,'(a30,f18.8,a3)')' NNenergy                     ',nntotalenergy * timestep_ha2ev,' eV'
-                write(*,*)'-------------------------------------------------------------'
-                if(nn_type_short.eq.1)then
+
+                if(lelec)then
                     do ictr_1=1,num_atoms
-                        write(*,*)'NNatomenergy ',ictr_1,elementsymbol(ictr_1),nnatomenergy(ictr_1) * timestep_ha2ev
+                        write(*,'(a10,i6,f14.8)')'NNcharge ',ictr_1,nnatomcharge(ictr_1)
                     enddo
-                end if
-            endif
-            write(*,*)'-------------------------------------------------------------'
+                endif
 
-            if(lelec)then ! not needed in every step
-                do ictr_1=1,num_atoms
-                    write(*,'(a10,i6,f14.8)')'NNcharge ',ictr_1,nnatomcharge(ictr_1)
-                enddo
-            endif
-
-            write(*,*)'-------------------------------------------------------------'
-            if(ldoforces)then ! not needed in every step, write forces
-                do ictr_1=1,num_atoms
-                    write(*,'(a10,i6,3f16.8,a8)')'NNforces ',ictr_1,nntotalforce(1,ictr_1) * habohr2evang,&
-                    nntotalforce(2,ictr_1) * habohr2evang,nntotalforce(3,ictr_1) * habohr2evang,' eV/Ang'
-                enddo
                 write(*,*)'-------------------------------------------------------------'
-            endif
-
-            if(ldostress.and.lperiodic)then ! not needed in every step
-                do ictr_1=1,3
-                    write(*,'(a10,3f18.8,a10)')'NNstress ',nnstress(ictr_1,1) * habohrcub2evangcub,&
-                    nnstress(ictr_1,2) * habohrcub2evangcub,nnstress(ictr_1,3) * habohrcub2evangcub,' eV/Ang^3'
-                enddo
-                write(*,*)'-------------------------------------------------------------'
-                pressure=(nnstress(1,1)+nnstress(2,2)+nnstress(3,3))/3.0d0
-                pressure=pressure*au2gpa
-                write(*,'(a12,f18.8,a5)')' NNpressure ',pressure,' GPa'
-                write(*,'(a12,f18.8,a5)')' NNpressure ',pressure*10.0d0,' kbar'
-                write(*,*)'-------------------------------------------------------------'
-            endif
-
-            if(lsens.and.lshort.and.(nn_type_short.eq.1))then ! not needed in every step
-                do ictr_1=1,nelem
-                    do ictr_2=1,num_funcvalues_short_atomic(ictr_1)
-                        write(*,'(a15,x,a2,x,i4,f16.8)')' NNsensitivity ',&
-                        element(ictr_1),ictr_2,sqrt(sens(ictr_1,ictr_2)/dble(num_atoms_element(ictr_1)))
+                if(ldoforces)then ! write forces
+                    do ictr_1=1,num_atoms
+                        write(*,'(a10,i6,3f16.8,a8)')'NNforces ',ictr_1,nntotalforce(1,ictr_1) * habohr2evang,&
+                        nntotalforce(2,ictr_1) * habohr2evang,nntotalforce(3,ictr_1) * habohr2evang,' eV/Ang'
                     enddo
                     write(*,*)'-------------------------------------------------------------'
-                enddo
-            endif
-        endif
+                endif
+
+                if(ldostress.and.lperiodic)then
+                    do ictr_1=1,3
+                        write(*,'(a10,3f18.8,a10)')'NNstress ',nnstress(ictr_1,1) * habohrcub2evangcub,&
+                        nnstress(ictr_1,2) * habohrcub2evangcub,nnstress(ictr_1,3) * habohrcub2evangcub,' eV/Ang^3'
+                    enddo
+                    write(*,*)'-------------------------------------------------------------'
+                    pressure=(nnstress(1,1)+nnstress(2,2)+nnstress(3,3))/3.0d0
+                    pressure=pressure*au2gpa
+                    write(*,'(a12,f18.8,a5)')' NNpressure ',pressure,' GPa'
+                    write(*,'(a12,f18.8,a5)')' NNpressure ',pressure*10.0d0,' kbar'
+                    write(*,*)'-------------------------------------------------------------'
+                endif
+
+                if(lsens.and.lshort.and.(nn_type_short.eq.1))then
+                    do ictr_1=1,nelem
+                        do ictr_2=1,num_funcvalues_short_atomic(ictr_1)
+                            write(*,'(a15,x,a2,x,i4,f16.8)')' NNsensitivity ',&
+                            element(ictr_1),ictr_2,sqrt(sens(ictr_1,ictr_2)/dble(num_atoms_element(ictr_1)))
+                        enddo
+                        write(*,*)'-------------------------------------------------------------'
+                    enddo
+                endif
+            endif ! end more information and checks
+
+        end do ! beads
 
     end subroutine compute_nene
 
@@ -7228,7 +7235,6 @@ module pes_nene_mod
 
         type(universe), intent(in) :: atoms
 
-        !integer, intent(in)     :: element_int_arr(size(atoms%names))
         integer, intent(out)    :: elem_num ! The number of unique elements
         integer                 :: nucelemarr(size(atoms%name))
         integer :: res(size(atoms%name))

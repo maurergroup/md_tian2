@@ -165,11 +165,10 @@ contains
         type(universe), intent(inout) :: atoms
         integer, intent(in) :: inp_unit
 
-        integer :: nwords, ios = 0, i
+        integer :: nwords, ios = 0
         character(len=max_string_length) :: buffer
         character(len=max_string_length) :: words(100)
         integer  :: idx1, idx2, ntypes
-        real(dp) :: temp3(3)
         character(len=*), parameter :: err = "Error in read_rebo: "
 
         call rebosi_initialize()
@@ -1650,8 +1649,9 @@ contains
         integer, intent(in)        :: type
 
         is_hydrogen = 0
-        if (atoms%name(type) == "H" .or. &
-            atoms%name(type) == "D" .or. &
+        if (atoms%name(type) == "H"  .or. &
+            atoms%name(type) == "HH" .or. &
+            atoms%name(type) == "D"  .or. &
             atoms%name(type) == "T") is_hydrogen = 1
 
     end function is_hydrogen
