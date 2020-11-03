@@ -7175,14 +7175,14 @@ module pes_nene_mod
 
                 if (.not.lmd) then
                     write(*,*)'-------------------------------------------------------------'
-                    write(*,'(a30,f18.8,a3)')' NN sum of free atom energies ',atomenergysum * timestep_ha2ev,' eV'
+                    write(*,'(a30,f18.8,a3)')' NN sum of free atom energies ',atomenergysum * hatoev,' eV'
                     write(*,'(a30,f18.8,a3)')' NN short range energy        ',(nntotalenergy-nnelecenergy-atomenergysum) * hatoev,' eV'
                     write(*,'(a30,f18.8,a3)')' NN electrostatic energy      ',nnelecenergy * hatoev,' eV'
                     write(*,'(a30,f18.8,a3)')' NNenergy                     ',nntotalenergy * hatoev,' eV'
                     write(*,*)'-------------------------------------------------------------'
                     if(nn_type_short.eq.1)then
                         do ictr_1=1,num_atoms
-                            write(*,*)'NNatomenergy ',ictr_1,elementsymbol(ictr_1),nnatomenergy(ictr_1) * timestep_ha2ev
+                            write(*,*)'NNatomenergy ',ictr_1,elementsymbol(ictr_1),nnatomenergy(ictr_1) * hatoev
                         enddo
                     end if
                 endif
