@@ -1,23 +1,23 @@
 !######################################################################
 ! This routine is part of
 ! RuNNer - RuNNer Neural Network Energy Representation
-! (c) 2008-2019 Prof. Dr. Joerg Behler 
+! (c) 2008-2020 Prof. Dr. Joerg Behler
 ! Georg-August-Universitaet Goettingen, Germany
 !
-! This program is free software: you can redistribute it and/or modify it 
-! under the terms of the GNU General Public License as published by the 
-! Free Software Foundation, either version 3 of the License, or 
+! This program is free software: you can redistribute it and/or modify it
+! under the terms of the GNU General Public License as published by the
+! Free Software Foundation, either version 3 of the License, or
 ! (at your option) any later version.
 !
-! This program is distributed in the hope that it will be useful, but 
-! WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY 
-! or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License 
+! This program is distributed in the hope that it will be useful, but
+! WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
 ! for more details.
 !
-! You should have received a copy of the GNU General Public License along 
-! with this program. If not, see http://www.gnu.org/licenses. 
+! You should have received a copy of the GNU General Public License along
+! with this program. If not, see http://www.gnu.org/licenses.
 !######################################################################
-      module globaloptions 
+      module globaloptions
 
       implicit none
 
@@ -31,10 +31,10 @@
       integer nblock
 
 !! max_num_atoms: number of atoms in the largest structure of all structures in input.data
-      integer max_num_atoms 
+      integer max_num_atoms
       integer max_num_pairs
 
-!! elementindex: yields number of element in system when nuclear charge of atom is provided. Example: for pure ZnO we have elementindex(6)=1 and elementindex(30)=2, all others are 0. 
+!! elementindex: yields number of element in system when nuclear charge of atom is provided. Example: for pure ZnO we have elementindex(6)=1 and elementindex(30)=2, all others are 0.
       integer elementindex(102)
 
 !! pairindex
@@ -64,6 +64,9 @@
       integer listdim
       integer ewaldkmax
 
+!! SFG (Emir)
+      integer maxnum_sfgroups_short_atomic
+
 !! determined in getdimensions
       integer npairs
 !! enforced value for max_num_neighbors
@@ -85,13 +88,19 @@
       real*8, dimension(:) , allocatable :: fixedcharge
       real*8 rmin
       real*8, dimension(:)     , allocatable :: atomrefenergies
+      real*8, dimension(:)     , allocatable :: atommasses
       real*8, dimension(:)     , allocatable :: dmin_element
-      real*8 kalman_epsilon 
-!! Noise matrix  and modified by kenko      
+      real*8 kalman_epsilon
+!! Noise matrix  and modified by kenko
       real*8 kalman_q
       real*8 kalman_qtau
       real*8 kalman_qmin
       real*8 kalman_q0
+
+      !! For hessian and frequency calculations - Emir
+      real*8, allocatable :: nnhessian(:,:)
+      real*8, allocatable :: nnfrequencies(:)
+      real*8, allocatable :: nnnormalmodes(:,:)
 
       logical lscalesym
       logical lcentersym
@@ -115,6 +124,10 @@
       logical lbindingenergyonly
 !! calculate correlation of symmetry functions
       logical lpearson_correlation
+!! use grouping while calculating symmetry functions (Emir)
+      logical lusesfgroups
+
+      logical lwritederiv ! for a specific task (Emir)
 
 !! calculate the sensitivity
       logical lsens
@@ -130,5 +143,9 @@
       character*2, dimension(:), allocatable :: element
       character*20 pstring
 
-      end module globaloptions 
+!! MD related (SW)
+      integer count_extrapolation_warnings
+      integer max_count_extrapolation_warnings
+
+      end module globaloptions
 

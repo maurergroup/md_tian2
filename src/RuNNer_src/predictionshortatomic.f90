@@ -1,23 +1,23 @@
 !######################################################################
 ! This routine is part of
 ! RuNNer - RuNNer Neural Network Energy Representation
-! (c) 2008-2019 Prof. Dr. Joerg Behler 
+! (c) 2008-2019 Prof. Dr. Joerg Behler
 ! Georg-August-Universitaet Goettingen, Germany
 !
-! This program is free software: you can redistribute it and/or modify it 
-! under the terms of the GNU General Public License as published by the 
-! Free Software Foundation, either version 3 of the License, or 
+! This program is free software: you can redistribute it and/or modify it
+! under the terms of the GNU General Public License as published by the
+! Free Software Foundation, either version 3 of the License, or
 ! (at your option) any later version.
 !
-! This program is distributed in the hope that it will be useful, but 
-! WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY 
-! or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License 
+! This program is distributed in the hope that it will be useful, but
+! WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
 ! for more details.
 !
-! You should have received a copy of the GNU General Public License along 
-! with this program. If not, see http://www.gnu.org/licenses. 
+! You should have received a copy of the GNU General Public License along
+! with this program. If not, see http://www.gnu.org/licenses.
 !######################################################################
-!! called by: 
+!! called by:
 !! - predict.f90
 !!
       subroutine predictionshortatomic(&
@@ -31,10 +31,10 @@
 !!
       use mpi_mod
       use fileunits
-      use predictionoptions 
+      use predictionoptions
       use nnflags
       use globaloptions
-      use symfunctions 
+      use symfunctions
       use timings
       use nnshort_atomic
 !!
@@ -42,7 +42,7 @@
 !!
       integer zelem(max_num_atoms)                    ! in
       integer num_atoms                               ! in
-      integer num_atoms_element(nelem)                ! in 
+      integer num_atoms_element(nelem)                ! in
       integer npoints                                 ! internal
       integer ncount                                  ! internal
       integer ndone                                   ! internal
@@ -55,7 +55,7 @@
       integer, allocatable :: lsta(:,:)                     ! numbers of neighbors
       integer, allocatable :: lstc(:)                       ! identification of atom
       integer, allocatable :: lste(:)                       ! nuclear charge of atom
-      integer, allocatable :: num_neighbors_short_atomic(:) ! internal    
+      integer, allocatable :: num_neighbors_short_atomic(:) ! internal
       integer max_num_neighbors_short_atomic                ! internal
 !!
       real*8 lattice(3,3)                                ! in
@@ -65,17 +65,17 @@
       real*8 avvalue_short_atomic(nelem,maxnum_funcvalues_short_atomic)            ! in
 !! DFT data (not necessarily provided in predicition mode)
 !! data predicted the NN
-      real*8 nntotalenergy                                              ! out 
-      real*8 nnshortforce(3,max_num_atoms)                              ! out 
-      real*8 nnatomenergy(max_num_atoms)                                ! out 
+      real*8 nntotalenergy                                              ! out
+      real*8 nnshortforce(3,max_num_atoms)                              ! out
+      real*8 nnatomenergy(max_num_atoms)                                ! out
 !! symmetry function parameters
-      real*8 nnshortenergy                                              ! out 
+      real*8 nnshortenergy                                              ! out
       real*8 nnstress_short(3,3)                                        ! internal
-      real*8 sens(nelem,maxnum_funcvalues_short_atomic)                              ! out  
+      real*8 sens(nelem,maxnum_funcvalues_short_atomic)                              ! out
       real*8 eshortmin                                                  ! in
       real*8 eshortmax                                                  ! in
-      real*8 atomenergysum                                              ! out 
-      real*8, allocatable :: lstb(:,:)                                  ! xyz and r_ij 
+      real*8 atomenergysum                                              ! out
+      real*8, allocatable :: lstb(:,:)                                  ! xyz and r_ij
 !!
       logical lperiodic                                                 ! in
       logical lextrapolation                                            ! internal
@@ -91,16 +91,16 @@
       nnshortenergy          = 0.0d0
       atomenergysum          = 0.0d0
 !! initialization of timings
-      timeshort              = 0.0d0 
-      timeeshort             = 0.0d0 
-      timefshort             = 0.0d0 
-      timesshort             = 0.0d0 
-      timeallocshort         = 0.0d0 
-      timesymshort           = 0.0d0 
-      timeextrapolationshort = 0.0d0 
-      timescalesymshort      = 0.0d0 
-      timescaledsfuncshort   = 0.0d0 
-      timecomm1              = 0.0d0 
+      timeshort              = 0.0d0
+      timeeshort             = 0.0d0
+      timefshort             = 0.0d0
+      timesshort             = 0.0d0
+      timeallocshort         = 0.0d0
+      timesymshort           = 0.0d0
+      timeextrapolationshort = 0.0d0
+      timescalesymshort      = 0.0d0
+      timescaledsfuncshort   = 0.0d0
+      timecomm1              = 0.0d0
 !! initialization of sensitivities
       sens(:,:)              = 0.0d0
 !!
@@ -114,7 +114,7 @@
         endif ! lfinetime
 !!======================================================================
 !! memory management strategy: keep only 'nblock' atoms in memory at once
-!! => loop step by step over these blocks of atoms 
+!! => loop step by step over these blocks of atoms
 !! In parallel runs the block of atoms is further split among the processes and each process does natoms atoms.
 !!======================================================================
 !! initialize auxiliary counters for splitting of atoms
@@ -122,7 +122,7 @@
         npoints = 0 ! number of atoms to be calculated in this loop step by all processes together
         ndone   = 0 ! number of atoms calculated in previous loops
 !!
-!! next block of npoints atoms 
+!! next block of npoints atoms
  11     continue
         if(ncount.gt.nblock)then
           npoints=nblock
@@ -133,11 +133,11 @@
         endif
 !!
 !!======================================================================
-!! Start short range energy part for this block of atoms 
+!! Start short range energy part for this block of atoms
 !!======================================================================
 !!
 !!======================================================================
-!! preparations for parallel runs 
+!! preparations for parallel runs
 !!======================================================================
         if((mpirank.eq.0).and.(.not.lmd))then
           write(ounit,*)'-------------------------------------------------------------'
@@ -159,11 +159,11 @@
           atomindex(i1)=n_start+i1-1
         enddo
 !!======================================================================
-!! end preparations for parallel runs 
+!! end preparations for parallel runs
 !!======================================================================
 !!
         if(lfinetime)then
-          dayallocshort=0 
+          dayallocshort=0
           call abstime(timeallocshortstart,dayallocshort)
         endif ! lfinetime
         allocate(lsta(2,max_num_atoms))
@@ -187,16 +187,16 @@
           lperiodic)
 !!
 !!======================================================================
-!! get neighboridx_short_atomic and invneighboridx_short_atomic for short range part 
+!! get neighboridx_short_atomic and invneighboridx_short_atomic for short range part
 !!======================================================================
-        allocate(neighboridx_short_atomic(natoms,0:max_num_neighbors_short_atomic))  
-        allocate(invneighboridx_short_atomic(natoms,max_num_atoms))  
+        allocate(neighboridx_short_atomic(natoms,0:max_num_neighbors_short_atomic))
+        allocate(invneighboridx_short_atomic(natoms,max_num_atoms))
         call getneighboridxatomic_para(n_start,natoms,listdim,&
           max_num_atoms,max_num_neighbors_short_atomic,&
           lsta,lstc,neighboridx_short_atomic,invneighboridx_short_atomic)
 !!
 !!======================================================================
-!! calculation of short range atomic energies (nnatomenergy), 
+!! calculation of short range atomic energies (nnatomenergy),
 !! forces (nnshortforce), and stress (nnstress_short)
 !!======================================================================
         call getshortatomic(n_start,natoms,atomindex,&
@@ -216,21 +216,21 @@
         enddo
 !!
 !!======================================================================
-!! deallocate short range arrays depending on natoms of this block of atoms 
+!! deallocate short range arrays depending on natoms of this block of atoms
 !!======================================================================
         deallocate(atomindex)
         deallocate(lsta)
         deallocate(lstc)
         deallocate(lste)
         deallocate(lstb)
-        deallocate(neighboridx_short_atomic)  
-        deallocate(invneighboridx_short_atomic)  
+        deallocate(neighboridx_short_atomic)
+        deallocate(invneighboridx_short_atomic)
         deallocate(num_neighbors_short_atomic)
 !!
 !! update the number of finished atoms:
         ndone=ndone+npoints
 !!======================================================================
-!! End short range energy part for this block of atoms 
+!! End short range energy part for this block of atoms
 !!======================================================================
 !! if there are atoms left to be done go to back and do next block of atoms
         if(ncount.gt.0) goto 11
@@ -264,7 +264,7 @@
         if(ldostress.and.lperiodic)then
           call mpi_allreduce(mpi_in_place,nnstress_short,9,&
             mpi_real8,mpi_sum,mpi_comm_world,mpierror)
-        endif 
+        endif
 !!
         if(lfinetime)then
           call abstime(timecomm1end,daycomm1)
@@ -275,31 +275,35 @@
 !!
 !!======================================================================
 !!======================================================================
-!! General output part 
+!! General output part
 !! (this is not ideal, all output should be done in predict.f90)
 !!======================================================================
 !!======================================================================
 !!
-      nnshortenergy=nntotalenergy 
+      nnshortenergy=nntotalenergy
 !!======================================================================
 !! check for short range energy extrapolation
 !!======================================================================
-      if((mpirank.eq.0).and.lshort.and.(.not.lmd))then
-        if((nntotalenergy/dble(max_num_atoms)).gt.eshortmax)then
+      if((nntotalenergy/dble(max_num_atoms)).gt.eshortmax)then
+        count_extrapolation_warnings = count_extrapolation_warnings + 1
+        if((mpirank.eq.0).and.lshort.and.(.not.lmd))then
           write(ounit,*)'-------------------------------------------------------------'
           write(ounit,'(a)')' WARNING: eshort is .gt. eshortmax '
           write(ounit,'(a,2f20.10)')' average eshort per atom, eshortmax ',&
             nntotalenergy/dble(max_num_atoms),eshortmax
           write(ounit,*)'-------------------------------------------------------------'
         endif
-        if((nntotalenergy/dble(max_num_atoms)).lt.eshortmin)then
+      end if
+      if((nntotalenergy/dble(max_num_atoms)).lt.eshortmin)then
+        count_extrapolation_warnings = count_extrapolation_warnings + 1
+        if((mpirank.eq.0).and.lshort.and.(.not.lmd))then
           write(ounit,*)'-------------------------------------------------------------'
           write(ounit,'(a)')' WARNING: eshort is .lt. eshortmin '
           write(ounit,'(a,2f20.10)')' average eshort per atom, eshortmin ',&
             nntotalenergy/dble(max_num_atoms),eshortmin
           write(ounit,*)'-------------------------------------------------------------'
         endif
-      endif ! mpirank
+      endif
 !!'
       return
       end

@@ -42,6 +42,9 @@ module output_mod
     integer :: out_id_poscar       = 0
     integer :: out_id_mxt          = 0
 
+    ! nene pes
+    integer :: total_count_extrapolation_warnings = 0
+
 
 contains
 
@@ -507,6 +510,7 @@ contains
     subroutine output_scatter(atoms, itraj, istep, flag)
 
         use rpmd
+        use globaloptions, only : count_extrapolation_warnings, max_count_extrapolation_warnings
 
         type(universe), intent(in) :: atoms
         integer, intent(in) :: itraj, istep
@@ -575,6 +579,12 @@ contains
                 atoms%idx, atoms%name, atoms%is_proj, atoms%simbox, atoms%isimbox
 
             close(fin_unit)
+
+            if (any(atoms%pes == pes_id_nene)) then
+                total_count_extrapolation_warnings = total_count_extrapolation_warnings + count_extrapolation_warnings
+                print *, "Extrapolation warnings this traj: ", count_extrapolation_warnings
+                if (total_count_extrapolation_warnings > max_count_extrapolation_warnings) stop err // "reached max number of extrapolation warnings!"
+            end if
 
         else
             print *, err, "unknown flag", flag

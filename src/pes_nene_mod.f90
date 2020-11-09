@@ -282,6 +282,11 @@ module pes_nene_mod
                     read(words(2), '(A)') inp_path
                     found_keyword = .true.
 
+                case ('maxnum_extrapolation_warnings')
+
+                    if (max_count_extrapolation_warnings /= default_int) stop err // err_pes // 'Multiple use of the maxnum_extrapolation_warnings key'
+                    read(words(2), '(i1000)') max_count_extrapolation_warnings
+
                 case default
 
                     print *, err // err_pes // "unknown nene parameter ", words(1)
@@ -291,9 +296,9 @@ module pes_nene_mod
 
         end do
 
-        if (found_keyword == default_bool) return
+        if (found_keyword == default_bool) return ! skip entry defining interaction without any keyword
 
-        if (read_files == .true.) return
+        if (read_files == .true.) return ! avoid multiple readout of RuNNer related files
 
         ! set name strings for RuNNer related files
         filename_inpnn      = trim(inp_path) // "input.nn"
@@ -7124,7 +7129,7 @@ module pes_nene_mod
             endif
 
             ! update and convert energy from RuNNer to MDT2 unit
-            atoms%epot(bead) = nntotalenergy * hatoev
+            atoms%epot(bead) =  atoms%epot(bead) + nntotalenergy * hatoev
 
 
             ! combination of short-range and electrostatic forces
@@ -7132,10 +7137,10 @@ module pes_nene_mod
 
 
             ! update and convert forces from RuNNer to MDT2 unit
-            atoms%f(:,bead,:) = nntotalforce(:,:) * habohr2evang
+            atoms%f(:,bead,:) = atoms%f(:,bead,:) + nntotalforce(:,:) * habohr2evang
 
-            ! more information and checks for debugging/analysis
-            if (simparams%detailed_step) then
+            ! more information and checks for debug
+            if (simparams%debug(id_nene)) then
 
                 print *, "bead: ", bead
 
@@ -7225,7 +7230,7 @@ module pes_nene_mod
                         write(*,*)'-------------------------------------------------------------'
                     enddo
                 endif
-            endif ! end more information and checks
+            endif ! end debug
 
         end do ! beads
 

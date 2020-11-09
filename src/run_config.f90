@@ -74,8 +74,8 @@ module run_config
         integer  :: maxit                                           ! maximum number of iteration during fit
         integer  :: nthreads                                        ! number of threads used for fitting
         real(dp) :: adsorption_start, adsorption_end                ! define adsorption start and end. it starts when below 'start' and ends when above 'end'
-        integer  :: nran                                            ! type of the random number genreator
-        logical  :: detailed_step                                   ! in case of the nene pes this variable is needed to turn on a more detailed printing of informations in the trajectory
+        integer  :: nran                                            ! type of the random number generator
+        logical  :: debug(id_nene)                                  ! in case of the nene pes this variable turn on more information for debugging
 
     end type
 
@@ -127,7 +127,7 @@ contains
         new_simulation_parameters%adsorption_start = default_real
         new_simulation_parameters%adsorption_end = default_real
         new_simulation_parameters%nran = default_int
-        new_simulation_parameters%detailed_step = default_bool
+        new_simulation_parameters%debug = default_bool
 
     end function
 
@@ -135,7 +135,7 @@ contains
 
         character(len=*), intent(in) :: input_file
 
-        integer :: i, ios = 0, line = 0, nwords, randk
+        integer :: i, ios = 0, line = 0, nwords, randk, word
         real(dp) :: rnd
         character(len=max_string_length) :: buffer
         character(len=max_string_length) :: words(100)
@@ -161,7 +161,7 @@ contains
                 ! Split an input string
                 call split_string(buffer, words, nwords)
                 select case (words(1))
-                    case('start')
+                    case ('start')
                         if (simparams%start /= default_int) stop 'Error in the input file: Multiple use of the start key'
                         if (nwords == 2) then
                             read(words(2),'(i1000)', iostat=ios) simparams%start
@@ -169,7 +169,7 @@ contains
                         else
                             print *, err, 'start key needs a single argument'; stop
                         end if
-                    case('rng_type')
+                    case ('rng_type')
                         if (simparams%nran /= default_int) stop 'Error in the input file: Multiple use of the rng_type key'
                         if (nwords == 2) then
                             read(words(2),'(i1000)', iostat=ios) simparams%nran
@@ -222,7 +222,7 @@ contains
                         end if
 
 
-                    case('ntrajs')
+                    case ('ntrajs')
 
                         if (simparams%ntrajs /= default_int)   stop 'Error in the input file: Multiple use of the ntrajs key'
                         if (nwords == 2) then
@@ -233,7 +233,7 @@ contains
                         end if
 
 
-                    case('nsteps')
+                    case ('nsteps')
 
                         if (simparams%nsteps /= default_int)   stop 'Error in the input file: Multiple use of the nsteps key'
                         if (nwords == 2) then
@@ -244,7 +244,7 @@ contains
                         end if
 
 
-                    case('step')
+                    case ('step')
 
                         if (simparams%step /= default_real) stop err // 'Multiple use of the step key'
                         if (nwords == 2) then
@@ -405,7 +405,7 @@ contains
                         end if
 
 
-                    case('annealing')
+                    case ('annealing')
 
                         if (simparams%sa_Tmax /= default_real) stop err // 'Multiple use of the annealing key'
                         if (nwords == 4) then
@@ -612,6 +612,20 @@ contains
                         read(words(3), *, iostat=ios) simparams%adsorption_end
                         if (ios /= 0) stop err // "Error reading the adsorption distance"
 
+                    case ('debug')
+                        if (nwords > 1) then
+                            do word=1,nwords-1
+                                select case(trim(words(word+1)))
+                                    case (pes_name_nene)
+                                        simparams%debug(id_nene) = .true.
+                                    case default
+                                        print *, "Warning: Debug option not available for ", trim(words(2))
+                                end select
+                            end do
+                        else
+                            print *, err, 'debug key needs an argument'
+                        end if
+
                     case default
                         if (trim(words(1)) /= '' .and. words(1)(1:1) /= '!') &
                             print *, 'Skipping invalid label ',trim(words(1)),' in line', line
@@ -622,8 +636,5 @@ contains
         close(inp_unit)
 
     end subroutine read_input_file
-
-
-
 
 end module run_config

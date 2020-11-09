@@ -1,23 +1,23 @@
 !######################################################################
 ! This routine is part of
 ! RuNNer - RuNNer Neural Network Energy Representation
-! (c) 2008-2018 Prof. Dr. Joerg Behler 
+! (c) 2008-2018 Prof. Dr. Joerg Behler
 ! Georg-August-Universitaet Goettingen, Germany
 !
-! This program is free software: you can redistribute it and/or modify it 
-! under the terms of the GNU General Public License as published by the 
-! Free Software Foundation, either version 3 of the License, or 
+! This program is free software: you can redistribute it and/or modify it
+! under the terms of the GNU General Public License as published by the
+! Free Software Foundation, either version 3 of the License, or
 ! (at your option) any later version.
 !
-! This program is distributed in the hope that it will be useful, but 
-! WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY 
-! or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License 
+! This program is distributed in the hope that it will be useful, but
+! WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
 ! for more details.
 !
-! You should have received a copy of the GNU General Public License along 
-! with this program. If not, see http://www.gnu.org/licenses. 
+! You should have received a copy of the GNU General Public License along
+! with this program. If not, see http://www.gnu.org/licenses.
 !######################################################################
-!! called by: 
+!! called by:
 !! - predictionshortatomic.f90
 !!
       subroutine getshortatomic(n_start,natoms,atomindex,&
@@ -59,29 +59,29 @@
 !!
       real*8 xyzstruct(3,max_num_atoms)                                 ! in
       real*8 lstb(listdim,4)                                            ! in, xyz and r_ij
-      real*8 minvalue_local(nelem,maxnum_funcvalues_short_atomic)       ! in 
-      real*8 maxvalue_local(nelem,maxnum_funcvalues_short_atomic)       ! in 
-      real*8 avvalue_local(nelem,maxnum_funcvalues_short_atomic)        ! in 
+      real*8 minvalue_local(nelem,maxnum_funcvalues_short_atomic)       ! in
+      real*8 maxvalue_local(nelem,maxnum_funcvalues_short_atomic)       ! in
+      real*8 avvalue_local(nelem,maxnum_funcvalues_short_atomic)        ! in
       real*8 scmin_local                                                ! in
       real*8 scmax_local                                                ! in
-      real*8 strs(3,3,maxnum_funcvalues_short_atomic)                   ! internal???                   
+      real*8 strs(3,3,maxnum_funcvalues_short_atomic)                   ! internal???
       real*8 dsfuncdxyz_temp(maxnum_funcvalues_short_atomic,0:max_num_neighbors_short_atomic,3)   ! internal
       real*8 dsfuncdxyz_local(0:max_num_neighbors_short_atomic,3)       ! internal
-      real*8 nnshortforce(3,max_num_atoms)                              ! out 
-      real*8 deshortdsfunc(maxnum_funcvalues_short_atomic)              ! internal 
+      real*8 nnshortforce(3,max_num_atoms)                              ! out
+      real*8 deshortdsfunc(maxnum_funcvalues_short_atomic)              ! internal
       real*8 symfunction(maxnum_funcvalues_short_atomic)                ! internal
 !! CAUTION: just one output node is assumed here
-      real*8 nnoutput                                                   ! internal 
+      real*8 nnoutput                                                   ! internal
       real*8 nodes_values(maxnum_layers_short_atomic,maxnodes_short_atomic)            ! internal
       real*8 nodes_sum(maxnum_layers_short_atomic,maxnodes_short_atomic)               ! internal
       real*8 dnodes_values(maxnum_layers_short_atomic,maxnodes_short_atomic)           ! internal
       real*8 tempderivative(maxnum_layers_short_atomic,maxnodes_short_atomic,maxnum_funcvalues_short_atomic) ! internal
-      real*8 nnatomenergy(max_num_atoms)                                ! out 
-      real*8 nnstress_short(3,3)                                        ! out 
+      real*8 nnatomenergy(max_num_atoms)                                ! out
+      real*8 nnstress_short(3,3)                                        ! out
       real*8 threshold                                                  ! internal
-      real*8 sens(nelem,maxnum_funcvalues_short_atomic)                 ! out 
-!!  
-      logical lrmin 
+      real*8 sens(nelem,maxnum_funcvalues_short_atomic)                 ! out
+!!
+      logical lrmin
       logical lextrapolation
       logical lperiodic
 !!
@@ -94,7 +94,7 @@
 
 
 !!====================================================================================
-!! loop over all atoms 
+!! loop over all atoms
 !!====================================================================================
       if(lprintforcecomponents.and.ldoforces)then
         write(ounit,*)'-------------------------------------------------------------'
@@ -114,7 +114,7 @@
       do i1=1,natoms
 
 !!====================================================================================
-!! initializations for this atom 
+!! initializations for this atom
 !!====================================================================================
         deshortdsfunc(:)= 0.0d0
         symfunction(:)  = 0.0d0
@@ -122,7 +122,7 @@
         ielem=elementindex(zelem(atomindex(i1)))
         iindex=elementindex(zelem(jcount))
 !!====================================================================================
-!! get the symmetry functions for atom jcount 
+!! get the symmetry functions for atom jcount
 !!====================================================================================
         do i2=1,num_funcvalues_short_atomic(ielem) ! over all symmetry functions
           call getatomsymfunctions(i1,i2,iindex,natoms,atomindex,natoms,&
@@ -140,7 +140,7 @@
           endif
 !!====================================================================================
 !! check for extrapolation atoms n_start to n_end
-!! This needs to be done before scaling 
+!! This needs to be done before scaling
 !!====================================================================================
           if(lfinetime)then
             dayextrapolationshort=0
@@ -148,14 +148,20 @@
           endif ! lfinetime
           lextrapolation=.false.
           if((symfunction(i2)-maxvalue_local(ielem,i2)).gt.threshold)then
-            write(ounit,'(a31,a5,x,2i5,x,a,2f18.8)')&
-            '### EXTRAPOLATION WARNING ### ','short',&
-            atomindex(i1),i2,'too large ',symfunction(i2),maxvalue_local(ielem,i2)
+            count_extrapolation_warnings = count_extrapolation_warnings + 1
+            if(.not.lmd)then
+              write(ounit,'(a31,a5,x,2i5,x,a,2f18.8)')&
+              '### EXTRAPOLATION WARNING ### ','short',&
+              atomindex(i1),i2,'too large ',symfunction(i2),maxvalue_local(ielem,i2)
+            end if
             lextrapolation=.true.
           elseif((-symfunction(i2)+minvalue_local(ielem,i2)).gt.threshold)then
-            write(ounit,'(a31,a5,x,2i5,x,a,2f18.8)')&
-            '### EXTRAPOLATION WARNING ### ','short',&
-            atomindex(i1),i2,'too small ',symfunction(i2),minvalue_local(ielem,i2)
+            count_extrapolation_warnings = count_extrapolation_warnings + 1
+            if(.not.lmd)then
+              write(ounit,'(a31,a5,x,2i5,x,a,2f18.8)')&
+              '### EXTRAPOLATION WARNING ### ','short',&
+              atomindex(i1),i2,'too small ',symfunction(i2),minvalue_local(ielem,i2)
+            end if
             lextrapolation=.true.
           endif
           if(lfinetime)then
@@ -209,7 +215,7 @@
             call abstime(timescalesymshortstart,dayscalesymshort)
           endif ! lfinetime
           if(lcentersym.and..not.lscalesym)then
-!! For each symmetry function remove the CMS of the respective element 
+!! For each symmetry function remove the CMS of the respective element
             symfunction(i2)=symfunction(i2)-avvalue_local(ielem,i2)
           elseif(lscalesym.and..not.lcentersym)then
 !! Scale each symmetry function value for the respective element
@@ -231,7 +237,7 @@
 
 
 !!====================================================================================
-!! now we have all symmetry functions of atom i1/jcount, now calculate the atom energy 
+!! now we have all symmetry functions of atom i1/jcount, now calculate the atom energy
 !! calculation of the values on all nodes (nodes_values) in the NN (needed below for the derivatives)
 !!====================================================================================
         nodes_sum(:,:)    =0.0d0 ! initialization
@@ -251,7 +257,7 @@
           nodes_short_atomic,ielem,nelem,nodes_sum,nodes_values,dnodes_values,actfunc_short_atomic)
 !!
 !!====================================================================================
-!! calculate deshortdsfunc for this atom i1  
+!! calculate deshortdsfunc for this atom i1
 !! calculate the full derivative of E_i with respect to G_j^i deshortdsfunc
 !!====================================================================================
         tempderivative(:,:,:)=0.0d0
@@ -260,19 +266,19 @@
 !! This is the derivative of the values of the nodes in the first layer with respect to G_i
 !! => nodes_short_atomic(1) values for each input node
         do i2=1,num_funcvalues_short_atomic(ielem)
-          do i4=1,nodes_short_atomic(1,ielem) ! over all nodes in layer 1 ("target layer") 
+          do i4=1,nodes_short_atomic(1,ielem) ! over all nodes in layer 1 ("target layer")
             icount=(i2-1)*nodes_short_atomic(1,ielem)+i4 ! set pointer in weights array, don't need windex_short_atomic for first weights
             tempderivative(1,i4,i2)=dnodes_values(1,i4)*weights_short_atomic(icount,ielem)
           enddo ! i4
         enddo ! i2
-!! for layers 2 and beyond (if present) 
+!! for layers 2 and beyond (if present)
         if(num_layers_short_atomic(ielem).gt.1)then
           do i2=1,num_funcvalues_short_atomic(ielem)
             do i5=2,num_layers_short_atomic(ielem) ! over all hidden and output layers
               do i3=1,nodes_short_atomic(i5,ielem) ! over all nodes in the target layer
 !! we have to sum over the nodes in the previous layer (i4)
                 do i4=1,nodes_short_atomic(i5-1,ielem) ! sum over all nodes in previous layer
-                  icount=windex_short_atomic(2*i5-1,ielem)+(i4-1)*nodes_short_atomic(i5,ielem)+i3-1 
+                  icount=windex_short_atomic(2*i5-1,ielem)+(i4-1)*nodes_short_atomic(i5,ielem)+i3-1
                   tempderivative(i5,i3,i2)=tempderivative(i5,i3,i2) + &
                   dnodes_values(i5,i3)*weights_short_atomic(icount,ielem)*tempderivative(i5-1,i4,i2)
                 enddo ! i4
@@ -290,7 +296,7 @@
         do i2=1,num_funcvalues_short_atomic(ielem)
           do i3=0,num_neighbors_short_atomic(jcount)  ! over all atoms in structure
             do i4=1,3 ! x,y,z
-              nnshortforce(i4,neighboridx_short_atomic(i1,i3))=nnshortforce(i4,neighboridx_short_atomic(i1,i3)) & 
+              nnshortforce(i4,neighboridx_short_atomic(i1,i3))=nnshortforce(i4,neighboridx_short_atomic(i1,i3)) &
                 -deshortdsfunc(i2)*dsfuncdxyz_temp(i2,i3,i4)
 !! JB start
               if(lprintforcecomponents.and.ldoforces)then
@@ -310,7 +316,7 @@
                     -deshortdsfunc(i2)*dsfuncdxyz_temp(i2,i3,i4)
                 endif
               endif
-!! JB end        
+!! JB end
             enddo ! i4
           enddo ! i3
         enddo ! i2
@@ -328,7 +334,7 @@
         endif ! lsens
 !!
 !!====================================================================================
-!! calculation of short range stress 
+!! calculation of short range stress
 !!====================================================================================
         if(lfinetime)then
           daysshort=0
