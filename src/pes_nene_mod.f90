@@ -6489,15 +6489,15 @@ module pes_nene_mod
 
         if(lshort)then
             if(nn_type_short.le.2)then
-                write(*,'(a55,i2)')&
+                write(*,'(a55,i4)')&
                     ' RuNNer nn_type_short                                              ',nn_type_short
             else
-                write(*,*)'ERROR: unknown nn_type_short: ',nn_type_short
+                write(*,'(a,i4)')'ERROR: unknown nn_type_short: ',nn_type_short
                 stop
             endif
         endif
 
-        write(*,*)'RuNNer is started in mode for prediction: ',mode
+        write(*,'(a,i4)')' RuNNer is started in mode for prediction: ',mode
 
         write(*,'(a,l)')' debugging mode is                                       ',ldebug
 

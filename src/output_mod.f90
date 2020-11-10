@@ -582,7 +582,7 @@ contains
 
             if (any(atoms%pes == pes_id_nene)) then
                 total_count_extrapolation_warnings = total_count_extrapolation_warnings + count_extrapolation_warnings
-                print *, "Extrapolation warnings this traj: ", count_extrapolation_warnings
+                if (count_extrapolation_warnings > 0) print *, "Extrapolation warnings this traj: ", count_extrapolation_warnings
                 if (total_count_extrapolation_warnings > max_count_extrapolation_warnings) stop err // "reached max number of extrapolation warnings!"
             end if
 
