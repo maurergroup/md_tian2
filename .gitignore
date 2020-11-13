@@ -19,8 +19,12 @@ conf/latt
 !conf/latt/mxt_00000001.dat
 # traj folder
 traj/
-# poscar folder
+# MDT2 output folders
 poscar/
+aims/
+energy/
+mxt/
+runner/
 # Manual
 *.aux
 *.bbl
