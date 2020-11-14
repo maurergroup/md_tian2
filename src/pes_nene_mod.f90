@@ -7066,6 +7066,12 @@ module pes_nene_mod
 
         real(dp) :: xyzstruct(3,atoms%natoms)
 
+        if (flag == energy_and_force) then
+            ldoforces = .true.
+        else
+            ldoforces = .false.
+        end if
+
 
         do bead = 1,atoms%nbeads ! loop over all beads
 

@@ -76,6 +76,7 @@ module run_config
         real(dp) :: adsorption_start, adsorption_end                ! define adsorption start and end. it starts when below 'start' and ends when above 'end'
         integer  :: nran                                            ! type of the random number generator
         logical  :: debug(id_nene)                                  ! in case of the nene pes this variable turn on more information for debugging
+        logical  :: loutput                                         ! if any output format is set this variable is true; should reduce the if condition when no output is chosen
 
     end type
 
@@ -128,6 +129,7 @@ contains
         new_simulation_parameters%adsorption_end = default_real
         new_simulation_parameters%nran = default_int
         new_simulation_parameters%debug = default_bool
+        new_simulation_parameters%loutput = default_bool
 
     end function
 
@@ -497,24 +499,33 @@ contains
                             select case (words(2*i))
                                 case (output_key_xyz)
                                     simparams%output_type(i) = output_id_xyz
+                                    simparams%loutput = .true.
                                 case (output_key_energy)
                                     simparams%output_type(i) = output_id_energy
+                                    simparams%loutput = .true.
                                 case (output_key_poscar)
                                     simparams%output_type(i) = output_id_poscar
+                                    simparams%loutput = .true.
                                 case (output_key_vasp)
                                     simparams%output_type(i) = output_id_vasp
+                                    simparams%loutput = .true.
                                 case (output_key_mxt)
                                     simparams%output_type(i) = output_id_mxt
+                                    simparams%loutput = .true.
                                 case (output_key_scatter)
                                     simparams%output_type(i) = output_id_scatter
                                 case (output_key_is_adsorbed)
                                     simparams%output_type(i) = output_id_is_adsorbed
+                                    simparams%loutput = .true.
                                 case (output_key_nene)
                                     simparams%output_type(i) = output_id_nene
+                                    simparams%loutput = .true.
                                 case (output_key_aims)
                                     simparams%output_type(i) = output_id_aims
+                                    simparams%loutput = .true.
                                 case (output_key_runner)
                                     simparams%output_type(i) = output_id_runner
+                                    simparams%loutput = .true.
                                 case default
                                     print *, 'Error in the input file: output format ', trim(words(2*i)), ' unknown'
                                     stop
@@ -619,7 +630,7 @@ contains
                                     case (pes_name_nene)
                                         simparams%debug(id_nene) = .true.
                                     case default
-                                        print *, "Warning: Debug option not available for ", trim(words(2))
+                                        print *, "Warning: Debug option not available for ", trim(words(word+1))
                                 end select
                             end do
                         else

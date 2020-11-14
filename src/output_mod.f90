@@ -62,49 +62,52 @@ contains
             call output_scatter(atoms, itraj, istep, flag)
         end if
 
-        do i = 1, size(simparams%output_type)
-            if (modulo(istep, simparams%output_interval(i)) == 0) then
+        if (simparams%loutput) then ! this should help to reduce if conditions per step
 
-                select case (simparams%output_type(i))
+            do i = 1, size(simparams%output_type)
+                if (modulo(istep, simparams%output_interval(i)) == 0) then
 
-                    case (output_id_xyz)
-                        call output_xyz(atoms, itraj, istep)
+                    select case (simparams%output_type(i))
 
-                    case (output_id_energy)
-                        call output_nrg(atoms, itraj, istep)
+                        case (output_id_xyz)
+                            call output_xyz(atoms, itraj, istep)
 
-                    case (output_id_poscar)
-                        call output_poscar(atoms)
-                        out_id_poscar = out_id_poscar + 1
+                        case (output_id_energy)
+                            call output_nrg(atoms, itraj, istep)
 
-                    case (output_id_vasp)
-                        call output_vasp(atoms, itraj, istep)
+                        case (output_id_poscar)
+                            call output_poscar(atoms)
+                            out_id_poscar = out_id_poscar + 1
 
-                    case (output_id_mxt)
-                        call output_mxt(atoms)
-                        out_id_mxt = out_id_mxt + 1
+                        case (output_id_vasp)
+                            call output_vasp(atoms, itraj, istep)
 
-                    case (output_id_scatter)
-                        ! pass
+                        case (output_id_mxt)
+                            call output_mxt(atoms)
+                            out_id_mxt = out_id_mxt + 1
 
-                    case (output_id_is_adsorbed)
-                        call output_adsorption_status(atoms, itraj, istep)
+                        case (output_id_scatter)
+                            ! pass
 
-                    case (output_id_nene)
-                        print *, "MD step ", istep
+                        case (output_id_is_adsorbed)
+                            call output_adsorption_status(atoms, itraj, istep)
 
-                    case (output_id_aims)
-                        call output_aims(atoms, itraj, istep)
+                        case (output_id_nene)
+                            print *, "MD step ", istep
 
-                    case (output_id_runner)
-                        call output_runner(atoms, itraj, istep)
+                        case (output_id_aims)
+                            call output_aims(atoms, itraj, istep)
 
-                    case default
-                        print *, err // "unknown output format", simparams%output_type(i)
-                        stop
-                end select
-            end if
-        end do
+                        case (output_id_runner)
+                            call output_runner(atoms, itraj, istep)
+
+                        case default
+                            print *, err // "unknown output format", simparams%output_type(i)
+                            stop
+                    end select
+                end if
+            end do
+        end if
 
     end subroutine output
 
