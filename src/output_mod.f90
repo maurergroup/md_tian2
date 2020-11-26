@@ -513,7 +513,7 @@ contains
     subroutine output_scatter(atoms, itraj, istep, flag)
 
         use rpmd
-        use globaloptions, only : count_extrapolation_warnings, max_count_extrapolation_warnings
+        use pes_nene_mod,  only : max_count_extrapolation_warnings, count_extrapolation_warnings_traj_energy, count_extrapolation_warnings_traj_symfunc
 
         type(universe), intent(in) :: atoms
         integer, intent(in) :: itraj, istep
@@ -550,6 +550,11 @@ contains
             write(out_unit, '(a11, f14.7)') "azi_i    = ", atan2(proj_v(2), proj_v(1))*rad2deg
             write(out_unit, '(a)') ""
 
+            if (any(atoms%pes == pes_id_nene)) then
+                count_extrapolation_warnings_traj_energy  = 0 ! re-initialize for each trajectory
+                count_extrapolation_warnings_traj_symfunc = 0 ! re-initialize for each trajectory
+            end if
+
         else if (flag == "scatter_final") then
 
             call open_for_append(out_unit, fname)
@@ -584,9 +589,10 @@ contains
             close(fin_unit)
 
             if (any(atoms%pes == pes_id_nene)) then
-                total_count_extrapolation_warnings = total_count_extrapolation_warnings + count_extrapolation_warnings
-                if (count_extrapolation_warnings > 0) print *, "Extrapolation warnings this traj: ", count_extrapolation_warnings
-                if (total_count_extrapolation_warnings > max_count_extrapolation_warnings) stop err // "reached max number of extrapolation warnings!"
+                total_count_extrapolation_warnings = total_count_extrapolation_warnings + sum(count_extrapolation_warnings_traj_energy) + sum(count_extrapolation_warnings_traj_symfunc)
+                if (sum(count_extrapolation_warnings_traj_energy) > 0)  print *, "Extrapolation warnings (energy) this traj: ", count_extrapolation_warnings_traj_energy
+                if (sum(count_extrapolation_warnings_traj_symfunc) > 0) print *, "Extrapolation warnings (symmetry functions) this traj: ", count_extrapolation_warnings_traj_symfunc
+                if (total_count_extrapolation_warnings > max_count_extrapolation_warnings) stop "Error: reached max number of extrapolation warnings!"
             end if
 
         else

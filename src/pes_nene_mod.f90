@@ -108,6 +108,12 @@ module pes_nene_mod
 
     integer, parameter  :: inpnn_unit = 61
 
+    integer :: bead
+    integer :: max_count_extrapolation_warnings = default_int
+
+    integer, dimension(:), allocatable :: count_extrapolation_warnings_traj_energy
+    integer, dimension(:), allocatable :: count_extrapolation_warnings_traj_symfunc
+
 
     contains
 
@@ -524,6 +530,9 @@ module pes_nene_mod
         maxcutoff_elec                      = 0.0d0
         kalmanlambda_local                  = 0.98d0
         kalmanlambdae_local                 = 0.98d0
+
+        count_extrapolation_warnings_energy  = 0 ! compare with RuNNer initialization
+        count_extrapolation_warnings_symfunc = 0 ! compare with RuNNer initialization
 
 
 
@@ -1614,11 +1623,13 @@ module pes_nene_mod
         end if
         zelem(:) = default_int
 
-        do atctr = 1,atoms%natoms ! this is done here to check if it is a valid structure
-            xyzstruct(:,atctr) = atoms%r(:,1,atctr) * ang2bohr
-            elementsymbol(atctr) = atoms%name(atoms%idx(atctr))
-            call nuccharge(elementsymbol(atctr),zelem(atctr))
-            lelement(zelem(atctr)) = .true.
+        do bead = 1,atoms%nbeads
+            do atctr = 1,atoms%natoms ! this is done here to check if it is a valid structure
+                xyzstruct(:,atctr) = atoms%r(:,bead,atctr) * ang2bohr
+                elementsymbol(atctr) = atoms%name(atoms%idx(atctr))
+                call nuccharge(elementsymbol(atctr),zelem(atctr))
+                lelement(zelem(atctr)) = .true.
+            end do
         end do
 
         if(lperiodic)then
@@ -5659,6 +5670,17 @@ module pes_nene_mod
         ! set variable true to avoid multiple read cycles in md_init.f90
         read_files = .true.
 
+        ! allocate counter for extrapolation warnings
+        if (not(allocated(count_extrapolation_warnings_traj_energy))) allocate(count_extrapolation_warnings_traj_energy(atoms%nbeads), stat=array_status)
+        if (array_status /= 0) then
+            print *, "count_extrapolation_warnings_traj_energy allocation failed; status = ", array_status; stop
+        end if
+
+        if (not(allocated(count_extrapolation_warnings_traj_symfunc))) allocate(count_extrapolation_warnings_traj_symfunc(atoms%nbeads), stat=array_status)
+        if (array_status /= 0) then
+            print *, "count_extrapolation_warnings_traj_symfunc allocation failed; status = ", array_status; stop
+        end if
+
         ! all things have been read and set up, ready for compute_nene()!!
 
     end subroutine read_nene
@@ -7062,7 +7084,6 @@ module pes_nene_mod
         character(len=*), parameter :: err = "Error in compute_nene: "
 
         integer :: ictr_1, ictr_2, ictr_3
-        integer :: bead
 
         real(dp) :: xyzstruct(3,atoms%natoms)
 
@@ -7090,26 +7111,29 @@ module pes_nene_mod
             nnstress_short(:,:) = 0.0d0
             nnstress_elec(:,:)  = 0.0d0
 
+            count_extrapolation_warnings_energy  = 0
+            count_extrapolation_warnings_symfunc = 0
+
             ! start according to getstructure_mode3.f90
 
             ! update coordinates and convert to internal RuNNer units
             xyzstruct(:,:) = atoms%r(:,bead,:) * ang2bohr
 
-            if(lperiodic)then
+            if (lperiodic) then
                 call translate(num_atoms,lattice,xyzstruct)
-            endif
+            end if
             ! end according to getstructure_mode3.f90
 
             ! further according to predict.f90
 
-            if(lshort .and. nn_type_short == 1) then
+            if (lshort .and. nn_type_short == 1) then
                 call predictionshortatomic(num_atoms,num_atoms_element,zelem,&
                     lattice,xyzstruct,minvalue_short_atomic,maxvalue_short_atomic,&
                     avvalue_short_atomic,eshortmin,eshortmax,nntotalenergy,nnshortforce,&
                     nnatomenergy,nnshortenergy,nnstress_short,atomenergysum,sens,lperiodic)
-            endif
+            end if
 
-            if(lelec .and. ((nn_type_elec == 1) .or. (nn_type_elec == 3) .or. (nn_type_elec == 4))) then
+            if (lelec .and. ((nn_type_elec == 1) .or. (nn_type_elec == 3) .or. (nn_type_elec == 4))) then
                 print *, err, "electrostatic NN prediction not implemented yet" ! be patient you must, not work it will
                 stop
                 !call predictionelectrostatic(&
@@ -7121,18 +7145,18 @@ module pes_nene_mod
                   !nnelecforce,nnstress_elec,sense,lperiodic)
             else
               nnatomcharge(:) = 0.0d0
-            endif
+            end if
 
             ! combine short range and electrostatic energies
             nntotalenergy = nnshortenergy + nnelecenergy
 
             ! add energies of free atoms
-            if (lremoveatomenergies.and.lshort) then
+            if (lremoveatomenergies .and. lshort) then
                 call addatoms(num_atoms,&
                     zelem,num_atoms_element,&
                     atomenergysum,nnatomenergy)
                 nntotalenergy = nntotalenergy + atomenergysum
-            endif
+            end if
 
             ! update and convert energy from RuNNer to MDT2 unit
             atoms%epot(bead) =  atoms%epot(bead) + nntotalenergy * hatoev
@@ -7145,26 +7169,29 @@ module pes_nene_mod
             ! update and convert forces from RuNNer to MDT2 unit
             atoms%f(:,bead,:) = atoms%f(:,bead,:) + nntotalforce(:,:) * habohr2evang
 
+            count_extrapolation_warnings_traj_energy(bead)  = count_extrapolation_warnings_traj_energy(bead)  + count_extrapolation_warnings_energy
+            count_extrapolation_warnings_traj_symfunc(bead) = count_extrapolation_warnings_traj_symfunc(bead) + count_extrapolation_warnings_symfunc
+
             ! more information and checks for debug
             if (simparams%debug(id_nene)) then
 
                 print *, "bead: ", bead
 
                 ! calculate the volume, needed also for stress
-                if (lperiodic) then ! not needed in every step
+                if (lperiodic) then
                     volume=0.0d0
                     call getvolume(lattice,volume)
-                    if (.not.lmd) then
+                    if (.not. lmd) then
                         write(*,*)'-------------------------------------------------------------'
                         write(*,*)'volume ',volume * bohr2ang**3,' Ang^3'
-                    endif
-                endif
+                    end if
+                end if
 
                 ! combination of short-range and electrostatic stress
-                if(ldostress.and.lperiodic)then !  not needed in every step?
+                if (ldostress .and. lperiodic) then
                     nnstress(:,:)=nnstress_short(:,:)+nnstress_elec(:,:)
                     nnstress(:,:)=nnstress(:,:)/volume
-                endif
+                end if
 
                 ! check if sum of forces is zero
                 if (lcheckf) then
@@ -7172,17 +7199,17 @@ module pes_nene_mod
                     do ictr_3=1,num_atoms
                         do ictr_2=1,3
                             forcesum(ictr_2)=forcesum(ictr_2)+nntotalforce(ictr_2,ictr_3)
-                        enddo
-                    enddo
+                        end do
+                    end do
                     write(*,'(3A25)') 'Sum of Fx(eV/Ang)', 'Sum of Fy(eV/Ang)','Sum of Fz(eV/Ang)'
                     write(*,'(3f25.8)') forcesum(1) * habohr2evang, forcesum(2) * habohr2evang, forcesum(3) * habohr2evang
                     do ictr_2=1,3
-                        if(abs(forcesum(ictr_2)).gt.0.000001d0)then
+                        if (abs(forcesum(ictr_2)) >= 0.000001d0) then
                             write(*,'(A20,I10,f25.8)')'Error in forces ',ictr_2,forcesum(ictr_2) * habohr2evang
                             stop
-                        endif
-                    enddo
-                endif
+                        end if
+                    end do
+                end if
 
                 if (.not.lmd) then
                     write(*,*)'-------------------------------------------------------------'
@@ -7191,58 +7218,62 @@ module pes_nene_mod
                     write(*,'(a30,f18.8,a3)')' NN electrostatic energy      ',nnelecenergy * hatoev,' eV'
                     write(*,'(a30,f18.8,a3)')' NNenergy                     ',nntotalenergy * hatoev,' eV'
                     write(*,*)'-------------------------------------------------------------'
-                    if(nn_type_short.eq.1)then
+                    if (nn_type_short == 1) then
                         do ictr_1=1,num_atoms
                             write(*,*)'NNatomenergy ',ictr_1,elementsymbol(ictr_1),nnatomenergy(ictr_1) * hatoev
-                        enddo
+                        end do
                     end if
-                endif
+                end if
                 write(*,*)'-------------------------------------------------------------'
 
-                if(lelec)then
+                if (lelec) then
                     do ictr_1=1,num_atoms
                         write(*,'(a10,i6,f14.8)')'NNcharge ',ictr_1,nnatomcharge(ictr_1)
-                    enddo
-                endif
+                    end do
+                end if
 
                 write(*,*)'-------------------------------------------------------------'
-                if(ldoforces)then ! write forces
+                if (ldoforces) then ! write forces
                     do ictr_1=1,num_atoms
                         write(*,'(a10,i6,3f16.8,a8)')'NNforces ',ictr_1,nntotalforce(1,ictr_1) * habohr2evang,&
                         nntotalforce(2,ictr_1) * habohr2evang,nntotalforce(3,ictr_1) * habohr2evang,' eV/Ang'
-                    enddo
+                    end do
                     write(*,*)'-------------------------------------------------------------'
-                endif
+                end if
 
-                if(ldostress.and.lperiodic)then
+                if (ldostress .and. lperiodic) then
                     do ictr_1=1,3
                         write(*,'(a10,3f18.8,a10)')'NNstress ',nnstress(ictr_1,1) * habohrcub2evangcub,&
                         nnstress(ictr_1,2) * habohrcub2evangcub,nnstress(ictr_1,3) * habohrcub2evangcub,' eV/Ang^3'
-                    enddo
+                    end do
                     write(*,*)'-------------------------------------------------------------'
                     pressure=(nnstress(1,1)+nnstress(2,2)+nnstress(3,3))/3.0d0
                     pressure=pressure*au2gpa
                     write(*,'(a12,f18.8,a5)')' NNpressure ',pressure,' GPa'
                     write(*,'(a12,f18.8,a5)')' NNpressure ',pressure*10.0d0,' kbar'
                     write(*,*)'-------------------------------------------------------------'
-                endif
+                end if
 
-                if(lsens.and.lshort.and.(nn_type_short.eq.1))then
+                if (lsens .and. lshort .and. (nn_type_short == 1)) then
                     do ictr_1=1,nelem
                         do ictr_2=1,num_funcvalues_short_atomic(ictr_1)
                             write(*,'(a15,x,a2,x,i4,f16.8)')' NNsensitivity ',&
                             element(ictr_1),ictr_2,sqrt(sens(ictr_1,ictr_2)/dble(num_atoms_element(ictr_1)))
-                        enddo
+                        end do
                         write(*,*)'-------------------------------------------------------------'
-                    enddo
-                endif
-            endif ! end debug
+                    end do
+                end if
+
+                write(ounit,'(A42,I10)') 'extrapolation warnings (energy)', count_extrapolation_warnings_energy
+                write(ounit,'(A42,I10)') 'extrapolation warnings (symmetry functions)', count_extrapolation_warnings_symfunc
+
+            end if ! debug
 
         end do ! beads
 
     end subroutine compute_nene
 
-    subroutine get_nelem(atoms,elem_num) ! this is needed so that the check for number of elements in MDT2 and RuNNer makes sense
+    subroutine get_nelem(atoms,elem_num) ! needed so that the check for number of elements in MDT2 and RuNNer makes sense
 
         type(universe), intent(in) :: atoms
 

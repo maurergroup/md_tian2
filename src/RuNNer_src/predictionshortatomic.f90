@@ -285,7 +285,7 @@
 !! check for short range energy extrapolation
 !!======================================================================
       if((nntotalenergy/dble(max_num_atoms)).gt.eshortmax)then
-        count_extrapolation_warnings = count_extrapolation_warnings + 1
+        count_extrapolation_warnings_energy = count_extrapolation_warnings_energy + 1
         if((mpirank.eq.0).and.lshort.and.(.not.lmd))then
           write(ounit,*)'-------------------------------------------------------------'
           write(ounit,'(a)')' WARNING: eshort is .gt. eshortmax '
@@ -295,7 +295,7 @@
         endif
       end if
       if((nntotalenergy/dble(max_num_atoms)).lt.eshortmin)then
-        count_extrapolation_warnings = count_extrapolation_warnings + 1
+        count_extrapolation_warnings_energy = count_extrapolation_warnings_energy + 1
         if((mpirank.eq.0).and.lshort.and.(.not.lmd))then
           write(ounit,*)'-------------------------------------------------------------'
           write(ounit,'(a)')' WARNING: eshort is .lt. eshortmin '

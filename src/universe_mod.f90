@@ -32,7 +32,7 @@ module universe_mod
     !  Type atoms
     !   structure to hold the position, velocity, force etc. for multiple atoms
     !       use rank2 array so positions, velocities, forces etc. are stored
-    !       in sequentional memory locations for efficient access
+    !       in sequential memory locations for efficient access
     !       each array should be allocated (3, n_beads, n_atom)
     !       mass array has length of n_atoms
     type universe

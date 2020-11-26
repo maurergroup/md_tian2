@@ -148,7 +148,7 @@
           endif ! lfinetime
           lextrapolation=.false.
           if((symfunction(i2)-maxvalue_local(ielem,i2)).gt.threshold)then
-            count_extrapolation_warnings = count_extrapolation_warnings + 1
+            count_extrapolation_warnings_symfunc = count_extrapolation_warnings_symfunc + 1
             if(.not.lmd)then
               write(ounit,'(a31,a5,x,2i5,x,a,2f18.8)')&
               '### EXTRAPOLATION WARNING ### ','short',&
@@ -156,7 +156,7 @@
             end if
             lextrapolation=.true.
           elseif((-symfunction(i2)+minvalue_local(ielem,i2)).gt.threshold)then
-            count_extrapolation_warnings = count_extrapolation_warnings + 1
+            count_extrapolation_warnings_symfunc = count_extrapolation_warnings_symfunc + 1
             if(.not.lmd)then
               write(ounit,'(a31,a5,x,2i5,x,a,2f18.8)')&
               '### EXTRAPOLATION WARNING ### ','short',&
