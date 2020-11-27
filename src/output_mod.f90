@@ -105,9 +105,12 @@ contains
                             print *, err // "unknown output format", simparams%output_type(i)
                             stop
                     end select
-                end if
-            end do
-        end if
+
+                end if ! interval
+
+            end do ! requested output format
+
+        end if ! loutput
 
     end subroutine output
 
@@ -137,7 +140,7 @@ contains
         fname = 'conf/mxt_conf'//traj_id//'.xyz'
 
         ! if this is the first call to this subroutine during a trajectory, find ID index
-        ! super ugly, but the findloc intrinsic is not implement in ifort 2013
+        ! super ugly, but the findloc intrinsic is not implemented in ifort 2013
         do i=1, size(simparams%output_type)
             if (simparams%output_type(i) == output_id_xyz) j = i
         end do
@@ -406,7 +409,7 @@ contains
                             write(out_unit, '(a)') "constrain_relaxation x"
                         else if (j == 2) then
                             write(out_unit, '(a)') "constrain_relaxation y"
-                        else
+                        else ! j == 3, no other option possible
                             write(out_unit, '(a)') "constrain_relaxation z"
                         end if
                     end if
@@ -637,17 +640,17 @@ contains
                         ! no interaction, no parameters
 
                     ! TODO: implement outputs
-                    !        case(pes_id_lj)
+                    !        case (pes_id_lj)
                     !            name = pes_name_lj
-                    !        case(pes_id_morse)
+                    !        case (pes_id_morse)
                     !            name = pes_name_morse
-                    !        case(pes_id_emt)
+                    !        case (pes_id_emt)
                     !            name = pes_name_emt
-                    !        case(pes_id_ho)
+                    !        case (pes_id_ho)
                     !            name = pes_name_ho
-                    !        case(pes_id_simple_lj)
+                    !        case (pes_id_simple_lj)
                     !            name = pes_name_simple_lj
-                    !	     case(pes_id_nene)
+                    !	     case (pes_id_nene)
                     !		 name = pes_name_nene
                     case default
                         print *, err, "pes output not implemented for ", pes

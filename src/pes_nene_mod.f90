@@ -52,7 +52,7 @@ module pes_nene_mod
     ! from and needed in predict.f90
     character(len=2), dimension(:), allocatable :: elementsymbol    ! elementsymbol(max_num_atoms)
 
-    logical :: lperiodic = .true.
+    logical :: lperiodic
     logical :: lfound_elements              = default_bool
 
     integer :: num_atoms = default_int
@@ -329,6 +329,7 @@ module pes_nene_mod
 
         ! set default values
         xyzstruct(:,:)                      = default_real
+        lperiodic                           = default_bool
         listdim                             = 100000
         nn_type_short                       = default_int
         mode                                = default_int
@@ -533,6 +534,11 @@ module pes_nene_mod
 
         count_extrapolation_warnings_energy  = 0 ! compare with RuNNer initialization
         count_extrapolation_warnings_symfunc = 0 ! compare with RuNNer initialization
+
+        if (.not. all(atoms%simbox == 0.0d)) then ! true if 3 lattice vectors are found
+            print *, here
+            lperiodic = .true.
+        end if
 
 
 
@@ -5927,13 +5933,6 @@ module pes_nene_mod
             kalman_qmin = 0.0d0
         end if
 
-        ! following our defaults
-        if (ldoforces == default_bool) then
-            ldoforces = .true. ! we always need forces
-        end if
-        if (lperiodic == default_bool) then
-            lperiodic = .true. ! we always assume a periodic structure
-        end if
         !if (lmd == default_bool) then
         !    lmd = .true.
         !end if
@@ -7119,7 +7118,7 @@ module pes_nene_mod
             ! update coordinates and convert to internal RuNNer units
             xyzstruct(:,:) = atoms%r(:,bead,:) * ang2bohr
 
-            if (lperiodic) then
+            if (lperiodic) then ! true if 3 lattice vectors are found
                 call translate(num_atoms,lattice,xyzstruct)
             end if
             ! end according to getstructure_mode3.f90

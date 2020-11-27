@@ -465,21 +465,21 @@ contains
         character(len=*), parameter :: err = "Error in pes_id_to_name(): "
 
         select case(id)
-            case(pes_id_lj)
+            case (pes_id_lj)
                 name = pes_name_lj
-            case(pes_id_morse)
+            case (pes_id_morse)
                 name = pes_name_morse
-            case(pes_id_emt)
+            case (pes_id_emt)
                 name = pes_name_emt
-            case(pes_id_rebo)
+            case (pes_id_rebo)
                 name = pes_name_rebo
-            case(pes_id_ho)
+            case (pes_id_ho)
                 name = pes_name_ho
-            case(pes_id_simple_lj)
+            case (pes_id_simple_lj)
                 name = pes_name_simple_lj
-            case(pes_id_no_interaction)
+            case (pes_id_no_interaction)
                 name = pes_name_no_interaction
-            case(pes_id_nene)
+            case (pes_id_nene)
                 name = pes_name_nene
             case default
                 print *, err // "unknown id", id

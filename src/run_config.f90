@@ -644,6 +644,7 @@ contains
                 end select
             end if
         end do ! ios
+
         close(inp_unit)
 
     end subroutine read_input_file
