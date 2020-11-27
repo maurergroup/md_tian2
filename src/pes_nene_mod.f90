@@ -535,8 +535,7 @@ module pes_nene_mod
         count_extrapolation_warnings_energy  = 0 ! compare with RuNNer initialization
         count_extrapolation_warnings_symfunc = 0 ! compare with RuNNer initialization
 
-        if (.not. all(atoms%simbox == 0.0d)) then ! true if 3 lattice vectors are found
-            print *, here
+        if (.not. all(atoms%simbox == 0.0d0)) then ! true if 3 lattice vectors are found
             lperiodic = .true.
         end if
 
