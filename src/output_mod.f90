@@ -546,8 +546,8 @@ contains
 
             write(out_unit, '(a11, f14.7)') "ekin_p_i = ", ekin_p
             write(out_unit, '(a11, f14.7)') "ekin_l_i = ", ekin_l
-            write(out_unit, '(a11, f14.7)') "epot_i   = ", sum(atoms%epot)/atoms%nbeads
-            write(out_unit, '(a11, f14.7)') "etotal_i = ", b_ekin_p + b_ekin_l + sum(atoms%epot)/atoms%nbeads + bead_epot
+            write(out_unit, '(a11, e19.8)') "epot_i   = ", sum(atoms%epot)/atoms%nbeads
+            write(out_unit, '(a11, e19.8)') "etotal_i = ", b_ekin_p + b_ekin_l + sum(atoms%epot)/atoms%nbeads + bead_epot
             write(out_unit, '(a11, 3f14.7)')"r_i      = ", sum(atoms%r(:,:,1), dim=2)/atoms%nbeads
             write(out_unit, '(a11, f14.7)') "polar_i  = ", 180-acos(proj_v(3)/sqrt(sum(proj_v*proj_v)))*rad2deg
             write(out_unit, '(a11, f14.7)') "azi_i    = ", atan2(proj_v(2), proj_v(1))*rad2deg
@@ -564,8 +564,8 @@ contains
 
             write(out_unit, '(a11, f14.7)') "ekin_p_f = ", ekin_p
             write(out_unit, '(a11, f14.7)') "ekin_l_f = ", ekin_l
-            write(out_unit, '(a11, f14.7)') "epot_f   = ", sum(atoms%epot)/atoms%nbeads
-            write(out_unit, '(a11, f14.7)') "etotal_f = ", b_ekin_p + b_ekin_l + sum(atoms%epot)/atoms%nbeads + bead_epot
+            write(out_unit, '(a11, e19.8)') "epot_f   = ", sum(atoms%epot)/atoms%nbeads
+            write(out_unit, '(a11, e19.8)') "etotal_f = ", b_ekin_p + b_ekin_l + sum(atoms%epot)/atoms%nbeads + bead_epot
             write(out_unit, '(a11, 3f14.7)')"r_f      = ", sum(atoms%r(:,:,1), dim=2)/atoms%nbeads
             write(out_unit, '(a11, f14.7)') "polar_f  = ", acos(proj_v(3)/sqrt(sum(proj_v*proj_v)))*rad2deg
             write(out_unit, '(a11, f14.7)') "azi_f    = ", atan2(proj_v(2), proj_v(1))*rad2deg
