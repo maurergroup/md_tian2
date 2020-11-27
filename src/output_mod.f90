@@ -283,7 +283,7 @@ contains
 
         character(len=max_string_length)    :: fname
         character(len=8)                    :: traj_id_vasp
-        character(len=6)                    :: step_id_vasp
+        character(len=7)                    :: step_id_vasp
 
         integer                             :: time_vals(8), noccurrences(atoms%ntypes), i, j
         real(dp)                            :: cents(3, atoms%natoms) ! for the beads to get center of mass
@@ -300,9 +300,9 @@ contains
 
         ! open file poscar_/poscar_%08d.dat
         if (istep == -1) then
-             write(step_id_vasp,'(i6.6)') zero_step
+             write(step_id_vasp,'(i7.7)') zero_step
         else
-             write(step_id_vasp,'(i6.6)') istep
+             write(step_id_vasp,'(i7.7)') istep
         end if
         write(traj_id_vasp,'(i8.8)') itraj
         fname = 'poscar/'//traj_id_vasp//'step'//step_id_vasp//'.POSCAR'
@@ -347,7 +347,7 @@ contains
 
         character(len=max_string_length)    :: fname
         character(len=8)                    :: traj_id_aims
-        character(len=6)                    :: step_id_aims
+        character(len=7)                    :: step_id_aims
 
         integer                             :: time_vals(8), noccurrences(atoms%ntypes), i, j, k, l
         real(dp)                            :: cents(3, atoms%natoms) ! for the beads to get center of mass
@@ -366,9 +366,9 @@ contains
         end do
 
         if (istep == -1) then ! initial structure
-             write(step_id_aims,'(i6.6)') zero_step
+             write(step_id_aims,'(i7.7)') zero_step
         else
-             write(step_id_aims,'(i6.6)') istep
+             write(step_id_aims,'(i7.7)') istep
         end if
         write(traj_id_aims,'(i8.8)') itraj
         fname = 'aims/'//traj_id_aims//'step'//step_id_aims//'.in'
