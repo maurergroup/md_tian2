@@ -19,6 +19,10 @@ azimuth 0
 !inc_rot energy <3 orientation angles>
 !inc_vib energy
 
+! 0K
+!pip 1.4246 0.0 6.0
+! 300K
+!pip 1.4495 0.0363 6.0
 pip r r 3.5
 pul 3.6
 
@@ -27,11 +31,15 @@ Tproj 300
 !annealing 1000 25 5
 
 !conf poscar 'conf/example.POSCAR'
-!conf merge 'conf/proj/' 1 'conf/latt/' 1
-conf merge 'conf/proj/' 1 'conf/latt/' 1000
+!conf merge 'conf/proj/' 1 'conf/latt_0K/' 1
+conf merge 'conf/proj/' 1 'conf/latt/' 1
+!conf merge 'conf/proj/' 1 'conf/latt/' 1000
+!conf mxt 'conf/latt/mxt_00000001.dat'
 
 
 !pes definition
 pes 'pes/NENE-HC.pes'
+!pes 'pes/NENE-C.pes'
+
 
 output scatter 1 energy 1 vasp 1 poscar 1 xyz 1 nene 1 mxt 1 runner 1 aims 1

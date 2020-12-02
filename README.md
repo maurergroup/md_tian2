@@ -61,6 +61,8 @@ for dynamic linking. Check also the intel link advisor webpage under:
 
 https://software.intel.com/content/www/us/en/develop/articles/intel-mkl-link-line-advisor.html
 
+Although it is possible to use GNU compiler, we strongly encourage to use the intel compiler due to performance reasons!
+
 Change the settings in the makefile to your need. Options:
 
     make help 		print possible arguments for make
