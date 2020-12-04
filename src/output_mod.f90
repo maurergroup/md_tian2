@@ -188,11 +188,11 @@ contains
         if (overwrite_nrg) then
             call open_for_write(out_unit, fname)
             write(out_unit, '(a)') '# All energies are given in eV.'
-            write(out_unit, '(a1, i8, 14i17)') "#", (i, i = 1, 15)
-            write(out_unit, '(15a17)') '#time/fs', 'atom T/K', 'bead T/K', 'r_gyr_sq_p/A²', &
+            write(out_unit, '(a1, i8, 20i17)') "#", (i, i = 1, 21)
+            write(out_unit, '(21a17)') '#time/fs', 'atom T/K', 'bead T/K', 'r_gyr_sq_p/A²', &
                 'r_gyr_sq_l/A²', 'atom ekin proj', 'atom ekin latt', 'bead ekin proj', &
                 'bead ekin latt', 'qntm ekin proj', 'qntm ekin latt', 'atom epot', &
-                'bead epot', 'e_total', 'f_total/(eV/A)'
+                'bead epot', 'e_total', 'f_total/(eV/A)', 'r_x', 'r_y', 'r_z', 'v_x', 'v_y', 'v_z'
             overwrite_nrg = .false.
         else
             call open_for_append(out_unit,fname)
@@ -209,15 +209,19 @@ contains
         atom_epot = sum(atoms%epot)/atoms%nbeads
         bead_epot = calc_bead_epot(atoms)
 
+
         etotal = b_ekin_p + b_ekin_l + atom_epot + bead_epot
 
         ! primitive quantum kinetic energy estimator, do not use, just for completeness
         ! source: J. Chem. Phys. 123, 134502 (2005)
         ! q_ekin = (0.5 * atoms%dof * kb * bead_temp - bead_epot)/atoms%nbeads
 
-        write(out_unit, '(15e17.8e2)') istep*simparams%step, atom_temp, bead_temp, &
+        
+
+        write(out_unit, '(21e17.8e2)') istep*simparams%step, atom_temp, bead_temp, &
             rgyr_p, rgyr_l, a_ekin_p, a_ekin_l, b_ekin_p, b_ekin_l, q_ekin_p, q_ekin_l, &
-            atom_epot, bead_epot, etotal, sum(atoms%f)
+            atom_epot, bead_epot, etotal, sum(atoms%f), sum(atoms%r(:,:,1), dim=2)/atoms%nbeads, &
+            sum(atoms%v(:,:,1), dim=2)/atoms%nbeads
 
         close(out_unit)
 
@@ -290,7 +294,7 @@ contains
 
         zero_step = 0
 
-        if (.not. dir_exists('poscar')) call execute_command_line('mkdir poscar')
+        if (.not. dir_exists('vasp')) call execute_command_line('mkdir vasp')
 
         ! prepare arrays
         noccurrences = 0
@@ -305,7 +309,7 @@ contains
              write(step_id_vasp,'(i7.7)') istep
         end if
         write(traj_id_vasp,'(i8.8)') itraj
-        fname = 'poscar/'//traj_id_vasp//'step'//step_id_vasp//'.POSCAR'
+        fname = 'vasp/'//traj_id_vasp//'step'//step_id_vasp//'.POSCAR'
         call open_for_write(out_unit, fname)
 
         ! write date and time as comment line
@@ -546,8 +550,8 @@ contains
 
             write(out_unit, '(a11, f14.7)') "ekin_p_i = ", ekin_p
             write(out_unit, '(a11, f14.7)') "ekin_l_i = ", ekin_l
-            write(out_unit, '(a11, e19.8)') "epot_i   = ", sum(atoms%epot)/atoms%nbeads
-            write(out_unit, '(a11, e19.8)') "etotal_i = ", b_ekin_p + b_ekin_l + sum(atoms%epot)/atoms%nbeads + bead_epot
+            write(out_unit, '(a11, e21.10)') "epot_i   = ", sum(atoms%epot)/atoms%nbeads
+            write(out_unit, '(a11, e21.10)') "etotal_i = ", b_ekin_p + b_ekin_l + sum(atoms%epot)/atoms%nbeads + bead_epot
             write(out_unit, '(a11, 3f14.7)')"r_i      = ", sum(atoms%r(:,:,1), dim=2)/atoms%nbeads
             write(out_unit, '(a11, f14.7)') "polar_i  = ", 180-acos(proj_v(3)/sqrt(sum(proj_v*proj_v)))*rad2deg
             write(out_unit, '(a11, f14.7)') "azi_i    = ", atan2(proj_v(2), proj_v(1))*rad2deg
@@ -564,8 +568,8 @@ contains
 
             write(out_unit, '(a11, f14.7)') "ekin_p_f = ", ekin_p
             write(out_unit, '(a11, f14.7)') "ekin_l_f = ", ekin_l
-            write(out_unit, '(a11, e19.8)') "epot_f   = ", sum(atoms%epot)/atoms%nbeads
-            write(out_unit, '(a11, e19.8)') "etotal_f = ", b_ekin_p + b_ekin_l + sum(atoms%epot)/atoms%nbeads + bead_epot
+            write(out_unit, '(a11, e21.10)') "epot_f   = ", sum(atoms%epot)/atoms%nbeads
+            write(out_unit, '(a11, e21.10)') "etotal_f = ", b_ekin_p + b_ekin_l + sum(atoms%epot)/atoms%nbeads + bead_epot
             write(out_unit, '(a11, 3f14.7)')"r_f      = ", sum(atoms%r(:,:,1), dim=2)/atoms%nbeads
             write(out_unit, '(a11, f14.7)') "polar_f  = ", acos(proj_v(3)/sqrt(sum(proj_v*proj_v)))*rad2deg
             write(out_unit, '(a11, f14.7)') "azi_f    = ", atan2(proj_v(2), proj_v(1))*rad2deg

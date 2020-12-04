@@ -25,6 +25,7 @@ aims/
 energy/
 mxt/
 runner/
+vasp/
 # Manual
 *.aux
 *.bbl

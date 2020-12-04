@@ -16,9 +16,6 @@ Einc 1.92
 polar 50
 azimuth 0
 
-!inc_rot energy <3 orientation angles>
-!inc_vib energy
-
 ! 0K
 !pip 1.4246 0.0 6.0
 ! 300K
