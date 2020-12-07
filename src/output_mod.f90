@@ -290,7 +290,8 @@ contains
         character(len=7)                    :: step_id_vasp
 
         integer                             :: time_vals(8), noccurrences(atoms%ntypes), i, j
-        real(dp)                            :: cents(3, atoms%natoms) ! for the beads to get center of mass
+        real(dp)                            :: cents_r(3, atoms%natoms) ! for the beads to get center of mass for positions
+        real(dp)                            :: cents_v(3, atoms%natoms) ! for the beads to get center of mass for velocities
 
         zero_step = 0
 
@@ -329,13 +330,14 @@ contains
         end if
 
 
-        cents = calc_centroid_positions(atoms)
+        cents_r = calc_centroid_positions(atoms)
+        cents_v = calc_centroid_velocities(atoms)
 
         ! positions and velocities
-        write(out_unit, '(3f23.15, 3l)') ((cents(:,i), &
-            .not.atoms%is_fixed(:,j,i), j=1,atoms%nbeads), i=1,atoms%natoms)
+        write(out_unit, '(3f23.15, 3l)') (cents_r(:,i), &
+            .not.atoms%is_fixed(:,1,i), i=1,atoms%natoms) ! T or F independent of bead, therefore use 1st entry
         write(out_unit, '(a)') ""
-        write(out_unit, '(3f23.15)') atoms%v
+        write(out_unit, '(3f23.15)') cents_v
 
         close(out_unit)
 
@@ -354,7 +356,8 @@ contains
         character(len=7)                    :: step_id_aims
 
         integer                             :: time_vals(8), noccurrences(atoms%ntypes), i, j, k, l
-        real(dp)                            :: cents(3, atoms%natoms) ! for the beads to get center of mass
+        real(dp)                            :: cents_r(3, atoms%natoms) ! for the beads to get center of mass for positions
+        real(dp)                            :: cents_v(3, atoms%natoms) ! for the beads to get center of mass for velocities
 
         logical, dimension(3)               :: lskip
 
@@ -391,12 +394,13 @@ contains
         ! add empty line, for asthetics
         write(out_unit, '(a)') ""
 
-        cents = calc_centroid_positions(atoms)
+        cents_r = calc_centroid_positions(atoms)
+        cents_v = calc_centroid_velocities(atoms)
 
         ! positions and velocities
         do i=1,atoms%natoms ! atoms
             lskip(:) = .FALSE.
-            write(out_unit, '(a,3f23.15,x,a)') ("atom",(cents(:,i), atoms%name(atoms%idx(i))))
+            write(out_unit, '(a,3f23.15,x,a)') ("atom",(cents_r(:,i), atoms%name(atoms%idx(i))))
             do k=1,atoms%nbeads
                 do j=1,3
                     if (atoms%is_fixed(j,k,i) == .TRUE.) then
@@ -421,7 +425,7 @@ contains
                 write(out_unit, '(a)',advance='no') "velocity"
                 do j=1,3
                     if (lskip(j) == .FALSE.) then
-                        write(out_unit, '(f23.15)',advance='no') atoms%v(j,:,i)
+                        write(out_unit, '(f23.15)',advance='no') cents_v(j,i)
                     end if
                 end do
                 write(out_unit, '(a)') ""
@@ -445,7 +449,8 @@ contains
 
         integer                             :: time_vals(8), noccurrences(atoms%ntypes)
         integer                             :: j, k
-        real(dp)                            :: cents(3, atoms%natoms) ! for the beads to get center of mass
+        real(dp)                            :: cents_r(3, atoms%natoms) ! for the beads to get center of mass for positions
+        real(dp)                            :: cents_f(3, atoms%natoms) ! for the beads to get center of mass for forces
 
         real(dp)                            :: dummy_ce
 
@@ -476,12 +481,16 @@ contains
             call open_for_append(out_unit,fname)
         end if
 
+        cents_r = calc_centroid_positions(atoms)
+        cents_f = calc_centroid_forces(atoms)
+
         write (out_unit,'(A5)') 'begin'
         do k = 1,3
             write(out_unit,lattice_format) 'lattice', atoms%simbox(:,k) * ang2bohr
         end do
         do j = 1,atoms%natoms
-            write (out_unit,atom_format) 'atom', atoms%r(:,:,j) * ang2bohr, atoms%name(atoms%idx(j)), dummy_ce, dummy_ce, atoms%f(:,:,j)
+            write (out_unit,atom_format) 'atom', cents_r(:,j) * ang2bohr, atoms%name(atoms%idx(j)), dummy_ce, dummy_ce, &
+            cents_f(:,j) / habohr2evang
         end do
         write (out_unit,ce_format) 'charge', dummy_ce
         write (out_unit,ce_format) 'energy', dummy_ce

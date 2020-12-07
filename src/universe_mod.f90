@@ -46,7 +46,7 @@ module universe_mod
         real(dp), allocatable         :: f(:,:,:)        ! forces
         real(dp), allocatable         :: a(:,:,:)        ! acceleration
         real(dp), allocatable         :: m(:)            ! mass
-        logical,  allocatable         :: is_fixed(:,:,:) ! mask array defining frozen atoms (T is frozen)
+        logical,  allocatable         :: is_fixed(:,:,:) ! mask array defining frozen atoms (T means atom can move, F is frozen)
 
         integer, allocatable          :: idx(:)          ! index of atom type used in program
         character(len=3), allocatable :: name(:)         ! atomic name
