@@ -159,7 +159,9 @@ module constants
     real(dp), parameter :: joule2ev             = 6.2415093433e+18_dp
     real(dp), parameter :: kelvin2ev            = kB
     real(dp), parameter :: ha2ev                = 27.21138602_dp ! convert Ha to eV
+    real(dp), parameter :: ev2ha                = 1/ha2ev
     real(dp), parameter :: habohr2evang         = ha2ev*ang2bohr !51.4220670398_dp; convert Ha/bohr to eV/ang
+    real(dp), parameter :: evang2habohr         = 1/habohr2evang
     real(dp), parameter :: habohrcub2evangcub   = ha2ev*(ang2bohr**3)
     real(dp), parameter :: au2gpa               = 29419.844d0 ! 1 Ha/Bohr3 = 29419.844 GPa
 

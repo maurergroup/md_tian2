@@ -452,7 +452,7 @@ contains
         real(dp)                            :: cents_r(3, atoms%natoms) ! for the beads to get center of mass for positions
         real(dp)                            :: cents_f(3, atoms%natoms) ! for the beads to get center of mass for forces
 
-        real(dp)                            :: dummy_ce
+        real(dp)                            :: dummy_ce, epot
 
         character(len=36)   :: lattice_format = '(A7, X, F11.8, X, F11.8, X, F11.8)'
         character(len=93)   :: atom_format = '(A4, X, F16.9, X, F16.9, X, F16.9, X, A3, X, F11.8, X, F11.8, X, F11.8, X, F11.8, X, F11.8)'
@@ -481,6 +481,7 @@ contains
             call open_for_append(out_unit,fname)
         end if
 
+        epot = sum(atoms%epot)/atoms%nbeads
         cents_r = calc_centroid_positions(atoms)
         cents_f = calc_centroid_forces(atoms)
 
@@ -490,10 +491,10 @@ contains
         end do
         do j = 1,atoms%natoms
             write (out_unit,atom_format) 'atom', cents_r(:,j) * ang2bohr, atoms%name(atoms%idx(j)), dummy_ce, dummy_ce, &
-            cents_f(:,j) / habohr2evang
+            cents_f(:,j) * evang2habohr
         end do
         write (out_unit,ce_format) 'charge', dummy_ce
-        write (out_unit,ce_format) 'energy', dummy_ce
+        write (out_unit,ce_format) 'energy', epot * ev2ha
         write (out_unit,'(A3)') 'end'
 
         close(out_unit)
