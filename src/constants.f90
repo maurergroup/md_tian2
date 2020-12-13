@@ -128,6 +128,7 @@ module constants
     character(len=*), parameter :: output_key_aims        = "aims"
     character(len=*), parameter :: output_key_runner      = "runner"
     character(len=*), parameter :: output_key_is_adsorbed = "adsorption_status"
+    character(len=*), parameter :: output_key_bead_output_format = "beads"
 
     integer, parameter :: output_id_xyz     = 1
     integer, parameter :: output_id_energy  = 2
@@ -139,6 +140,7 @@ module constants
     integer, parameter :: output_id_aims    = 8
     integer, parameter :: output_id_runner  = 9
     integer, parameter :: output_id_is_adsorbed = 10
+    integer, parameter :: output_id_beads   = 11
 
     ! Conversion constants to program units
     !

@@ -77,6 +77,7 @@ module run_config
         integer  :: nran                                            ! type of the random number generator
         logical  :: debug(id_nene)                                  ! in case of the nene pes this variable turn on more information for debugging
         logical  :: loutput                                         ! if any output format is set this variable is true; should reduce the if condition when no output is chosen
+        logical  :: lbead_output_format                             ! defines if centroid positions or each bead is written out in a separate data file
 
     end type
 
@@ -130,6 +131,7 @@ contains
         new_simulation_parameters%nran = default_int
         new_simulation_parameters%debug = default_bool
         new_simulation_parameters%loutput = default_bool
+        new_simulation_parameters%lbead_output_format = default_bool
 
     end function
 
@@ -525,6 +527,10 @@ contains
                                     simparams%loutput = .true.
                                 case (output_key_runner)
                                     simparams%output_type(i) = output_id_runner
+                                    simparams%loutput = .true.
+                                case (output_key_bead_output_format)
+                                    simparams%output_type(i) = output_id_beads
+                                    simparams%lbead_output_format = .true.
                                     simparams%loutput = .true.
                                 case default
                                     print *, 'Error in the input file: output format ', trim(words(2*i)), ' unknown'

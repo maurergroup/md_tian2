@@ -5691,6 +5691,7 @@ module pes_nene_mod
     end subroutine read_nene
 
 
+
     subroutine inputnndefaults()
 
 
@@ -5938,6 +5939,8 @@ module pes_nene_mod
 
 
     end subroutine inputnndefaults
+
+
 
     subroutine checkinputnn()
 
@@ -6472,6 +6475,8 @@ module pes_nene_mod
 
     end subroutine checkinputnn
 
+
+
     subroutine printinputnn(nodes_short_atomic_temp,nodes_elec_temp,kalmanlambda_local,kalmanlambdae_local,actfunc_short_atomic_dummy,actfunc_elec_dummy)
 
         integer :: ictr_1, ictr_2
@@ -6679,6 +6684,8 @@ module pes_nene_mod
 
     end subroutine printinputnn
 
+
+
     subroutine readscale(filename,filename_error,ndim,iswitch,maxnum_funcvalues_local,num_funcvalues_local,minvalue_local,maxvalue_local,avvalue_local,eshortmin,eshortmax,chargemin,chargemax)
 
         use open_file, only : open_for_read
@@ -6832,6 +6839,8 @@ module pes_nene_mod
 
     end subroutine readscale
 
+
+
     subroutine readweights(directory,iswitch,ndim,maxnum_weights_local,num_weights_local,weights_local)
 
         use open_file, only : open_for_read
@@ -6956,6 +6965,7 @@ module pes_nene_mod
     end subroutine readweights
 
 
+
     ! the following subroutine is not needed at he moment, maybe this will become important later
     subroutine read_vdw_coefficients_type_1(filename)
 
@@ -7068,6 +7078,8 @@ module pes_nene_mod
 
     end subroutine read_vdw_coefficients_type_1
 
+
+
     subroutine compute_nene(atoms, flag)
 
         ! Calculates energy and forces with HDNNPs
@@ -7117,7 +7129,7 @@ module pes_nene_mod
             ! update coordinates and convert to internal RuNNer units
             xyzstruct(:,:) = atoms%r(:,bead,:) * ang2bohr
 
-            if (lperiodic) then ! true if 3 lattice vectors are found
+            if (lperiodic) then ! true if 3 lattice vectors are found, this will remap the atoms inside the simulation box
                 call translate(num_atoms,lattice,xyzstruct)
             end if
             ! end according to getstructure_mode3.f90
@@ -7252,6 +7264,7 @@ module pes_nene_mod
                     write(*,*)'-------------------------------------------------------------'
                 end if
 
+                ! write out data for the derivatives of the symmetry functions to check how important a SF is, more important when setting up a new PES, her given for completeness compared to RuNNer code
                 if (lsens .and. lshort .and. (nn_type_short == 1)) then
                     do ictr_1=1,nelem
                         do ictr_2=1,num_funcvalues_short_atomic(ictr_1)
@@ -7270,6 +7283,8 @@ module pes_nene_mod
         end do ! beads
 
     end subroutine compute_nene
+
+
 
     subroutine get_nelem(atoms,elem_num) ! needed so that the check for number of elements in MDT2 and RuNNer makes sense
 

@@ -31,7 +31,7 @@ module rpmd !ring polymer MD
 
     real(dp), allocatable :: cjk(:,:)
 
-contains
+    contains
 
     subroutine build_cjk(nbeads)
         integer, intent(in) :: nbeads
@@ -60,7 +60,6 @@ contains
 
 
 
-
     real(dp) function calc_bead_temperature(atoms) result(temperature)
 
         type(universe), intent(in) :: atoms
@@ -75,7 +74,6 @@ contains
         temperature = temp / kB / atoms%dof
 
     end function calc_bead_temperature
-
 
 
 
@@ -103,6 +101,36 @@ contains
 
     end function calc_centroid_positions
 
+
+
+    function calc_centroid_is_fixed(atoms) result(cents)
+
+        type(universe), intent(in) :: atoms
+        logical                   :: cents(3, atoms%natoms)
+
+        integer  :: i,j,k
+
+        cents = .false.
+
+        ! active rpmd
+        if (atoms%nbeads > 1) then
+
+            do i = 1,atoms%natoms
+                do j= 1,atoms%nbeads
+                    do k = 1,3
+                        if (atoms%is_fixed(k,j,i)) then
+                            cents(k,i) = .true.
+                        end if
+                    end do
+                end do
+            end do
+
+        ! no rpmd
+        else
+            cents = atoms%is_fixed(:,1,:)
+        end if
+
+    end function calc_centroid_is_fixed
 
 
 
@@ -213,7 +241,6 @@ contains
 
 
 
-
     real(dp) function calc_bead_epot(atoms) result(epot)
 
         type(universe), intent(in) :: atoms
@@ -238,7 +265,6 @@ contains
         epot = 0.5_dp * epot / atoms%nbeads
 
     end function calc_bead_epot
-
 
 
 
@@ -444,7 +470,6 @@ contains
 
 
 
-
     subroutine set_ring_polymer_forces(atoms)
 
         type(universe), intent(inout) :: atoms
@@ -519,7 +544,6 @@ contains
 
 
 
-
     subroutine bead_ekin(atoms, ekin_p, ekin_l)
 
         type(universe), intent(in) :: atoms
@@ -546,7 +570,6 @@ contains
         ekin_l = 0.5_dp * ekin_l / atoms%nbeads
 
     end subroutine bead_ekin
-
 
 
 
@@ -619,6 +642,5 @@ contains
 !        x = factor * copy(1:N)
 !
 !    end subroutine irfft
-
 
 end module rpmd
