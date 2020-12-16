@@ -1,0 +1,261 @@
+### #############################################################
+### This is the input file for RuNNer (version 0_44 and upwards)
+### #############################################################
+### General remarks: 
+### - commands can be switched off by using the # character at the BEGINNING of the line
+### - the input file can be structured by blank lines and comment lines
+### - the order of the keywords is arbitrary
+### - if keywords are missing, default values will be used and written to runner.out
+### - if mandatory keywords or keyword options are missing, RuNNer will stop with an error message 
+
+########################################################################################################################
+### general keywords
+########################################################################################################################
+nn_type_short 1
+runner_mode 1
+#debug_mode                               # debugging mode                                       (ldebug)
+parallel_mode 1 
+#detailed_timing                          # enable detailed timing                               (lfinetime)(not fully implemented)
+#number_of_elements 3                      # number of elements                                   (nelem)                       MODE1+2+3+4
+number_of_elements 1
+elements C
+random_seed 73
+random_number_type 5
+#remove_atom_energies                      # remove atomic energies before fitting                (lremoveatomenergies)         MODE1+2+3+4
+#atom_energy Zn -1805.01857147             # free atom reference energy (atomic zora)
+#atom_energy Cu -1662.62769510             # free atom reference energy (atomic zora)
+#atom_energy O    -75.10095491             # free atom reference energy (atomic zora)
+energy_threshold 0.00
+#energy_threshold -0.09245/-0.074075/-0.0557 is the same parameter for ZnO fit
+bond_threshold 0.1d0
+
+########################################################################################################################
+### NN structure of the short-range NN  
+########################################################################################################################
+use_short_nn       
+global_hidden_layers_short 2 
+global_nodes_short 15 15    
+global_activation_short t t l
+#element_hidden_layers_short Zn 1          # set number of hidden layers for element 
+#element_hidden_layers_short O 2           # set number of hidden layers for element
+#element_nodes_short O 1 9                # set number of nodes in hidden layer (order: element layer nodes)
+#element_nodes_short O 2 8                # set number of nodes in hidden layer (order: element layer nodes)
+#element_nodes_short Zn 1 7                # set number of nodes in hidden layer (order: element layer nodes)
+#element_nodes_short Zn 2 6                # set number of nodes in hidden layer (order: element layer nodes)
+#element_activation_short Zn 1 1 s         # set activation function for node (order: element layer node function)
+
+########################################################################################################################
+### NN structure of the electrostatic NN  
+########################################################################################################################
+#use_electrostatic_nn                      # use NN for electrostatic interactions                (lewald)                             
+#global_hidden_layers_electrostatic 2      # number of hidden layers                              (num_layersewald-1)
+#global_nodes_electrostatic 40 40          # number of nodes in hidden layers                     (nodes_ewald)
+#global_activation_electrostatic t t l     # activation functions                                 (actfunc_ewald)
+#ewald_alpha 0.2                           # alpha for Ewald summation (ewaldalpha)! recommended (alpha 0.2/kmax 10) or (alpha 0.5/kmax >20 )
+#ewald_kmax 10                             # parameter Kmax for Ewald summation                   (ewaldkmax)
+#ewald_cutoff 15.0                         # Ewald cutoff                                         (ewaldcutoff)
+#element_hidden_layers_electrostatic Zn 1  # set number of hidden layers for element
+#element_nodes_electrostatic O 1 5        # set number of nodes in hidden layer (order: element layer nodes)
+#element_nodes_electrostatic O 2 4        # set number of nodes in hidden layer (order: element layer nodes)
+#element_nodes_electrostatic Zn 1 3        # set number of nodes in hidden layer (order: element layer nodes)
+#element_nodes_electrostatic Zn 2 2        # set number of nodes in hidden layer (order: element layer nodes)
+#element_activation_electrostatic Zn 1 1 s # set activation function for node (order: element layer node function)
+
+########################################################################################################################
+### symmetry function generation ( mode 1): 
+########################################################################################################################
+#use_atom_energies                        # use atomic energies for fitting (not implemented)    (luseatomenergies)                     MODE1+2+3+4
+#use_atom_charges                          # use atomic charges for fitting(set always true!)     (luseatomcharges)                      MODE1+2+3+4
+test_fraction 0.10000         
+#CAUTION: don't forget use_short_forces below (if you want to generate the training files for the forces)
+
+########################################################################################################################
+### symmetry function definitions (all modes): 
+########################################################################################################################
+# INFO: not yet implemented in this file
+# INFO: symfunction format: reference atom, type, neighbor element 1 (and neighbor element 2), symfunction parameters 
+#
+# GLOBAL SYMMETRY FUNCTIONS FOR SHORT RANGE NN
+# SAMPLE TYPE 1: global_symfunction_short 1 2.0                           ! type funccutoff 
+# SAMPLE TYPE 2: global_symfunction_short 2 7.14214 0.0 11.338            ! type eta rshift funccutoff
+# SAMPLE TYPE 3: global_symfunction_short 3 0.03571 -1.0 16.0  7.55891    ! type eta lambda zeta funccutoff
+# SAMPLE TYPE 4: global_symfunction_short 4 7.14214 11.338                ! type eta funccutoff
+# SAMPLE TYPE 5: global_symfunction_short O 5 1.000                       ! central_atom type eta                         ! CARTESIAN COORDINATES 
+# SAMPLE TYPE 6: global_symfunction_short O 6 11.338                      ! central_atom type funccutoff                  ! BOND LENGTH
+#----------------------------------------------------------------
+#global_symfunction_short 2 0.0009  0.0000  12.00000  ! eta rshift funccutoff
+symfunction_short C  2 C    0.000000      0.000000     12.000000
+
+symfunction_short C  2 C    0.005000      0.000000     12.000000
+
+symfunction_short C  2 C    0.013000      0.000000     12.000000
+
+symfunction_short C  2 C    0.027000      0.000000     12.000000
+
+symfunction_short C  2 C    0.060000      0.000000     12.000000
+
+symfunction_short C  2 C    0.156000      0.000000     12.000000
+
+#global_symfunction_short 3 0.0000  1.0  1.0  12.00000  ! eta lambda zeta funccutoff
+symfunction_short C  3 C  C 0.0000  1.0  1.0  12.00000 
+
+symfunction_short C  3 C  C 0.0000  1.0  2.0  12.00000 
+
+symfunction_short C  3 C  C 0.0000  1.0  4.0  12.00000 
+
+symfunction_short C  3 C  C 0.0000  1.0  16.0  12.00000 
+
+symfunction_short C  3 C  C 0.0000  -1.0  1.0  12.00000
+
+symfunction_short C  3 C  C 0.0000  -1.0  2.0  12.00000 
+
+symfunction_short C  3 C  C 0.0000  -1.0  4.0  12.00000 
+
+symfunction_short C  3 C  C 0.0000  -1.0  16.0  12.00000 
+
+#global_symfunction_short 3 0.0000  1.0  1.0  12.00000  ! eta lambda zeta funccutoff
+symfunction_short C  3 C  C 0.0130  1.0  1.0  12.00000 
+symfunction_short C  3 C  C 0.0130  1.0  2.0  12.00000 
+symfunction_short C  3 C  C 0.0130  1.0  4.0  12.00000 
+symfunction_short C  3 C  C 0.0130  1.0  16.0  12.00000 
+#global_symfunction_short 3 0.0000  -1.0  1.0  12.00000  ! eta lambda zeta funccutoff
+symfunction_short C  3 C  C 0.0130  -1.0  1.0  12.00000 
+symfunction_short C  3 C  C 0.0130  -1.0  2.0  12.00000 
+symfunction_short C  3 C  C 0.0130  -1.0  4.0  12.00000 
+symfunction_short C  3 C  C 0.0130  -1.0  16.0  12.00000 
+
+#global_symfunction_short 3 0.0000  1.0  1.0  12.00000  ! eta lambda zeta funccutoff
+symfunction_short C  3 C  C 0.1560  1.0  1.0  12.00000 
+symfunction_short C  3 C  C 0.1560  1.0  2.0  12.00000 
+symfunction_short C  3 C  C 0.1560  1.0  4.0  12.00000 
+symfunction_short C  3 C  C 0.1560  1.0  16.0  12.00000 
+#global_symfunction_short 3 0.0000  -1.0  1.0  12.00000  ! eta lambda zeta funccutoff
+symfunction_short C  3 C  C 0.1560  -1.0  1.0  12.00000 
+symfunction_short C  3 C  C 0.1560  -1.0  2.0  12.00000 
+symfunction_short C  3 C  C 0.1560  -1.0  4.0  12.00000 
+symfunction_short C  3 C  C 0.1560  -1.0  16.0  12.00000 
+
+########################################################################################################################
+### fitting (mode 2):general inputs for short range AND electrostatic part:
+########################################################################################################################
+epochs 100                    
+points_in_memory 2000   
+mix_all_points
+#random_order_training                     # training with random order of points                 (lrandomtrain)                         MODE2
+#save_kalman_matrices                     # save Kalman filter matrices                          (lsavekalman)                          MODE2
+#read_kalman_matrices                     # restart using old Kalman filter matrices             (lrestkalman)                          MODE2
+scale_symmetry_functions   
+#center_symmetry_functions                 # remove center of mass of structure function values   (lcentersym)                           MODE2+3+4
+#fix_weights                               # fix some weights                                     (lfixweights)                          MODE2
+#growth_mode 11 6                          # growth mode                                          (lgrowth,ngrowth,growthstep)           MODE2
+#use_damping 0.00001d0                     # use weight decay                                     (ldampw,dampw)                         MODE2
+#update_single_element 30                  # do weight update just for one element                (lupdatebyelement,elemupdate)          MODE2
+fitting_unit  eV          
+#joint_energy_force_update                 # for each atom do one update for energy and averaged forces together (not yet working well) 
+#normalize_nodes
+#write_fit_statistics                      # write statistics on usage of points for fitting (lfitstats)
+#use_old_scaling
+precondition_weights     
+########################################################################################################################
+### fitting options ( mode 2): short range part only:
+########################################################################################################################
+optmode_short_energy 1  
+optmode_short_force 1  
+short_energy_error_threshold 0.8000001 
+short_force_error_threshold 1.2000001 
+kalman_lambda_short 0.98000
+kalman_nue_short 0.99870            
+#steepest_descent_step_energy_short 0.01d0 # step size for steepest descent energy                (steepeststepe)                        MODE2
+#steepest_descent_step_force_short 0.01d0  # step size for steepest descent force                 (steepeststepf)                        MODE2
+#use_old_weights_short                     # restart fitting with old weight parameters for short (luseoldweightsshort)                  MODE2
+#update_worst_short_energies 0.5d0         # percentage of the worst energies used for update     (worste)                               MODE2
+#update_worst_short_forces 0.001d0           # percentage of the worst forces used for update       (worstf)                               MODE2
+#force_update_scaling -1.0d0               # scaling factor for the force update (negative value means automatic scaling) (scalefactorf) MODE2
+short_energy_group 1               
+short_energy_fraction 1.000       
+short_force_group 10             
+short_force_fraction  0.01      
+use_short_forces               
+#calculate_final_force                     # calculate force error only in final epoch (lfinalforce)     MODE2
+#weight_constraint O all fixed               # "all" switch
+#weight_constraint O interlayer 1 2 free     # "interlayer" layer1 layer2 switch
+#weight_constraint Zn bias 1 2 free           # "bias layer" node switch
+#weight_constraint Zn weight 1 3 2 3 free     # "weight" layer1 node1 layer2 node2 switch
+#weight_constraint Zn node 1 1 free           # "node" layer node switch
+weights_min -1.0              
+weights_max 1.0              
+#separate_kalman_short                     # use separate Kalman matrices for short range energies and forces (lsepkalman)        MODE2
+#use_systematic_weights_short               #
+#nguyen_widrow_weights_short              # initialize short range weights according to Nguyen Widrow scheme                     MODE2
+#repeated_energy_update                    # repeat energy update for each force update                       (lrepeate) MODE2
+#max_force 0.5                            # do not use larger forces in Ha/Bohr for update                   (maxforce) MODE2
+#max_energy -0.09245
+scale_min_short_atomic 0.0  
+scale_max_short_atomic 1.0 
+#force_grouping_by_structure               # group all forces within one structure for fitting                                    MODE 2
+
+########################################################################################################################
+### fitting ( mode 2): electrostatic part only:
+########################################################################################################################
+#optmode_charge 1                          # optimization mode atomic charges      (optmodeq, 1=Kalman filter, 2=conjugate gradient, 3=steepest descent)
+#charge_error_threshold 0.0000001          # threshold of adaptive Kalman filter charge           (kalmanthresholde)                     MODE2
+#kalman_lambda_charge 0.97400              # Kalman parameter charge                              (kalmanlambdae)                        MODE2
+#kalman_nue_charge 0.99870                 # Kalman parameter charge                              (kalmannuee)                           MODE2
+#steepest_descent_step_charge 0.01d0       # step size for steepest descent charge                (steepeststepq)                        MODE2
+#use_old_weights_charge                    # restart fitting with old weight parameters for charge(luseoldweightscharge)                 MODE2
+#update_worst_charges 0.1d0                # percentage of the worst charges used for update      (worstq)                               MODE2
+#charge_group 1                            # group charges for update                             (nchargegroup)                         MODE2
+#charge_fraction 1.00                      # percentage of charges used for fitting 100%=1.0      (chargernd)                            MODE2
+#weighte_constraint O all fixed              # "all" switch
+#weighte_constraint O interlayer 1 2 free    # "interlayer" layer1 layer2 switch
+#weighte_constraint Zn bias 1 2 free          # "bias layer" node switch
+#weighte_constraint Zn weight 1 3 2 3 free    # "weight" layer1 node1 layer2 node2 switch
+#weighte_constraint Zn node 2 1 free          # "node" layer node switch
+#use_systematic_weights_electrostatic               #
+#nguyen_widrow_weights_ewald              # initialize electrostatic weights according to Nguyen Widrow scheme                           MODE2
+#weightse_min -1.0                          # minimum value for initial random charge weights
+#weightse_max 1.0                           # maximum value for initial random charge weights
+#scale_min_ewald 0.0                       # minimum value for scaling (scmin_ewald)                                                      MODE2+3
+#scale_max_ewald 1.0                       # maximum value for scaling (scmax_ewald)                                                      MODE2+3
+
+########################################################################################################################
+### options for charge constraint in mode 2 (not tested! not parallel!)
+########################################################################################################################
+#use_charge_constraint                     # use total charge constraint                          (lchargeconstraint)                    MODE2
+#total_charge_error_threshold 0.0000001    # threshold of adaptive Kalman filter charge constraint(kalmanthresholdc)                     MODE2
+#kalman_lambda_charge_constraint 0.98000   # Kalman parameter charge constraint                   (kalmanlambdac)                        MODE2
+#kalman_nue_charge_constraint 0.99870      # Kalman parameter charge constraint                   (kalmannuec)                           MODE2
+
+########################################################################################################################
+### output options for mode 2 (fitting):  
+########################################################################################################################
+write_weights_epoch 1     
+#write_temporary_weights                   # write temporary weights each data block              (lwritetmpweights)                     MODE2
+#write_trainpoints                         # write trainpoints.out and testpoints.out files       (lwritetrainpoints)                    MODE2
+#write_traincharges                        # write traincharges.out and testcharges.out files     (lwritetraincharges)                   MODE2
+#write_trainforces                         # write trainforces.out and testforces.out files       (lwritetrainforces)                    MODE2
+
+########################################################################################################################
+### output options for mode 3 (prediction):  
+########################################################################################################################
+check_forces
+calculate_forces         
+#calculate_stress                          # calculate stress                                     (ldostress)(not fully implemented)     MODE3
+#write_pdb                                 # write predicted structure in pdb format              (lwritepdb)                            MODE3
+#write_xyz                                 # write predicted structure in xyz format              (lwritexyz)                            MODE3
+#write_pov                                 # write predicted structure in pov format              (lwritepov)                            MODE3
+#write_pwscf                               # write predicted structure in pwscf format            (lwritepw)                             MODE3
+
+########################################################################################################################
+### output options for debug.out file  
+########################################################################################################################
+#print_all_short_weights
+#print_all_electrostatic_weights
+
+########################################################################################################################
+### options for mode 4 (not yet working)
+########################################################################################################################
+#symfunction_check_threshold 0.001d0       # threshold for symmetry function check                (symthres)                             MODE4
+#charge_check_threshold 0.0002d0           # threshold for atomic charge check                    (chargethres)                          MODE4
+#force_check_threshold 0.0003d0            # threshold for atomic force check                     (forcethres)                           MODE4
+#energy_check_threshold 0.0004d0           # threshold for atomic energy check                    (energythres)(not yet implemented)     MODE4
