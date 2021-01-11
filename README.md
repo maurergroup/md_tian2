@@ -61,7 +61,12 @@ for dynamic linking. Check also the intel link advisor webpage under:
 
 https://software.intel.com/content/www/us/en/develop/articles/intel-mkl-link-line-advisor.html
 
-Although it is possible to use GNU compiler, we strongly encourage to use the intel compiler due to performance reasons!
+Although it is possible to use GNU compiler, we strongly recommend to use the intel compiler due to performance reasons!
+
+Example calculation:
+To check for the technical and numerical stability of the program, one can run the simulation in the example/md/ folder 
+and compare the results one gets with the output archive. For this purpose, a NN PES was fitted to a reduced data set. 
+The corresponding input and output can be found in the example/fit/ folder.
 
 Change the settings in the makefile to your need. Options:
 
@@ -115,7 +120,7 @@ jqrw sxrw=n! wr wj nA r sxrw nTrw!
 
 Annotations from Sebastian Wille: -> put in manual!
 
-md_tian.inp file:
+md_tian.inp file: -> add a list with the complete set of keywords with descriptions
 
   pip: projectile initial position
   pul: projectile upper limit (in /AA)
