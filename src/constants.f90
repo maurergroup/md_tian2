@@ -128,7 +128,7 @@ module constants
     character(len=*), parameter :: output_key_aims        = "aims"
     character(len=*), parameter :: output_key_runner      = "runner"
     character(len=*), parameter :: output_key_is_adsorbed = "adsorption_status"
-    character(len=*), parameter :: output_key_bead_output_format = "beads"
+    character(len=*), parameter :: output_key_beads       = "beads"
 
     integer, parameter :: output_id_xyz     = 1
     integer, parameter :: output_id_energy  = 2

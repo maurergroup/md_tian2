@@ -90,48 +90,48 @@ contains
 
         type(simulation_parameters) new_simulation_parameters
 
-        new_simulation_parameters%start  = default_int
-        new_simulation_parameters%ntrajs = default_int
-        new_simulation_parameters%nsteps = default_int
-        new_simulation_parameters%step   = default_real
-        new_simulation_parameters%nlattices = default_int
-        new_simulation_parameters%nprojectiles = default_int
-        new_simulation_parameters%Tsurf   = default_real
-        new_simulation_parameters%Tproj   = default_real
-        new_simulation_parameters%einc  = default_real
-        new_simulation_parameters%sigma_einc = default_real
-        new_simulation_parameters%polar = default_real
-        new_simulation_parameters%azimuth = default_string
-        new_simulation_parameters%sigma_azimuth = default_real
-        new_simulation_parameters%sa_Tmax   = default_real
-        new_simulation_parameters%sa_nsteps = default_int
-        new_simulation_parameters%sa_interval = default_int
-        new_simulation_parameters%confname = default_string
-        new_simulation_parameters%confname_file = default_string
-        new_simulation_parameters%merge_proj_file = default_string
-        new_simulation_parameters%merge_proj_nconfs = default_int
-        new_simulation_parameters%rep = [0,0]
-        new_simulation_parameters%nconfs  = default_int
-        new_simulation_parameters%pes_file = default_string
-        new_simulation_parameters%run = default_string
-        new_simulation_parameters%pip = default_string
-        new_simulation_parameters%andersen_time = 30.0_dp
-        new_simulation_parameters%pile_tau = 200.0_dp
-        new_simulation_parameters%force_beads = default_int
-        new_simulation_parameters%proj_ul = default_real
-        new_simulation_parameters%fit_training_data = default_int
-        new_simulation_parameters%fit_validation_data = default_int
-        new_simulation_parameters%fit_training_folder = default_string
+        new_simulation_parameters%start                 = default_int
+        new_simulation_parameters%ntrajs                = default_int
+        new_simulation_parameters%nsteps                = default_int
+        new_simulation_parameters%step                  = default_real
+        new_simulation_parameters%nlattices             = default_int
+        new_simulation_parameters%nprojectiles          = default_int
+        new_simulation_parameters%Tsurf                 = default_real
+        new_simulation_parameters%Tproj                 = default_real
+        new_simulation_parameters%einc                  = default_real
+        new_simulation_parameters%sigma_einc            = default_real
+        new_simulation_parameters%polar                 = default_real
+        new_simulation_parameters%azimuth               = default_string
+        new_simulation_parameters%sigma_azimuth         = default_real
+        new_simulation_parameters%sa_Tmax               = default_real
+        new_simulation_parameters%sa_nsteps             = default_int
+        new_simulation_parameters%sa_interval           = default_int
+        new_simulation_parameters%confname              = default_string
+        new_simulation_parameters%confname_file         = default_string
+        new_simulation_parameters%merge_proj_file       = default_string
+        new_simulation_parameters%merge_proj_nconfs     = default_int
+        new_simulation_parameters%rep                   = [0,0]
+        new_simulation_parameters%nconfs                = default_int
+        new_simulation_parameters%pes_file              = default_string
+        new_simulation_parameters%run                   = default_string
+        new_simulation_parameters%pip                   = default_string
+        new_simulation_parameters%andersen_time         = 30.0_dp
+        new_simulation_parameters%pile_tau              = 200.0_dp
+        new_simulation_parameters%force_beads           = default_int
+        new_simulation_parameters%proj_ul               = default_real
+        new_simulation_parameters%fit_training_data     = default_int
+        new_simulation_parameters%fit_validation_data   = default_int
+        new_simulation_parameters%fit_training_folder   = default_string
         new_simulation_parameters%fit_validation_folder = default_string
-        new_simulation_parameters%evasp = default_real
-        new_simulation_parameters%maxit = 30
-        new_simulation_parameters%nthreads = 1
-        new_simulation_parameters%adsorption_start = default_real
-        new_simulation_parameters%adsorption_end = default_real
-        new_simulation_parameters%nran = default_int
-        new_simulation_parameters%debug = default_bool
-        new_simulation_parameters%loutput = default_bool
-        new_simulation_parameters%lbead_output_format = default_bool
+        new_simulation_parameters%evasp                 = default_real
+        new_simulation_parameters%maxit                 = 30
+        new_simulation_parameters%nthreads              = 1
+        new_simulation_parameters%adsorption_start      = default_real
+        new_simulation_parameters%adsorption_end        = default_real
+        new_simulation_parameters%nran                  = default_int
+        new_simulation_parameters%debug                 = default_bool
+        new_simulation_parameters%loutput               = default_bool
+        new_simulation_parameters%lbead_output_format   = default_bool
 
     end function
 
@@ -528,7 +528,7 @@ contains
                                 case (output_key_runner)
                                     simparams%output_type(i) = output_id_runner
                                     simparams%loutput = .true.
-                                case (output_key_bead_output_format)
+                                case (output_key_beads)
                                     simparams%output_type(i) = output_id_beads
                                     simparams%lbead_output_format = .true.
                                     simparams%loutput = .true.

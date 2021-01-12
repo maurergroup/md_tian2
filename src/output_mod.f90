@@ -102,6 +102,7 @@ contains
                             call output_runner(atoms, itraj, istep)
 
                         case (output_id_beads)
+                            ! pass
 
                         case default
                             print *, err // "unknown output format", simparams%output_type(i)
@@ -329,12 +330,12 @@ contains
                 call date_and_time(values=time_vals)
                 write(out_unit, '(i4, a, i2.2, a, i2.2, a, i2.2, a, i2.2)') &
                     time_vals(1), "-", time_vals(2), "-",time_vals(3), " - ",time_vals(5), ".",time_vals(6)
-          
+
                 write(out_unit, '(a)')       '1.0'                    ! scaling constant
                 write(out_unit, '(3f23.15)') atoms%simbox
                 write(out_unit, *)           atoms%name
                 write(out_unit, '(100i6)') (noccurrences(i), i=1,atoms%ntypes)
-          
+
                 if (atoms%is_cart) then
                     write(out_unit, '(a)') "Cartesian"
                 else
@@ -345,7 +346,7 @@ contains
                     .not.atoms%is_fixed(:,bead,i), i=1,atoms%natoms)
                 write(out_unit, '(a)') ""
                 write(out_unit, '(3f23.15)') (atoms%v(:,bead,i), i=1,atoms%natoms)
-             
+
                 close(out_unit)
 
             end do
@@ -354,34 +355,34 @@ contains
 
             fname = 'vasp/'//traj_id_vasp//'step'//step_id_vasp//'.POSCAR'
             call open_for_write(out_unit, fname)
-         
+
             ! write date and time as comment line
             call date_and_time(values=time_vals)
             write(out_unit, '(i4, a, i2.2, a, i2.2, a, i2.2, a, i2.2)') &
                 time_vals(1), "-", time_vals(2), "-",time_vals(3), " - ",time_vals(5), ".",time_vals(6)
-         
+
             write(out_unit, '(a)')       '1.0'                    ! scaling constant
             write(out_unit, '(3f23.15)') atoms%simbox
             write(out_unit, *)           atoms%name
             write(out_unit, '(100i6)') (noccurrences(i), i=1,atoms%ntypes)
-         
+
             if (atoms%is_cart) then
                 write(out_unit, '(a)') "Cartesian"
             else
                 write(out_unit, '(a)') "Direct"
             end if
-         
-         
+
+
             cents_r   = calc_centroid_positions(atoms)
             cents_v   = calc_centroid_velocities(atoms)
             ! in case different beads have different notations of F and T we set F if at least one entry in all beads is F
             cents_fix = calc_centroid_is_fixed(atoms)
-         
+
             ! positions and velocities
             write(out_unit, '(3f23.15, 3l)') (cents_r(:,i), .not. cents_fix(:,i), i=1,atoms%natoms)
             write(out_unit, '(a)') ""
             write(out_unit, '(3f23.15)') (cents_v(:,i), i=1,atoms%natoms)
-         
+
             close(out_unit)
 
         end if
@@ -433,17 +434,17 @@ contains
                 write(step_id_beads,'(i2.2)') bead
                 fname = 'aims/'//traj_id_aims//'step'//step_id_aims//'b'//step_id_beads//'.in'
                 call open_for_write(out_unit, fname)
-          
+
                 ! write date and time as comment line
                 call date_and_time(values=time_vals)
                 write(out_unit, '(a,i4, a, i2.2, a, i2.2, a, i2.2, a, i2.2)') &
                     "# ", time_vals(1), "-", time_vals(2), "-",time_vals(3), " - ",time_vals(5), ".",time_vals(6)
-          
+
                 ! lattice
                 do l=1,3
                     write(out_unit, '(a,3f23.15)') "lattice_vector",atoms%simbox(:,l)
                 end do
-          
+
                 ! add empty line, for asthetics
                 write(out_unit, '(a)') ""
 
@@ -478,9 +479,9 @@ contains
                         end do
                         write(out_unit, '(a)') ""
                     end if
-          
+
                 end do ! atoms
-          
+
                 close(out_unit)
 
             end do ! beads
@@ -489,23 +490,23 @@ contains
 
             fname = 'aims/'//traj_id_aims//'step'//step_id_aims//'.in'
             call open_for_write(out_unit, fname)
-         
+
             ! write date and time as comment line
             call date_and_time(values=time_vals)
             write(out_unit, '(a,i4, a, i2.2, a, i2.2, a, i2.2, a, i2.2)') &
                 "# ", time_vals(1), "-", time_vals(2), "-",time_vals(3), " - ",time_vals(5), ".",time_vals(6)
-         
+
             ! lattice
             do l=1,3
                 write(out_unit, '(a,3f23.15)') "lattice_vector",atoms%simbox(:,l)
             end do
-         
+
             ! add empty line, for asthetics
             write(out_unit, '(a)') ""
-         
+
             cents_r = calc_centroid_positions(atoms)
             cents_v = calc_centroid_velocities(atoms)
-         
+
             ! positions and velocities
             do i=1,atoms%natoms ! atoms
                 lskip(:) = .false.
@@ -539,14 +540,14 @@ contains
                     end do
                     write(out_unit, '(a)') ""
                 end if
-         
+
             end do ! atoms
-         
+
             close(out_unit)
 
         end if
 
-    end subroutine output_aims ! -> add format that write out all beads
+    end subroutine output_aims
 
 
     subroutine output_runner(atoms, itraj, istep)
