@@ -704,18 +704,18 @@ contains
             !write(out_unit, '(a11, f14.7)') "time_int = ", interaction_time
 
             ! to make sure that a configuration file is written even if no format keyword is given:
-            if (.not. dir_exists('mxt')) call execute_command_line('mkdir mxt')
+!            if (.not. dir_exists('mxt')) call execute_command_line('mkdir mxt')
 
             ! open file mxt/mxt_%08d.dat
-            write(fin_id,'(i8.8)') itraj
-            fin_name = 'mxt/mxt_fin_'//fin_id//'.dat'
-            open(fin_unit, file=fin_name, form="unformatted", status="replace")
+!            write(fin_id,'(i8.8)') itraj
+!            fin_name = 'mxt/mxt_fin_'//fin_id//'.dat'
+!            open(fin_unit, file=fin_name, form="unformatted", status="replace")
 
-            write(fin_unit) atoms%natoms, atoms%nbeads, atoms%ntypes
-            write(fin_unit) atoms%r, atoms%v, atoms%is_cart, atoms%is_fixed, &
-                atoms%idx, atoms%name, atoms%is_proj, atoms%simbox, atoms%isimbox
+!            write(fin_unit) atoms%natoms, atoms%nbeads, atoms%ntypes
+!            write(fin_unit) atoms%r, atoms%v, atoms%is_cart, atoms%is_fixed, &
+!                atoms%idx, atoms%name, atoms%is_proj, atoms%simbox, atoms%isimbox
 
-            close(fin_unit)
+!            close(fin_unit)
 
             if (any(atoms%pes == pes_id_nene)) then
                 total_count_extrapolation_warnings = total_count_extrapolation_warnings + sum(count_extrapolation_warnings_traj_energy) + sum(count_extrapolation_warnings_traj_symfunc)

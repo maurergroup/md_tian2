@@ -216,6 +216,9 @@ contains
                     case ('start')
                         ! pass
 
+                    case ('rng_type')
+                        ! pass
+
                     case ('run')
 
                         if (simparams%run /= default_string) stop err // "Multiple use of the run key"
