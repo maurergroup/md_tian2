@@ -33,7 +33,6 @@ module output_mod
 
     implicit none
 
-    !logical :: overwrite_xyz       = .true.
     logical :: overwrite_nrg       = .true.
     logical :: overwrite_ads       = .true.
     logical :: overwrite_runner    = .true.
@@ -130,7 +129,7 @@ contains
         integer :: i, j
         real(dp), dimension(3, atoms%nbeads, atoms%natoms) :: dir_coords, cart_coords
 
-        if (.not. dir_exists('conf')) call execute_command_line('mkdir conf')
+        if (.not. dir_exists('xyz')) call execute_command_line('mkdir xyz')
 
         ! to direct, fold into simbox, to cartesian
         forall (i = 1 : atoms%natoms) dir_coords(:,:,i) = matmul(atoms%isimbox, atoms%r(:,:,i))
@@ -140,7 +139,7 @@ contains
             cart_coords(3,:,:) = cart_coords(3,:,:) - atoms%simbox(3,3)
 
         write(traj_id,'(i8.8)') itraj
-        fname = 'conf/mxt_conf'//traj_id//'.xyz'
+        fname = 'xyz/traj_'//traj_id//'.xyz'
 
         ! if this is the first call to this subroutine during a trajectory, find ID index
         ! super ugly, but the findloc intrinsic is not implemented in ifort 2013
@@ -170,7 +169,6 @@ contains
 
     subroutine output_nrg(atoms, itraj, istep)
 
-        ! time, epot, ekin_p, ekin_l, etotal,
         use rpmd
 
         type(universe), intent(in) :: atoms
@@ -186,7 +184,7 @@ contains
         if (.not. dir_exists('energy')) call execute_command_line('mkdir energy')
 
         write(traj_id,'(i8.8)') itraj
-        fname = 'energy/mxt_trj'//traj_id//'.dat'
+        fname = 'energy/traj_'//traj_id//'.dat'
 
         if (overwrite_nrg) then
             call open_for_write(out_unit, fname)
@@ -231,7 +229,6 @@ contains
     end subroutine output_nrg
 
 
-    !2DO: call calc_centroid_positions (rpmd.f90) to write center of masses for higher beads to create a proper file
     subroutine output_poscar(atoms)
 
         type(universe), intent(in) :: atoms
@@ -280,7 +277,7 @@ contains
     end subroutine output_poscar
 
 
-    ! Like poscar format, but without bead entry
+    ! proper poscar format
     subroutine output_vasp(atoms, itraj, istep)
 
         type(universe), intent(in)          :: atoms
@@ -309,7 +306,7 @@ contains
             noccurrences(atoms%idx(i)) = noccurrences(atoms%idx(i)) + 1
         end do
 
-        ! open file poscar_/poscar_%08d.dat
+        ! open file
         if (istep == -1) then
              write(step_id_vasp,'(i7.7)') zero_step
         else
@@ -574,8 +571,6 @@ contains
         zero_step = 0 ! write the initial structure to step 0 file
         dummy_ce = 0.0_dp
 
-        ! XXX: change system() to execute_command_line() when new compiler is available
-        !if (.not. dir_exists('conf')) call system('mkdir conf')
         if (.not. dir_exists('runner')) call system('mkdir runner')
 
         fname = 'runner/input.data'

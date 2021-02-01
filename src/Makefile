@@ -24,6 +24,7 @@ LIB    =
 # Changes below this line developers only
 ###############################################
 
+# for debug purpose just copy the wanted settings below to the FFLAGS entry!
 DEBUG_FULL  = -fpe0 -O0 -mkl -g -check all -check bounds -check uninit -ftrapuv -debug all -gen-interfaces -warn interfaces -traceback -warn all -extend-source 132 -fp-stack-check -fstack-protector-all -no-ftz -std08 -standard-semantics -fpe-all=0 -heap-arrays
 DEBUG  = -O0 -mkl -g -check all -traceback -fp-stack-check -fstack-protector-all -heap-arrays
 
@@ -41,8 +42,8 @@ SUBROUTINES = 	md_tian2.o \
 		atomsymfunction6.o \
 		atomsymfunction8.o \
 		atomsymfunction9.o \
-		checkelement.o \
 		calconenn.o \
+		checkelement.o \
 		getatomsymfunctions.o \
 		getcutoff.o \
 		getdnodes_values.o \
@@ -239,7 +240,7 @@ geometry_opt.o: geometry_opt.f90
 
 
 
-# compile subroutines in alphabetic order
+# compile subroutines in alphabetical order
 
 md_tian2.o: md_tian2.f90
 	$(FC) $(FFLAGS) -c md_tian2.f90
@@ -307,9 +308,6 @@ getshortatomic.o: $(RUNNER_SRC_DIR)getshortatomic.f90
 getvolume.o: $(RUNNER_SRC_DIR)getvolume.f90
 	$(FC) $(FFLAGS) -c $(RUNNER_SRC_DIR)getvolume.f90
 
-inputnndefaults.o: $(RUNNER_SRC_DIR)inputnndefaults.f90
-	$(FC) $(FFLAGS) -c $(RUNNER_SRC_DIR)inputnndefaults.f90
-
 mpi_dummy_routines.o: $(RUNNER_SRC_DIR)mpi_dummy_routines.f90
 	$(FC) $(FFLAGS) -c $(RUNNER_SRC_DIR)mpi_dummy_routines.f90
 
@@ -324,9 +322,6 @@ nuccharge.o: $(RUNNER_SRC_DIR)nuccharge.f90
 
 predictionshortatomic.o: $(RUNNER_SRC_DIR)predictionshortatomic.f90
 	$(FC) $(FFLAGS) -c $(RUNNER_SRC_DIR)predictionshortatomic.f90
-
-printinputnn.o: $(RUNNER_SRC_DIR)printinputnn.f90
-	$(FC) $(FFLAGS) -c $(RUNNER_SRC_DIR)printinputnn.f90
 
 sortelements.o: $(RUNNER_SRC_DIR)sortelements.f90
 	$(FC) $(FFLAGS) -c $(RUNNER_SRC_DIR)sortelements.f90
@@ -346,17 +341,11 @@ serial: ./md_tian2.serial.x
 	$(FC) $(FFLAGS) -o $@ \
 		$(SUBROUTINES) $(MODULES_MPI_DUMMY) $(MODULES) $(MPI_DUMMY_SUBROUTINES) $(LIB)
 
-debug: ./md_tian2.debug.x
-./md_tian2.debug.x: $(MODULES_MPI_DUMMY) $(MODULES) $(SUBROUTINES) $(MPI_DUMMY_SUBROUTINES)
-	$(FC) $(DEBUG) -o $@ \
-		$(SUBROUTINES) $(MODULES_MPI_DUMMY) $(MODULES) $(MPI_DUMMY_SUBROUTINES) $(LIB)
-
 clean:
 	rm -f *.o *.mod *.x
 
 help:
 	@echo ''
 	@echo 'make serial		serial version, default'
-	@echo 'make debug		debug version, for programmers'
 	@echo 'make clean		delete all object, module and binary files'
 	@echo ''

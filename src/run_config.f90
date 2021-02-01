@@ -468,6 +468,7 @@ contains
                                     ! conf mergewith <mxt_folder> <n>: randomly select mxt files 1<=x<=n from folder
                                     if (nwords /= 6) stop err // "conf merge needs projectile mxt folder, # of projectile configurations therein &
                                         lattice mxt folder and # of lattice configurations therein"
+
                                     ! projectile
                                     read(words(3),'(A)') simparams%merge_proj_file
                                     read(words(4),'(i1000)',iostat=ios) simparams%merge_proj_nconfs

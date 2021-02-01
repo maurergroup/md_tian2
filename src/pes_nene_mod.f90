@@ -7129,7 +7129,7 @@ module pes_nene_mod
             ! update coordinates and convert to internal RuNNer units
             xyzstruct(:,:) = atoms%r(:,bead,:) * ang2bohr
 
-            if (lperiodic) then ! true if 3 lattice vectors are found, this will remap the atoms inside the simulation box
+            if (lperiodic) then ! true if 3 lattice vectors are found, this will re-map the atoms inside the simulation box
                 call translate(num_atoms,lattice,xyzstruct)
             end if
             ! end according to getstructure_mode3.f90
@@ -7144,7 +7144,7 @@ module pes_nene_mod
             end if
 
             if (lelec .and. ((nn_type_elec == 1) .or. (nn_type_elec == 3) .or. (nn_type_elec == 4))) then
-                print *, err, "electrostatic NN prediction not implemented yet" ! be patient you must, not work it will
+                print *, err, "electrostatic NN prediction not implemented yet"
                 stop
                 !call predictionelectrostatic(&
                   !num_atoms,zelem,&
@@ -7251,7 +7251,7 @@ module pes_nene_mod
                     write(*,*)'-------------------------------------------------------------'
                 end if
 
-                if (ldostress .and. lperiodic) then
+                if (ldostress .and. lperiodic) then ! write stress and pressure
                     do ictr_1=1,3
                         write(*,'(a10,3f18.8,a10)')'NNstress ',nnstress(ictr_1,1) * habohrcub2evangcub,&
                         nnstress(ictr_1,2) * habohrcub2evangcub,nnstress(ictr_1,3) * habohrcub2evangcub,' eV/Ang^3'
@@ -7264,7 +7264,8 @@ module pes_nene_mod
                     write(*,*)'-------------------------------------------------------------'
                 end if
 
-                ! write out data for the derivatives of the symmetry functions to check how important a SF is, more important when setting up a new PES, her given for completeness compared to RuNNer code
+                ! write out data for the derivatives of the symmetry functions to check how important a SF is, more important when
+                ! setting up a new PES, here given for completeness compared to RuNNer code
                 if (lsens .and. lshort .and. (nn_type_short == 1)) then
                     do ictr_1=1,nelem
                         do ictr_2=1,num_funcvalues_short_atomic(ictr_1)
