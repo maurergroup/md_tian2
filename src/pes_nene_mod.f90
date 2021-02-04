@@ -1985,6 +1985,14 @@ module pes_nene_mod
                                 print *, err, err_inpnn, "parallel_mode key needs a single argument"; stop
                             end if
 
+                        case('use_sf_groups')
+                            if (lusesfgroups /= default_bool) stop err // err_inpnn // 'Multiple use of the use_sf_groups key'
+                            if (nwords == 1) then
+                                lusesfgroups = .true.
+                            else
+                                print *, err, err_inpnn, "use_sf_groups key needs no argument(s)"; stop
+                            end if
+
                         case ('symfunction_correlation')
                             if (lpearson_correlation /= default_bool) stop err // err_inpnn // 'Multiple use of the symfunction_correlation key'
                             if (nwords == 1) then
@@ -2045,13 +2053,13 @@ module pes_nene_mod
                                 print *, err, err_inpnn, "md_mode key needs no argument(s)"; stop
                             end if
 
-                        case ('global_nodes_short')
+                        case ('global_nodes_short','global_nodes_short_atomic')
                             if(lshort .and. (nn_type_short == 1)) then
                                 if (nwords == maxnum_layers_short_atomic) then
                                     do genctr_1 = 1,maxnum_layers_short_atomic-1
                                         read(words(genctr_1+1),'(i1000)', iostat=ios) nodes_short_atomic_temp(genctr_1)
                                         if (ios /= 0) then
-                                            print *, err // err_inpnn // "global_nodes_short argument ", genctr_1, " value must be integer"; stop
+                                            print *, err // err_inpnn // "global_nodes_short/global_nodes_short_atomic argument ", genctr_1, " value must be integer"; stop
                                         end if
                                     end do
                                     do genctr_1 = 1,nelem
@@ -2814,11 +2822,31 @@ module pes_nene_mod
                             end if
 
                         case ('calculate_hessian')
-                            if (ldohessian /= default_bool) stop err // err_inpnn // 'Multiple use of the calculate_hessian key'
+                            if (lwritehessian /= default_bool) stop err // err_inpnn // 'Multiple use of the calculate_hessian key'
                             if (nwords == 1) then
-                                ldohessian = .true.
+                                ldohessian    = .true.
+                                lwritehessian = .true.
                             else
-                                print *, err, err_inpnn, "calculate_hessian key needs no argument(s)"; stop
+                                print *, err, err_inpnn, "calculate_hessian key needs no argument(s)"; sto
+                            end if
+
+                        case ('calculate_frequencies')
+                            if (lcalculatefrequencies /= default_bool) stop err // err_inpnn // 'Multiple use of the calculate_frequencies key'
+                            if (nwords == 1) then
+                                ldohessian    = .true.
+                                lcalculatefrequencies = .true.
+                            else
+                                print *, err, err_inpnn, "calculate_frequencies key needs no argument(s)"; stop
+                            end if
+
+                        case ('calculate_normalmodes')
+                            if (lcalculatenormalmodes /= default_bool) stop err // err_inpnn // 'Multiple use of the calculate_normalmodes key'
+                            if (nwords == 1) then
+                                ldohessian    = .true.
+                                lcalculatefrequencies = .true.
+                                lcalculatenormalmodes = .true.
+                            else
+                                print *, err, err_inpnn, "calculate_normalmodes key needs no argument(s)"; stop
                             end if
 
                         case ('calculate_stress')
@@ -2886,6 +2914,14 @@ module pes_nene_mod
                                 print *, err, err_inpnn, "write_trainpoints key needs no argument(s)"; stop
                             end if
 
+                        case ('write_binding_energy_only')
+                            if (lbindingenergyonly /= default_bool) stop err // err_inpnn // 'Multiple use of the write_binding_energy_only key'
+                            if (nwords == 1) then
+                                lbindingenergyonly = .true.
+                            else
+                                print *, err, err_inpnn, "write_binding_energy_only key needs no argument(s)"; stop
+                            end if
+
                         case ('write_trainforces')
                             if (lwritetrainforces /= default_bool) stop err // err_inpnn // 'Multiple use of the write_trainforces key'
                             if (nwords == 1) then
@@ -2949,6 +2985,9 @@ module pes_nene_mod
                             end if
 
                         case ('atom_energy')
+                            ! just let it pass
+
+                        case ('atom_mass')
                             ! just let it pass
 
                         case ('vdw_coefficient', 'vdW_coefficient')
@@ -5291,9 +5330,13 @@ module pes_nene_mod
 
             endif
 
+            if(ldohessian)then
+                call readatommasses() ! own subroutine
+            end if
+
             if (lvdw) then
                 if (nn_type_vdw == 1) then
-                    print *, "vdw treatment not implemented"; stop
+                    !print *, "vdw treatment not implemented"; stop
                     call read_vdw_coefficients_type_1(filename_inpnn) ! own subroutine
 
                 else
@@ -5507,6 +5550,12 @@ module pes_nene_mod
         ! end of readout according to readinput.f90
 
         ! further readout according to initnn.f90
+        if (lusesfgroups) then
+            call allocatesymfunctiongroups()
+            call setupsymfunctiongroups()
+            print *, "sf groups are set"
+        end if
+
         call getlistdim()
 
         if (lshort .and. (nn_type_short == 1)) then
@@ -5657,6 +5706,21 @@ module pes_nene_mod
         if (not(allocated(nnatomcharge))) allocate(nnatomcharge(max_num_atoms), stat=array_status)
         if (array_status /= 0) then
             print *, "nnatomcharge allocation failed; status = ", array_status; stop
+        end if
+
+        if (not(allocated(nnhessian))) allocate(nnhessian(3*max_num_atoms,3*max_num_atoms), stat=array_status)
+        if (array_status /= 0) then
+            print *, "nnhessian allocation failed; status = ", array_status; stop
+        end if
+
+        if (not(allocated(nnfrequencies))) allocate(nnfrequencies(3*max_num_atoms), stat=array_status)
+        if (array_status /= 0) then
+            print *, "nnfrequencies allocation failed; status = ", array_status; stop
+        end if
+
+        if (not(allocated(nnnormalmodes))) allocate(nnnormalmodes(3*max_num_atoms,3*max_num_atoms), stat=array_status)
+        if (array_status /= 0) then
+            print *, "nnnormalmodes allocation failed; status = ", array_status; stop
         end if
 
 
@@ -5936,11 +6000,6 @@ module pes_nene_mod
             kalman_qmin = 0.0d0
         end if
 
-        !if (lmd == default_bool) then
-        !    lmd = .true.
-        !end if
-
-
     end subroutine inputnndefaults
 
 
@@ -6095,7 +6154,7 @@ module pes_nene_mod
         endif
 
         if(lshort.and.(any(nodes_short_atomic == 0)).and.(nn_type_short.eq.1))then
-            write(*,*)'Error: global_nodes_short is not specified'
+            write(*,*)'Error: global_nodes_short/global_nodes_short_atomic is not specified'
             stop
         endif
 
@@ -6533,6 +6592,8 @@ module pes_nene_mod
 
         write(*,'(a,l)')' enable detailed time measurement                        ',lfinetime
 
+        write(*,'(a,l)')' using symmetry function groups                          ',lusesfgroups
+
         write(*,'(a,l)')' silent mode                                             ',lsilent
 
         write(*,'(a,l)')' NN force check                                          ',lcheckf
@@ -6969,7 +7030,6 @@ module pes_nene_mod
 
 
 
-    ! the following subroutine is not needed at he moment, maybe this will become important later
     subroutine read_vdw_coefficients_type_1(filename)
 
         use open_file, only : open_for_read
@@ -7123,6 +7183,9 @@ module pes_nene_mod
             atomenergysum       = 0.0d0
             nnstress_short(:,:) = 0.0d0
             nnstress_elec(:,:)  = 0.0d0
+            nnhessian(:,:)      = 0.0_dp
+            nnfrequencies(:)  = 0.0_dp
+            nnnormalmodes(:,:)  = 0.0_dp
 
             count_extrapolation_warnings_energy  = 0
             count_extrapolation_warnings_symfunc = 0
@@ -7150,14 +7213,14 @@ module pes_nene_mod
                 print *, err, "electrostatic NN prediction not implemented yet"
                 stop
                 !call predictionelectrostatic(&
-                  !num_atoms,zelem,&
-                  !minvalue_elec,maxvalue_elec,avvalue_elec,&
-                  !lattice,xyzstruct,&
-                  !nntotalcharge,nnatomcharge,&
-                  !chargemin,chargemax,nnelecenergy,&
-                  !nnelecforce,nnstress_elec,sense,lperiodic)
+                    !num_atoms,zelem,&
+                    !minvalue_elec,maxvalue_elec,avvalue_elec,&
+                    !lattice,xyzstruct,&
+                    !nntotalcharge,nnatomcharge,&
+                    !chargemin,chargemax,nnelecenergy,&
+                    !nnelecforce,nnstress_elec,sense,lperiodic)
             else
-              nnatomcharge(:) = 0.0d0
+                nnatomcharge(:) = 0.0d0
             end if
 
             ! combine short range and electrostatic energies
@@ -7247,6 +7310,15 @@ module pes_nene_mod
 
                 write(*,*)'-------------------------------------------------------------'
                 if (ldoforces) then ! write forces
+                    print *, "NN short range forces"
+                    do ictr_1=1,num_atoms
+                        write(*,'(3f18.8,a10)') nnshortforce(:,ictr_1) * habohr2evang, " eV/Ang"
+                    end do
+                    print *, "NN electrostatic forces"
+                    do ictr_1=1,num_atoms
+                        write(*,'(3f18.8,a10)') nnelecforce(:,ictr_1) * habohr2evang, " eV/Ang"
+                    end do
+                    print *, "NN total forces"
                     do ictr_1=1,num_atoms
                         write(*,'(a10,i6,3f16.8,a8)')'NNforces ',ictr_1,nntotalforce(1,ictr_1) * habohr2evang,&
                         nntotalforce(2,ictr_1) * habohr2evang,nntotalforce(3,ictr_1) * habohr2evang,' eV/Ang'
@@ -7257,14 +7329,22 @@ module pes_nene_mod
                 if (ldostress .and. lperiodic) then ! write stress and pressure
                     do ictr_1=1,3
                         write(*,'(a10,3f18.8,a10)')'NNstress ',nnstress(ictr_1,1) * habohrcub2evangcub,&
-                        nnstress(ictr_1,2) * habohrcub2evangcub,nnstress(ictr_1,3) * habohrcub2evangcub,' eV/Ang^3'
+                        nnstress(ictr_1,2) * habohrcub2evangcub,nnstress(ictr_1,3) * habohrcub2evangcub,' eV/Ang^3
                     end do
                     write(*,*)'-------------------------------------------------------------'
                     pressure=(nnstress(1,1)+nnstress(2,2)+nnstress(3,3))/3.0d0
                     pressure=pressure*au2gpa
-                    write(*,'(a12,f18.8,a5)')' NNpressure ',pressure,' GPa'
-                    write(*,'(a12,f18.8,a5)')' NNpressure ',pressure*10.0d0,' kbar'
+                    write(*,'(a20,f18.8,a5)')' NNpressure ',pressure,' GPa'
+                    write(*,'(a20,f18.8,a5)')' NNpressure ',pressure*10.0d0,' kbar'
                     write(*,*)'-------------------------------------------------------------'
+                endif
+
+                ! vibrational frequencies
+                if(lcalculatefrequencies.and.(nn_type_short.eq.1))then
+                    print *, "NN total frequencies"
+                    do ictr_1=1,3*num_atoms
+                        write(*,'(a15,i10,3f18.8)') "NNfrequency", ictr_1, nnfrequencies(ictr_1)
+                    end do
                 end if
 
                 ! write out data for the derivatives of the symmetry functions to check how important a SF is, more important when
@@ -7320,5 +7400,464 @@ module pes_nene_mod
 
 
     end subroutine get_nelem
+
+
+    subroutine readatommasses()
+
+        character(len=*), parameter :: err = "Error in readatommasses: "
+
+        integer :: elem_ctr
+
+        do elem_ctr=1,nelem
+
+            select case (nucelem(elem_ctr))
+
+                case (1) ! H
+
+                    atommasses(elem_ctr) = 1.0079_dp
+
+                case (2) ! He
+
+                    atommasses(elem_ctr) = 4.0026_dp
+
+                case (3) ! Li
+
+                    atommasses(elem_ctr) = 6.941_dp
+
+                case (4) ! Be
+
+                    atommasses(elem_ctr) = 9.0122_dp
+
+                case (5) ! B
+
+                    atommasses(elem_ctr) = 10.811_dp
+
+                case (6) ! C
+
+                    atommasses(elem_ctr) = 12.0107_dp
+
+                case (7) ! N
+
+                    atommasses(elem_ctr) = 14.0067_dp
+
+                case (8) ! O
+
+                    atommasses(elem_ctr) = 15.9994_dp
+
+                case (9) ! F
+
+                    atommasses(elem_ctr) = 18.9984_dp
+
+                case (10) ! Ne
+
+                    atommasses(elem_ctr) = 20.1797_dp
+
+                case (11) ! Na
+
+                    atommasses(elem_ctr) = 22.9897_dp
+
+                case (12) ! Mg
+
+                    atommasses(elem_ctr) = 24.305_dp
+
+                case (13) ! Al
+
+                    atommasses(elem_ctr) = 26.9815_dp
+
+                case (14) ! Si
+
+                    atommasses(elem_ctr) = 28.0855_dp
+
+                case (15) ! P
+
+                    atommasses(elem_ctr) = 30.9738_dp
+
+                case (16) ! S
+
+                    atommasses(elem_ctr) = 32.065_dp
+
+                case (17) ! Cl
+
+                    atommasses(elem_ctr) = 35.453_dp
+
+                case (18) ! Ar
+
+                    atommasses(elem_ctr) = 39.948_dp
+
+                case (19) ! K
+
+                    atommasses(elem_ctr) = 39.0983_dp
+
+                case (20) ! Ca
+
+                    atommasses(elem_ctr) = 40.078_dp
+
+                case (21) ! Sc
+
+                    atommasses(elem_ctr) = 44.9559_dp
+
+                case (22) ! Ti
+
+                    atommasses(elem_ctr) = 47.867_dp
+
+                case (23) ! V
+
+                    atommasses(elem_ctr) = 50.9415_dp
+
+                case (24) ! Cr
+
+                    atommasses(elem_ctr) = 51.9961_dp
+
+                case (25) ! Mn
+
+                    atommasses(elem_ctr) = 54.938_dp
+
+                case (26) ! Fe
+
+                    atommasses(elem_ctr) = 55.845_dp
+
+                case (27) ! Co
+
+                    atommasses(elem_ctr) = 58.9332_dp
+
+                case (28) ! Ni
+
+                    atommasses(elem_ctr) = 58.6934_dp
+
+                case (29) ! Cu
+
+                    atommasses(elem_ctr) = 63.546_dp
+
+                case (30) ! Zn
+
+                    atommasses(elem_ctr) = 65.39_dp
+
+                case (31) ! Ga
+
+                    atommasses(elem_ctr) = 69.723_dp
+
+                case (32) ! Ge
+
+                    atommasses(elem_ctr) = 72.64_dp
+
+                case (33) ! As
+
+                    atommasses(elem_ctr) = 74.9216_dp
+
+                case (34) ! Se
+
+                    atommasses(elem_ctr) = 78.96_dp
+
+                case (35) ! Br
+
+                    atommasses(elem_ctr) = 79.904_dp
+
+                case (36) ! Kr
+
+                    atommasses(elem_ctr) = 83.8_dp
+
+                case (37) ! Rb
+
+                    atommasses(elem_ctr) = 85.4678_dp
+
+                case (38) ! Sr
+
+                    atommasses(elem_ctr) = 87.62_dp
+
+                case (39) ! Y
+
+                    atommasses(elem_ctr) = 88.9059_dp
+
+                case (40) ! Zr
+
+                    atommasses(elem_ctr) = 91.224_dp
+
+                case (41) ! Nb
+
+                    atommasses(elem_ctr) = 92.9064_dp
+
+                case (42) ! Mo
+
+                    atommasses(elem_ctr) = 95.94_dp
+
+                case (43) ! Tc
+
+                    atommasses(elem_ctr) = 98.0_dp
+
+                case (44) ! Ru
+
+                    atommasses(elem_ctr) = 101.07_dp
+
+                case (45) ! Rh
+
+                    atommasses(elem_ctr) = 102.9055_dp
+
+                case (46) ! Pd
+
+                    atommasses(elem_ctr) = 106.42_dp
+
+                case (47) ! Ag
+
+                    atommasses(elem_ctr) = 107.8682_dp
+
+                case (48) ! Cd
+
+                    atommasses(elem_ctr) = 112.411_dp
+
+                case (49) ! In
+
+                    atommasses(elem_ctr) = 114.818_dp
+
+                case (50) ! Sn
+
+                    atommasses(elem_ctr) = 118.71_dp
+
+                case (51) ! Sb
+
+                    atommasses(elem_ctr) = 121.76_dp
+
+                case (52) ! Te
+
+                    atommasses(elem_ctr) = 127.6_dp
+
+                case (53) ! I
+
+                    atommasses(elem_ctr) = 126.9045_dp
+
+                case (54) ! Xe
+
+                    atommasses(elem_ctr) = 131.293_dp
+
+                case (55) ! Cs
+
+                    atommasses(elem_ctr) = 132.9055_dp
+
+                case (56) ! Ba
+
+                    atommasses(elem_ctr) = 137.327_dp
+
+                case (57) ! La
+
+                    atommasses(elem_ctr) = 138.9055_dp
+
+                case (58) ! Ce
+
+                    atommasses(elem_ctr) = 140.116_dp
+
+                case (59) ! Pr
+
+                    atommasses(elem_ctr) = 140.9077_dp
+
+                case (60) ! Nd
+
+                    atommasses(elem_ctr) = 144.24_dp
+
+                case (61) ! Pm
+
+                    atommasses(elem_ctr) = 145.0_dp
+
+                case (62) ! Sm
+
+                    atommasses(elem_ctr) = 150.36_dp
+
+                case (63) ! Eu
+
+                    atommasses(elem_ctr) = 151.964_dp
+
+                case (64) ! Gd
+
+                    atommasses(elem_ctr) = 157.25_dp
+
+                case (65) ! Tb
+
+                    atommasses(elem_ctr) = 158.9253_dp
+
+                case (66) ! Dy
+
+                    atommasses(elem_ctr) = 162.5_dp
+
+                case (67) ! Ho
+
+                    atommasses(elem_ctr) = 164.9303_dp
+
+                case (68) ! Er
+
+                    atommasses(elem_ctr) = 167.259_dp
+
+                case (69) ! Tm
+
+                    atommasses(elem_ctr) = 168.9342_dp
+
+                case (70) ! Yb
+
+                    atommasses(elem_ctr) = 173.04_dp
+
+                case (71) ! Lu
+
+                    atommasses(elem_ctr) = 174.967_dp
+
+                case (72) ! Hf
+
+                    atommasses(elem_ctr) = 178.49_dp
+
+                case (73) ! Ta
+
+                    atommasses(elem_ctr) = 180.9479_dp
+
+                case (74) ! W
+
+                    atommasses(elem_ctr) = 183.84_dp
+
+                case (75) ! Re
+
+                    atommasses(elem_ctr) = 186.207_dp
+
+                case (76) ! Os
+
+                    atommasses(elem_ctr) = 190.23_dp
+
+                case (77) ! Ir
+
+                    atommasses(elem_ctr) = 192.217_dp
+
+                case (78) ! Pt
+
+                    atommasses(elem_ctr) = 195.078_dp
+
+                case (79) ! Au
+
+                    atommasses(elem_ctr) = 196.9665_dp
+
+                case (80) ! Hg
+
+                    atommasses(elem_ctr) = 200.59_dp
+
+                case (81) ! Tl
+
+                    atommasses(elem_ctr) = 204.3833_dp
+
+                case (82) ! Pb
+
+                    atommasses(elem_ctr) = 207.2_dp
+
+                case (83) ! Bi
+
+                    atommasses(elem_ctr) = 208.9804_dp
+
+                case (84) ! Po
+
+                    atommasses(elem_ctr) = 209.0_dp
+
+                case (85) ! At
+
+                    atommasses(elem_ctr) = 210.0_dp
+
+                case (86) ! Rn
+
+                    atommasses(elem_ctr) = 222.0_dp
+
+                case (87) ! Fr
+
+                    atommasses(elem_ctr) = 223.0_dp
+
+                case (88) ! Ra
+
+                    atommasses(elem_ctr) = 226.0_dp
+
+                case (89) ! Ac
+
+                    atommasses(elem_ctr) = 227.0_dp
+
+                case (90) ! Th
+
+                    atommasses(elem_ctr) = 232.0381_dp
+
+                case (91) ! Pa
+
+                    atommasses(elem_ctr) = 231.0359_dp
+
+                case (92) ! U
+
+                    atommasses(elem_ctr) = 238.0289_dp
+
+                case (93) ! Np
+
+                    atommasses(elem_ctr) = 237.0_dp
+
+                case (94) ! Pu
+
+                    atommasses(elem_ctr) = 244.0_dp
+
+                case (95) ! Am
+
+                    atommasses(elem_ctr) = 243.0_dp
+
+                case (96) ! Cm
+
+                    atommasses(elem_ctr) = 247.0_dp
+
+                case (97) ! Bk
+
+                    atommasses(elem_ctr) = 247.0_dp
+
+                case (98) ! Cf
+
+                    atommasses(elem_ctr) = 251.0_dp
+
+                case (99) ! Es
+
+                    atommasses(elem_ctr) = 252.0_dp
+
+                case (100) ! Fm
+
+                    atommasses(elem_ctr) = 257.0_dp
+
+                case (101) ! Md
+
+                    atommasses(elem_ctr) = 258.0_dp
+
+                case (102) ! No
+
+                    atommasses(elem_ctr) = 259.0_dp
+
+                ! up to here conform with RuNNer, following just for completeness
+
+                !case (103) ! Lr
+
+                    !atommasses(elem_ctr) = 262.0_dp
+
+                !case (104) ! Rf
+
+                    !atommasses(elem_ctr) = 261.0_dp
+
+                !case (105) ! Db
+
+                    !atommasses(elem_ctr) = 262.0_dp
+
+                !case (106) ! Sg
+
+                    !atommasses(elem_ctr) = 266.0_dp
+
+                !case (107) ! Bh
+
+                    !atommasses(elem_ctr) = 264.0_dp
+
+                !case (108) ! Hs
+
+                    !atommasses(elem_ctr) = 277.0_dp
+
+                !case (109) ! Mt
+
+                    !atommasses(elem_ctr) = 268.0_dp
+
+                case default
+                    print *, err, "nuclear charge not in 1-102: ", nucelem(elem_ctr)
+                    stop
+
+            end select
+
+        end do
+
+    end subroutine readatommasses
 
 end module pes_nene_mod
