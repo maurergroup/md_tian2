@@ -1,7 +1,7 @@
 !######################################################################
 ! This routine is part of
 ! RuNNer - RuNNer Neural Network Energy Representation
-! (c) 2008-2020 Prof. Dr. Joerg Behler 
+! (c) 2008-2019 Prof. Dr. Joerg Behler 
 ! Georg-August-Universitaet Goettingen, Germany
 !
 ! This program is free software: you can redistribute it and/or modify it 
@@ -51,7 +51,7 @@
       integer m
       integer jcount 
       integer cutoff_type
-      integer invneighboridx(natoms,max_num_atoms)
+      integer invneighboridx(natoms,max_num_atoms) 
 !!
       real*8 strs_temp(3,3,maxnum_funcvalues_local)
       real*8 lstb(listdim,4)
@@ -79,7 +79,6 @@
       real*8 temp3
       real*8 temp4
       real*8 temp5
-      real*8 dum ! Emir (second derivative of fcut)
       real*8 dsfuncdxyz_temp(0:max_num_neighbors_local,3) 
       real*8 eta_local(maxnum_funcvalues_local,nelem)                            ! in
       real*8 zeta_local(maxnum_funcvalues_local,nelem)                            ! in
@@ -146,7 +145,7 @@
           call getcutoff(&
             cutoff_type,cutoff_alpha,maxnum_funcvalues_local,nelem,&
             i2,iindex,&
-            funccutoff_local,rij,fcutij,temp1,dum)
+            funccutoff_local,rij,fcutij,temp1)
           dfcutijdxi=temp1*drijdxi
           dfcutijdyi=temp1*drijdyi
           dfcutijdzi=temp1*drijdzi
@@ -186,7 +185,7 @@
               call getcutoff(&
                 cutoff_type,cutoff_alpha,maxnum_funcvalues_local,nelem,&
                 i2,iindex,&
-                funccutoff_local,rik,fcutik,temp1,dum)
+                funccutoff_local,rik,fcutik,temp1)
               dfcutikdxi=temp1*drikdxi
               dfcutikdyi=temp1*drikdyi
               dfcutikdzi=temp1*drikdzi
@@ -222,7 +221,7 @@
                 call getcutoff(&
                   cutoff_type,cutoff_alpha,maxnum_funcvalues_local,nelem,&
                   i2,iindex,&
-                  funccutoff_local,rjk,fcutjk,temp1,dum)
+                  funccutoff_local,rjk,fcutjk,temp1)
 
                 dfcutjkdxj=temp1*drjkdxj
                 dfcutjkdyj=temp1*drjkdyj

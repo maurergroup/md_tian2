@@ -1,7 +1,7 @@
 !######################################################################
 ! This routine is part of
 ! RuNNer - RuNNer Neural Network Energy Representation
-! (c) 2008-2020 Prof. Dr. Joerg Behler 
+! (c) 2008-2019 Prof. Dr. Joerg Behler 
 ! Georg-August-Universitaet Goettingen, Germany
 !
 ! This program is free software: you can redistribute it and/or modify it 
@@ -29,7 +29,6 @@
       integer mpi_double_precision
       integer mpi_lor
       integer mpi_integer
-      integer mpi_integer8
       integer mpi_real8
       integer mpi_character
       integer mpi_logical

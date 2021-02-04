@@ -1,7 +1,7 @@
 !######################################################################
 ! This routine is part of
 ! RuNNer - RuNNer Neural Network Energy Representation
-! (c) 2008-2020 Prof. Dr. Joerg Behler 
+! (c) 2008-2019 Prof. Dr. Joerg Behler 
 ! Georg-August-Universitaet Goettingen, Germany
 !
 ! This program is free software: you can redistribute it and/or modify it 
@@ -21,12 +21,10 @@
       subroutine getcutoff(&
         cutoff_type,cutoff_alpha,maxnum_funcvalues_local,nelem,&
         i2,iindex,&
-        funccutoff_local,r_local,fcut_local,temp1,temp2)
+        funccutoff_local,r_local,fcut_local,temp1)
 !!
       use nnconstants
       use fileunits
-      use nnflags
-      use predictionoptions
 !!
       implicit none
 !!
@@ -37,8 +35,7 @@
       integer cutoff_type                                    ! in
       integer maxnum_funcvalues_local                        ! in
 
-      real*8 temp1                                           ! out (first derivative)
-      real*8 temp2                                           ! out (second derivative)
+      real*8 temp1                                           ! out 
       real*8 r_local                                         ! in
       real*8 r_temp                                          ! internal
       real*8 fcut_local                                      ! out
@@ -60,9 +57,7 @@
       r_temp=r_local/rc    ! R_ij/R_c
       rci= cutoff_alpha*rc ! inner cutoff
       rcinv = 1.0d0/rc     ! inverse cutoff
-      iw = 1.0d0/(rc-rci)
-
-      temp2 = 0.d0 ! calculate only when ldohessian is true
+      iw = 1.0d0/(rc-rci)     
 
       if(cutoff_type.eq.0)then
 !!      fc=1 (be aware that this usually does not make sense)
@@ -71,7 +66,6 @@
       elseif(cutoff_type.eq.1)then
 !!      fc=0.5*(cos(pi*r/Rc)+1)
 !!      fc'=0.5*(-sin(pi*r/Rc))*pi/Rc
-!!      fc''=0.5*(-cos(pi*r/Rc))*pi^2/Rc^2
         if (r_local .le. rci) then
             fcut_local = 1.0d0
             temp1 = 0.0d0
@@ -79,9 +73,6 @@
             x = (r_local-rci)*iw
             fcut_local=0.5d0*(dcos(pi*x)+1.d0)
             temp1 =(-dsin(pi*x))*(pi/2.0d0)*iw
-            if(mode.eq.3.and.ldohessian)then
-                temp2 = 0.5d0*(-dcos(pi*x))*pi*pi*iw*iw
-            end if
         end if
       elseif(cutoff_type.eq.2)then
 !!      fc=(tanh(1-r/Rc))^3
@@ -95,10 +86,6 @@
             fcut_local=(tanh(1.d0-r_temp))**3
             temp1 =(-3.d0/rc)&
                   *((tanh(1.d0-r_temp))**2 -(tanh(1.d0-r_temp))**4)
-            if(mode.eq.3.and.ldohessian)then
-                temp2 = (6.d0/(rc**2))*(1.d0 - (tanh(1.d0-r_temp))**2)*(tanh(1.d0-r_temp) - &
-                        2.d0*(tanh(1.d0-r_temp))**3)
-            end if
         end if 
       elseif(cutoff_type.eq.3)then
 !!      fc=((e^1+1)/(e^1-1))^3*(tanh(1-r/Rc))^3
@@ -110,10 +97,6 @@
             fcut_local=((exp(1.0d0)+1.0d0)/(exp(1.0d0)-1.0d0))**3 *(tanh(1.d0-r_temp))**3
             temp1 =((exp(1.0d0)+1.0d0)/(exp(1.0d0)-1.0d0))**3 &
                    *((-3.d0/rc)*((tanh(1.d0-r_temp))**2 -(tanh(1.d0-r_temp))**4))
-            if(mode.eq.3.and.ldohessian)then
-                temp2 = ((exp(1.0d0)+1.0d0)/(exp(1.0d0)-1.0d0))**3 *(6.d0/(rc**2))*&
-                        (1.d0 - (tanh(1.d0-r_temp))**2)*(tanh(1.d0-r_temp) - 2.d0*(tanh(1.d0-r_temp))**3)
-            end if
         end if
       elseif(cutoff_type.eq.4)then
 !!      fc=e^(1-1/(1-(r/Rc)^2))
@@ -126,10 +109,6 @@
            fcut_local=exp(1.0d0-1.0d0/(1.0d0-x**2))
            temp1=(-2.0d0*iw*x/((1.0d0-x**2)**2))&
            *exp(-1.0d0/(1.0d0-x**2))*exp(1.0d0)
-           if(mode.eq.3.and.ldohessian)then
-               temp2 = temp1*(-2.0d0*iw*x/((1.0d0-x**2)**2)) + (-2.0d0*iw*(1.0d0-x**2)**2 -&
-                       8.0d0 * iw * iw * (1.0d0-x**2)**2 * x**2)/((1.0d0-x**2)**4) *exp(-1.0d0/(1.0d0-x**2))*exp(1.0d0)
-           end if
         end if
       elseif(cutoff_type.eq.5)then
 !!      fc=(2r/Rc-3)*(r/Rc)^2+1
@@ -141,9 +120,6 @@
            x = (r_local-rci)*iw
            fcut_local=(2.0d0*x-3.0d0)*x**2 + 1.0d0
            temp1 = iw*x*(6.0d0*x-6.0d0)
-           if(mode.eq.3.and.ldohessian)then
-               temp2 = iw*iw*(12.0d0*x - 6.0d0)
-           end if
         end if
       elseif(cutoff_type.eq.6)then
 !!      fc=((15-6r/Rc)r/Rc-10)*(r/Rc)^3+1
@@ -155,9 +131,6 @@
            x = (r_local-rci)*iw  
            fcut_local=((15.0d0-6.0d0*x)*x-10.0d0)*(x)**3+1.0d0
            temp1 = iw *x*x*((60.0d0-30.0d0*x)*x-30.0)
-           if(mode.eq.3.and.ldohessian)then
-               temp2 = iw*iw*x*60.0d0*(3.0d0*x - 2.0d0*x*x -1.0d0)
-           end if
         end if
       elseif(cutoff_type.eq.7)then
 !!      fc = (r/Rc(r/Rc(20r/Rc-70)+84)-35)*(r/Rc)^4+1
@@ -170,9 +143,6 @@
            fcut_local=(x*(x*(20.0d0*x-70.0d0)+84.0d0)-35.0d0)&
                       *x**4+1.0d0
            temp1 =(x**3)*iw*(x*(x*(140.0d0*x-420.0d0)+420.0d0)-140.0d0)
-           if(mode.eq.3.and.ldohessian)then
-               temp2 = (x**2)*iw*iw*(840.0d0*(x**3) - 2100.0d0*(x**2) + 1680.0d0*x -420.0d0)
-           end if
         end if
       elseif(cutoff_type.eq.8)then
 !!      fc=(r/Rc(r/Rc(r/Rc(315-70r/Rc)-540)+420)-126)*(r/Rc)^5+1
@@ -185,10 +155,6 @@
            fcut_local=(x*(x*(x*(315.0d0-70.0d0*x)-540.0d0)+420.0d0)-126.0d0)&
                       *x**5+1.0d0
            temp1 =iw*(x**4)*(x*(x*((2520.0d0-630.d0*x)*x-3780.0d0)+2520.0d0)-630.0d0)
-           if(mode.eq.3.and.ldohessian)then
-               temp2 = (x**3)*iw*iw*(17640.0d0*(x**3) - 5040.0d0*(x**4) - 22680.0d0*(x**2) +&
-                       12600.0d0*x - 2520.d0)
-           end if
         end if
       else !'
         write(ounit,*)'ERROR: Unknown cutoff_type in calconefunction_para, please use value between 0 and 8 in input.nn'

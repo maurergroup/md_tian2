@@ -25,7 +25,7 @@
       subroutine sortsymfunctions(&
         maxnum_funcvalues_local,num_funcvalues_local,&
         function_type_local,symelement_local,&
-        eta_local,zeta_local,rshift_local,lambda_local,funccutoff_local)
+        eta_loca,zeta_loca,rshift_local,lambda_local,funccutoff_local)
 !!
       use fileunits
       use globaloptions
@@ -45,13 +45,13 @@
       integer num_others                                      ! internal
 !!
       real*8 funccutoff_local(maxnum_funcvalues_local,nelem)        ! in/out
-      real*8 eta_local(maxnum_funcvalues_local,nelem)               ! in/out
-      real*8 zeta_local(maxnum_funcvalues_local,nelem)              ! in/out
+      real*8 eta_loca(maxnum_funcvalues_local,nelem)               ! in/out
+      real*8 zeta_loca(maxnum_funcvalues_local,nelem)              ! in/out
       real*8 lambda_local(maxnum_funcvalues_local,nelem)            ! in/out
       real*8 rshift_local(maxnum_funcvalues_local,nelem)            ! in/out
       real*8 funccutoff_local_temp                            ! internal
-      real*8 eta_local_temp                                   ! internal
-      real*8 zeta_local_temp                                  ! internal
+      real*8 eta_loca_temp                                   ! internal
+      real*8 zeta_loca_temp                                  ! internal
       real*8 lambda_local_temp                                ! internal
       real*8 rshift_local_temp                                ! internal
       real*8 thres                                      ! internal
@@ -88,12 +88,12 @@
               symelement_local_temp(2)    =symelement_local(i2,2,i1)
               symelement_local(i2,2,i1)   =symelement_local(i2+1,2,i1)
               symelement_local(i2+1,2,i1) =symelement_local_temp(2)
-              eta_local_temp    =eta_local(i2,i1)
-              eta_local(i2,i1)  =eta_local(i2+1,i1)
-              eta_local(i2+1,i1)=eta_local_temp
-              zeta_local_temp    =zeta_local(i2,i1)
-              zeta_local(i2,i1)  =zeta_local(i2+1,i1)
-              zeta_local(i2+1,i1)=zeta_local_temp
+              eta_loca_temp    =eta_loca(i2,i1)
+              eta_loca(i2,i1)  =eta_loca(i2+1,i1)
+              eta_loca(i2+1,i1)=eta_loca_temp
+              zeta_loca_temp    =zeta_loca(i2,i1)
+              zeta_loca(i2,i1)  =zeta_loca(i2+1,i1)
+              zeta_loca(i2+1,i1)=zeta_loca_temp
               lambda_local_temp    =lambda_local(i2,i1)
               lambda_local(i2,i1)  =lambda_local(i2+1,i1)
               lambda_local(i2+1,i1)=lambda_local_temp
@@ -135,12 +135,12 @@
               symelement_local_temp(2)    =symelement_local(i2,2,i1)
               symelement_local(i2,2,i1)   =symelement_local(i2+1,2,i1)
               symelement_local(i2+1,2,i1) =symelement_local_temp(2)
-              eta_local_temp    =eta_local(i2,i1)
-              eta_local(i2,i1)  =eta_local(i2+1,i1)
-              eta_local(i2+1,i1)=eta_local_temp
-              zeta_local_temp    =zeta_local(i2,i1)
-              zeta_local(i2,i1)  =zeta_local(i2+1,i1)
-              zeta_local(i2+1,i1)=zeta_local_temp
+              eta_loca_temp    =eta_loca(i2,i1)
+              eta_loca(i2,i1)  =eta_loca(i2+1,i1)
+              eta_loca(i2+1,i1)=eta_loca_temp
+              zeta_loca_temp    =zeta_loca(i2,i1)
+              zeta_loca(i2,i1)  =zeta_loca(i2+1,i1)
+              zeta_loca(i2+1,i1)=zeta_loca_temp
               lambda_local_temp    =lambda_local(i2,i1)
               lambda_local(i2,i1)  =lambda_local(i2+1,i1)
               lambda_local(i2+1,i1)=lambda_local_temp
@@ -156,7 +156,7 @@
         endif
       enddo ! i1
 !!
-!! sort according to eta_local
+!! sort according to eta_loca
 !!
       do i1=1,nelem
         if(num_funcvalues_local(i1).gt.1)then
@@ -164,7 +164,7 @@
           do i2=1,num_funcvalues_local(i1)-1
             if((function_type_local(i2,i1).eq.function_type_local(i2+1,i1))&
               .and.(funccutoff_local(i2,i1).eq.funccutoff_local(i2+1,i1))&
-              .and.(eta_local(i2,i1).gt.eta_local(i2+1,i1)))then
+              .and.(eta_loca(i2,i1).gt.eta_loca(i2+1,i1)))then
               function_type_local_temp    =function_type_local(i2,i1)
               function_type_local(i2,i1)  =function_type_local(i2+1,i1)
               function_type_local(i2+1,i1)=function_type_local_temp
@@ -174,12 +174,12 @@
               symelement_local_temp(2)    =symelement_local(i2,2,i1)
               symelement_local(i2,2,i1)   =symelement_local(i2+1,2,i1)
               symelement_local(i2+1,2,i1) =symelement_local_temp(2)
-              eta_local_temp    =eta_local(i2,i1)
-              eta_local(i2,i1)  =eta_local(i2+1,i1)
-              eta_local(i2+1,i1)=eta_local_temp
-              zeta_local_temp    =zeta_local(i2,i1)
-              zeta_local(i2,i1)  =zeta_local(i2+1,i1)
-              zeta_local(i2+1,i1)=zeta_local_temp
+              eta_loca_temp    =eta_loca(i2,i1)
+              eta_loca(i2,i1)  =eta_loca(i2+1,i1)
+              eta_loca(i2+1,i1)=eta_loca_temp
+              zeta_loca_temp    =zeta_loca(i2,i1)
+              zeta_loca(i2,i1)  =zeta_loca(i2+1,i1)
+              zeta_loca(i2+1,i1)=zeta_loca_temp
               lambda_local_temp    =lambda_local(i2,i1)
               lambda_local(i2,i1)  =lambda_local(i2+1,i1)
               lambda_local(i2+1,i1)=lambda_local_temp
@@ -195,7 +195,7 @@
         endif
       enddo ! i1
 !!
-!! sort according to zeta_local
+!! sort according to zeta_loca
 !!
       do i1=1,nelem
         if(num_funcvalues_local(i1).gt.1)then
@@ -203,8 +203,8 @@
           do i2=1,num_funcvalues_local(i1)-1
             if((function_type_local(i2,i1).eq.function_type_local(i2+1,i1))&
               .and.(funccutoff_local(i2,i1).eq.funccutoff_local(i2+1,i1))&
-              .and.(eta_local(i2,i1).eq.eta_local(i2+1,i1))&
-              .and.(zeta_local(i2,i1).gt.zeta_local(i2+1,i1)))then
+              .and.(eta_loca(i2,i1).eq.eta_loca(i2+1,i1))&
+              .and.(zeta_loca(i2,i1).gt.zeta_loca(i2+1,i1)))then
               function_type_local_temp    =function_type_local(i2,i1)
               function_type_local(i2,i1)  =function_type_local(i2+1,i1)
               function_type_local(i2+1,i1)=function_type_local_temp
@@ -214,12 +214,12 @@
               symelement_local_temp(2)    =symelement_local(i2,2,i1)
               symelement_local(i2,2,i1)   =symelement_local(i2+1,2,i1)
               symelement_local(i2+1,2,i1) =symelement_local_temp(2)
-              eta_local_temp    =eta_local(i2,i1)
-              eta_local(i2,i1)  =eta_local(i2+1,i1)
-              eta_local(i2+1,i1)=eta_local_temp
-              zeta_local_temp    =zeta_local(i2,i1)
-              zeta_local(i2,i1)  =zeta_local(i2+1,i1)
-              zeta_local(i2+1,i1)=zeta_local_temp
+              eta_loca_temp    =eta_loca(i2,i1)
+              eta_loca(i2,i1)  =eta_loca(i2+1,i1)
+              eta_loca(i2+1,i1)=eta_loca_temp
+              zeta_loca_temp    =zeta_loca(i2,i1)
+              zeta_loca(i2,i1)  =zeta_loca(i2+1,i1)
+              zeta_loca(i2+1,i1)=zeta_loca_temp
               lambda_local_temp    =lambda_local(i2,i1)
               lambda_local(i2,i1)  =lambda_local(i2+1,i1)
               lambda_local(i2+1,i1)=lambda_local_temp
@@ -243,8 +243,8 @@
           do i2=1,num_funcvalues_local(i1)-1
             if((function_type_local(i2,i1).eq.function_type_local(i2+1,i1))&
               .and.(funccutoff_local(i2,i1).eq.funccutoff_local(i2+1,i1))&
-              .and.(eta_local(i2,i1).eq.eta_local(i2+1,i1))&
-              .and.(zeta_local(i2,i1).eq.zeta_local(i2+1,i1))&
+              .and.(eta_loca(i2,i1).eq.eta_loca(i2+1,i1))&
+              .and.(zeta_loca(i2,i1).eq.zeta_loca(i2+1,i1))&
               .and.(lambda_local(i2,i1).gt.lambda_local(i2+1,i1)))then
               function_type_local_temp    =function_type_local(i2,i1)
               function_type_local(i2,i1)  =function_type_local(i2+1,i1)
@@ -255,12 +255,12 @@
               symelement_local_temp(2)    =symelement_local(i2,2,i1)
               symelement_local(i2,2,i1)   =symelement_local(i2+1,2,i1)
               symelement_local(i2+1,2,i1) =symelement_local_temp(2)
-              eta_local_temp    =eta_local(i2,i1)
-              eta_local(i2,i1)  =eta_local(i2+1,i1)
-              eta_local(i2+1,i1)=eta_local_temp
-              zeta_local_temp    =zeta_local(i2,i1)
-              zeta_local(i2,i1)  =zeta_local(i2+1,i1)
-              zeta_local(i2+1,i1)=zeta_local_temp
+              eta_loca_temp    =eta_loca(i2,i1)
+              eta_loca(i2,i1)  =eta_loca(i2+1,i1)
+              eta_loca(i2+1,i1)=eta_loca_temp
+              zeta_loca_temp    =zeta_loca(i2,i1)
+              zeta_loca(i2,i1)  =zeta_loca(i2+1,i1)
+              zeta_loca(i2+1,i1)=zeta_loca_temp
               lambda_local_temp    =lambda_local(i2,i1)
               lambda_local(i2,i1)  =lambda_local(i2+1,i1)
               lambda_local(i2+1,i1)=lambda_local_temp
@@ -284,8 +284,8 @@
           do i2=1,num_funcvalues_local(i1)-1
             if((function_type_local(i2,i1).eq.function_type_local(i2+1,i1))&
               .and.(funccutoff_local(i2,i1).eq.funccutoff_local(i2+1,i1))&
-              .and.(eta_local(i2,i1).eq.eta_local(i2+1,i1))&
-              .and.(zeta_local(i2,i1).eq.zeta_local(i2+1,i1))&
+              .and.(eta_loca(i2,i1).eq.eta_loca(i2+1,i1))&
+              .and.(zeta_loca(i2,i1).eq.zeta_loca(i2+1,i1))&
               .and.(lambda_local(i2,i1).eq.lambda_local(i2+1,i1))&
               .and.(rshift_local(i2,i1).gt.rshift_local(i2+1,i1)))then
               function_type_local_temp    =function_type_local(i2,i1)
@@ -297,12 +297,12 @@
               symelement_local_temp(2)    =symelement_local(i2,2,i1)
               symelement_local(i2,2,i1)   =symelement_local(i2+1,2,i1)
               symelement_local(i2+1,2,i1) =symelement_local_temp(2)
-              eta_local_temp    =eta_local(i2,i1)
-              eta_local(i2,i1)  =eta_local(i2+1,i1)
-              eta_local(i2+1,i1)=eta_local_temp
-              zeta_local_temp    =zeta_local(i2,i1)
-              zeta_local(i2,i1)  =zeta_local(i2+1,i1)
-              zeta_local(i2+1,i1)=zeta_local_temp
+              eta_loca_temp    =eta_loca(i2,i1)
+              eta_loca(i2,i1)  =eta_loca(i2+1,i1)
+              eta_loca(i2+1,i1)=eta_loca_temp
+              zeta_loca_temp    =zeta_loca(i2,i1)
+              zeta_loca(i2,i1)  =zeta_loca(i2+1,i1)
+              zeta_loca(i2+1,i1)=zeta_loca_temp
               lambda_local_temp    =lambda_local(i2,i1)
               lambda_local(i2,i1)  =lambda_local(i2+1,i1)
               lambda_local(i2+1,i1)=lambda_local_temp
@@ -326,8 +326,8 @@
           do i2=1,num_funcvalues_local(i1)-1
             if((function_type_local(i2,i1).eq.function_type_local(i2+1,i1))&
               .and.(funccutoff_local(i2,i1).eq.funccutoff_local(i2+1,i1))&
-              .and.(eta_local(i2,i1).eq.eta_local(i2+1,i1))&
-              .and.(zeta_local(i2,i1).eq.zeta_local(i2+1,i1))&
+              .and.(eta_loca(i2,i1).eq.eta_loca(i2+1,i1))&
+              .and.(zeta_loca(i2,i1).eq.zeta_loca(i2+1,i1))&
               .and.(lambda_local(i2,i1).eq.lambda_local(i2+1,i1))&
               .and.(rshift_local(i2,i1).eq.rshift_local(i2+1,i1))&
               .and.(symelement_local(i2,1,i1).gt.symelement_local(i2+1,1,i1)))then
@@ -340,12 +340,12 @@
               symelement_local_temp(2)    =symelement_local(i2,2,i1)
               symelement_local(i2,2,i1)   =symelement_local(i2+1,2,i1)
               symelement_local(i2+1,2,i1) =symelement_local_temp(2)
-              eta_local_temp    =eta_local(i2,i1)
-              eta_local(i2,i1)  =eta_local(i2+1,i1)
-              eta_local(i2+1,i1)=eta_local_temp
-              zeta_local_temp    =zeta_local(i2,i1)
-              zeta_local(i2,i1)  =zeta_local(i2+1,i1)
-              zeta_local(i2+1,i1)=zeta_local_temp
+              eta_loca_temp    =eta_loca(i2,i1)
+              eta_loca(i2,i1)  =eta_loca(i2+1,i1)
+              eta_loca(i2+1,i1)=eta_loca_temp
+              zeta_loca_temp    =zeta_loca(i2,i1)
+              zeta_loca(i2,i1)  =zeta_loca(i2+1,i1)
+              zeta_loca(i2+1,i1)=zeta_loca_temp
               lambda_local_temp    =lambda_local(i2,i1)
               lambda_local(i2,i1)  =lambda_local(i2+1,i1)
               lambda_local(i2+1,i1)=lambda_local_temp
@@ -369,8 +369,8 @@
           do i2=1,num_funcvalues_local(i1)-1
             if((function_type_local(i2,i1).eq.function_type_local(i2+1,i1))&
               .and.(funccutoff_local(i2,i1).eq.funccutoff_local(i2+1,i1))&
-              .and.(eta_local(i2,i1).eq.eta_local(i2+1,i1))&
-              .and.(zeta_local(i2,i1).eq.zeta_local(i2+1,i1))&
+              .and.(eta_loca(i2,i1).eq.eta_loca(i2+1,i1))&
+              .and.(zeta_loca(i2,i1).eq.zeta_loca(i2+1,i1))&
               .and.(lambda_local(i2,i1).eq.lambda_local(i2+1,i1))&
               .and.(rshift_local(i2,i1).eq.rshift_local(i2+1,i1))&
               .and.(symelement_local(i2,1,i1).eq.symelement_local(i2+1,1,i1))&
@@ -384,12 +384,12 @@
               symelement_local_temp(2)    =symelement_local(i2,2,i1)
               symelement_local(i2,2,i1)   =symelement_local(i2+1,2,i1)
               symelement_local(i2+1,2,i1) =symelement_local_temp(2)
-              eta_local_temp    =eta_local(i2,i1)
-              eta_local(i2,i1)  =eta_local(i2+1,i1)
-              eta_local(i2+1,i1)=eta_local_temp
-              zeta_local_temp    =zeta_local(i2,i1)
-              zeta_local(i2,i1)  =zeta_local(i2+1,i1)
-              zeta_local(i2+1,i1)=zeta_local_temp
+              eta_loca_temp    =eta_loca(i2,i1)
+              eta_loca(i2,i1)  =eta_loca(i2+1,i1)
+              eta_loca(i2+1,i1)=eta_loca_temp
+              zeta_loca_temp    =zeta_loca(i2,i1)
+              zeta_loca(i2,i1)  =zeta_loca(i2+1,i1)
+              zeta_loca(i2+1,i1)=zeta_loca_temp
               lambda_local_temp    =lambda_local(i2,i1)
               lambda_local(i2,i1)  =lambda_local(i2+1,i1)
               lambda_local(i2+1,i1)=lambda_local_temp
@@ -411,8 +411,8 @@
         do i2=1,num_funcvalues_local(i1)-1
           if((function_type_local(i2,i1).eq.function_type_local(i2+1,i1))&
             .and.(abs(funccutoff_local(i2,i1)-funccutoff_local(i2+1,i1)).lt.thres)&
-            .and.(abs(eta_local(i2,i1)-eta_local(i2+1,i1)).lt.thres)&
-            .and.(abs(zeta_local(i2,i1)-zeta_local(i2+1,i1)).lt.thres)&
+            .and.(abs(eta_loca(i2,i1)-eta_loca(i2+1,i1)).lt.thres)&
+            .and.(abs(zeta_loca(i2,i1)-zeta_loca(i2+1,i1)).lt.thres)&
             .and.(abs(lambda_local(i2,i1)-lambda_local(i2+1,i1)).lt.thres)&
             .and.(abs(rshift_local(i2,i1)-rshift_local(i2+1,i1)).lt.thres)&
             .and.(symelement_local(i2,1,i1).eq.symelement_local(i2+1,1,i1))&
@@ -421,8 +421,8 @@
             write(ounit,*)'element is ',element(i1)
             write(ounit,*)'function_type_local ',function_type_local(i2,i1)
             write(ounit,'(a14,f10.3)')'funccutoff_local    ',funccutoff_local(i2,i1)
-            write(ounit,'(a14,f10.3)')'eta_local           ',eta_local(i2,i1)
-            write(ounit,'(a14,f10.3)')'zeta_local          ',zeta_local(i2,i1)
+            write(ounit,'(a14,f10.3)')'eta_loca           ',eta_loca(i2,i1)
+            write(ounit,'(a14,f10.3)')'zeta_loca          ',zeta_loca(i2,i1)
             write(ounit,'(a14,f10.3)')'lambda_local        ',lambda_local(i2,i1)
             write(ounit,'(a14,f10.3)')'rshift_local        ',rshift_local(i2,i1)
             write(ounit,*)'symelement_local(1) ',symelement_local(i2,1,i1)

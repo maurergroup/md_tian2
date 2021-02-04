@@ -1,7 +1,7 @@
 !######################################################################
 ! This routine is part of
 ! RuNNer - RuNNer Neural Network Energy Representation
-! (c) 2008-2020 Prof. Dr. Joerg Behler 
+! (c) 2008-2019 Prof. Dr. Joerg Behler 
 ! Georg-August-Universitaet Goettingen, Germany
 !
 ! This program is free software: you can redistribute it and/or modify it 
@@ -168,13 +168,13 @@
           invneighboridx_local,&
           jcount,listdim,lsta,lstc,lste,symelement_local,maxnum_funcvalues_local,&
           cutoff_type,cutoff_alpha,lstb,funccutoff_local,xyzstruct,eta_local,rshift_local,&
-          rmin,symfunction_temp,dsfuncdxyz_temp,strs_temp,&
+          lambda_local,rmin,symfunction_temp,dsfuncdxyz_temp,strs_temp,&
           ldoforces,ldostress,ldohessian_local,lrmin)
 !!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       elseif(function_type_local(i2,iindex).eq.9)then ! angular function
 !!
-        call atomsymfunction9(i1,i2,iindex,natoms,atomindex,nelem,&
+        call atomsymfunction9(i1,i2,iindex,natoms,atomindex,natomsdim,nelem,&
           max_num_atoms,max_num_neighbors_local,&
           invneighboridx_local,&
           jcount,listdim,lsta,lstc,lste,symelement_local,maxnum_funcvalues_local,&
