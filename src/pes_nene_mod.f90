@@ -2827,7 +2827,7 @@ module pes_nene_mod
                                 ldohessian    = .true.
                                 lwritehessian = .true.
                             else
-                                print *, err, err_inpnn, "calculate_hessian key needs no argument(s)"; sto
+                                print *, err, err_inpnn, "calculate_hessian key needs no argument(s)"; stop
                             end if
 
                         case ('calculate_frequencies')
@@ -7329,7 +7329,7 @@ module pes_nene_mod
                 if (ldostress .and. lperiodic) then ! write stress and pressure
                     do ictr_1=1,3
                         write(*,'(a10,3f18.8,a10)')'NNstress ',nnstress(ictr_1,1) * habohrcub2evangcub,&
-                        nnstress(ictr_1,2) * habohrcub2evangcub,nnstress(ictr_1,3) * habohrcub2evangcub,' eV/Ang^3
+                        nnstress(ictr_1,2) * habohrcub2evangcub,nnstress(ictr_1,3) * habohrcub2evangcub,' eV/Ang^3'
                     end do
                     write(*,*)'-------------------------------------------------------------'
                     pressure=(nnstress(1,1)+nnstress(2,2)+nnstress(3,3))/3.0d0

@@ -91,8 +91,8 @@ MODULES      =	constants.o \
 	       	nnewald.o \
 		saturation.o \
 		structures.o \
-		symfunctiongroups.o \
 		symfunctions.o \
+		symfunctiongroups.o \
 		timings.o \
 		fittingoptions.o \
 	        pes_nene_mod.o \
