@@ -15,9 +15,6 @@
 # ifort and mkl library
 FC     = ifort 
 FFLAGS = -O3 -mkl -xhost -fp-model precise -132
-#FFLAGS = -O2 -mkl -xhost
-#FFLAGS = -O3 -mkl -xcore-avx2 -fp-model precise -132
-#FFLAGS = -O3 -mkl -xcore-avx512 -fp-model precise -132
 LIB    =
 
 ###############################################
@@ -44,13 +41,23 @@ SUBROUTINES = 	md_tian2.o \
 		atomsymfunction9.o \
 		calconenn.o \
 		checkelement.o \
+		check_type.o \
+		convert_frequencies.o \
+		dia_hessian.o \
 		getatomsymfunctions.o \
+		getatomsymfunctions_sfg.o \
 		getcutoff.o \
+		getddnodes_values.o \
 		getdnodes_values.o \
+		getgroupcutoffvalues.o \
+		getgroupneighlist.o \
 		getlistdim.o \
 		getneighboridxatomic_para.o \
 		getneighborsatomic_para.o \
 		getshortatomic.o \
+		getsymfunctionderivatives.o \
+		getsymfunctionsecondderivatives.o \
+		getvibrationalfrequencies.o \
 		getvolume.o \
 		mpifitdistribution.o \
 		neighbor_para_short.o \
@@ -84,6 +91,7 @@ MODULES      =	constants.o \
 	       	nnewald.o \
 		saturation.o \
 		structures.o \
+		symfunctiongroups.o \
 		symfunctions.o \
 		timings.o \
 		fittingoptions.o \
@@ -190,6 +198,10 @@ symfunctions.o: $(RUNNER_SRC_DIR)symfunctions.f90
 	rm $(RUNNER_SRC_DIR)symfunctions.mod ; \
         $(FC) $(FFLAGS) -c $(RUNNER_SRC_DIR)symfunctions.f90
 
+symfunctiongroups.o: $(RUNNER_SRC_DIR)symfunctiongroups.f90
+	rm $(RUNNER_SRC_DIR)symfunctiongroups.mod ; \
+        $(FC) $(FFLAGS) -c $(RUNNER_SRC_DIR)symfunctiongroups.f90
+
 timings.o: $(RUNNER_SRC_DIR)timings.f90
 	rm $(RUNNER_SRC_DIR)timings.mod ; \
         $(FC) $(FFLAGS) -c $(RUNNER_SRC_DIR)timings.f90
@@ -284,14 +296,35 @@ calconenn.o: $(RUNNER_SRC_DIR)calconenn.f90
 checkelement.o: $(RUNNER_SRC_DIR)checkelement.f90
 	$(FC) $(FFLAGS) -c $(RUNNER_SRC_DIR)checkelement.f90
 
+check_type.o: $(RUNNER_SRC_DIR)check_type.f90
+	$(FC) $(FFLAGS) -c $(RUNNER_SRC_DIR)check_type.f90
+
+convert_frequencies.o: $(RUNNER_SRC_DIR)convert_frequencies.f90
+	$(FC) $(FFLAGS) -c $(RUNNER_SRC_DIR)convert_frequencies.f90
+
+dia_hessian.o: $(RUNNER_SRC_DIR)dia_hessian.f90
+	$(FC) $(FFLAGS) -c $(RUNNER_SRC_DIR)dia_hessian.f90
+
 getatomsymfunctions.o: $(RUNNER_SRC_DIR)getatomsymfunctions.f90
 	$(FC) $(FFLAGS) -c $(RUNNER_SRC_DIR)getatomsymfunctions.f90
+
+getatomsymfunctions_sfg.o: $(RUNNER_SRC_DIR)getatomsymfunctions_sfg.f90
+	$(FC) $(FFLAGS) -c $(RUNNER_SRC_DIR)getatomsymfunctions_sfg.f90
 
 getcutoff.o: $(RUNNER_SRC_DIR)getcutoff.f90
 	$(FC) $(FFLAGS) -c $(RUNNER_SRC_DIR)getcutoff.f90
 
+getddnodes_values.o: $(RUNNER_SRC_DIR)getddnodes_values.f90
+	$(FC) $(FFLAGS) -c $(RUNNER_SRC_DIR)getddnodes_values.f90
+
 getdnodes_values.o: $(RUNNER_SRC_DIR)getdnodes_values.f90
 	$(FC) $(FFLAGS) -c $(RUNNER_SRC_DIR)getdnodes_values.f90
+
+getgroupcutoffvalues.o: $(RUNNER_SRC_DIR)getgroupcutoffvalues.f90
+	$(FC) $(FFLAGS) -c $(RUNNER_SRC_DIR)getgroupcutoffvalues.f90
+
+getgroupneighlist.o: $(RUNNER_SRC_DIR)getgroupneighlist.f90
+	$(FC) $(FFLAGS) -c $(RUNNER_SRC_DIR)getgroupneighlist.f90
 
 getlistdim.o: $(RUNNER_SRC_DIR)getlistdim.f90
 	$(FC) $(FFLAGS) -c $(RUNNER_SRC_DIR)getlistdim.f90
@@ -304,6 +337,15 @@ getneighborsatomic_para.o: $(RUNNER_SRC_DIR)getneighborsatomic_para.f90
 
 getshortatomic.o: $(RUNNER_SRC_DIR)getshortatomic.f90
 	$(FC) $(FFLAGS) -c $(RUNNER_SRC_DIR)getshortatomic.f90
+
+getsymfunctionderivatives.o: $(RUNNER_SRC_DIR)getsymfunctionderivatives.f90
+	$(FC) $(FFLAGS) -c $(RUNNER_SRC_DIR)getsymfunctionderivatives.f90
+
+getsymfunctionsecondderivatives.o: $(RUNNER_SRC_DIR)getsymfunctionsecondderivatives.f90
+	$(FC) $(FFLAGS) -c $(RUNNER_SRC_DIR)getsymfunctionsecondderivatives.f90
+
+getvibrationalfrequencies.o: $(RUNNER_SRC_DIR)getvibrationalfrequencies.f90
+	$(FC) $(FFLAGS) -c $(RUNNER_SRC_DIR)getvibrationalfrequencies.f90
 
 getvolume.o: $(RUNNER_SRC_DIR)getvolume.f90
 	$(FC) $(FFLAGS) -c $(RUNNER_SRC_DIR)getvolume.f90

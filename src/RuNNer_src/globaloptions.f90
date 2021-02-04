@@ -144,8 +144,8 @@
       character*20 pstring
 
 !! MD related (SW)
-      integer count_extrapolation_warnings_energy
-      integer count_extrapolation_warnings_symfunc
+      integer count_extrapolation_warnings
+      integer max_count_extrapolation_warnings
 
       end module globaloptions
 

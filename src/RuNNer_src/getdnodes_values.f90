@@ -1,7 +1,7 @@
 !######################################################################
 ! This routine is part of
 ! RuNNer - RuNNer Neural Network Energy Representation
-! (c) 2008-2019 Prof. Dr. Joerg Behler 
+! (c) 2008-2020 Prof. Dr. Joerg Behler 
 ! Georg-August-Universitaet Goettingen, Germany
 !
 ! This program is free software: you can redistribute it and/or modify it 
@@ -55,7 +55,7 @@
 !!
       real*8 nodes_values_local(maxnum_layers_local,maxnodes_local)         ! in
       real*8 nodes_sum_local(maxnum_layers_local,maxnodes_local)            ! in
-      real*8 dnodes_values_local(maxnum_layers_local,maxnodes_local)        ! out 
+      real*8 dnodes_values_local(maxnum_layers_local,maxnodes_local)        ! out
       real*8 alphagaussian                                                  ! internal
       real*8 norm                                                           ! internal
 !!

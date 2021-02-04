@@ -1,7 +1,7 @@
 !######################################################################
 ! This routine is part of
 ! RuNNer - RuNNer Neural Network Energy Representation
-! (c) 2008-2019 Prof. Dr. Joerg Behler 
+! (c) 2008-2020 Prof. Dr. Joerg Behler 
 ! Georg-August-Universitaet Goettingen, Germany
 !
 ! This program is free software: you can redistribute it and/or modify it 
@@ -289,6 +289,11 @@
       character*10 fulltime
       character*5 zone
       integer*4 timevalues(8)
+
+      ! Emir (testing)
+      integer daytest
+      real*8 teststart
+      real*8 testend
 
       end module timings 
 

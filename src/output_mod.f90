@@ -571,7 +571,7 @@ contains
         zero_step = 0 ! write the initial structure to step 0 file
         dummy_ce = 0.0_dp
 
-        if (.not. dir_exists('runner')) call system('mkdir runner')
+        if (.not. dir_exists('runner')) call execute_command_line('mkdir runner')
 
         fname = 'runner/input.data'
 

@@ -1,7 +1,7 @@
 !######################################################################
 ! This routine is part of
 ! RuNNer - RuNNer Neural Network Energy Representation
-! (c) 2008-2019 Prof. Dr. Joerg Behler 
+! (c) 2008-2020 Prof. Dr. Joerg Behler 
 ! Georg-August-Universitaet Goettingen, Germany
 !
 ! This program is free software: you can redistribute it and/or modify it 
@@ -25,7 +25,7 @@
         max_num_atoms,max_num_neighbors_local,invneighboridx,&
         jcount,listdim,lsta,lstc,lste,symelement_local,maxnum_funcvalues_local,&
         cutoff_type,cutoff_alpha,lstb,funccutoff_local,xyzstruct,eta_local,rshift_local,&
-        lambda_local,rmin,symfunction_temp,dsfuncdxyz_temp,strs_temp,&
+        rmin,symfunction_temp,dsfuncdxyz_temp,strs_temp,&
         ldoforces,ldostress,ldohessian_local,lrmin)
 !!
       use fileunits
@@ -57,7 +57,6 @@
       real*8 strs_temp(3,3,maxnum_funcvalues_local)
       real*8 lstb(listdim,4)
       real*8 funccutoff_local(maxnum_funcvalues_local,nelem)
-      real*8 lambda_local(maxnum_funcvalues_local,nelem)                ! in
       real*8 rij
       real*8 rik
       real*8 rjk
@@ -78,6 +77,7 @@
       real*8 temp2
       real*8 temp3
       real*8 temp4
+      real*8 dum ! Emir (second derivative of fcut)
       real*8 dsfuncdxyz_temp(0:max_num_neighbors_local,3) 
       real*8 eta_local(maxnum_funcvalues_local,nelem)                            ! in
       real*8 rshift_local(maxnum_funcvalues_local,nelem)                ! in
@@ -145,7 +145,7 @@
           call getcutoff(&
             cutoff_type,cutoff_alpha,maxnum_funcvalues_local,nelem,&
             i2,iindex,&
-            funccutoff_local,rij,fcutij,temp1)
+            funccutoff_local,rij,fcutij,temp1,dum)
 
           dfcutijdxi=temp1*drijdxi
           dfcutijdyi=temp1*drijdyi
@@ -184,7 +184,7 @@
               call getcutoff(&
                 cutoff_type,cutoff_alpha,maxnum_funcvalues_local,nelem,&
                 i2,iindex,&
-                funccutoff_local,rik,fcutik,temp1)
+                funccutoff_local,rik,fcutik,temp1,dum)
 
               dfcutikdxi=temp1*drikdxi
               dfcutikdyi=temp1*drikdyi
@@ -220,7 +220,7 @@
                 call getcutoff(&
                   cutoff_type,cutoff_alpha,maxnum_funcvalues_local,nelem,&
                   i2,iindex,&
-                  funccutoff_local,rjk,fcutjk,temp1)
+                  funccutoff_local,rjk,fcutjk,temp1,dum)
 
                 dfcutjkdxj=temp1*drjkdxj
                 dfcutjkdyj=temp1*drjkdyj
@@ -259,17 +259,18 @@
 !! calculate the derivatives of costheta already here
 !! (f/g)' = (f'g - fg')/g^2
                 if(ldoforces) then
-                 dfdxi=lambda_local(i2,iindex)*(-2.d0*rij*drijdxi - 2.d0*rik*drikdxi)
-                 dfdyi=lambda_local(i2,iindex)*(-2.d0*rij*drijdyi - 2.d0*rik*drikdyi)
-                 dfdzi=lambda_local(i2,iindex)*(-2.d0*rij*drijdzi - 2.d0*rik*drikdzi)
+!! 2020/05/28 bug detected in dfd** below by EK, fixed by JB
+                 dfdxi=-2.d0*rij*drijdxi - 2.d0*rik*drikdxi
+                 dfdyi=-2.d0*rij*drijdyi - 2.d0*rik*drikdyi
+                 dfdzi=-2.d0*rij*drijdzi - 2.d0*rik*drikdzi
 !!
-                 dfdxj=lambda_local(i2,iindex)*(2.d0*rjk*drjkdxj - 2.d0*rij*drijdxj)
-                 dfdyj=lambda_local(i2,iindex)*(2.d0*rjk*drjkdyj - 2.d0*rij*drijdyj)
-                 dfdzj=lambda_local(i2,iindex)*(2.d0*rjk*drjkdzj - 2.d0*rij*drijdzj)
+                 dfdxj=2.d0*rjk*drjkdxj - 2.d0*rij*drijdxj
+                 dfdyj=2.d0*rjk*drjkdyj - 2.d0*rij*drijdyj
+                 dfdzj=2.d0*rjk*drjkdzj - 2.d0*rij*drijdzj
 !!
-                 dfdxk=lambda_local(i2,iindex)*(2.d0*rjk*drjkdxk - 2.d0*rik*drikdxk)
-                 dfdyk=lambda_local(i2,iindex)*(2.d0*rjk*drjkdyk - 2.d0*rik*drikdyk)
-                 dfdzk=lambda_local(i2,iindex)*(2.d0*rjk*drjkdzk - 2.d0*rik*drikdzk)
+                 dfdxk=2.d0*rjk*drjkdxk - 2.d0*rik*drikdxk
+                 dfdyk=2.d0*rjk*drjkdyk - 2.d0*rik*drikdyk
+                 dfdzk=2.d0*rjk*drjkdzk - 2.d0*rik*drikdzk
 !!
                  dgdxi=-2.d0*(drijdxi*rik + rij*drikdxi)
                  dgdyi=-2.d0*(drijdyi*rik + rij*drikdyi)
@@ -317,10 +318,11 @@
               if(ldoforces)then
 !! Calculation of derivatives for forces
 !! (fghi)'= f'ghi + fg'hi + fgh'i + fghi'
+!! 2020/05/28 bug detected in temp3 below by EK, fixed by JB
                 temp3=-2.d0*eta_local(i2,iindex)*temp1*dexp(-eta_local(i2,iindex)*(temp1       )**2)&
-                      -2.d0*eta_local(i2,iindex)*temp2*dexp(-eta_local(i2,iindex)*(temp2-360.d0)**2)&
+                      -2.d0*eta_local(i2,iindex)*(temp2-360.d0)*dexp(-eta_local(i2,iindex)*(temp2-360.d0)**2)&
                       -2.d0*eta_local(i2,iindex)*temp2*dexp(-eta_local(i2,iindex)*(temp2       )**2)&
-                      -2.d0*eta_local(i2,iindex)*temp1*dexp(-eta_local(i2,iindex)*(temp1-360.d0)**2)
+                      -2.d0*eta_local(i2,iindex)*(temp1-360.d0)*dexp(-eta_local(i2,iindex)*(temp1-360.d0)**2)
 !!
                 dexptempdxi=temp3*dthetadxi
                 dexptempdyi=temp3*dthetadyi

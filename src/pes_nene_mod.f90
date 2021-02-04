@@ -38,6 +38,7 @@ module pes_nene_mod
     use nnflags
     use nnshort_atomic
     use predictionoptions
+    use symfunctiongroups
     use symfunctions
     use timings
 
@@ -467,6 +468,8 @@ module pes_nene_mod
         lfixweights                         = default_bool
         ldoforces                           = default_bool
         ldohessian                          = default_bool
+        lcalculatefrequencies               = default_bool
+        lcalculatenormalmodes               = default_bool
         ldostress                           = default_bool
         lenforcemaxnumneighborsatomic       = default_bool
         max_num_neighbors_atomic_input      = default_int
@@ -841,20 +844,20 @@ module pes_nene_mod
 
                 select case (words(1))
 
-                    case ('global_nodes_short')
+                    case ('global_nodes_short','global_nodes_short_atomic')
 
-                        if (lfound_global_nodes_short /= default_bool) stop err // err_inpnn // 'Multiple use of the global_nodes_short key'
+                        if (lfound_global_nodes_short /= default_bool) stop err // err_inpnn // 'Multiple use of the global_nodes_short/global_nodes_short_atomic key'
                         if (nwords == maxnum_layers_short_atomic) then
                             lfound_global_nodes_short = .true.
                             do nodesctr = 1,maxnum_layers_short_atomic-1
                                 read(words(nodesctr+1),'(i1000)', iostat=ios) nodes_short_local(nodesctr)
                                 if (ios /= 0) then
-                                    print *, err, err_inpnn, "global_nodes_short value", nodesctr, " must be integer"; stop
+                                    print *, err, err_inpnn, "global_nodes_short/global_nodes_short_atomic value", nodesctr, " must be integer"; stop
                                 end if
                             end do
 
                         else
-                            print *, err // err_inpnn // "global_nodes_short argument number does not match with global_hidden_layers_short value"; stop
+                            print *, err // err_inpnn // "global_nodes_short/global_nodes_short_atomic argument number does not match with global_hidden_layers_short value"; stop
                         end if
 
                     case ('global_nodes_electrostatic')

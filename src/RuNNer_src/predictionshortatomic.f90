@@ -1,7 +1,7 @@
 !######################################################################
 ! This routine is part of
 ! RuNNer - RuNNer Neural Network Energy Representation
-! (c) 2008-2019 Prof. Dr. Joerg Behler
+! (c) 2008-2020 Prof. Dr. Joerg Behler
 ! Georg-August-Universitaet Goettingen, Germany
 !
 ! This program is free software: you can redistribute it and/or modify it
@@ -27,7 +27,8 @@
         eshortmin,eshortmax,&
         nntotalenergy,nnshortforce,&
         nnatomenergy,nnshortenergy,nnstress_short,&
-         atomenergysum,sens,lperiodic)
+         atomenergysum,sens,lperiodic,hessian_local,frequencies_local,&
+            normalmodes_local)
 !!
       use mpi_mod
       use fileunits
@@ -76,6 +77,12 @@
       real*8 eshortmax                                                  ! in
       real*8 atomenergysum                                              ! out
       real*8, allocatable :: lstb(:,:)                                  ! xyz and r_ij
+
+      real*8 hessian_local(3*num_atoms,3*num_atoms) ! in (for all structure)
+      real*8 frequencies_local(3*num_atoms)
+      real*8 normalmodes_local(3*num_atoms,3*num_atoms)
+
+      real*8, allocatable :: hessian_block(:,:,:)  ! internal (for natoms)
 !!
       logical lperiodic                                                 ! in
       logical lextrapolation                                            ! internal
@@ -194,6 +201,9 @@
         call getneighboridxatomic_para(n_start,natoms,listdim,&
           max_num_atoms,max_num_neighbors_short_atomic,&
           lsta,lstc,neighboridx_short_atomic,invneighboridx_short_atomic)
+
+        !! allocate hessian matrix for the subroutine call
+        allocate(hessian_block(max_num_atoms,3*num_atoms,3*num_atoms)) ! Emir
 !!
 !!======================================================================
 !! calculation of short range atomic energies (nnatomenergy),
@@ -206,7 +216,8 @@
           lsta,lstc,lste,lstb,xyzstruct,&
           sens,nnshortforce,nnstress_short,minvalue_short_atomic,&
           maxvalue_short_atomic,avvalue_short_atomic,&
-          scmin_short_atomic,scmax_short_atomic,nnatomenergy,lextrapolation,lperiodic)
+          scmin_short_atomic,scmax_short_atomic,nnatomenergy,lextrapolation,lperiodic,&
+          hessian_block)
 !!
 !!======================================================================
 !! add atomic energy constributions of this block of atoms to nntotalenergy
@@ -214,6 +225,14 @@
         do i1=1,natoms
           nntotalenergy=nntotalenergy+nnatomenergy(atomindex(i1))
         enddo
+!!======================================================================
+!! add Hessian constributions of this block of atoms to nntotalhessian
+!!======================================================================
+        if(ldohessian)then
+            do i1=1,natoms
+                hessian_local = hessian_local + hessian_block(atomindex(i1),:,:)
+            end do
+        end if
 !!
 !!======================================================================
 !! deallocate short range arrays depending on natoms of this block of atoms
@@ -226,6 +245,7 @@
         deallocate(neighboridx_short_atomic)
         deallocate(invneighboridx_short_atomic)
         deallocate(num_neighbors_short_atomic)
+        if(allocated(hessian_block))deallocate(hessian_block)
 !!
 !! update the number of finished atoms:
         ndone=ndone+npoints
@@ -272,6 +292,12 @@
         endif ! lfinetime
 !!
       endif ! lshort
+
+      !! Calculate vibrational modes and frequencies
+      if(lcalculatefrequencies)then
+          normalmodes_local = hessian_local
+          call getvibrationalfrequencies(normalmodes_local,num_atoms,frequencies_local,lcalculatenormalmodes)
+      end if
 !!
 !!======================================================================
 !!======================================================================
@@ -284,8 +310,9 @@
 !!======================================================================
 !! check for short range energy extrapolation
 !!======================================================================
+
       if((nntotalenergy/dble(max_num_atoms)).gt.eshortmax)then
-        count_extrapolation_warnings_energy = count_extrapolation_warnings_energy + 1
+        count_extrapolation_warnings = count_extrapolation_warnings + 1
         if((mpirank.eq.0).and.lshort.and.(.not.lmd))then
           write(ounit,*)'-------------------------------------------------------------'
           write(ounit,'(a)')' WARNING: eshort is .gt. eshortmax '
@@ -295,7 +322,7 @@
         endif
       end if
       if((nntotalenergy/dble(max_num_atoms)).lt.eshortmin)then
-        count_extrapolation_warnings_energy = count_extrapolation_warnings_energy + 1
+        count_extrapolation_warnings = count_extrapolation_warnings + 1
         if((mpirank.eq.0).and.lshort.and.(.not.lmd))then
           write(ounit,*)'-------------------------------------------------------------'
           write(ounit,'(a)')' WARNING: eshort is .lt. eshortmin '

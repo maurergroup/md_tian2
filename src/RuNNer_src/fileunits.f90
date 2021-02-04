@@ -1,7 +1,7 @@
 !######################################################################
 ! This routine is part of
 ! RuNNer - RuNNer Neural Network Energy Representation
-! (c) 2008-2019 Prof. Dr. Joerg Behler 
+! (c) 2008-2020 Prof. Dr. Joerg Behler 
 ! Georg-August-Universitaet Goettingen, Germany
 !
 ! This program is free software: you can redistribute it and/or modify it 
@@ -53,7 +53,9 @@
       integer, parameter :: outunit         = 40 ! output.data 
       integer, parameter :: nnsunit         = 41 ! nnstress.out 
       integer, parameter :: nnfunit         = 42 ! nnforces.out 
-      integer, parameter :: nnhunit         = 72 ! nnhessian.out 
+      integer, parameter :: nnhunit         = 72 ! nnhessian.out
+      integer, parameter :: nnfrequnit      = 73 ! nnfrequencies.out
+      integer, parameter :: nnmodesunit     = 74 ! nnnormalmodes.out
       integer, parameter :: nneunit         = 43 ! energy.out 
       integer, parameter :: debugunit       = 44 ! debug.out 
 !! element-specific files
@@ -74,7 +76,9 @@
       integer, parameter :: nnmdunit        = 57 ! nnmd.in 
       integer, parameter :: chargeunit      = 58 ! charges.in 
 
-      integer, parameter :: symoutunit      = 71 ! symfunctions.out 
+      integer, parameter :: symoutunit      = 71 ! symfunctions.out
+
+      integer, parameter :: symderivunit     = 88 ! dsfuncdxyz.data (just for testing) - Emir
 
       end module fileunits 
 

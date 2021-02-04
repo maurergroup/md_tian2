@@ -1,7 +1,7 @@
 !######################################################################
 ! This routine is part of
 ! RuNNer - RuNNer Neural Network Energy Representation
-! (c) 2008-2019 Prof. Dr. Joerg Behler 
+! (c) 2008-2020 Prof. Dr. Joerg Behler 
 ! Georg-August-Universitaet Goettingen, Germany
 !
 ! This program is free software: you can redistribute it and/or modify it 
@@ -80,7 +80,8 @@
       real*8 pdfcij,pdfcik,pdfcjk
       real*8 p1,p2,p3
       real*8 fg
-!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!1
+      real*8 dum ! Emir
 !!
       logical ldoforces
       logical ldostress
@@ -122,7 +123,7 @@
               call getcutoff(&
                 cutoff_type,cutoff_alpha,maxnum_funcvalues_local,nelem,&
                 i2,iindex,&
-                funccutoff_local,rij,pfcij,pdfcij)
+                funccutoff_local,rij,pfcij,pdfcij,dum)
 
 
 
@@ -178,11 +179,11 @@
               call getcutoff(&
                 cutoff_type,cutoff_alpha,maxnum_funcvalues_local,nelem,&
                 i2,iindex,&
-                funccutoff_local,rik,pfcik,pdfcik)
+                funccutoff_local,rik,pfcik,pdfcik,dum)
               call getcutoff(&
                 cutoff_type,cutoff_alpha,maxnum_funcvalues_local,nelem,&
                 i2,iindex,&
-                funccutoff_local,rjk,pfcjk,pdfcjk)
+                funccutoff_local,rjk,pfcjk,pdfcjk,dum)
 
                               costheta = dxij*dxik + dyij*dyik + dzij*dzik
                               costheta = costheta * rinvijik

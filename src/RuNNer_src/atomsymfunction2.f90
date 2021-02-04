@@ -1,7 +1,7 @@
 !######################################################################
 ! This routine is part of
 ! RuNNer - RuNNer Neural Network Energy Representation
-! (c) 2008-2019 Prof. Dr. Joerg Behler 
+! (c) 2008-2020 Prof. Dr. Joerg Behler 
 ! Georg-August-Universitaet Goettingen, Germany
 !
 ! This program is free software: you can redistribute it and/or modify it 
@@ -65,6 +65,7 @@
       real*8 drijdxj, drijdyj, drijdzj
       real*8 temp1
       real*8 temp2
+      real*8 dum  ! Emir (second derivative of cutoff)
       real*8 dsfuncdxyz_temp(0:max_num_neighbors_local,3) 
       real*8 eta_local(maxnum_funcvalues_local,nelem)                            ! in
       real*8 rshift_local(maxnum_funcvalues_local,nelem)                ! in
@@ -97,7 +98,7 @@
               call getcutoff(&
                 cutoff_type,cutoff_alpha,maxnum_funcvalues_local,nelem,&
                 i2,iindex,&
-                funccutoff_local,rij,fcutij,temp1)
+                funccutoff_local,rij,fcutij,temp1,dum)
 
               dfcutijdxi=temp1*drijdxi
               dfcutijdyi=temp1*drijdyi

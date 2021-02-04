@@ -26,9 +26,13 @@
 
       real*8 vdw_screening(2)
       real*8, dimension(:,:) , allocatable :: vdw_coefficients
+      real*8 melem(108) ! atomic masses of elements (required in normal mode calculation)
 
       logical ldoforces
       logical ldohessian
+      logical lwritehessian ! Emir
+      logical lcalculatefrequencies !Emir
+      logical lcalculatenormalmodes !Emir
       logical lpreparemd
       logical lprintforcecomponents
       logical lwritesymfunctions
