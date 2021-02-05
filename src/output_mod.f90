@@ -696,7 +696,7 @@ contains
             write(out_unit, '(a11, f14.7)') "time     = ", (istep-1) * simparams%step
             write(out_unit, '(a11, i)')     "turn_pnts = ", nturning_points
             write(out_unit, '(a11, f14.7)') "cl_appr  = ", closest_approach
-            write(out_unit, '(a11, f14.7)') "cl_appr_time  = ", closest_approach_time
+            write(out_unit, '(a15, i)') "cl_appr_time = ", closest_approach_time
             write(out_unit, '(a11, 3f14.7)')"r_min_p  = ", lowest_z
             !write(out_unit, '(a11, i)')     "bounces  = ", bounces
             !write(out_unit, '(a11, f14.7)') "time_int = ", interaction_time
