@@ -34,6 +34,7 @@ module trajectory_info
 
     integer  :: nearest_surface_idx, bounces, col_partner_change
     integer  :: last_surface_idx, rFcut, vFcut, r_dot_v_ptm
+    integer  :: closest_approach_time
     real(dp) :: lowest_z(3), closest_approach, interaction_time
     real(dp) :: r_dot_v(2), r_dot_F(2), v_dot_F(2)      ! needed for collision detection
     logical  :: is_adsorbed
@@ -51,25 +52,26 @@ contains
 
         ! reset at beginning of new trajctory
         if (istep == 1) then
-            closest_approach = default_real
-            lowest_z         = default_real
-            interaction_time = 0
-            bounces          = 0
-            r_dot_v          = default_real
-            r_dot_F          = default_real
-            v_dot_F          = default_real
-            col_partner_change = 1
-            rFcut            = 0
-            vFcut            = 0
-            r_dot_v_ptm      = 0 ! ptm = plus to minus
-            nturning_points  = 0
-            was_moving_down  = .true.
+            closest_approach      = default_real
+            closest_approach_time = 0
+            lowest_z              = default_real
+            interaction_time      = 0
+            bounces               = 0
+            r_dot_v               = default_real
+            r_dot_F               = default_real
+            v_dot_F               = default_real
+            col_partner_change    = 1
+            rFcut                 = 0
+            vFcut                 = 0
+            r_dot_v_ptm           = 0 ! ptm = plus to minus
+            nturning_points       = 0
+            was_moving_down       = .true.
         end if
 
         if (.not. allocated(centroid_positions)) allocate(centroid_positions(3,atoms%natoms))
         centroid_positions = calc_centroid_positions(atoms)
         call check_for_lowest_position(atoms)
-        call check_for_closest_approach(atoms)
+        call check_for_closest_approach(atoms, istep)
         call check_for_proj_surf_interaction(atoms)
         call check_for_bounce(atoms, itraj, istep)
 
@@ -78,9 +80,11 @@ contains
 
 
 
-    subroutine check_for_closest_approach(atoms)
+    subroutine check_for_closest_approach(atoms, istep)
 
         type(universe), intent(in) :: atoms
+        integer,        intent(in) :: istep
+
 
         real(dp) :: vec(3), r
         real(dp) :: cl_appr_in_this_step
@@ -96,7 +100,10 @@ contains
             vec = vec - anint(vec)           ! imaging
             vec = matmul(atoms%simbox, vec)  ! back to cartesian coordinates
             r =  sqrt(sum(vec*vec))          ! distance
-            if (r < closest_approach) closest_approach = r
+            if (r < closest_approach) then
+                    closest_approach = r
+                    closest_approach_time = istep
+            end if
             if (r < cl_appr_in_this_step) then
                 cl_appr_in_this_step = r
                 nearest_surface_idx = i      ! needed for collision detection

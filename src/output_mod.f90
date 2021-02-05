@@ -670,6 +670,7 @@ contains
             write(out_unit, '(a11, e21.10)') "epot_i   = ", sum(atoms%epot)/atoms%nbeads
             write(out_unit, '(a11, e21.10)') "etotal_i = ", b_ekin_p + b_ekin_l + sum(atoms%epot)/atoms%nbeads + bead_epot
             write(out_unit, '(a11, 3f14.7)')"r_i      = ", sum(atoms%r(:,:,1), dim=2)/atoms%nbeads
+            write(out_unit, '(a11, 3f14.7)')"v_i      = ", sum(atoms%v(:,:,1), dim=2)/atoms%nbeads
             write(out_unit, '(a11, f14.7)') "polar_i  = ", 180-acos(proj_v(3)/sqrt(sum(proj_v*proj_v)))*rad2deg
             write(out_unit, '(a11, f14.7)') "azi_i    = ", atan2(proj_v(2), proj_v(1))*rad2deg
             write(out_unit, '(a)') ""
@@ -688,12 +689,14 @@ contains
             write(out_unit, '(a11, e21.10)') "epot_f   = ", sum(atoms%epot)/atoms%nbeads
             write(out_unit, '(a11, e21.10)') "etotal_f = ", b_ekin_p + b_ekin_l + sum(atoms%epot)/atoms%nbeads + bead_epot
             write(out_unit, '(a11, 3f14.7)')"r_f      = ", sum(atoms%r(:,:,1), dim=2)/atoms%nbeads
+            write(out_unit, '(a11, 3f14.7)')"v_f      = ", sum(atoms%v(:,:,1), dim=2)/atoms%nbeads
             write(out_unit, '(a11, f14.7)') "polar_f  = ", acos(proj_v(3)/sqrt(sum(proj_v*proj_v)))*rad2deg
             write(out_unit, '(a11, f14.7)') "azi_f    = ", atan2(proj_v(2), proj_v(1))*rad2deg
             write(out_unit, '(a)') ""
             write(out_unit, '(a11, f14.7)') "time     = ", (istep-1) * simparams%step
             write(out_unit, '(a11, i)')     "turn_pnts = ", nturning_points
             write(out_unit, '(a11, f14.7)') "cl_appr  = ", closest_approach
+            write(out_unit, '(a11, f14.7)') "cl_appr_time  = ", closest_approach_time
             write(out_unit, '(a11, 3f14.7)')"r_min_p  = ", lowest_z
             !write(out_unit, '(a11, i)')     "bounces  = ", bounces
             !write(out_unit, '(a11, f14.7)') "time_int = ", interaction_time
