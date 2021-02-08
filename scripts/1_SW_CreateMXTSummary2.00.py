@@ -158,8 +158,6 @@ def read_in_mxt_fins(logfile):
                                         logfile.write("Error in file {} in line {}\n".format(folder,line))
 				        sys.exit()	
 
-		        #infile.close()
-		        #traj_list[counter] = traj
                         traj_list.append(traj)
                         counter += 1
 

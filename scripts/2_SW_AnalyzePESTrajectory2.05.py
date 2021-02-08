@@ -665,39 +665,39 @@ def analyze(trajs):
 				angle_collect.append(traj.polar_f)
 				ps_dist_collect.append(traj.cl_appr)
 
-	ang_dist_v_file = open("analysis/ang_res_vloss.txt", "w")
+	ang_dist_file_v = open("analysis/ang_res_vloss.txt", "w")
 	if len(velocity_collect) != 0:
 		angle_vloss_hist, xedges, yedges = numpy.histogram2d(velocity_collect, angle_collect,  bins=(numbins(velocity_collect)), normed=False)
 			
 		# OUTPUT
 		for i in range(len(angle_vloss_hist)):
 			for j in range(len(angle_vloss_hist[i])):
-				ang_dist_file.write("%f %f %d\n" % (0.5*(xedges[i]+xedges[i+1]), 0.5*(yedges[j]+yedges[j+1]), angle_eloss_hist[i][j]))
-			ang_dist_file.write("\n")
+				ang_dist_v_file.write("%f %f %d\n" % (0.5*(xedges[i]+xedges[i+1]), 0.5*(yedges[j]+yedges[j+1]), angle_vloss_hist[i][j]))
+			ang_dist_file_v.write("\n")
 	else:
-		ang_dist_file.write("%f %f %d\n"   % (0.1, 0.5, 0))
-                ang_dist_file.write("%f %f %d\n\n" % (0.1, 1.0, 1))
-		ang_dist_file.write("%f %f %d\n"   % (0.2, 1.0, 1))
-		ang_dist_file.write("%f %f %d\n"   % (0.2, 0.5, 2))
+		ang_dist_file_v.write("%f %f %d\n"   % (0.1, 0.5, 0))
+                ang_dist_file_v.write("%f %f %d\n\n" % (0.1, 1.0, 1))
+		ang_dist_file_v.write("%f %f %d\n"   % (0.2, 1.0, 1))
+		ang_dist_file_v.write("%f %f %d\n"   % (0.2, 0.5, 2))
 		
-	ang_dist_file.close()
+	ang_dist_file_v.close()
 
 	# INTERGRATED OVER ALL AZIMUTH ANGLES #
-	polar_scatt_azi_file = open("analysis/polar_scatt_azi_int.txt", "w")
-	if len(polar_scatt_azi_int_energy) != 0:
-		polar_scatt_azi_int_hist, xedges, yedges = numpy.histogram2d(polar_scatt_azi_int_energy, polar_scatt_azi_int_angle, bins=(numbins(polar_scatt_azi_int_energy)), normed=False)
+	polar_scatt_azi_file_v = open("analysis/polar_scatt_azi_int_v.txt", "w")
+	if len(polar_scatt_azi_int_velocity) != 0:
+		polar_scatt_azi_int_hist_v, xedges, yedges = numpy.histogram2d(polar_scatt_azi_int_velocity, polar_scatt_azi_int_angle, bins=(numbins(polar_scatt_azi_int_velocity)), normed=False)
 		
-		for i in range(len(polar_scatt_azi_int_hist)):
-			for j in range(len(polar_scatt_azi_int_hist[i])):
-				polar_scatt_azi_file.write("%f %f %d\n" % (0.5*(xedges[i]+xedges[i+1]), 0.5*(yedges[j]+yedges[j+1]), polar_scatt_azi_int_hist[i][j]))
-			polar_scatt_azi_file.write("\n")
+		for i in range(len(polar_scatt_azi_int_hist_v)):
+			for j in range(len(polar_scatt_azi_int_hist_v[i])):
+				polar_scatt_azi_file_v.write("%f %f %d\n" % (0.5*(xedges[i]+xedges[i+1]), 0.5*(yedges[j]+yedges[j+1]), polar_scatt_azi_int_hist_v[i][j]))
+			polar_scatt_azi_file_v.write("\n")
 	else:
-		polar_scatt_azi_file.write("%f %f %d\n"   % (0.1, 0.5, 0))
-		polar_scatt_azi_file.write("%f %f %d\n\n" % (0.1, 1.0, 1))
+		polar_scatt_azi_file_v.write("%f %f %d\n"   % (0.1, 0.5, 0))
+		polar_scatt_azi_file_v.write("%f %f %d\n\n" % (0.1, 1.0, 1))
 		polar_scatt_azi_file.write("%f %f %d\n"   % (0.2, 1.0, 1))
 		polar_scatt_azi_file.write("%f %f %d\n"   % (0.2, 0.5, 2))
 
-	polar_scatt_azi_file.close()
+	polar_scatt_azi_file_v.close()
 
 
 	

@@ -306,7 +306,12 @@ def write_statistics(traj_list):
 
 # open logfile
 logfile = open(logfilename, 'w')
+
 print("Screen output will be automatically written to {}!".format(logfilename))
+
+print("Created by version %4.2f" % VERSION_ID)
+logfile.write("Created by version %4.2f\n" % VERSION_ID)
+
 
 
 # WARNING: the following is outdated since now empty or unfinished trajectory files are just skipped which is wanted!!
