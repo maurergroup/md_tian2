@@ -138,9 +138,9 @@ def read_in_mxt_fins(logfile):
 
                 traj_id = folder[7:15]
 
-                checkline = file_len(folder)
+                checkline = file_len(folder) # check if number of entries match finished traj file
 
-                if checkline == 20:
+                if checkline == 23:
 		        for line in infile:
 			        try:
 			        	ekin_p_i = line.strip(' \n\t\r').split()[-1]; line=infile.next()	#	ekin_p_i =      1.9200000
@@ -215,6 +215,7 @@ def write_summary(logfile, outfile_name, traj_list):
 
 	outfile.close()
 
+# the following is not needed anymore since empty or unfinished files are skipped; might be useful for other applications
 def remove_unfinished_traj(logfile):
     os.chdir("traj/")
     traj_dir = os.getcwd()
@@ -241,8 +242,8 @@ def remove_unfinished_traj(logfile):
 
     os.chdir("../")
 
-def write_traj_to_file(this_traj,this_outfile):
-        outfile = open(out_file, "w")
+def write_traj_to_file(traj,this_outfile):
+        outfile = open(this_outfile, "w")
         outfile.write("%s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s\n" \
                        % ( traj.traj_id, traj.ekin_p_i, traj.ekin_l_i, traj.epot_i, traj.etotal_i, traj.r_p_i[0], \
                        traj.r_p_i[1], traj.r_p_i[2], traj.v_p_i[0], traj.v_p_i[1], traj.v_p_i[2], traj.polar_i, \

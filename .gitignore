@@ -19,6 +19,7 @@ conf/latt
 !conf/latt/mxt_00000001.dat
 # traj folder
 traj/
+!scripts/traj/
 # output folder
 poscar/
 aims/
