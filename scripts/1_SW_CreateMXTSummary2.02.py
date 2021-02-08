@@ -1,17 +1,26 @@
 #!/usr/bin/env python
 
-# Original version 2.00 was done by Marvin Kammler
-# This version is modified by Sebastian Wille
+# original version 2.00 was done by Marvin Kammler
+# version 2.01 is modified by Sebastian Wille
+# version 2.02 is modified by Sebastian Wille
 
-# Modifications:
+# Modifications v2.01:
 # trajid added in Traj class
 # logfile will be written
 # set readfile name
 # depending on final polar angle additional data files are written
 
+# Modifications v2.02:
+# initial and final velocities will also be given
+# added time at closest approach
+
 # intention: analyze all traj/mxt_fin files and create the MXt2Summary file
 
 # use like: python <scriptname>
+
+
+# 2DO:
+# merge this script with the analysis script and in the end use matplotlib to generate all plots using a single script
 
 
 
@@ -23,9 +32,9 @@ logfilename = "CreateMXTSummary.log"
 
 
 
-############# NO CHANGES BEXOND THIS LINE ######################################
+############# NO CHANGES BEYOND THIS LINE ######################################
 
-VERSION_ID = 2.01
+VERSION_ID = 2.02
 
 class Traj:
 	def __init__(self, fname, ekin_p_i, ekin_l_i, epot_i, etotal_i,\
@@ -46,6 +55,7 @@ class Traj:
 		self.epot_f    = epot_f
 		self.etotal_f  = etotal_f
 		self.r_p_f     = r_p_f
+		self.v_p_f     = v_p_f
 		self.polar_f   = polar_f
 		self.azi_f     = azi_f
 		self.time      = time
@@ -231,44 +241,59 @@ def remove_unfinished_traj(logfile):
 
     os.chdir("../")
 
+def write_traj_to_file(this_traj,this_outfile):
+        outfile = open(out_file, "w")
+        outfile.write("%s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s\n" \
+                       % ( traj.traj_id, traj.ekin_p_i, traj.ekin_l_i, traj.epot_i, traj.etotal_i, traj.r_p_i[0], \
+                       traj.r_p_i[1], traj.r_p_i[2], traj.v_p_i[0], traj.v_p_i[1], traj.v_p_i[2], traj.polar_i, \
+                       traj.azi_i, traj.ekin_p_f, traj.ekin_l_f, traj.epot_f, traj.etotal_f, traj.r_p_f[0], 
+                       traj.r_p_f[1], traj.r_p_f[2], traj.v_p_f[0], traj.v_p_f[1], traj.v_p_f[2], traj.polar_f, \
+                       traj.azi_f, traj.time, traj.turn_pnts, traj.cl_appr, traj.cl_appr_t, traj.r_p_min[0], \
+                       traj.r_p_min[1], traj.r_p_min[2]))
+        outfile.close()
+
 
 # 2DO: include write function to spare unnecessary code!!
 def write_statistics(traj_list):
-        outfile_15 = open("MXT2Summary_15.txt", "w")
-        outfile_30 = open("MXT2Summary_30.txt", "w")
-        outfile_45 = open("MXT2Summary_45.txt", "w")
-        outfile_60 = open("MXT2Summary_60.txt", "w")
+        outfile_15 = "MXT2Summary_15.txt"
+        outfile_30 = "MXT2Summary_30.txt"
+        outfile_45 = "MXT2Summary_45.txt"
+        outfile_60 = "MXT2Summary_60.txt"
         for traj in traj_list:
                 if 7.5 <= float(traj.polar_f) <= 22.5:
-                        outfile_15.write("%s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s\n" \
-                                % ( traj.traj_id, traj.ekin_p_i, traj.ekin_l_i, traj.epot_i, traj.etotal_i, traj.r_p_i[0], traj.r_p_i[1], traj.r_p_i[2], \
-                                traj.polar_i, traj.azi_i, traj.ekin_p_f, traj.ekin_l_f, traj.epot_f, traj.etotal_f, traj.r_p_f[0], \
-                                traj.r_p_f[1], traj.r_p_f[2], traj.polar_f, traj.azi_f, traj.time, traj.turn_pnts, traj.cl_appr, \
-                                traj.r_p_min[0], traj.r_p_min[1], traj.r_p_min[2]))
+                        write_traj_to_file(traj,outfile_15)
+                        #outfile_15.write("%s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s\n" \
+                        #        % ( traj.traj_id, traj.ekin_p_i, traj.ekin_l_i, traj.epot_i, traj.etotal_i, traj.r_p_i[0], traj.r_p_i[1], traj.r_p_i[2], \
+                        #        traj.polar_i, traj.azi_i, traj.ekin_p_f, traj.ekin_l_f, traj.epot_f, traj.etotal_f, traj.r_p_f[0], \
+                        #        traj.r_p_f[1], traj.r_p_f[2], traj.polar_f, traj.azi_f, traj.time, traj.turn_pnts, traj.cl_appr, \
+                        #        traj.r_p_min[0], traj.r_p_min[1], traj.r_p_min[2]))
                 if 22.5 <= float(traj.polar_f) <= 37.5:
-                        outfile_30.write("%s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s\n" \
-                                % ( traj.traj_id, traj.ekin_p_i, traj.ekin_l_i, traj.epot_i, traj.etotal_i, traj.r_p_i[0], traj.r_p_i[1], traj.r_p_i[2], \
-                                traj.polar_i, traj.azi_i, traj.ekin_p_f, traj.ekin_l_f, traj.epot_f, traj.etotal_f, traj.r_p_f[0], \
-                                traj.r_p_f[1], traj.r_p_f[2], traj.polar_f, traj.azi_f, traj.time, traj.turn_pnts, traj.cl_appr, \
-                                traj.r_p_min[0], traj.r_p_min[1], traj.r_p_min[2]))
+                        write_traj_to_file(traj,outfile_30)
+                        #outfile_30.write("%s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s\n" \
+                        #        % ( traj.traj_id, traj.ekin_p_i, traj.ekin_l_i, traj.epot_i, traj.etotal_i, traj.r_p_i[0], traj.r_p_i[1], traj.r_p_i[2], \
+                        #        traj.polar_i, traj.azi_i, traj.ekin_p_f, traj.ekin_l_f, traj.epot_f, traj.etotal_f, traj.r_p_f[0], \
+                        #        traj.r_p_f[1], traj.r_p_f[2], traj.polar_f, traj.azi_f, traj.time, traj.turn_pnts, traj.cl_appr, \
+                        #        traj.r_p_min[0], traj.r_p_min[1], traj.r_p_min[2]))
                 if 37.5 <= float(traj.polar_f) <= 52.5:
-                        outfile_45.write("%s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s\n" \
-                                % ( traj.traj_id, traj.ekin_p_i, traj.ekin_l_i, traj.epot_i, traj.etotal_i, traj.r_p_i[0], traj.r_p_i[1], traj.r_p_i[2], \
-                                traj.polar_i, traj.azi_i, traj.ekin_p_f, traj.ekin_l_f, traj.epot_f, traj.etotal_f, traj.r_p_f[0], \
-                                traj.r_p_f[1], traj.r_p_f[2], traj.polar_f, traj.azi_f, traj.time, traj.turn_pnts, traj.cl_appr, \
-                                traj.r_p_min[0], traj.r_p_min[1], traj.r_p_min[2]))
+                        write_traj_to_file(traj,outfile_45)
+                        #outfile_45.write("%s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s\n" \
+                        #        % ( traj.traj_id, traj.ekin_p_i, traj.ekin_l_i, traj.epot_i, traj.etotal_i, traj.r_p_i[0], traj.r_p_i[1], traj.r_p_i[2], \
+                        #        traj.polar_i, traj.azi_i, traj.ekin_p_f, traj.ekin_l_f, traj.epot_f, traj.etotal_f, traj.r_p_f[0], \
+                        #        traj.r_p_f[1], traj.r_p_f[2], traj.polar_f, traj.azi_f, traj.time, traj.turn_pnts, traj.cl_appr, \
+                        #        traj.r_p_min[0], traj.r_p_min[1], traj.r_p_min[2]))
                 if 52.5 <= float(traj.polar_f) <= 67.5:
-                        outfile_60.write("%s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s\n" \
-                                % ( traj.traj_id, traj.ekin_p_i, traj.ekin_l_i, traj.epot_i, traj.etotal_i, traj.r_p_i[0], traj.r_p_i[1], traj.r_p_i[2], \
-                                traj.polar_i, traj.azi_i, traj.ekin_p_f, traj.ekin_l_f, traj.epot_f, traj.etotal_f, traj.r_p_f[0], \
-                                traj.r_p_f[1], traj.r_p_f[2], traj.polar_f, traj.azi_f, traj.time, traj.turn_pnts, traj.cl_appr, \
-                                traj.r_p_min[0], traj.r_p_min[1], traj.r_p_min[2]))
+                        write_traj_to_file(traj,outfile_60)
+                        #outfile_60.write("%s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s\n" \
+                        #        % ( traj.traj_id, traj.ekin_p_i, traj.ekin_l_i, traj.epot_i, traj.etotal_i, traj.r_p_i[0], traj.r_p_i[1], traj.r_p_i[2], \
+                        #        traj.polar_i, traj.azi_i, traj.ekin_p_f, traj.ekin_l_f, traj.epot_f, traj.etotal_f, traj.r_p_f[0], \
+                        #        traj.r_p_f[1], traj.r_p_f[2], traj.polar_f, traj.azi_f, traj.time, traj.turn_pnts, traj.cl_appr, \
+                        #        traj.r_p_min[0], traj.r_p_min[1], traj.r_p_min[2]))
 
 
-        outfile_15.close()
-        outfile_30.close()
-        outfile_45.close()
-        outfile_60.close()
+        #outfile_15.close()
+        #outfile_30.close()
+        #outfile_45.close()
+        #outfile_60.close()
 
 
 
