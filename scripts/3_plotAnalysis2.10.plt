@@ -2,7 +2,8 @@
 
 # intention: plot all beforehand created data files to analyze the scattering
 
-E_INC = 1.92
+#E_INC = 0.99
+E_INC = 1.94
 
 set term png enhanced size 1920,1080 font "Computer Modern, 30"
 

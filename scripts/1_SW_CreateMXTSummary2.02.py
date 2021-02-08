@@ -30,7 +30,7 @@ import os, sys, glob
 outname     = "MXT2Summary.txt"
 logfilename = "CreateMXTSummary.log"
 
-
+# add range of scattered angle to look at
 
 ############# NO CHANGES BEYOND THIS LINE ######################################
 
@@ -316,7 +316,7 @@ print("Screen output will be automatically written to {}!".format(logfilename))
 traj_list = read_in_mxt_fins(logfile)
 write_summary(logfile, outname, traj_list)
 
-# in case of further analystics
+# in case of further analysis
 write_statistics(traj_list)
 
 logfile.close()

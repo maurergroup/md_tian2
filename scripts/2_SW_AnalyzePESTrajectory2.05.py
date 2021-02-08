@@ -93,14 +93,17 @@ class Traj:
 		self.epot_f   = epot_f
 		self.etotal_f = etotal_f
 		self.r_p_f    = r_p_f
+		self.v_p_f    = v_p_f
 		self.polar_f  = polar_f
 		self.azi_f    = azi_f
 		self.time     = time
 		self.turn_pnts = turn_pnts
 		self.cl_appr  = cl_appr
+		self.cl_appr_t  = cl_appr_t
 		self.r_p_min  = r_p_min
                 self.traj_id  = traj_id
-		self.eloss    = ekin_p_i - ekin_p_f
+		self.eloss    = ekin_p_i - ekin_p_f    # energy loss
+		self.vloss    = distance(v_p_f, v_p_i) # velocity loss
 		self.has_scattered = r_p_f.z > r_p_i.z
 		self.has_transmitted = r_p_f.z < SHOT_THRU_LIMIT
 		self.has_adsorbed = not (self.has_scattered or self.has_scattered)
@@ -201,25 +204,28 @@ def initialize():
 		epot_i   = float(sl[3])						#	epot_i    = 30.09554
 		etotal_i = float(sl[4])						#       e_total_i = 37.49818
 		r_p_i    = Point3D(float(sl[5]), float(sl[6]), float(sl[7]))	#	r_i       = 14.88455  -2.57611  6.00000
-		polar_i  = float(sl[8])                                         #       polar_i   = 50.00000
-		azi_i    = float(sl[9])                                         #       azi_i     = 0.000000
+		v_p_i    = Point3D(float(sl[8]), float(sl[9]), float(sl[10]))	#	v_i       = 0.0000000 0.0000000 -0.1934888
+		polar_i  = float(sl[11])                                         #       polar_i   = 50.00000
+		azi_i    = float(sl[12])                                         #       azi_i     = 0.000000
 
-		ekin_p_f = float(sl[10])					#	ekin_p_f  = 0.05978
-		ekin_l_f = float(sl[11])					#	ekin_l_f  = 5.26957
-		epot_f   = float(sl[12])					#	epot_f    = 28.73945
-		etotal_f = float(sl[13])					#	etotal_f  = 34.06880
-		r_p_f    = Point3D(float(sl[14]), float(sl[15]), float(sl[16]))	#	r_f       = 13.70619  1.33464  -1.07431
-		polar_f  = float(sl[17])                                        #       polar_f   = 27.23457
-                azi_f    = float(sl[18])                                        # 	azi_f     = 4.23478	
+		ekin_p_f = float(sl[13])					#	ekin_p_f  = 0.05978
+		ekin_l_f = float(sl[14])					#	ekin_l_f  = 5.26957
+		epot_f   = float(sl[15])					#	epot_f    = 28.73945
+		etotal_f = float(sl[16])					#	etotal_f  = 34.06880
+		r_p_f    = Point3D(float(sl[17]), float(sl[18]), float(sl[19]))	#	r_f       = 13.70619  1.33464  -1.07431
+		v_p_f    = Point3D(float(sl[20]), float(sl[21]), float(sl[22]))	#	v_f       = 0.0026410 0.0117354 0.1513796
+		polar_f  = float(sl[23])                                        #       polar_f   = 27.23457
+                azi_f    = float(sl[24])                                        # 	azi_f     = 4.23478	
 		
-		time     = float(sl[19])					#	time      = 978.70000
-		turn_pnts = int(sl[20])						#       turn_pnts = 14
-		cl_appr  = float(sl[21])					#	cl_appr  =      0.9846501
-		r_p_min  = Point3D(float(sl[22]), float(sl[23]), float(sl[24])) #	r_min_p  = 33.4630699  31.9529501  0.9322836
+		time     = float(sl[25])					#	time      = 978.70000
+		turn_pnts = int(sl[26])						#       turn_pnts = 14
+		cl_appr  = float(sl[27])					#	cl_appr  =      0.9846501
+                cl_appr_t = int(sl[28])                                         #       cl_appr_t = 128
+		r_p_min  = Point3D(float(sl[29]), float(sl[30]), float(sl[31])) #	r_min_p  = 33.4630699  31.9529501  0.9322836
 	
-		this_traj = Traj(ekin_p_i, ekin_l_i, epot_i, etotal_i, r_p_i, polar_i, azi_i, ekin_p_f, \
-					ekin_l_f, epot_f, etotal_f, r_p_f, polar_f, azi_f, time, turn_pnts, \
-					cl_appr, r_p_min, traj_id)
+		this_traj = Traj(ekin_p_i, ekin_l_i, epot_i, etotal_i, r_p_i, v_p_i, polar_i, azi_i, ekin_p_f, \
+					ekin_l_f, epot_f, etotal_f, r_p_f, v_p_f, polar_f, azi_f, time, turn_pnts, \
+					cl_appr, cl_appr_t, r_p_min, traj_id)
 
 		if this_traj.ekin_p_f < 1.1*this_traj.ekin_p_i:
 			traj_list.append(this_traj)
@@ -613,6 +619,86 @@ def analyze(trajs):
                 eloss_psd_in_plane_file.write("%f %f %d\n"   % (0.2, 0.5, 2))
         eloss_psd_in_plane_file.close()
 	
+
+	### TOTAL VELOCITY LOSS ###
+	print "Calculating total velocity loss."
+	# LOOP 
+	all_vloss = [traj.vloss for traj in trajs if traj.has_scattered] 
+	one_vb     = [traj.vloss for traj in trajs if traj.has_scattered and traj.turn_pnts == 1]
+	two_vb     = [traj.vloss for traj in trajs if traj.has_scattered and traj.turn_pnts == 3]
+	mul_vb     = [traj.vloss for traj in trajs if traj.has_scattered and traj.turn_pnts >= 5]
+	
+	absorbed_vloss = [traj.vloss for traj in trajs if traj.has_adsorbed]
+
+	# ANALYSIS
+	all_vloss_hist, all_vloss_edges = numpy.histogram(all_vloss, bins=numbins(SCATTERED), range=(min(all_vloss), max(all_vloss)), density=True)
+	one_vb_hist,     one_vb_edges     = numpy.histogram(one_vb,     bins=numbins(SCATTERED), range=(min(all_vloss), max(all_vloss)), density=True)
+	two_vb_hist,     two_vb_edges     = numpy.histogram(two_vb,     bins=numbins(SCATTERED), range=(min(all_vloss), max(all_vloss)), density=True)
+	mul_vb_hist,     mul_vb_edges     = numpy.histogram(mul_vb,     bins=numbins(SCATTERED), range=(min(all_vloss), max(all_vloss)), density=True)
+	frac_one_vb = float(len(one_vb))/SCATTERED
+	frac_two_vb = float(len(two_vb))/SCATTERED
+	frac_mul_vb = float(len(mul_vb))/SCATTERED
+
+	# OUTPUT 
+	vloss_file = open("analysis/vloss.txt", "w")
+	vloss_file.write("# vloss/eV  all  single bounce  double bounce  multi bounce\n")
+	for i in range(len(all_vloss_hist)):
+		vloss_file.write("%f %f %f %f %f\n" % (0.5*(all_vloss_edges[i]+all_vloss_edges[i+1]), all_vloss_hist[i], frac_one_vb*one_vb_hist[i], frac_two_vb*two_vb_hist[i], frac_mul_vb*mul_vb_hist[i]))
+	vloss_file.close()
+
+
+        ### ANGULAR DISTRIBUTION ###
+	print "Calculating angular velocity loss"
+	# get trajectories that are within specular radius in azimuth direction
+	velocity_collect  = []
+	angle_collect   = []
+	ps_dist_collect = []
+	polar_scatt_azi_int_velocity = []
+	polar_scatt_azi_int_angle  = []
+	for traj in trajs:
+		if traj.has_scattered:
+			polar_scatt_azi_int_velocity.append(traj.vloss)
+			polar_scatt_azi_int_angle.append(traj.polar_f)
+
+			if traj.in_plane:
+				velocity_collect.append(traj.vloss)
+				angle_collect.append(traj.polar_f)
+				ps_dist_collect.append(traj.cl_appr)
+
+	ang_dist_v_file = open("analysis/ang_res_vloss.txt", "w")
+	if len(velocity_collect) != 0:
+		angle_vloss_hist, xedges, yedges = numpy.histogram2d(velocity_collect, angle_collect,  bins=(numbins(velocity_collect)), normed=False)
+			
+		# OUTPUT
+		for i in range(len(angle_vloss_hist)):
+			for j in range(len(angle_vloss_hist[i])):
+				ang_dist_file.write("%f %f %d\n" % (0.5*(xedges[i]+xedges[i+1]), 0.5*(yedges[j]+yedges[j+1]), angle_eloss_hist[i][j]))
+			ang_dist_file.write("\n")
+	else:
+		ang_dist_file.write("%f %f %d\n"   % (0.1, 0.5, 0))
+                ang_dist_file.write("%f %f %d\n\n" % (0.1, 1.0, 1))
+		ang_dist_file.write("%f %f %d\n"   % (0.2, 1.0, 1))
+		ang_dist_file.write("%f %f %d\n"   % (0.2, 0.5, 2))
+		
+	ang_dist_file.close()
+
+	# INTERGRATED OVER ALL AZIMUTH ANGLES #
+	polar_scatt_azi_file = open("analysis/polar_scatt_azi_int.txt", "w")
+	if len(polar_scatt_azi_int_energy) != 0:
+		polar_scatt_azi_int_hist, xedges, yedges = numpy.histogram2d(polar_scatt_azi_int_energy, polar_scatt_azi_int_angle, bins=(numbins(polar_scatt_azi_int_energy)), normed=False)
+		
+		for i in range(len(polar_scatt_azi_int_hist)):
+			for j in range(len(polar_scatt_azi_int_hist[i])):
+				polar_scatt_azi_file.write("%f %f %d\n" % (0.5*(xedges[i]+xedges[i+1]), 0.5*(yedges[j]+yedges[j+1]), polar_scatt_azi_int_hist[i][j]))
+			polar_scatt_azi_file.write("\n")
+	else:
+		polar_scatt_azi_file.write("%f %f %d\n"   % (0.1, 0.5, 0))
+		polar_scatt_azi_file.write("%f %f %d\n\n" % (0.1, 1.0, 1))
+		polar_scatt_azi_file.write("%f %f %d\n"   % (0.2, 1.0, 1))
+		polar_scatt_azi_file.write("%f %f %d\n"   % (0.2, 0.5, 2))
+
+	polar_scatt_azi_file.close()
+
 
 	
 
