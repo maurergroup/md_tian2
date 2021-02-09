@@ -4,11 +4,21 @@
 
 import os, sys, math, copy, numpy, time
 
+
 ### edit here ###
 METAL_TYPE = "C"
 SHOT_THRU_LIMIT = 0.0    # yes, this should be a negative number
 SPECULAR_RADIUS = 1.5
+
+# set names for output and log file
+inpname     = "MXT2Summary.txt"
+logfilename = "CreateMXTSummary.log"
+
+
 ### do not edit anything below this line ###
+
+VERSION_ID = 2.06
+
 
 
 class Point3D:
@@ -179,11 +189,11 @@ def matmul(mat, vec):
 	v3 = mat[2][0]*vec[0] + mat[2][1]*vec[1] + mat[2][2]*vec[2]
 	return [v1, v2, v3]
 
-def initialize():
-	ntrajs = sum(1 for line in open("MXT2Summary.txt", "r")) -1 	# first line is commment
+def initialize(inpname,logfile):
+	ntrajs = sum(1 for line in open(inpname, "r")) -1 	# first line is commment
 	print "Reading %d trajectories" % ntrajs
 	traj_list = []					# init list
-	mxt_file = open("MXT2Summary.txt", "r")
+	inp_file = open(inpname, "r")
 	counter = 0
         counter_to_total = 0
         cl_appr_count = 0
@@ -192,7 +202,7 @@ def initialize():
 	scattered = 0
 	absorbed = 0
 	transmitted = 0
-	for linenum,line in enumerate(mxt_file):
+	for linenum,line in enumerate(inp_file):
 		if line.startswith("#"):				# is comment line
 			continue
 		if (counter % (ntrajs/10) == 0):
@@ -621,7 +631,8 @@ def analyze(trajs):
 	
 
 	### TOTAL VELOCITY LOSS ###
-	print "Calculating total velocity loss."
+	print("Calculating total velocity loss.")
+        logfile.write("Calculating total velocity loss.")
 	# LOOP 
 	all_vloss = [traj.vloss for traj in trajs if traj.has_scattered] 
 	one_vb     = [traj.vloss for traj in trajs if traj.has_scattered and traj.turn_pnts == 1]
@@ -648,7 +659,8 @@ def analyze(trajs):
 
 
         ### ANGULAR DISTRIBUTION ###
-	print "Calculating angular velocity loss"
+	print("Calculating angular velocity loss")
+        logfile.write("Calculating angular velocity loss")
 	# get trajectories that are within specular radius in azimuth direction
 	velocity_collect  = []
 	angle_collect   = []
@@ -708,6 +720,7 @@ def analyze(trajs):
 
 	# OUTPUT 
 	out = open("analysis/Summary.txt", "w")
+	out.write("Created by version %4.2f\n" % VERSION_ID)
 	out.write("Scattered:   %d (%f%%)\n" % (SCATTERED,   100.*FRAC_SCATTERED))
 	out.write("Absorbed:    %d (%f%%)\n" % (ABSORBED,    100.*FRAC_ABSORBED))
 	out.write("Transmitted: %d (%f%%)\n\n" % (TRANSMITTED, 100.*FRAC_TRANSMITTED))
@@ -744,8 +757,21 @@ def analyze(trajs):
 #
 
 
+###### SCRIPT ######
+
+# open logfile
+logfile = open(logfilename, 'w')
+
+print("Screen output will be automatically written to {}!".format(logfilename))
+
+print("Created by version %4.2f" % VERSION_ID)
+logfile.write("Created by version %4.2f\n" % VERSION_ID)
+
+
+
+
 ### READ IN TRAJS ###
-traj_collection, SCATTERED, ABSORBED, TRANSMITTED = initialize()
+traj_collection, SCATTERED, ABSORBED, TRANSMITTED = initialize(inpname,logfile)
 
 ### CALCULATE USEFUL CONSTANTS ###
 NTRAJS = len(traj_collection)
@@ -755,4 +781,6 @@ FRAC_TRANSMITTED = float(TRANSMITTED)/NTRAJS
 
 ### OUTPUT ###
 analyze(traj_collection)
+
+logfile.close()
 

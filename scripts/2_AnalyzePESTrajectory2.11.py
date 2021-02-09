@@ -28,12 +28,13 @@ SHOT_THRU_LIMIT = 0.0
 
 SPECULAR_RADIUS = 1.5
 
-mxt_file_name = "MXT2Summary.txt"
+
+inpname = "MXT2Summary.txt"
 logfilename = "AnalyzePESTrajectory.log"
 
 ### NO CHANGES BELOW THIS LINE ###
 
-VERSION_ID = 2.10
+VERSION_ID = 2.11
 
 class Point3D:
 	def __init__(self,x,y,z):
@@ -204,17 +205,17 @@ def matmul(mat, vec):
 	v3 = mat[2][0]*vec[0] + mat[2][1]*vec[1] + mat[2][2]*vec[2]
 	return [v1, v2, v3]
 
-def initialize(mxt_file_name):
-	ntrajs = sum(1 for line in open(mxt_file_name, "r")) -1 	# first line is commment
+def initialize(inpname):
+	ntrajs = sum(1 for line in open(inpname, "r")) -1 	# first line is commment
 	print "Reading %d trajectories" % ntrajs
 	logfile.write("Reading %d trajectories" % ntrajs)
 	traj_list = []					# init list
-	mxt_file = open(mxt_file_name, "r")
+	inp_file = open(inpname, "r")
 	counter = 0
 	scattered = 0
 	absorbed = 0
 	transmitted = 0
-	for line in mxt_file:
+	for line in inp_file:
 		if line.startswith("#"):				# is comment line
 			continue
 		if (counter % (ntrajs/10) == 0):
@@ -243,7 +244,7 @@ def initialize(mxt_file_name):
 		time     = float(sl[25])					#	time      = 978.70000
 		turn_pnts = int(sl[26])						#       turn_pnts = 14
 		cl_appr  = float(sl[27])					#	cl_appr  =      0.9846501
-		cl_appr_t  = int(sl[28])					#	cl_appr  =      0.9846501
+		cl_appr_t  = int(sl[28])					#	cl_appr_t = 128
 		r_p_min  = Point3D(float(sl[29]), float(sl[30]), float(sl[31])) #	r_min_p  = 33.4630699  31.9529501  0.9322836
 	
 		this_traj = Traj(ekin_p_i, ekin_l_i, epot_i, etotal_i, r_p_i, v_p_i, polar_i, azi_i, ekin_p_f, \
@@ -254,11 +255,21 @@ def initialize(mxt_file_name):
 		counter += 1
 
 		if this_traj.ekin_p_f > 1.4*this_traj.ekin_p_i:
-			print("Warning in traj_id {}: a projectile with final kinetic energy of {} gained more than 40% of its initial kinetic energy!".format(this_traj.traj_id,this_traj.ekin_p_f))
-			logfile.write("Warning in traj_id {}: a projectile with final kinetic energy of {} gained more than 40% of its initial kinetic energy!".format(this_traj.traj_id,this_traj.ekin_p_f))
+			print("Warning in traj {}: a projectile with final kinetic energy of {} gained more \
+                            than 40% of its initial kinetic energy!".format(this_traj.traj_id,this_traj.ekin_p_f))
+			logfile.write("Warning in traj {}: a projectile with final kinetic energy of {} gained \
+                            more than 40% of its initial kinetic energy!".format(this_traj.traj_id,this_traj.ekin_p_f))
+
+                if this_traj.has_transmitted is True:
+                        print("Particle was transmitted in traj {}".format(this_traj.traj_id))
+                        logfile.write("Particle was transmitted in traj {}".format(this_traj.traj_id))
+
+                if 
 
 
-	mxt_file.close()
+
+
+	inp_file.close()
 
 	if not os.path.exists("analysis"):
     		os.makedirs("analysis")
@@ -266,10 +277,18 @@ def initialize(mxt_file_name):
 	for traj in traj_list:
 		if traj.has_scattered:
 			scattered += 1
+                        if this_traj.cl_appr < 1.4:
+                                print("Analyze slow component in traj {}".format(this_traj.traj_id))
+                                logfile.write("Analyze slow component in traj {}".format(this_traj.traj_id))
+                                sc_count += 1
 		elif traj.has_transmitted:
 			transmitted += 1
+                        print("Particle was transmitted in traj {}".format(this_traj.traj_id))
+                        logfile.write("Particle was transmitted in traj {}".format(this_traj.traj_id))
 		else:
 			absorbed += 1
+
+        print()
 
 	return traj_list, scattered, absorbed, transmitted
 
@@ -746,7 +765,89 @@ def analyze(trajs):
         eloss_psd_in_plane_file.close()
 	
 
+	### TOTAL VELOCITY LOSS ###
+	print("Calculating total velocity loss.")
+        logfile.write("Calculating total velocity loss.")
+	# LOOP 
+	all_vloss = [traj.vloss for traj in trajs if traj.has_scattered] 
+	one_vb     = [traj.vloss for traj in trajs if traj.has_scattered and traj.turn_pnts == 1]
+	two_vb     = [traj.vloss for traj in trajs if traj.has_scattered and traj.turn_pnts == 3]
+	mul_vb     = [traj.vloss for traj in trajs if traj.has_scattered and traj.turn_pnts >= 5]
 	
+	absorbed_vloss = [traj.vloss for traj in trajs if traj.has_adsorbed]
+
+	# ANALYSIS
+	all_vloss_hist, all_vloss_edges = numpy.histogram(all_vloss, bins=numbins(SCATTERED), range=(min(all_vloss), max(all_vloss)), density=True)
+	one_vb_hist,     one_vb_edges     = numpy.histogram(one_vb,     bins=numbins(SCATTERED), range=(min(all_vloss), max(all_vloss)), density=True)
+	two_vb_hist,     two_vb_edges     = numpy.histogram(two_vb,     bins=numbins(SCATTERED), range=(min(all_vloss), max(all_vloss)), density=True)
+	mul_vb_hist,     mul_vb_edges     = numpy.histogram(mul_vb,     bins=numbins(SCATTERED), range=(min(all_vloss), max(all_vloss)), density=True)
+	frac_one_vb = float(len(one_vb))/SCATTERED
+	frac_two_vb = float(len(two_vb))/SCATTERED
+	frac_mul_vb = float(len(mul_vb))/SCATTERED
+
+	# OUTPUT 
+	vloss_file = open("analysis/vloss.txt", "w")
+	vloss_file.write("# vloss/eV  all  single bounce  double bounce  multi bounce\n")
+	for i in range(len(all_vloss_hist)):
+		vloss_file.write("%f %f %f %f %f\n" % (0.5*(all_vloss_edges[i]+all_vloss_edges[i+1]), all_vloss_hist[i], frac_one_vb*one_vb_hist[i], frac_two_vb*two_vb_hist[i], frac_mul_vb*mul_vb_hist[i]))
+	vloss_file.close()
+
+
+        ### ANGULAR DISTRIBUTION ###
+	print("Calculating angular velocity loss")
+        logfile.write("Calculating angular velocity loss")
+	# get trajectories that are within specular radius in azimuth direction
+	velocity_collect  = []
+	angle_collect   = []
+	ps_dist_collect = []
+	polar_scatt_azi_int_velocity = []
+	polar_scatt_azi_int_angle  = []
+	for traj in trajs:
+		if traj.has_scattered:
+			polar_scatt_azi_int_velocity.append(traj.vloss)
+			polar_scatt_azi_int_angle.append(traj.polar_f)
+
+			if traj.in_plane:
+				velocity_collect.append(traj.vloss)
+				angle_collect.append(traj.polar_f)
+				ps_dist_collect.append(traj.cl_appr)
+
+	ang_dist_file_v = open("analysis/ang_res_vloss.txt", "w")
+	if len(velocity_collect) != 0:
+		angle_vloss_hist, xedges, yedges = numpy.histogram2d(velocity_collect, angle_collect,  bins=(numbins(velocity_collect)), normed=False)
+			
+		# OUTPUT
+		for i in range(len(angle_vloss_hist)):
+			for j in range(len(angle_vloss_hist[i])):
+				ang_dist_v_file.write("%f %f %d\n" % (0.5*(xedges[i]+xedges[i+1]), 0.5*(yedges[j]+yedges[j+1]), angle_vloss_hist[i][j]))
+			ang_dist_file_v.write("\n")
+	else:
+		ang_dist_file_v.write("%f %f %d\n"   % (0.1, 0.5, 0))
+                ang_dist_file_v.write("%f %f %d\n\n" % (0.1, 1.0, 1))
+		ang_dist_file_v.write("%f %f %d\n"   % (0.2, 1.0, 1))
+		ang_dist_file_v.write("%f %f %d\n"   % (0.2, 0.5, 2))
+		
+	ang_dist_file_v.close()
+
+	# INTERGRATED OVER ALL AZIMUTH ANGLES #
+	polar_scatt_azi_file_v = open("analysis/polar_scatt_azi_int_v.txt", "w")
+	if len(polar_scatt_azi_int_velocity) != 0:
+		polar_scatt_azi_int_hist_v, xedges, yedges = numpy.histogram2d(polar_scatt_azi_int_velocity, polar_scatt_azi_int_angle, bins=(numbins(polar_scatt_azi_int_velocity)), normed=False)
+		
+		for i in range(len(polar_scatt_azi_int_hist_v)):
+			for j in range(len(polar_scatt_azi_int_hist_v[i])):
+				polar_scatt_azi_file_v.write("%f %f %d\n" % (0.5*(xedges[i]+xedges[i+1]), 0.5*(yedges[j]+yedges[j+1]), polar_scatt_azi_int_hist_v[i][j]))
+			polar_scatt_azi_file_v.write("\n")
+	else:
+		polar_scatt_azi_file_v.write("%f %f %d\n"   % (0.1, 0.5, 0))
+		polar_scatt_azi_file_v.write("%f %f %d\n\n" % (0.1, 1.0, 1))
+		polar_scatt_azi_file.write("%f %f %d\n"   % (0.2, 1.0, 1))
+		polar_scatt_azi_file.write("%f %f %d\n"   % (0.2, 0.5, 2))
+
+	polar_scatt_azi_file_v.close()
+
+
+
 
 	### SUMMARY ###
 	# ANALYSIS
@@ -803,8 +904,9 @@ logfile.write("Created by version %4.2f\n" % VERSION_ID)
 
 
 
+
 ### READ IN TRAJS ###
-traj_collection, SCATTERED, ABSORBED, TRANSMITTED = initialize(mxt_file_name,logfile)
+traj_collection, SCATTERED, ABSORBED, TRANSMITTED = initialize(inpname,logfile)
 
 ### CALCULATE USEFUL CONSTANTS ###
 NTRAJS = len(traj_collection)
@@ -814,3 +916,5 @@ FRAC_TRANSMITTED = float(TRANSMITTED)/NTRAJS
 
 ### OUTPUT ###
 analyze(traj_collection,logfile)
+
+logfile.close()

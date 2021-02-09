@@ -4,6 +4,8 @@
 
 import os, sys, glob 
 
+VERSION_ID = 2.00
+
 class Traj:
 	def __init__(self, fname, ekin_p_i, ekin_l_i, epot_i, etotal_i,\
 			r_p_i, polar_i, azi_i, ekin_p_f, ekin_l_f, epot_f,   \
@@ -140,6 +142,8 @@ def write_summary():
 			
 
 	outfile.close()
+
+print("Created by version %4.2f" % VERSION_ID)
 
 traj_list = read_in_mxt_fins()
 write_summary()

@@ -132,7 +132,7 @@ def read_in_mxt_fins(logfile):
         traj_id = []
 	for folder in folder_list:
 		if (counter % (num_folders/10) == 0):
-			print 100*counter/num_folders+1, "%"
+                        print("{}%\n".format(100*counter/num_folders+1))
                         logfile.write("{}%\n".format(100*counter/num_folders+1))
 		infile = open(folder, 'r')						        	####    Reference Trajectory Output   ####
 
@@ -172,7 +172,7 @@ def read_in_mxt_fins(logfile):
                        			    etotal_f, r_p_f, v_p_f, polar_f, azi_f, time, turn_pnts,\
 					    cl_appr, cl_appr_t, r_p_min, traj_id)
 			        except:
-				        print "Error in file ", folder, " in line ", line
+                                        print("Error in file {} in line {}".format(folder,line))
                                         logfile.write("Error in file {} in line {}\n".format(folder,line))
 				        sys.exit()	
 
@@ -182,7 +182,7 @@ def read_in_mxt_fins(logfile):
                         counter += 1
 
                 else:
-                        print "Skipping unfinished traj", folder
+                        print("Skipping unfinished traj {}".format(folder))
                         logfile.write("Skipping unfinished traj {}\n".format(folder))
                         #break
                         continue
@@ -242,24 +242,33 @@ def remove_unfinished_traj(logfile):
 
     os.chdir("../")
 
-def write_traj_to_file(traj,this_outfile):
-        outfile = open(this_outfile, "w")
-        outfile.write("%s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s\n" \
-                       % ( traj.traj_id, traj.ekin_p_i, traj.ekin_l_i, traj.epot_i, traj.etotal_i, traj.r_p_i[0], \
-                       traj.r_p_i[1], traj.r_p_i[2], traj.v_p_i[0], traj.v_p_i[1], traj.v_p_i[2], traj.polar_i, \
-                       traj.azi_i, traj.ekin_p_f, traj.ekin_l_f, traj.epot_f, traj.etotal_f, traj.r_p_f[0], 
-                       traj.r_p_f[1], traj.r_p_f[2], traj.v_p_f[0], traj.v_p_f[1], traj.v_p_f[2], traj.polar_f, \
-                       traj.azi_f, traj.time, traj.turn_pnts, traj.cl_appr, traj.cl_appr_t, traj.r_p_min[0], \
-                       traj.r_p_min[1], traj.r_p_min[2]))
-        outfile.close()
+def write_traj_to_file(this_traj,this_outfile):
+        #outfile = open(this_outfile, "w")
+        this_outfile.write("%s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s\n" \
+                       % ( this_traj.traj_id, this_traj.ekin_p_i, this_traj.ekin_l_i, this_traj.epot_i, 
+                           this_traj.etotal_i, this_traj.r_p_i[0], this_traj.r_p_i[1], this_traj.r_p_i[2], \
+                           this_traj.v_p_i[0], this_traj.v_p_i[1], this_traj.v_p_i[2], this_traj.polar_i, \
+                           this_traj.azi_i, this_traj.ekin_p_f, this_traj.ekin_l_f, this_traj.epot_f, \
+                           this_traj.etotal_f, this_traj.r_p_f[0], this_traj.r_p_f[1], this_traj.r_p_f[2], \
+                           this_traj.v_p_f[0], this_traj.v_p_f[1], this_traj.v_p_f[2], this_traj.polar_f, \
+                           this_traj.azi_f, this_traj.time, this_traj.turn_pnts, this_traj.cl_appr, this_traj.cl_appr_t, \
+                           this_traj.r_p_min[0], this_traj.r_p_min[1], this_traj.r_p_min[2]))
+        #outfile.close()
 
 
 # 2DO: include write function to spare unnecessary code!!
 def write_statistics(traj_list):
-        outfile_15 = "MXT2Summary_15.txt"
-        outfile_30 = "MXT2Summary_30.txt"
-        outfile_45 = "MXT2Summary_45.txt"
-        outfile_60 = "MXT2Summary_60.txt"
+        # make the following more general
+        outfilestr_15 = "MXT2Summary_15.txt"
+        outfilestr_30 = "MXT2Summary_30.txt"
+        outfilestr_45 = "MXT2Summary_45.txt"
+        outfilestr_60 = "MXT2Summary_60.txt"
+
+        outfile_15 = open(outfilestr_15, "w")
+        outfile_30 = open(outfilestr_30, "w")
+        outfile_45 = open(outfilestr_45, "w")
+        outfile_60 = open(outfilestr_60, "w")
+
         for traj in traj_list:
                 if 7.5 <= float(traj.polar_f) <= 22.5:
                         write_traj_to_file(traj,outfile_15)
@@ -291,10 +300,10 @@ def write_statistics(traj_list):
                         #        traj.r_p_min[0], traj.r_p_min[1], traj.r_p_min[2]))
 
 
-        #outfile_15.close()
-        #outfile_30.close()
-        #outfile_45.close()
-        #outfile_60.close()
+        outfile_15.close()
+        outfile_30.close()
+        outfile_45.close()
+        outfile_60.close()
 
 
 
@@ -314,7 +323,7 @@ logfile.write("Created by version %4.2f\n" % VERSION_ID)
 
 
 
-# WARNING: the following is outdated since now empty or unfinished trajectory files are just skipped which is wanted!!
+# WARNING: the following function is outdated since now empty or unfinished trajectory files are just skipped which is wanted!!
 # check if unfinished trajectories are there and remove them
 #remove_unfinished_traj(logfile)
 
