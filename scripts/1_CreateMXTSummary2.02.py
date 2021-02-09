@@ -132,7 +132,7 @@ def read_in_mxt_fins(logfile):
         traj_id = []
 	for folder in folder_list:
 		if (counter % (num_folders/10) == 0):
-                        print("{}%\n".format(100*counter/num_folders+1))
+                        print("{}%".format(100*counter/num_folders+1))
                         logfile.write("{}%\n".format(100*counter/num_folders+1))
 		infile = open(folder, 'r')						        	####    Reference Trajectory Output   ####
 

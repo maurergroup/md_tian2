@@ -128,7 +128,7 @@ class Traj:
 		self.r_p_min    = r_p_min
                 self.traj_id    = traj_id
 		self.eloss      = ekin_p_i - ekin_p_f
-                self.vloss      = distance(v_p_f,v_p_i)
+                self.vloss      = delta_velocity(v_p_f,v_p_i)
 		self.has_scattered = r_p_f.z > r_p_i.z
 		self.has_transmitted = r_p_f.z < SHOT_THRU_LIMIT
 		self.has_adsorbed = not (self.has_scattered or self.has_scattered)
@@ -205,22 +205,26 @@ def matmul(mat, vec):
 	v3 = mat[2][0]*vec[0] + mat[2][1]*vec[1] + mat[2][2]*vec[2]
 	return [v1, v2, v3]
 
-def initialize(inpname):
+def delta_velocity(self,other):
+	return math.sqrt( (self.x-other.x)**2 + (self.y-other.y)**2 +(self.z-other.z)**2 )
+
+def initialize(inpname,logfile):
 	ntrajs = sum(1 for line in open(inpname, "r")) -1 	# first line is commment
-	print "Reading %d trajectories" % ntrajs
-	logfile.write("Reading %d trajectories" % ntrajs)
+	print("Reading {} trajectories".format(ntrajs))
+	logfile.write("Reading {} trajectories".format(ntrajs))
 	traj_list = []					# init list
 	inp_file = open(inpname, "r")
 	counter = 0
 	scattered = 0
+        sc_count = 0
 	absorbed = 0
 	transmitted = 0
 	for line in inp_file:
 		if line.startswith("#"):				# is comment line
 			continue
 		if (counter % (ntrajs/10) == 0):
-                        print (100*counter+1)/ntrajs, "%"
-                        logfile.write((100*counter+1)/ntrajs, "%")
+                        print("{}%".format(100*counter/ntrajs+1))
+                        logfile.write("{}%".format(100*counter/ntrajs+1))
 		sl = line.strip("\n\t\r ").split()
                 traj_id  = str(sl[0])                                           #       traj_id   = 00000001
 		ekin_p_i = float(sl[1])						#	e_kin_p_i = 3.33000
@@ -260,11 +264,10 @@ def initialize(inpname):
 			logfile.write("Warning in traj {}: a projectile with final kinetic energy of {} gained \
                             more than 40% of its initial kinetic energy!".format(this_traj.traj_id,this_traj.ekin_p_f))
 
-                if this_traj.has_transmitted is True:
-                        print("Particle was transmitted in traj {}".format(this_traj.traj_id))
-                        logfile.write("Particle was transmitted in traj {}".format(this_traj.traj_id))
+                #if this_traj.has_transmitted is True:
+                #        print("Particle was transmitted in traj {}".format(this_traj.traj_id))
+                #        logfile.write("Particle was transmitted in traj {}".format(this_traj.traj_id))
 
-                if 
 
 
 
@@ -277,18 +280,20 @@ def initialize(inpname):
 	for traj in traj_list:
 		if traj.has_scattered:
 			scattered += 1
-                        if this_traj.cl_appr < 1.4:
-                                print("Analyze slow component in traj {}".format(this_traj.traj_id))
-                                logfile.write("Analyze slow component in traj {}".format(this_traj.traj_id))
+                        if traj.cl_appr < 1.4:
+                                print("Analyze slow component in traj {}".format(traj.traj_id))
+                                logfile.write("Analyze slow component in traj {}".format(traj.traj_id))
                                 sc_count += 1
 		elif traj.has_transmitted:
 			transmitted += 1
-                        print("Particle was transmitted in traj {}".format(this_traj.traj_id))
-                        logfile.write("Particle was transmitted in traj {}".format(this_traj.traj_id))
+                        print("Particle was transmitted in traj {}".format(traj.traj_id))
+                        logfile.write("Particle was transmitted in traj {}".format(traj.traj_id))
 		else:
 			absorbed += 1
 
-        print()
+        print("total traj: {}".format(ntrajs))
+        print("# traj with scattering after barrier: {} out of {} scattered traj ({}%)".format(sc_count,scattered,float(sc_count)*100/float(scattered)))
+        print("# traj with adsorption: {} out of total {} traj ({}%)".format(absorbed,ntrajs,float(absorbed)*float(100)/float(ntrajs)))
 
 	return traj_list, scattered, absorbed, transmitted
 
@@ -302,7 +307,7 @@ def numbins(inp):
 	else:
 		sys.exit("Unknown type from which to compute number of bins in histogram")
 
-def analyze(trajs):
+def analyze(trajs,logfile):
 
 	### BOUNCES ###
 	print("Calculating bounces.")
@@ -787,7 +792,7 @@ def analyze(trajs):
 
 	# OUTPUT 
 	vloss_file = open("analysis/vloss.txt", "w")
-	vloss_file.write("# vloss/eV  all  single bounce  double bounce  multi bounce\n")
+	vloss_file.write("# vloss/Ang*fs^-1  all  single bounce  double bounce  multi bounce\n")
 	for i in range(len(all_vloss_hist)):
 		vloss_file.write("%f %f %f %f %f\n" % (0.5*(all_vloss_edges[i]+all_vloss_edges[i+1]), all_vloss_hist[i], frac_one_vb*one_vb_hist[i], frac_two_vb*two_vb_hist[i], frac_mul_vb*mul_vb_hist[i]))
 	vloss_file.close()
@@ -813,21 +818,43 @@ def analyze(trajs):
 				ps_dist_collect.append(traj.cl_appr)
 
 	ang_dist_file_v = open("analysis/ang_res_vloss.txt", "w")
+        ang_dist_mat_file_v = open("analysis/ang_res_vloss_matrix.txt", "w")
+        occurence_file_v    = open("analysis/ang_res_occurrence_v.txt", "w")
 	if len(velocity_collect) != 0:
 		angle_vloss_hist, xedges, yedges = numpy.histogram2d(velocity_collect, angle_collect,  bins=(numbins(velocity_collect)), normed=False)
+                occurence_hist_v, occ_edges = numpy.histogram(angle_collect, bins=numpy.arange(91), normed=False)
 			
 		# OUTPUT
 		for i in range(len(angle_vloss_hist)):
 			for j in range(len(angle_vloss_hist[i])):
-				ang_dist_v_file.write("%f %f %d\n" % (0.5*(xedges[i]+xedges[i+1]), 0.5*(yedges[j]+yedges[j+1]), angle_vloss_hist[i][j]))
+				ang_dist_file_v.write("%f %f %d\n" % (0.5*(xedges[i]+xedges[i+1]), 0.5*(yedges[j]+yedges[j+1]), angle_vloss_hist[i][j]))
 			ang_dist_file_v.write("\n")
+
+                ang_dist_mat_file_v.write("# x-range describing velocity loss in Ang/fs (left to right) from %f to %f in steps of %f\n" % (0.5*(xedges[0]+xedges[1]), 0.5*(xedges[-2]+xedges[-1]), abs(xedges[0]-xedges[1])))
+                ang_dist_mat_file_v.write("# y-range describing scattering angle in degrees (top to bottom) from %f to %f in steps of %f\n" % (0.5*(yedges[0]+yedges[1]), 0.5*(yedges[-2]+yedges[-1]), abs(yedges[0]-yedges[1])))
+                ang_dist_mat_file_v.write("# specular scattering angle is %f degrees and detector radius is %f degrees\n" % (trajs[0].polar_i, SPECULAR_RADIUS))
+                ang_dist_mat_file_v.write("0.0 "); [ang_dist_mat_file_v.write("%f " % (0.5*(xedges[i]+xedges[i+1]))) for i in range(len(xedges)-1)]; ang_dist_mat_file_v.write("\n")
+                for i in range(len(angle_vloss_hist[0])):
+                        ang_dist_mat_file_v.write("%f " % (0.5*(yedges[i]+yedges[i+1])))
+                        for j in range(len(angle_vloss_hist)):
+                                ang_dist_mat_file_v.write("%d " % angle_vloss_hist[j][i])
+                        ang_dist_mat_file_v.write("\n")
+
+                occurence_file_v.write("# number of trajs in plane in unit polar angle, unit azimuthal angle\n")
+                for i in range(len(occurence_hist_v)):
+                        this_angle = 0.5*(occ_edges[i]+occ_edges[i+1])
+                        occurence_file_v.write("%f %f\n" % (this_angle, 1.0*occurence_hist_v[i]/sum(occurence_hist_v)))
 	else:
 		ang_dist_file_v.write("%f %f %d\n"   % (0.1, 0.5, 0))
                 ang_dist_file_v.write("%f %f %d\n\n" % (0.1, 1.0, 1))
 		ang_dist_file_v.write("%f %f %d\n"   % (0.2, 1.0, 1))
 		ang_dist_file_v.write("%f %f %d\n"   % (0.2, 0.5, 2))
+
+                occurence_file_v.write("%f %f\n" % (0.1, 0.1))
 		
+        occurence_file_v.close()
 	ang_dist_file_v.close()
+        ang_dist_mat_file_v.close()
 
 	# INTERGRATED OVER ALL AZIMUTH ANGLES #
 	polar_scatt_azi_file_v = open("analysis/polar_scatt_azi_int_v.txt", "w")
@@ -841,10 +868,55 @@ def analyze(trajs):
 	else:
 		polar_scatt_azi_file_v.write("%f %f %d\n"   % (0.1, 0.5, 0))
 		polar_scatt_azi_file_v.write("%f %f %d\n\n" % (0.1, 1.0, 1))
-		polar_scatt_azi_file.write("%f %f %d\n"   % (0.2, 1.0, 1))
-		polar_scatt_azi_file.write("%f %f %d\n"   % (0.2, 0.5, 2))
+		polar_scatt_azi_file_v.write("%f %f %d\n"   % (0.2, 1.0, 1))
+		polar_scatt_azi_file_v.write("%f %f %d\n"   % (0.2, 0.5, 2))
 
 	polar_scatt_azi_file_v.close()
+
+        ### SPHERICAL SYMMETRY ###
+        # LOOP
+        print("Calculating spherical symmetry")
+        logfile.write("Calculating spherical symmetry")
+        abs_azi = []
+        rel_azi = []
+        yvals = []
+        this_azi = None
+        for traj in trajs:
+                if traj.has_scattered:
+                        delta_azi = traj.azi_f-traj.azi_i
+                        if -180 <= delta_azi <= 180:
+                                rel_azi.append(delta_azi)
+                        elif delta_azi < -180:
+                                rel_azi.append(delta_azi+360)
+                        elif delta_azi > 180:
+                                rel_azi.append(delta_azi-360)
+                        else:
+                                sys.exit("Weird angle in spherical symmetry.")
+
+                        abs_azi.append(traj.azi_f)
+                        yvals.append(traj.polar_f)
+
+        # ANALYSIS
+        rel_spherical_hist_v, rel_xedges, yedges = numpy.histogram2d(rel_azi, yvals, bins=numbins(rel_azi), normed=False)
+        abs_spherical_hist_v, abs_xedges, yedges = numpy.histogram2d(abs_azi, yvals, bins=numbins(abs_azi), normed=False)
+
+        # OUTPUT
+        spherical_file_rel_v = open("analysis/rel_spherical_symmetry_v.txt", "w")
+        for i in range(len(rel_spherical_hist_v)):
+                for j in range(len(rel_spherical_hist_v[i])):
+                        spherical_file_rel_v.write("%f %f %d\n" % (0.5*(rel_xedges[i]+rel_xedges[i+1]), -0.5*(yedges[j]+yedges[j+1]), rel_spherical_hist_v[i][j]))
+                spherical_file_rel_v.write("\n")
+        spherical_file_rel_v.close()
+
+        spherical_file_abs_v = open("analysis/abs_spherical_symmetry_v.txt", "w")
+        for i in range(len(abs_spherical_hist_v)):
+                for j in range(len(abs_spherical_hist_v[i])):
+                        spherical_file_abs_v.write("%f %f %d\n" % (0.5*(abs_xedges[i]+abs_xedges[i+1]), -0.5*(yedges[j]+yedges[j+1]), abs_spherical_hist_v[i][j]))
+                spherical_file_abs_v.write("\n")
+        spherical_file_abs_v.close()
+
+
+
 
 
 
