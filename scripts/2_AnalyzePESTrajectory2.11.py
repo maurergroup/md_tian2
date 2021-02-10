@@ -128,7 +128,7 @@ class Traj:
 		self.r_p_min    = r_p_min
                 self.traj_id    = traj_id
 		self.eloss      = ekin_p_i - ekin_p_f
-                self.vloss      = length(v_p_i) - length(v_p_i)
+                self.vloss      = length(v_p_i) - length(v_p_f)
 		self.has_scattered = r_p_f.z > r_p_i.z
 		self.has_transmitted = r_p_f.z < SHOT_THRU_LIMIT
 		self.has_adsorbed = not (self.has_scattered or self.has_scattered)
@@ -211,7 +211,7 @@ def length(self):
 def initialize(inpname,logfile):
 	ntrajs = sum(1 for line in open(inpname, "r")) -1 	# first line is commment
 	print("Reading {} trajectories".format(ntrajs))
-	logfile.write("Reading {} trajectories".format(ntrajs))
+	logfile.write("Reading {} trajectories\n".format(ntrajs))
 	traj_list = []					# init list
 	inp_file = open(inpname, "r")
 	counter = 0
@@ -224,7 +224,7 @@ def initialize(inpname,logfile):
 			continue
 		if (counter % (ntrajs/10) == 0):
                         print("{}%".format(100*counter/ntrajs+1))
-                        logfile.write("{}%".format(100*counter/ntrajs+1))
+                        logfile.write("{}%\n".format(100*counter/ntrajs+1))
 		sl = line.strip("\n\t\r ").split()
                 traj_id  = str(sl[0])                                           #       traj_id   = 00000001
 		ekin_p_i = float(sl[1])						#	e_kin_p_i = 3.33000
@@ -262,7 +262,7 @@ def initialize(inpname,logfile):
 			print("Warning in traj {}: a projectile with final kinetic energy of {} gained more \
                             than 40% of its initial kinetic energy!".format(this_traj.traj_id,this_traj.ekin_p_f))
 			logfile.write("Warning in traj {}: a projectile with final kinetic energy of {} gained \
-                            more than 40% of its initial kinetic energy!".format(this_traj.traj_id,this_traj.ekin_p_f))
+                            more than 40% of its initial kinetic energy!\n".format(this_traj.traj_id,this_traj.ekin_p_f))
 
                 #if this_traj.has_transmitted is True:
                 #        print("Particle was transmitted in traj {}".format(this_traj.traj_id))
@@ -282,18 +282,21 @@ def initialize(inpname,logfile):
 			scattered += 1
                         if traj.cl_appr < 1.4:
                                 print("Analyze slow component in traj {}".format(traj.traj_id))
-                                logfile.write("Analyze slow component in traj {}".format(traj.traj_id))
+                                logfile.write("Analyze slow component in traj {}\n".format(traj.traj_id))
                                 sc_count += 1
 		elif traj.has_transmitted:
 			transmitted += 1
                         print("Particle was transmitted in traj {}".format(traj.traj_id))
-                        logfile.write("Particle was transmitted in traj {}".format(traj.traj_id))
+                        logfile.write("Particle was transmitted in traj {}\n".format(traj.traj_id))
 		else:
 			absorbed += 1
 
         print("total traj: {}".format(ntrajs))
+        logfile.write("total traj: {}\n".format(ntrajs))
         print("# traj with scattering after barrier: {} out of {} scattered traj ({}%)".format(sc_count,scattered,float(sc_count)*100/float(scattered)))
+        logfile.write("# traj with scattering after barrier: {} out of {} scattered traj ({}%)\n".format(sc_count,scattered,float(sc_count)*100/float(scattered)))
         print("# traj with adsorption: {} out of total {} traj ({}%)".format(absorbed,ntrajs,float(absorbed)*float(100)/float(ntrajs)))
+        logfile.write("# traj with adsorption: {} out of total {} traj ({}%)\n".format(absorbed,ntrajs,float(absorbed)*float(100)/float(ntrajs)))
 
 	return traj_list, scattered, absorbed, transmitted
 
@@ -311,7 +314,7 @@ def analyze(trajs,logfile):
 
 	### BOUNCES ###
 	print("Calculating bounces.")
-	logfile.write("Calculating bounces.")
+	logfile.write("Calculating bounces.\n")
 
 	# LOOP 
 	all_bounces    = [traj.turn_pnts for traj in trajs]
@@ -335,7 +338,7 @@ def analyze(trajs,logfile):
 
 	### TOTAL ENERGY LOSS ###
 	print("Calculating total energy loss.")
-	logfile.write("Calculating total energy loss.")
+	logfile.write("Calculating total energy loss.\n")
 	# LOOP 
 	all_eloss = [traj.eloss for traj in trajs if traj.has_scattered] 
 	one_b     = [traj.eloss for traj in trajs if traj.has_scattered and traj.turn_pnts == 1]
@@ -363,7 +366,7 @@ def analyze(trajs,logfile):
 
 	### SPECULAR ENERGY LOSS ###
 	print("Calculating specular energy loss.")
-	logfile.write("Calculating specular energy loss.")
+	logfile.write("Calculating specular energy loss.\n")
 
 	# INIT
 	spec_all_eloss = []
@@ -406,7 +409,9 @@ def analyze(trajs,logfile):
 
 	### IN PLANE ENERGY LOSS ###
 	print("Calculating in-plane energy loss.")
-	logfile.write("Calculating in-plane energy loss.")
+	logfile.write("Calculating in-plane energy loss.\n")
+
+        pp_file = open("analysis/plot_parameter.txt")
 
 
 	# INIT
@@ -417,6 +422,8 @@ def analyze(trajs,logfile):
 
 	# LOOP
 	for ind,traj in enumerate(trajs):	# List comprehension simply need too much time. This is ugly, but fast.
+                if ind is 0:
+                        pp_file("Einc Vinc\n{} {}".format(traj.ekin_p_i,length(traj.v_p_i)))
 		if traj.in_plane and traj.has_scattered:
                         if traj.cl_appr < 1.4:
                             outfile_string = "slow_component.log"
@@ -465,6 +472,8 @@ def analyze(trajs,logfile):
 			else:
 				in_plane_mul_b.append(traj.eloss)
 
+        ppfile.close()
+
 	in_plane_eloss_file = open("analysis/in_plane_eloss.txt", "w")
         in_plane_eloss_file.write("# eloss/eV  all  single bounce  double bounce  multi bounce\n")
 	if len(in_plane_all_eloss) > 0:	
@@ -490,7 +499,7 @@ def analyze(trajs,logfile):
 
 	### Z-POSITION ###
 	print("Calculating final z positions.")
-	logfile.write("Calculating final z positions.")
+	logfile.write("Calculating final z positions.\n")
 	# LOOP
 	final_z = [traj.r_p_f.z for traj in trajs if traj.has_adsorbed]
 
@@ -508,7 +517,7 @@ def analyze(trajs,logfile):
 
 	### BOUNCES VS ELOSS ###
 	print("Calculating bounces/energy loss correlation.")
-	logfile.write("Calculating bounces/energy loss correlation.")
+	logfile.write("Calculating bounces/energy loss correlation.\n")
 	# ANALYSIS
 	bounce_vs_eloss_hist, xegdes, yedges = numpy.histogram2d(scat_bounces, all_eloss, bins=(max(scat_bounces),numbins(all_eloss)), range=[[0,max(scat_bounces)],[min(all_eloss),max(all_eloss)]], normed=False)
 
@@ -523,8 +532,8 @@ def analyze(trajs,logfile):
 
 
         ### ANGULAR DISTRIBUTION ###
-	print("Calculating angular energy loss")
-	logfile.write("Calculating angular energy loss")
+	print("Calculating angular energy loss.")
+	logfile.write("Calculating angular energy loss.\n")
 	# get trajectories that are within specular radius in azimuth direction
 	energy_collect  = []
 	angle_collect   = []
@@ -584,8 +593,8 @@ def analyze(trajs,logfile):
 
 
 	# Graphene bounce events #
-	print("Calculating graphene bounce events")
-	logfile.write("Calculating graphene bounce events")
+	print("Calculating graphene bounce events.")
+	logfile.write("Calculating graphene bounce events.\n")
 	fast_c = open("analysis/component_fast.txt", "w")
         slow_c_sb = open("analysis/component_slow_single.txt", "w")
         slow_c_mb = open("analysis/component_slow_multi.txt", "w")
@@ -624,8 +633,8 @@ def analyze(trajs,logfile):
 
 
 	### LOSS TO EHP AND PHONONS ###
-	print("Calculating loss to ehps and phonons")
-	logfile.write("Calculating loss to ehps and phonons")
+	print("Calculating loss to ehps and phonons.")
+	logfile.write("Calculating loss to ehps and phonons.\n")
 	# LOOP
 	loss_to_ehps = [ traj.etotal_i - traj.etotal_f for traj in trajs if traj.has_scattered ]
 	loss_to_ehps_spec = [ traj.etotal_i - traj.etotal_f for traj in trajs if traj.has_scattered and traj.in_spec ]
@@ -653,8 +662,8 @@ def analyze(trajs,logfile):
 
 	### SPHERICAL SYMMETRY ###
 	# LOOP
-	print("Calculating spherical symmetry")
-	logfile.write("Calculating spherical symmetry")
+	print("Calculating spherical symmetry.")
+	logfile.write("Calculating spherical symmetry.\n")
 	abs_azi = []
 	rel_azi = []
 	yvals = []
@@ -696,8 +705,8 @@ def analyze(trajs,logfile):
 
 
 	### Projectile-Surface distance ###
-	print("Calculating projectile-surface distance")
-	logfile.write("Calculating projectile-surface distance")
+	print("Calculating projectile-surface distance.")
+	logfile.write("Calculating projectile-surface distance.\n")
 	# LOOP
 	ps_dist = [traj.cl_appr for traj in trajs if traj.has_scattered]
 
@@ -713,8 +722,8 @@ def analyze(trajs,logfile):
 
 
 	### Eloss vs Projectile-Surface distance ###
-	print("Calculating energy loss projectile-surface distance relationship")
-	logfile.write("Calculating energy loss projectile-surface distance relationship")
+	print("Calculating energy loss projectile-surface distance relationship.")
+	logfile.write("Calculating energy loss projectile-surface distance relationship.\n")
 	# ANALYSIS
 	eloss_psd_hist, xedges, yedges = numpy.histogram2d(all_eloss, ps_dist, bins=numbins(all_eloss), normed=False)
 	
@@ -729,8 +738,8 @@ def analyze(trajs,logfile):
 
 
 	### Scattering polar angle vs Projectile-Surface distance in-plane ###
-	print("Calculating scattering angle projectile-surface distance relationship")
-	logfile.write("Calculating scattering angle projectile-surface distance relationship")
+	print("Calculating scattering angle projectile-surface distance relationship.")
+	logfile.write("Calculating scattering angle projectile-surface distance relationship.\n")
 	# ANALYSIS
 	polar_psd_file = open("analysis/polar_psd.txt", "w")
 	if len(ps_dist_collect) > 0:
@@ -750,8 +759,8 @@ def analyze(trajs,logfile):
 
 
 	### Eloss vs Projectile-Surface distance in plane ###
-	print("Calculating in-plane energy loss projectile-surface distance relationship")
-	logfile.write("Calculating in-plane energy loss projectile-surface distance relationship")
+	print("Calculating in-plane energy loss projectile-surface distance relationship.")
+	logfile.write("Calculating in-plane energy loss projectile-surface distance relationship.\n")
 	# ANALYSIS
 	eloss_psd_in_plane_file = open("analysis/eloss_psd_in_plane.txt", "w")
 	if len(ps_dist_collect) > 0:
@@ -772,7 +781,7 @@ def analyze(trajs,logfile):
 
 	### TOTAL VELOCITY LOSS ###
 	print("Calculating total velocity loss.")
-        logfile.write("Calculating total velocity loss.")
+        logfile.write("Calculating total velocity loss.\n")
 	# LOOP 
 	all_vloss = [traj.vloss for traj in trajs if traj.has_scattered] 
 	one_vb     = [traj.vloss for traj in trajs if traj.has_scattered and traj.turn_pnts == 1]
@@ -799,8 +808,8 @@ def analyze(trajs,logfile):
 
 
         ### ANGULAR DISTRIBUTION ###
-	print("Calculating angular velocity loss")
-        logfile.write("Calculating angular velocity loss")
+	print("Calculating angular velocity loss.")
+        logfile.write("Calculating angular velocity loss.\n")
 	# get trajectories that are within specular radius in azimuth direction
 	velocity_collect  = []
 	angle_collect   = []
@@ -875,8 +884,8 @@ def analyze(trajs,logfile):
 
         ### SPHERICAL SYMMETRY ###
         # LOOP
-        print("Calculating spherical symmetry")
-        logfile.write("Calculating spherical symmetry")
+        print("Calculating spherical symmetry.")
+        logfile.write("Calculating spherical symmetry.\n")
         abs_azi = []
         rel_azi = []
         yvals = []
