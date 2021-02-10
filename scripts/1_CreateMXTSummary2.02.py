@@ -42,6 +42,7 @@ class Traj:
                         etotal_f, r_p_f, v_p_f, polar_f, azi_f, time, turn_pnts, \
 			cl_appr, cl_appr_t, r_p_min, traj_id):
 		self.fname     = fname
+                self.traj_id   = traj_id
 		self.ekin_p_i  = ekin_p_i
 		self.ekin_l_i  = ekin_l_i
 		self.epot_i    = epot_i
@@ -63,7 +64,6 @@ class Traj:
 		self.cl_appr   = cl_appr
 		self.cl_appr_t = cl_appr_t
 		self.r_p_min   = r_p_min
-                self.traj_id   = traj_id
 
 	def containsNaN(self):
 		return "NaN" in self.ekin_p_i or "NaN" in self.ekin_l_i or "NaN" in self.epot_i or "NaN" in self.etotal_i or \
@@ -71,6 +71,7 @@ class Traj:
 
 	def __str__(self):
 		return "   fname " + str(self.fname) +\
+                        "\ntraj_id " + str(self.traj_id) +\
 			"\nekin_p_i " + str(self.ekin_p_i) +\
                         "\nekin_l_i " + str(self.ekin_l_i) +\
                         "\nepot_i " + str(self.epot_i) +\
@@ -91,8 +92,7 @@ class Traj:
                         "\nturn_pnts " + str(self.turn_pnts) +\
 			"\ncl_appr " + str(self.cl_appr) +\
 			"\ncl_appr_t " + str(self.cl_appr_t) +\
-			"\nr_p_min " + str(self.r_p_min) +\
-                        "\ntraj_id " + str(self.traj_id)
+			"\nr_p_min " + str(self.r_p_min)
 
 
 

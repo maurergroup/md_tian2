@@ -5,6 +5,8 @@
 #E_INC = 0.99
 E_INC = 1.94
 
+V_INC = 0.1935
+
 set term png enhanced size 1920,1080 font "Computer Modern, 30"
 
 set xlabel "Number of bounces"
@@ -292,3 +294,68 @@ unset xlabel
 #plot (sqrt( -(1E-10*x)**2      + x**2)<1?-1E-10*x       :NaN) lc rgb "black" lw 5 # 0°
 plot NaN notitle
 unset multiplot
+
+
+
+### VELOCITIES PART ###
+
+### OVER ALL AZIMUTH ANGLES ###
+
+set output "analysis/3d-polar_azi_integrated_v.png"
+set multiplot
+
+set pm3d map interpolate 0,0
+unset key
+unset label
+
+# plot the heatmap
+set isosamples 500
+
+unset border
+set xtics nomirror 0.25
+unset ytics
+set autoscale
+
+set xrange[-1.1:0]
+set yrange[0:1.1]
+set colorbox user origin 0.9,0.1 size 0.03,0.8
+splot "analysis/polar_scatt_azi_int.txt" u ((V_INC-$1)/V_INC*cos($2+90)):((V_INC-$1)/V_INC*sin($2+90)):3
+
+set label "15°" at first 1.1*cos(105), first 1.1*sin(105) front textcolor rgb "black" center
+set label "30°" at first 1.1*cos(120), first 1.1*sin(120) front textcolor rgb "black" center
+set label "45°" at first 1.1*cos(135), first 1.1*sin(135) front textcolor rgb "black" center
+set label "60°" at first 1.1*cos(150), first 1.1*sin(150) front textcolor rgb "black" center
+set label "75°" at first 1.1*cos(165), first 1.1*sin(165) front textcolor rgb "black" center
+
+unset pm3d
+unset xtics
+plot -10**8 * x     lc rgb "black" lw 5 # 90°
+plot -(2-sqrt(3))*x lc rgb "white" lw 3 # 75°
+plot -(1/sqrt(3))*x lc rgb "white" lw 3 # 60°
+plot -x             lc rgb "white" lw 3 # 45°
+plot -sqrt(3)*x     lc rgb "white" lw 3 # 30°
+plot -(2+sqrt(3))*x lc rgb "white" lw 3 # 15°
+plot 0              lc rgb "black" lw 5 # 0°
+
+set term png enhanced size 1920,1080 font "Computer Modern, 30"
+
+set xlabel "{/cmti10 v}_{loss} / (Å * fs^{-1})"
+set ylabel "Probability density/eV^{-1}"
+set output "analysis/vloss.png"
+plot "analysis/vloss.txt" u 1:3 t "single bounce" w l lw 5,\
+     "analysis/vloss.txt" u 1:4 t "double bounce" w l lw 5,\
+     "analysis/vloss.txt" u 1:5 t "multi bounce"  w l lw 5,\
+     "analysis/vloss.txt" u 1:2 t "all"           w l lw 5 lt -1
+
+
+set term png enhanced size 2000,1200 font "Computer Modern, 30"
+set pm3d map interpolate 0,0
+set xlabel "{/Symbol D} out of plane / °"
+set ylabel "{/Symbol D} in plane / °"
+set output "analysis/spherical_rel.png"
+splot "analysis/rel_spherical_symmetry.txt" notitle
+
+set xlabel "azimuth / °"
+set ylabel "polar / °"
+set output "analysis/spherical_abs.png"
+splot "analysis/abs_spherical_symmetry.txt" u 1:2:3  notitle

@@ -128,7 +128,7 @@ class Traj:
 		self.r_p_min    = r_p_min
                 self.traj_id    = traj_id
 		self.eloss      = ekin_p_i - ekin_p_f
-                self.vloss      = delta_velocity(v_p_f,v_p_i)
+                self.vloss      = length(v_p_i) - length(v_p_i)
 		self.has_scattered = r_p_f.z > r_p_i.z
 		self.has_transmitted = r_p_f.z < SHOT_THRU_LIMIT
 		self.has_adsorbed = not (self.has_scattered or self.has_scattered)
@@ -205,8 +205,8 @@ def matmul(mat, vec):
 	v3 = mat[2][0]*vec[0] + mat[2][1]*vec[1] + mat[2][2]*vec[2]
 	return [v1, v2, v3]
 
-def delta_velocity(self,other):
-	return math.sqrt( (self.x-other.x)**2 + (self.y-other.y)**2 +(self.z-other.z)**2 )
+def length(self):
+	return math.sqrt( (self.x)**2 + (self.y)**2 +(self.z)**2 )
 
 def initialize(inpname,logfile):
 	ntrajs = sum(1 for line in open(inpname, "r")) -1 	# first line is commment
