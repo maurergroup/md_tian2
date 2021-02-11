@@ -4,11 +4,11 @@
 
 #E_INC = 0.99
 #E_INC = 1.94
-E_INC = "`head -1 analysis/plot_parameter.txt | awk '{print $1}'`"
+E_INC = "`head analysis/plot_parameter.txt | tail -1 | awk '{print $1}'`"
 
 #V_INC = 0.1382
 #V_INC = 0.1935
-V_INC = "`head -1 analysisplot_parameter.txt | awk '{print $2}'`"
+V_INC = "`head analysis/plot_parameter.txt | tail -1 | awk '{print $2}'`"
 
 set term png enhanced size 1920,1080 font "Computer Modern, 30"
 
@@ -31,20 +31,30 @@ plot "analysis/eloss.txt" u 1:3 t "single bounce" w l lw 5,\
 
 
 set xlabel "{/cmti10 v}_{loss}/Å fs^{-1}"
-set ylabel "Probability density/eV^{-1}"
+set ylabel "Probability density/Å^{-1} fs"
 set output "analysis/vloss.png"
 plot "analysis/vloss.txt" u 1:3 t "single bounce" w l lw 5,\
      "analysis/vloss.txt" u 1:4 t "double bounce" w l lw 5,\
      "analysis/vloss.txt" u 1:5 t "multi bounce"  w l lw 5,\
      "analysis/vloss.txt" u 1:2 t "all"           w l lw 5 lt -1
 
+
 set xlabel "{/cmti10 v}_{loss}/km s^{-1}"
-set ylabel "Probability density/eV^{-1}"
+set ylabel "Probability density/km^{-1} s"
 set output "analysis/vloss_mod.png"
 plot "analysis/vloss.txt" u ($1*100):3 t "single bounce" w l lw 5,\
      "analysis/vloss.txt" u ($1*100):4 t "double bounce" w l lw 5,\
      "analysis/vloss.txt" u ($1*100):5 t "multi bounce"  w l lw 5,\
      "analysis/vloss.txt" u ($1*100):2 t "all"           w l lw 5 lt -1
+
+
+set xlabel "{/cmti10 v}_{fin}/km s^{-1}"
+set ylabel "Probability density/km^{-1} s"
+set output "analysis/final_v_distribution.png"
+plot "analysis/all_final_v.txt" u ($1*100):3 t "single bounce" w l lw 5,\
+     "analysis/all_final_v.txt" u ($1*100):4 t "double bounce" w l lw 5,\
+     "analysis/all_final_v.txt" u ($1*100):5 t "multi bounce"  w l lw 5,\
+     "analysis/all_final_v.txt" u ($1*100):2 t "all"           w l lw 5 lt -1
 
 
 set xlabel "{/cmti10 E}_{loss}/eV"

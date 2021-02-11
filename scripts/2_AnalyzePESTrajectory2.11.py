@@ -411,7 +411,9 @@ def analyze(trajs,logfile):
 	print("Calculating in-plane energy loss.")
 	logfile.write("Calculating in-plane energy loss.\n")
 
-        pp_file = open("analysis/plot_parameter.txt")
+        pp_file = open("analysis/plot_parameter.txt", "w") # here the parameters needed for plotting are stored
+        pp_file.write("Einc Vinc\n{} {}".format(trajs[0].ekin_p_i,length(trajs[0].v_p_i)))
+        pp_file.close()
 
 
 	# INIT
@@ -422,8 +424,6 @@ def analyze(trajs,logfile):
 
 	# LOOP
 	for ind,traj in enumerate(trajs):	# List comprehension simply need too much time. This is ugly, but fast.
-                if ind is 0:
-                        pp_file("Einc Vinc\n{} {}".format(traj.ekin_p_i,length(traj.v_p_i)))
 		if traj.in_plane and traj.has_scattered:
                         if traj.cl_appr < 1.4:
                             outfile_string = "slow_component.log"
@@ -472,7 +472,6 @@ def analyze(trajs,logfile):
 			else:
 				in_plane_mul_b.append(traj.eloss)
 
-        ppfile.close()
 
 	in_plane_eloss_file = open("analysis/in_plane_eloss.txt", "w")
         in_plane_eloss_file.write("# eloss/eV  all  single bounce  double bounce  multi bounce\n")
@@ -519,14 +518,14 @@ def analyze(trajs,logfile):
 	print("Calculating bounces/energy loss correlation.")
 	logfile.write("Calculating bounces/energy loss correlation.\n")
 	# ANALYSIS
-	bounce_vs_eloss_hist, xegdes, yedges = numpy.histogram2d(scat_bounces, all_eloss, bins=(max(scat_bounces),numbins(all_eloss)), range=[[0,max(scat_bounces)],[min(all_eloss),max(all_eloss)]], normed=False)
+	bounce_vs_eloss_hist, xedges, yedges = numpy.histogram2d(scat_bounces, all_eloss, bins=(max(scat_bounces),numbins(all_eloss)), range=[[0,max(scat_bounces)],[min(all_eloss),max(all_eloss)]], normed=False)
 
 	# OUTPUT
 	out = open("analysis/bounces_vs_eloss.txt", "w")
 	out.write("# bounces  eloss/eV  counts\n")
 	for i in range(len(bounce_vs_eloss_hist)):
 		for j in range(len(bounce_vs_eloss_hist[i])):
-			out.write("%d %f %d\n" % (0.5*(xegdes[i]+xegdes[i+1]), 0.5*(yedges[j]+yedges[j+1]), bounce_vs_eloss_hist[i][j]))
+			out.write("%d %f %d\n" % (0.5*(xedges[i]+xedges[i+1]), 0.5*(yedges[j]+yedges[j+1]), bounce_vs_eloss_hist[i][j]))
 		out.write("\n")
 	out.close()
 
@@ -678,7 +677,9 @@ def analyze(trajs,logfile):
 			elif delta_azi > 180:
 				rel_azi.append(delta_azi-360)
 			else:
-				sys.exit("Weird angle in spherical symmetry.")
+                                print("Weird angle in spherical symmetry.")
+                                logfile.write("Weird angle in spherical symmetry.\n")
+				sys.exit()
 
 			abs_azi.append(traj.azi_f)
 			yvals.append(traj.polar_f)
@@ -783,21 +784,36 @@ def analyze(trajs,logfile):
 	print("Calculating total velocity loss.")
         logfile.write("Calculating total velocity loss.\n")
 	# LOOP 
-	all_vloss = [traj.vloss for traj in trajs if traj.has_scattered] 
+	all_vloss  = [traj.vloss for traj in trajs if traj.has_scattered] 
 	one_vb     = [traj.vloss for traj in trajs if traj.has_scattered and traj.turn_pnts == 1]
 	two_vb     = [traj.vloss for traj in trajs if traj.has_scattered and traj.turn_pnts == 3]
 	mul_vb     = [traj.vloss for traj in trajs if traj.has_scattered and traj.turn_pnts >= 5]
+
+        all_vf     = [length(traj.v_p_f) for traj in trajs if traj.has_scattered]
+        one_vfb    = [length(traj.v_p_f) for traj in trajs if traj.has_scattered and traj.turn_pnts == 1]
+        two_vfb    = [length(traj.v_p_f) for traj in trajs if traj.has_scattered and traj.turn_pnts == 3]
+        mul_vfb    = [length(traj.v_p_f) for traj in trajs if traj.has_scattered and traj.turn_pnts >= 5]
 	
 	absorbed_vloss = [traj.vloss for traj in trajs if traj.has_adsorbed]
 
 	# ANALYSIS
-	all_vloss_hist, all_vloss_edges = numpy.histogram(all_vloss, bins=numbins(SCATTERED), range=(min(all_vloss), max(all_vloss)), density=True)
+	all_vloss_hist, all_vloss_edges  = numpy.histogram(all_vloss,   bins=numbins(SCATTERED), range=(min(all_vloss), max(all_vloss)), density=True)
 	one_vb_hist,     one_vb_edges     = numpy.histogram(one_vb,     bins=numbins(SCATTERED), range=(min(all_vloss), max(all_vloss)), density=True)
 	two_vb_hist,     two_vb_edges     = numpy.histogram(two_vb,     bins=numbins(SCATTERED), range=(min(all_vloss), max(all_vloss)), density=True)
 	mul_vb_hist,     mul_vb_edges     = numpy.histogram(mul_vb,     bins=numbins(SCATTERED), range=(min(all_vloss), max(all_vloss)), density=True)
+
+        all_vf_hist,      all_vf_edges      = numpy.histogram(all_vf,     bins=numbins(SCATTERED), range=(min(all_vf), max(all_vf)), density=True)
+        one_vfb_hist,     one_vfb_edges     = numpy.histogram(one_vfb,     bins=numbins(SCATTERED), range=(min(all_vf), max(all_vf)), density=True)
+        two_vfb_hist,     two_vfb_edges     = numpy.histogram(two_vfb,     bins=numbins(SCATTERED), range=(min(all_vf), max(all_vf)), density=True)
+        mul_vfb_hist,     mul_vfb_edges     = numpy.histogram(mul_vfb,     bins=numbins(SCATTERED), range=(min(all_vf), max(all_vf)), density=True)
+
 	frac_one_vb = float(len(one_vb))/SCATTERED
 	frac_two_vb = float(len(two_vb))/SCATTERED
 	frac_mul_vb = float(len(mul_vb))/SCATTERED
+
+        frac_one_vfb = float(len(one_vfb))/SCATTERED
+        frac_two_vfb = float(len(two_vfb))/SCATTERED
+        frac_mul_vfb = float(len(mul_vfb))/SCATTERED
 
 	# OUTPUT 
 	vloss_file = open("analysis/vloss.txt", "w")
@@ -805,6 +821,12 @@ def analyze(trajs,logfile):
 	for i in range(len(all_vloss_hist)):
 		vloss_file.write("%f %f %f %f %f\n" % (0.5*(all_vloss_edges[i]+all_vloss_edges[i+1]), all_vloss_hist[i], frac_one_vb*one_vb_hist[i], frac_two_vb*two_vb_hist[i], frac_mul_vb*mul_vb_hist[i]))
 	vloss_file.close()
+
+        v_final_file = open("analysis/all_final_v.txt", "w")
+        v_final_file.write("# final v/Ang*fs^-1  all  single bounce  double bounce  multi bounce\n")
+        for i in range(len(all_vf_hist)):
+                v_final_file.write("%f %f %f %f %f\n" % (0.5*(all_vf_edges[i]+all_vf_edges[i+1]), all_vf_hist[i], frac_one_vfb*one_vfb_hist[i], frac_two_vfb*two_vfb_hist[i], frac_mul_vfb*mul_vfb_hist[i]))
+        v_final_file.close()
 
 
         ### ANGULAR DISTRIBUTION ###
@@ -923,6 +945,8 @@ def analyze(trajs,logfile):
                         spherical_file_abs_v.write("%f %f %d\n" % (0.5*(abs_xedges[i]+abs_xedges[i+1]), -0.5*(yedges[j]+yedges[j+1]), abs_spherical_hist_v[i][j]))
                 spherical_file_abs_v.write("\n")
         spherical_file_abs_v.close()
+
+
 
 
 

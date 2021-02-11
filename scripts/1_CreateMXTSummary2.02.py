@@ -32,7 +32,7 @@ logfilename = "CreateMXTSummary.log"
 
 # add range of scattered angle to look at
 
-############# NO CHANGES BEYOND THIS LINE ######################################
+############# NO CHANGES BELOW THIS LINE ######################################
 
 VERSION_ID = 2.02
 
@@ -42,7 +42,7 @@ class Traj:
                         etotal_f, r_p_f, v_p_f, polar_f, azi_f, time, turn_pnts, \
 			cl_appr, cl_appr_t, r_p_min, traj_id):
 		self.fname     = fname
-                self.traj_id   = traj_id
+		self.traj_id   = traj_id
 		self.ekin_p_i  = ekin_p_i
 		self.ekin_l_i  = ekin_l_i
 		self.epot_i    = epot_i
@@ -125,11 +125,11 @@ def read_in_mxt_fins(logfile):
 	#folder_list = [folder for folder in os.listdir(traj_dir)]
 	num_folders = len(folder_list)
 #	traj_list = num_folders*[None]
-        traj_list = []
+	traj_list = []
 	print("Reading {} trajs...".format(num_folders))
-        logfile.write("Reading {} trajs...\n".format(num_folders))
+	logfile.write("Reading {} trajs...\n".format(num_folders))
 	counter = 0
-        traj_id = []
+	traj_id = []
 	for folder in folder_list:
 		if (counter % (num_folders/10) == 0):
                         print("{}%".format(100*counter/num_folders+1))
@@ -208,9 +208,9 @@ def write_summary(logfile, outfile_name, traj_list):
 				traj.r_p_min[0], traj.r_p_min[1], traj.r_p_min[2]))
 		except (IndexError):
 			outfile.close()
-                        logfile.write("ERROR: There's something wrong with file " + str(traj))
-                        logfile.close()
-			sys.exit("ERROR: There's something wrong with file " + str(traj))
+                        print("ERROR: There's something wrong with file {}\n".format(str(traj)))
+                        logfile.write("ERROR: There's something wrong with file {}\n".format(str(traj)))
+			sys.exit()
 			
 
 	outfile.close()
