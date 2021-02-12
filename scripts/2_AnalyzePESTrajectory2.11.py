@@ -822,11 +822,21 @@ def analyze(trajs,logfile):
 		vloss_file.write("%f %f %f %f %f\n" % (0.5*(all_vloss_edges[i]+all_vloss_edges[i+1]), all_vloss_hist[i], frac_one_vb*one_vb_hist[i], frac_two_vb*two_vb_hist[i], frac_mul_vb*mul_vb_hist[i]))
 	vloss_file.close()
 
+        # write final velocities
         v_final_file = open("analysis/all_final_v.txt", "w")
         v_final_file.write("# final v/Ang*fs^-1  all  single bounce  double bounce  multi bounce\n")
         for i in range(len(all_vf_hist)):
                 v_final_file.write("%f %f %f %f %f\n" % (0.5*(all_vf_edges[i]+all_vf_edges[i+1]), all_vf_hist[i], frac_one_vfb*one_vfb_hist[i], frac_two_vfb*two_vfb_hist[i], frac_mul_vfb*mul_vfb_hist[i]))
         v_final_file.close()
+
+
+        spatial_file = open("spatial_v.txt", "w")
+        spatial_file.write("# x-pos y-pos v_scat")
+        for traj in trajs:
+            if traj.has_scattered:
+                spatial_file.write("{:7.4f} {:7.4f} {:7.5f}\n".format(traj.r_p_f.x,traj.r_p_f.y,length(traj.v_p_f)))
+        spatial_file.close()
+
 
 
         ### ANGULAR DISTRIBUTION ###

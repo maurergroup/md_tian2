@@ -2,13 +2,10 @@
 
 # intention: plot all beforehand created data files to analyze the scattering
 
-#E_INC = 0.99
-#E_INC = 1.94
+# the incidence energy and velocity are read from data file
 E_INC = "`head analysis/plot_parameter.txt | tail -1 | awk '{print $1}'`"
-
-#V_INC = 0.1382
-#V_INC = 0.1935
 V_INC = "`head analysis/plot_parameter.txt | tail -1 | awk '{print $2}'`"
+
 
 set term png enhanced size 1920,1080 font "Computer Modern, 30"
 
@@ -48,7 +45,7 @@ plot "analysis/vloss.txt" u ($1*100):3 t "single bounce" w l lw 5,\
      "analysis/vloss.txt" u ($1*100):2 t "all"           w l lw 5 lt -1
 
 
-set xlabel "{/cmti10 v}_{fin}/km s^{-1}"
+set xlabel "{/cmti10 v}_{scat}/km s^{-1}"
 set ylabel "Probability density/km^{-1} s"
 set output "analysis/final_v_distribution.png"
 plot "analysis/all_final_v.txt" u ($1*100):3 t "single bounce" w l lw 5,\
