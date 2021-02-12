@@ -26,7 +26,7 @@ import os, sys, math, copy, numpy, time
 METAL_TYPE = "C"
 SHOT_THRU_LIMIT = 0.0 
 
-SPECULAR_RADIUS = 1.5
+SPECULAR_RADIUS = 4.4
 
 
 inpname = "MXT2Summary.txt"
@@ -830,11 +830,11 @@ def analyze(trajs,logfile):
         v_final_file.close()
 
 
-        spatial_file = open("spatial_v.txt", "w")
-        spatial_file.write("# x-pos y-pos v_scat")
+        spatial_file = open("analysis/spatial_v.txt", "w")
+        spatial_file.write("# x-pos y-pos v_scat\n")
         for traj in trajs:
             if traj.has_scattered:
-                spatial_file.write("{:7.4f} {:7.4f} {:7.5f}\n".format(traj.r_p_f.x,traj.r_p_f.y,length(traj.v_p_f)))
+                spatial_file.write("{:10.4f} {:10.4f} {:10.5f}\n".format(traj.r_p_f.x,traj.r_p_f.y,length(traj.v_p_f)))
         spatial_file.close()
 
 
