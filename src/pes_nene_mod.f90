@@ -6584,7 +6584,7 @@ module pes_nene_mod
             endif
         endif
 
-        write(*,'(a,i4)')' RuNNer is started in mode for prediction: ',mode
+        write(*,'(a,i4)')' RuNNer is started in mode for prediction:             ',mode
 
         write(*,'(a,l)')' debugging mode is                                       ',ldebug
 
