@@ -6594,8 +6594,6 @@ module pes_nene_mod
 
         write(*,'(a,l)')' using symmetry function groups                          ',lusesfgroups
 
-        write(*,'(a,l)')' silent mode                                             ',lsilent
-
         write(*,'(a,l)')' NN force check                                          ',lcheckf
 
         if(nelem.lt.ielem)then

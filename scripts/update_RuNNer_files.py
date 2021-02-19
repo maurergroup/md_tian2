@@ -27,15 +27,25 @@ file_list = \
         atomsymfunction9.f90 \
         calconenn.f90 \
         checkelement.f90 \
+        check_type.f90 \
+        convert_frequencies.f90 \
+        dia_hessian.f90 \
         fileunits.f90 \
         fittingoptions.f90 \
         getatomsymfunctions.f90 \
+        getatomsymfunctions_sfg.f90 \
         getcutoff.f90 \
+        getddnodes_values.f90 \
         getdnodes_values.f90 \
+        getgroupcutoffvalues.f90 \
+        getgroupneighlist.f90 \
         getlistdim.f90 \
         getneighboridxatomic_para.f90 \
         getneighborsatomic_para.f90 \
         getshortatomic.f90 \
+        getsymfunctionderivatives.f90 \
+        getsymfunctionsecondderivatives.f90 \
+        getvibrationalfrequencies.f90 \
         getvolume.f90 \
         globaloptions.f90 \
         mode1options.f90 \
@@ -54,6 +64,7 @@ file_list = \
         sortelements.f90 \
         sortsymfunctions.f90 \
         structures.f90 \
+        symfunctiongroups.f90 \
         symfunctions.f90 \
         timings.f90 \
         translate.f90'
