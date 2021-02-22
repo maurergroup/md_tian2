@@ -15,9 +15,9 @@ conf/ads*
 conf/pos* 
 conf/mxt*
 conf/proj
-conf/latt_300K
+conf/latt_300K/
 !conf/proj/mxt_00000001.dat
-!conf/latt_300K/mxt_00000001.dat
+!conf/latt/mxt_00000001.dat
 # traj folder
 traj/
 !scripts/traj/
