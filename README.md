@@ -160,11 +160,11 @@ md_tian.inp file: -> add a list with the complete set of keywords with descripti
 		v) fit_training_data: path to training data
 		w) fit_validation_data: path to validation data
 		x) evasp: reference energy for fit
-		y) maxit: maximum number of iteration during fit
+		y) maxit: maximum number of iterations during fit
 		z) nthreads: number of threads used for fitting
 		aa) adsorption_distance: define distance of projectile to surface (start and end) to get interaction time 
 		ab) rng_type: we have two types of RNG, default is 1 if you give no keyword
-		ac) debug: debugging, only interesting for us
+		ac) debug: debugging, only interesting for developers
 
         Annotations to points from list:
 
@@ -191,6 +191,7 @@ md_tian.inp file: -> add a list with the complete set of keywords with descripti
 			 8) nene: (prints every timestep the current step on screen, debugging purpose for the NN PES)
 			 9) aims: (for each step a separate geometry.in file is written)
 			10) runner: (one input.data file is written in the RuNNer format)
+                        11) beads: in RPMD with this keyword every single bead will be written to a separate file (depending on output format keyword(s) given); without this keyword, only the center of mass structure will be written
 
     ii) Following a complete list of keywords for pes/<potential_name>.pes:
 

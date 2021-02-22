@@ -1,12 +1,16 @@
 run md
 
+rng_type 2
+
 start 1
 ntrajs 2
 nsteps 10
 step 0.1
 
 projectile 1 H 1.0 ver
+!projectile 2 H 1.0 ver O 16.0 ver
 lattice 1 C 12.0 ver
+!lattice 2 Al 27.0 ver O 16.0 ver
 
 !force_beads 12
 !pile_tau 100
@@ -16,27 +20,25 @@ Einc 1.92
 polar 50
 azimuth 0
 
-! 0K
-!pip 1.4246 0.0 6.0
-! 300K
-!pip 1.4495 0.0363 6.0
-pip r r 3.5
-pul 3.6
+pip r r 6.0
+pul 6.1
 
 Tsurf 300
 Tproj 300
 !annealing 1000 25 5
 
-!conf poscar 'conf/example.POSCAR'
+adsorption_distance 1.0 2.0
+
+!conf merge 'conf/proj/' 1 'conf/latt/' 1
 !conf merge 'conf/proj/' 1 'conf/latt_0K/' 1
-conf merge 'conf/proj/' 1 'conf/latt/' 1
-!conf merge 'conf/proj/' 1 'conf/latt/' 1000
+conf merge 'conf/proj/' 1 'conf/latt_300K/' 1000
 !conf mxt 'conf/latt/mxt_00000001.dat'
+!conf poscar 'conf/example.POSCAR'
 
 
 !pes definition
 pes 'pes/NENE-HC.pes'
-!pes 'pes/NENE-C.pes'
 
+debug nene
 
-output scatter 1 energy 1 vasp 1 poscar 1 xyz 1 nene 1 mxt 1 runner 1 aims 1
+output adsorption_status 1 aims 1 beads 1 energy 1 mxt 1 nene 1 poscar 1 runner 1 scatter 1 vasp 1 xyz 1

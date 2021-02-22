@@ -11,12 +11,13 @@ bin/
 # RuNNer input files
 RuNNer_input/*
 # conf folder
+conf/ads*
 conf/pos* 
 conf/mxt*
 conf/proj
-conf/latt
+conf/latt*
 !conf/proj/mxt_00000001.dat
-!conf/latt/mxt_00000001.dat
+!conf/latt_300K/mxt_00000001.dat
 # traj folder
 traj/
 !scripts/traj/

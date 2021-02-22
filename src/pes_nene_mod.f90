@@ -7402,9 +7402,11 @@ module pes_nene_mod
 
     subroutine readatommasses()
 
+        use run_config, only : simparams
+
         character(len=*), parameter :: err = "Error in readatommasses: "
 
-        integer :: elem_ctr
+        integer :: elem_ctr, species_ctr, z_val, pos_ctr, elem_pos
 
         do elem_ctr=1,nelem
 
@@ -7855,6 +7857,40 @@ module pes_nene_mod
             end select
 
         end do
+
+
+        ! check if default mass and mass set in md_tian.inp are equal and if not set mass according to input file
+
+        ! for all projectile species
+        do species_ctr=1,size(simparams%name_p)
+
+            call nuccharge(simparams%name_p(species_ctr),z_val)
+
+            do pos_ctr=1,size(nucelem)
+                if (nucelem(pos_ctr) == z_val) elem_pos = pos_ctr
+            end do
+
+            if (atommasses(elem_pos) /= simparams%mass_p(species_ctr)) then
+                    atommasses(elem_pos) = simparams%mass_p(species_ctr)
+            end if
+
+        end do
+
+        ! for all lattice species
+        do species_ctr=1,size(simparams%name_l)
+
+            call nuccharge(simparams%name_l(species_ctr),z_val)
+
+            do pos_ctr=1,size(nucelem)
+                if (nucelem(pos_ctr) == z_val) elem_pos = pos_ctr
+            end do
+
+            if (atommasses(elem_pos) /= simparams%mass_l(species_ctr)) then
+                    atommasses(elem_pos) = simparams%mass_l(species_ctr)
+            end if
+
+        end do
+
 
     end subroutine readatommasses
 
