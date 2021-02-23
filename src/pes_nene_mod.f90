@@ -7357,8 +7357,8 @@ module pes_nene_mod
                     end do
                 end if
 
-                write(ounit,'(A42,I10)') 'extrapolation warnings (energy)', count_extrapolation_warnings_energy
-                write(ounit,'(A42,I10)') 'extrapolation warnings (symmetry functions)', count_extrapolation_warnings_symfunc
+                write(ounit,'(A44,I10)') 'extrapolation warnings (energy)', count_extrapolation_warnings_energy
+                write(ounit,'(A44,I10)') 'extrapolation warnings (symmetry functions)', count_extrapolation_warnings_symfunc
 
             end if ! debug
 

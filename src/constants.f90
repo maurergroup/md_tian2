@@ -57,7 +57,7 @@ module constants
     integer, parameter :: nparams_morse         = 3
     integer, parameter :: nparams_emt           = 7
     integer, parameter :: nparams_rebo          = 13
-    integer, parameter :: nparams_nene          = 1
+    integer, parameter :: nparams_nene          = 2
 
     integer, parameter :: pes_id_lj             = 2001
     integer, parameter :: pes_id_morse          = 2002
