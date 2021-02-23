@@ -1,7 +1,7 @@
 !############################################################################
 ! This routine is part of
 ! md_tian2 (Molecular Dynamics Tian Xia 2)
-! (c) 2014-2020 Daniel J. Auerbach, Svenja M. Janke, Marvin Kammler,
+! (c) 2014-2021 Daniel J. Auerbach, Svenja M. Janke, Marvin Kammler,
 !               Sascha Kandratsenka, Sebastian Wille
 ! Dynamics at Surfaces Department
 ! MPI for Biophysical Chemistry Goettingen, Germany
@@ -73,7 +73,11 @@ module run_config
         real(dp) :: evasp                                           ! reference energy for fit
         integer  :: maxit                                           ! maximum number of iteration during fit
         integer  :: nthreads                                        ! number of threads used for fitting
-        integer  :: nran                                            ! type of the random number genreator
+        real(dp) :: adsorption_start, adsorption_end                ! define adsorption start and end. it starts when below 'start' and ends when above 'end'
+        integer  :: nran                                            ! type of the random number generator
+        logical  :: debug(id_nene)                                  ! in case of the nene pes this variable turn on more information for debugging
+        logical  :: loutput                                         ! if any output format is set this variable is true; should reduce the if condition when no output is chosen
+        logical  :: lbead_output_format                             ! defines if centroid positions or each bead is written out in a separate data file
 
     end type
 
@@ -86,43 +90,48 @@ contains
 
         type(simulation_parameters) new_simulation_parameters
 
-        new_simulation_parameters%start  = default_int
-        new_simulation_parameters%ntrajs = default_int
-        new_simulation_parameters%nsteps = default_int
-        new_simulation_parameters%step   = default_real
-        new_simulation_parameters%nlattices = default_int
-        new_simulation_parameters%nprojectiles = default_int
-        new_simulation_parameters%Tsurf   = default_real
-        new_simulation_parameters%Tproj   = default_real
-        new_simulation_parameters%einc  = default_real
-        new_simulation_parameters%sigma_einc = default_real
-        new_simulation_parameters%polar = default_real
-        new_simulation_parameters%azimuth = default_string
-        new_simulation_parameters%sigma_azimuth = default_real
-        new_simulation_parameters%sa_Tmax   = default_real
-        new_simulation_parameters%sa_nsteps = default_int
-        new_simulation_parameters%sa_interval = default_int
-        new_simulation_parameters%confname = default_string
-        new_simulation_parameters%confname_file = default_string
-        new_simulation_parameters%merge_proj_file = default_string
-        new_simulation_parameters%merge_proj_nconfs = default_int
-        new_simulation_parameters%rep = [0,0]
-        new_simulation_parameters%nconfs  = default_int
-        new_simulation_parameters%pes_file = default_string
-        new_simulation_parameters%run = default_string
-        new_simulation_parameters%pip = default_string
-        new_simulation_parameters%andersen_time = 30.0_dp
-        new_simulation_parameters%pile_tau = 200.0_dp
-        new_simulation_parameters%force_beads = default_int
-        new_simulation_parameters%proj_ul = default_real
-        new_simulation_parameters%fit_training_data = default_int
-        new_simulation_parameters%fit_validation_data = default_int
-        new_simulation_parameters%fit_training_folder = default_string
+        new_simulation_parameters%start                 = default_int
+        new_simulation_parameters%ntrajs                = default_int
+        new_simulation_parameters%nsteps                = default_int
+        new_simulation_parameters%step                  = default_real
+        new_simulation_parameters%nlattices             = default_int
+        new_simulation_parameters%nprojectiles          = default_int
+        new_simulation_parameters%Tsurf                 = default_real
+        new_simulation_parameters%Tproj                 = default_real
+        new_simulation_parameters%einc                  = default_real
+        new_simulation_parameters%sigma_einc            = default_real
+        new_simulation_parameters%polar                 = default_real
+        new_simulation_parameters%azimuth               = default_string
+        new_simulation_parameters%sigma_azimuth         = default_real
+        new_simulation_parameters%sa_Tmax               = default_real
+        new_simulation_parameters%sa_nsteps             = default_int
+        new_simulation_parameters%sa_interval           = default_int
+        new_simulation_parameters%confname              = default_string
+        new_simulation_parameters%confname_file         = default_string
+        new_simulation_parameters%merge_proj_file       = default_string
+        new_simulation_parameters%merge_proj_nconfs     = default_int
+        new_simulation_parameters%rep                   = [0,0]
+        new_simulation_parameters%nconfs                = default_int
+        new_simulation_parameters%pes_file              = default_string
+        new_simulation_parameters%run                   = default_string
+        new_simulation_parameters%pip                   = default_string
+        new_simulation_parameters%andersen_time         = 30.0_dp
+        new_simulation_parameters%pile_tau              = 200.0_dp
+        new_simulation_parameters%force_beads           = default_int
+        new_simulation_parameters%proj_ul               = default_real
+        new_simulation_parameters%fit_training_data     = default_int
+        new_simulation_parameters%fit_validation_data   = default_int
+        new_simulation_parameters%fit_training_folder   = default_string
         new_simulation_parameters%fit_validation_folder = default_string
-        new_simulation_parameters%evasp = default_real
-        new_simulation_parameters%maxit = 30
-        new_simulation_parameters%nthreads = 1
-        new_simulation_parameters%nran = default_int
+        new_simulation_parameters%evasp                 = default_real
+        new_simulation_parameters%maxit                 = 30
+        new_simulation_parameters%nthreads              = 1
+        new_simulation_parameters%adsorption_start      = default_real
+        new_simulation_parameters%adsorption_end        = default_real
+        new_simulation_parameters%nran                  = default_int
+        new_simulation_parameters%debug                 = default_bool
+        new_simulation_parameters%loutput               = default_bool
+        new_simulation_parameters%lbead_output_format   = default_bool
 
     end function
 
@@ -130,8 +139,8 @@ contains
 
         character(len=*), intent(in) :: input_file
 
-        integer :: i, ios = 0, line = 0, nwords, randk
-        real(dp) :: rnd, tmp
+        integer :: i, ios = 0, line = 0, nwords, randk, word
+        real(dp) :: rnd
         character(len=max_string_length) :: buffer
         character(len=max_string_length) :: words(100)
         integer, parameter :: inp_unit = 38
@@ -156,7 +165,7 @@ contains
                 ! Split an input string
                 call split_string(buffer, words, nwords)
                 select case (words(1))
-                    case('start')
+                    case ('start')
                         if (simparams%start /= default_int) stop 'Error in the input file: Multiple use of the start key'
                         if (nwords == 2) then
                             read(words(2),'(i1000)', iostat=ios) simparams%start
@@ -164,23 +173,20 @@ contains
                         else
                             print *, err, 'start key needs a single argument'; stop
                         end if
-                    case('rng_type')
+                    case ('rng_type')
                         if (simparams%nran /= default_int) stop 'Error in the input file: Multiple use of the rng_type key'
                         if (nwords == 2) then
                             read(words(2),'(i1000)', iostat=ios) simparams%nran
                             if (ios /= 0) stop err // 'rng_type value must be integer'
                             select case (words(2))
-
                                 case ('1', '2')
                                         ! let the valid types pass
                                 case default
                                     print *, err, 'Unknown rng_type value'; stop
-
                             end select
                         else
                             print *, err, 'rng_type key needs a single argument'; stop
                         end if
-
                 end select
             end if
         end do
@@ -191,8 +197,6 @@ contains
         if (simparams%nran == default_int) then
             simparams%nran = 1
         end if
-
-
 
         call rnd_seed(simparams%nran,simparams%start) ! seed the RNG
 
@@ -225,7 +229,7 @@ contains
                         end if
 
 
-                    case('ntrajs')
+                    case ('ntrajs')
 
                         if (simparams%ntrajs /= default_int)   stop 'Error in the input file: Multiple use of the ntrajs key'
                         if (nwords == 2) then
@@ -236,7 +240,7 @@ contains
                         end if
 
 
-                    case('nsteps')
+                    case ('nsteps')
 
                         if (simparams%nsteps /= default_int)   stop 'Error in the input file: Multiple use of the nsteps key'
                         if (nwords == 2) then
@@ -247,7 +251,7 @@ contains
                         end if
 
 
-                    case('step')
+                    case ('step')
 
                         if (simparams%step /= default_real) stop err // 'Multiple use of the step key'
                         if (nwords == 2) then
@@ -408,7 +412,7 @@ contains
                         end if
 
 
-                    case('annealing')
+                    case ('annealing')
 
                         if (simparams%sa_Tmax /= default_real) stop err // 'Multiple use of the annealing key'
                         if (nwords == 4) then
@@ -455,7 +459,7 @@ contains
                                         read(words(4),'(i1000)',iostat=ios) simparams%nconfs
                                         if (ios /= 0) stop err // 'conf key - mxt argument must be integer'
                                         call random_number(rnd)
-                                        write(simparams%confname_file, '(2a, i8.8, a)') trim(simparams%confname_file), "mxt_", int(rnd*simparams%nconfs)+1, ".dat"
+                                        write(simparams%confname_file, '(2a, i8.8, a)') trim(simparams%confname_file), "/mxt_", int(rnd*simparams%nconfs)+1, ".dat"
                                     end if
                                     if (nwords < 3) stop err // 'conf key - too few mxt arguments'
                                     if (nwords > 4) stop err // 'conf key - too many mxt arguments'
@@ -464,6 +468,7 @@ contains
                                     ! conf mergewith <mxt_folder> <n>: randomly select mxt files 1<=x<=n from folder
                                     if (nwords /= 6) stop err // "conf merge needs projectile mxt folder, # of projectile configurations therein &
                                         lattice mxt folder and # of lattice configurations therein"
+
                                     ! projectile
                                     read(words(3),'(A)') simparams%merge_proj_file
                                     read(words(4),'(i1000)',iostat=ios) simparams%merge_proj_nconfs
@@ -479,6 +484,7 @@ contains
                                     call random_number(rnd)
                                     write(simparams%confname_file, '(2a, i8.8, a)') &
                                         trim(simparams%confname_file), "/mxt_", int(rnd*simparams%nconfs)+1, ".dat"
+
 
                                 case default
                                     stop 'Error in the input file: conf key - unknown conf name'
@@ -499,22 +505,37 @@ contains
                             select case (words(2*i))
                                 case (output_key_xyz)
                                     simparams%output_type(i) = output_id_xyz
+                                    simparams%loutput = .true.
                                 case (output_key_energy)
                                     simparams%output_type(i) = output_id_energy
+                                    simparams%loutput = .true.
                                 case (output_key_poscar)
                                     simparams%output_type(i) = output_id_poscar
+                                    simparams%loutput = .true.
                                 case (output_key_vasp)
                                     simparams%output_type(i) = output_id_vasp
+                                    simparams%loutput = .true.
                                 case (output_key_mxt)
                                     simparams%output_type(i) = output_id_mxt
+                                    simparams%loutput = .true.
                                 case (output_key_scatter)
                                     simparams%output_type(i) = output_id_scatter
+                                case (output_key_is_adsorbed)
+                                    simparams%output_type(i) = output_id_is_adsorbed
+                                    simparams%loutput = .true.
                                 case (output_key_nene)
                                     simparams%output_type(i) = output_id_nene
+                                    simparams%loutput = .true.
                                 case (output_key_aims)
                                     simparams%output_type(i) = output_id_aims
+                                    simparams%loutput = .true.
                                 case (output_key_runner)
                                     simparams%output_type(i) = output_id_runner
+                                    simparams%loutput = .true.
+                                case (output_key_beads)
+                                    simparams%output_type(i) = output_id_beads
+                                    simparams%lbead_output_format = .true.
+                                    simparams%loutput = .true.
                                 case default
                                     print *, 'Error in the input file: output format ', trim(words(2*i)), ' unknown'
                                     stop
@@ -605,14 +626,26 @@ contains
                         read(words(2), *, iostat=ios) simparams%nthreads
                         if (ios /= 0) stop err // "Error reading number of threads"
 
-                    !case ('detailed_step')
-                        !if (simparams%details /= default_bool) stop err // 'Multiple use of the detailed_step key'
-                        !if (nwords == 1) then
-                            !simparams%details = .true.
-                        !else
-                            !print *, err, 'detailed_step key needs no argument(s)'
-                            !stop
-                        !end if
+                    case ('adsorption_distance')
+
+                        if (nwords /= 3) stop err // "adsorption_distance key needs 2 arguments"
+                        read(words(2), *, iostat=ios) simparams%adsorption_start
+                        read(words(3), *, iostat=ios) simparams%adsorption_end
+                        if (ios /= 0) stop err // "Error reading the adsorption distance"
+
+                    case ('debug')
+                        if (nwords > 1) then
+                            do word=1,nwords-1
+                                select case(trim(words(word+1)))
+                                    case (pes_name_nene)
+                                        simparams%debug(id_nene) = .true.
+                                    case default
+                                        print *, "Warning: Debug option not available for ", trim(words(word+1))
+                                end select
+                            end do
+                        else
+                            print *, err, 'debug key needs an argument'
+                        end if
 
                     case default
                         if (trim(words(1)) /= '' .and. words(1)(1:1) /= '!') &
@@ -621,11 +654,9 @@ contains
                 end select
             end if
         end do ! ios
+
         close(inp_unit)
 
     end subroutine read_input_file
-
-
-
 
 end module run_config

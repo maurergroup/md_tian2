@@ -1,7 +1,7 @@
 !############################################################################
 ! This routine is part of
 ! md_tian2 (Molecular Dynamics Tian Xia 2)
-! (c) 2014-2020 Daniel J. Auerbach, Svenja M. Janke, Marvin Kammler,
+! (c) 2014-2021 Daniel J. Auerbach, Svenja M. Janke, Marvin Kammler,
 !               Sascha Kandratsenka, Sebastian Wille
 ! Dynamics at Surfaces Department
 ! MPI for Biophysical Chemistry Goettingen, Germany
@@ -79,7 +79,6 @@ program md_tian2
 
                     ! core propagation
                     call propagate_1(atoms)
-                    if (atoms%nbeads > 1) call do_ring_polymer_step(atoms)
                     call calc_force(atoms, energy_and_force)
                     call propagate_2(atoms)
 
@@ -90,9 +89,8 @@ program md_tian2
                         .and. any(simparams%output_type == output_id_scatter)) exit
 
                     ! record bounces, lowest position, etc.
-                    call collect_trajectory_characteristics(atoms, istep)
+                    call collect_trajectory_characteristics(atoms, itraj, istep)
 
-                    !if (mod(istep, 10)) print *, sum(sum(atoms%r(:,:,:), dim=2), dim=2)/atoms%natoms/atoms%nbeads
 
                 end do
                 close(78)
@@ -100,11 +98,12 @@ program md_tian2
                 if (any(simparams%output_type == output_id_scatter)) call output(atoms, itraj, istep, "scatter_final")
 
                 if (itraj < simparams%start+simparams%ntrajs-1) then
-                    
+
                     seed = itraj + 1
-                    call rnd_seed(simparams%nran, seed)
+                    call rnd_seed(simparams%nran,seed)
 
                     call prepare_next_traj(atoms)
+
                 end if
 
             end do

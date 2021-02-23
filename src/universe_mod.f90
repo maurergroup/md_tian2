@@ -1,7 +1,7 @@
 !############################################################################
 ! This routine is part of
 ! md_tian2 (Molecular Dynamics Tian Xia 2)
-! (c) 2014-2020 Daniel J. Auerbach, Svenja M. Janke, Marvin Kammler,
+! (c) 2014-2021 Daniel J. Auerbach, Svenja M. Janke, Marvin Kammler,
 !               Sascha Kandratsenka, Sebastian Wille
 ! Dynamics at Surfaces Department
 ! MPI for Biophysical Chemistry Goettingen, Germany
@@ -32,7 +32,7 @@ module universe_mod
     !  Type atoms
     !   structure to hold the position, velocity, force etc. for multiple atoms
     !       use rank2 array so positions, velocities, forces etc. are stored
-    !       in sequentional memory locations for efficient access
+    !       in sequential memory locations for efficient access
     !       each array should be allocated (3, n_beads, n_atom)
     !       mass array has length of n_atoms
     type universe
@@ -46,7 +46,7 @@ module universe_mod
         real(dp), allocatable         :: f(:,:,:)        ! forces
         real(dp), allocatable         :: a(:,:,:)        ! acceleration
         real(dp), allocatable         :: m(:)            ! mass
-        logical,  allocatable         :: is_fixed(:,:,:) ! mask array defining frozen atoms (T is frozen)
+        logical,  allocatable         :: is_fixed(:,:,:) ! mask array defining frozen atoms (T means atom can move, F means atom is frozen)
 
         integer, allocatable          :: idx(:)          ! index of atom type used in program
         character(len=3), allocatable :: name(:)         ! atomic name
@@ -465,21 +465,21 @@ contains
         character(len=*), parameter :: err = "Error in pes_id_to_name(): "
 
         select case(id)
-            case(pes_id_lj)
+            case (pes_id_lj)
                 name = pes_name_lj
-            case(pes_id_morse)
+            case (pes_id_morse)
                 name = pes_name_morse
-            case(pes_id_emt)
+            case (pes_id_emt)
                 name = pes_name_emt
-            case(pes_id_rebo)
+            case (pes_id_rebo)
                 name = pes_name_rebo
-            case(pes_id_ho)
+            case (pes_id_ho)
                 name = pes_name_ho
-            case(pes_id_simple_lj)
+            case (pes_id_simple_lj)
                 name = pes_name_simple_lj
-            case(pes_id_no_interaction)
+            case (pes_id_no_interaction)
                 name = pes_name_no_interaction
-            case(pes_id_nene)
+            case (pes_id_nene)
                 name = pes_name_nene
             case default
                 print *, err // "unknown id", id

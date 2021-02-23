@@ -1,7 +1,7 @@
 !############################################################################
 ! This routine is part of
 ! md_tian2 (Molecular Dynamics Tian Xia 2)
-! (c) 2014-2020 Daniel J. Auerbach, Svenja M. Janke, Marvin Kammler,
+! (c) 2014-2021 Daniel J. Auerbach, Svenja M. Janke, Marvin Kammler,
 !               Sascha Kandratsenka, Sebastian Wille
 ! Dynamics at Surfaces Department
 ! MPI for Biophysical Chemistry Goettingen, Germany
@@ -30,6 +30,7 @@ module force
     use pes_emt_mod,  only : compute_emt
     use pes_ho_mod,   only : compute_ho
     use pes_rebo_mod, only : compute_rebo
+    use rpmd,         only : do_ring_polymer_step
     use pes_nene_mod, only : compute_nene
 
     implicit none
@@ -48,6 +49,9 @@ contains
         atoms%f    = 0.0_dp
         atoms%a    = 0.0_dp
         atoms%epot = 0.0_dp
+
+        ! XXX remove for production
+        if (atoms%nbeads > 1) call do_ring_polymer_step(atoms)
 
         ! gather distance and vector information before calling energy subroutines
         ! calculate only one half and then add to other half (with changed sign)

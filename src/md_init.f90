@@ -1,7 +1,7 @@
 !############################################################################
 ! This routine is part of
 ! md_tian2 (Molecular Dynamics Tian Xia 2)
-! (c) 2014-2020 Daniel J. Auerbach, Svenja M. Janke, Marvin Kammler,
+! (c) 2014-2021 Daniel J. Auerbach, Svenja M. Janke, Marvin Kammler,
 !               Sascha Kandratsenka, Sebastian Wille
 ! Dynamics at Surfaces Department
 ! MPI for Biophysical Chemistry Goettingen, Germany
@@ -21,7 +21,7 @@
 ! with this program. If not, see http://www.gnu.org/licenses.
 !############################################################################
 
-! Initialize molecular dynamics simulation
+! Initialize molecular dynamics simulations
 module md_init
 
     use universe_mod
@@ -65,7 +65,7 @@ contains
         ! build the simparams object
         call read_input_file(input_file)
         call ensure_input_sanity()
-        
+
         call read_geometry(atoms, simparams%confname_file)
         call ensure_geometry_sanity(atoms)
 
@@ -435,6 +435,13 @@ contains
                 simparams%Tsurf == default_real .and. simparams%Tproj == default_real) &
                 stop err // "projectile and/or slab temperature required for rpmd"
 
+            if (simparams%nprojectiles > 0) then
+                if( any(simparams%md_algo_p == prop_id_andersen) .and. simparams%Tproj == default_real) stop err // "Projectile temperature not set"
+            end if
+
+            if (any(simparams%output_type == output_id_is_adsorbed) .and. &
+                any([simparams%adsorption_start, simparams%adsorption_end] == default_real)) &
+                stop err // "cannot output adsorption status when adsorption distance is not provided"
 
                 ! TODO: to be completed
 
@@ -587,8 +594,6 @@ contains
         new%is_cart = .true.
 
         this = new
-
-        !print *, this%r, this%name
 
         ! fold all centroids into simulation box
         centroids = calc_centroid_positions(this)
@@ -873,6 +878,8 @@ contains
         integer :: mxt_idx, dat_idx, new_conf
         real(dp) :: rnd
         type(universe) :: proj, slab
+        character(len=max_string_length) :: dummy_merge_proj_file
+        character(len=max_string_length) :: dummy_confname_file
 
         if (simparams%confname == "merge") then
 
@@ -882,18 +889,20 @@ contains
             if (mxt_idx /= 0 .and. dat_idx /= 0 .and. dat_idx == mxt_idx+12) then
                 call random_number(rnd)
                 new_conf = int(rnd*simparams%merge_proj_nconfs)+1
-                write(simparams%merge_proj_file, '(a, i8.8, a)') simparams%merge_proj_file(:mxt_idx+3), new_conf, ".dat"
+                write(dummy_merge_proj_file, '(a, i8.8, a)') simparams%merge_proj_file(:mxt_idx+3), new_conf, ".dat"
+                simparams%merge_proj_file = trim(dummy_merge_proj_file)
             else
                 print *, err, "projectile confname_file has wrong format. It needs to end on /mxt_%08d.dat"; stop
             end if
-                
+
             ! renew simparams slab geometry file
             mxt_idx = index(simparams%confname_file, "mxt_")
             dat_idx = index(simparams%confname_file, ".dat")
             if (mxt_idx /= 0 .and. dat_idx /= 0 .and. dat_idx == mxt_idx+12) then
                 call random_number(rnd)
                 new_conf = int(rnd*simparams%nconfs)+1
-                write(simparams%confname_file, '(a, i8.8, a)') simparams%confname_file(:mxt_idx+3), new_conf, ".dat"
+                write(dummy_confname_file, '(a, i8.8, a)') simparams%confname_file(:mxt_idx+3), new_conf, ".dat"
+                simparams%confname_file = trim(dummy_confname_file)
             else
                 print *, err, "lattice confname_file has wrong format. It needs to end on /mxt_%08d.dat"; stop
             end if

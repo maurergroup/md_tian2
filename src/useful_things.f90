@@ -1,7 +1,7 @@
 !############################################################################
 ! This routine is part of
 ! md_tian2 (Molecular Dynamics Tian Xia 2)
-! (c) 2014-2020 Daniel J. Auerbach, Svenja M. Janke, Marvin Kammler,
+! (c) 2014-2021 Daniel J. Auerbach, Svenja M. Janke, Marvin Kammler,
 !               Sascha Kandratsenka, Sebastian Wille
 ! Dynamics at Surfaces Department
 ! MPI for Biophysical Chemistry Goettingen, Germany
@@ -368,5 +368,15 @@ contains
         write(out_unit, fstring) "[", val(1), "-", val(2), "-",val(3), " - ",val(5), ".",val(6), ":", val(7), "] "
 
     end subroutine timestamp
+
+    subroutine normalize(vec)
+
+        real(dp), intent(inout) :: vec(3)
+
+        real(dp) :: length
+
+        if (any(vec /= 0)) vec = vec / sqrt(sum(vec*vec))
+
+    end subroutine normalize
 
 end module useful_things

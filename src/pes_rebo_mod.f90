@@ -1,7 +1,7 @@
 !############################################################################
 ! This routine is part of
 ! md_tian2 (Molecular Dynamics Tian Xia 2)
-! (c) 2014-2020 Daniel J. Auerbach, Svenja M. Janke, Marvin Kammler,
+! (c) 2014-2021 Daniel J. Auerbach, Svenja M. Janke, Marvin Kammler,
 !               Sascha Kandratsenka, Sebastian Wille
 ! Dynamics at Surfaces Department
 ! MPI for Biophysical Chemistry Goettingen, Germany
@@ -152,7 +152,7 @@ module pes_rebo_mod
 
 
 
-    ! Subroutine and function accessabililty
+    ! Subroutine and function accessability
     private :: init_spline2d, init_spline3d, gSpline, Sp5th, rebosi2d, rebosi3d
     public  :: rebosi_initialize, cufu
 
@@ -165,11 +165,10 @@ contains
         type(universe), intent(inout) :: atoms
         integer, intent(in) :: inp_unit
 
-        integer :: nwords, ios = 0, i
+        integer :: nwords, ios = 0
         character(len=max_string_length) :: buffer
         character(len=max_string_length) :: words(100)
         integer  :: idx1, idx2, ntypes
-        real(dp) :: temp3(3)
         character(len=*), parameter :: err = "Error in read_rebo: "
 
         call rebosi_initialize()
@@ -1650,8 +1649,9 @@ contains
         integer, intent(in)        :: type
 
         is_hydrogen = 0
-        if (atoms%name(type) == "H" .or. &
-            atoms%name(type) == "D" .or. &
+        if (atoms%name(type) == "H"  .or. &
+            atoms%name(type) == "HH" .or. &
+            atoms%name(type) == "D"  .or. &
             atoms%name(type) == "T") is_hydrogen = 1
 
     end function is_hydrogen

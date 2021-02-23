@@ -1,0 +1,11 @@
+run md
+
+start 1
+ntrajs 1
+nsteps 10000
+step 1
+lattice 1 C 12.0 ver
+Tsurf 300
+conf mxt 'conf/latt/mxt_00000001.dat'
+pes 'pes/nene.pes'
+output energy 1 vasp 10

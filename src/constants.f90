@@ -1,7 +1,7 @@
 !############################################################################
 ! This routine is part of
 ! md_tian2 (Molecular Dynamics Tian Xia 2)
-! (c) 2014-2020 Daniel J. Auerbach, Svenja M. Janke, Marvin Kammler,
+! (c) 2014-2021 Daniel J. Auerbach, Svenja M. Janke, Marvin Kammler,
 !               Sascha Kandratsenka, Sebastian Wille
 ! Dynamics at Surfaces Department
 ! MPI for Biophysical Chemistry Goettingen, Germany
@@ -78,17 +78,27 @@ module constants
     character(len=*), parameter :: pes_name_morse          = "morse"
     character(len=*), parameter :: pes_name_nene           = "nene"
 
+    ! Debug ID
+    integer, parameter :: id_lj                 = 1
+    integer, parameter :: id_simple_lj          = 2
+    integer, parameter :: id_emt                = 3
+    integer, parameter :: id_rebo               = 4
+    integer, parameter :: id_no_interaction     = 5
+    integer, parameter :: id_ho                 = 6
+    integer, parameter :: id_morse              = 7
+    integer, parameter :: id_nene               = 8 ! This will also define debug array length
+
      ! Internal program constants
-    integer, parameter :: randseed(13)      = [7,5,3,11,9,1,17,2,9,6,4,5,8]
-    integer, parameter :: max_string_length = 1000
-    real(dp), parameter :: tolerance        = 1.0e-9_dp
+    integer, parameter :: randseed(13)            = [7,5,3,11,9,1,17,2,9,6,4,5,8]
+    integer, parameter :: max_string_length       = 1000
+    real(dp), parameter :: tolerance              = 1.0e-9_dp
 
 
     ! Defaults
-    integer,   parameter  :: default_int           = huge(0_4)
-    real(dp),  parameter  :: default_real          = huge(0_dp)
-    character, parameter  :: default_string        = ""
-    logical,   parameter  :: default_bool          = .false.
+    integer,   parameter  :: default_int          = huge(0_4)
+    real(dp),  parameter  :: default_real         = huge(0_dp)
+    character, parameter  :: default_string       = ""
+    logical,   parameter  :: default_bool         = .false.
 
 
     ! Propagation
@@ -108,15 +118,17 @@ module constants
 
 
     ! Output
-    character(len=*), parameter :: output_key_xyz       = "xyz"
-    character(len=*), parameter :: output_key_energy    = "energy"
-    character(len=*), parameter :: output_key_poscar    = "poscar"
-    character(len=*), parameter :: output_key_vasp      = "vasp"
-    character(len=*), parameter :: output_key_mxt       = "mxt"
-    character(len=*), parameter :: output_key_scatter   = "scatter"
-    character(len=*), parameter :: output_key_nene      = "nene"
-    character(len=*), parameter :: output_key_aims      = "aims"
-    character(len=*), parameter :: output_key_runner    = "runner"
+    character(len=*), parameter :: output_key_xyz         = "xyz"
+    character(len=*), parameter :: output_key_energy      = "energy"
+    character(len=*), parameter :: output_key_poscar      = "poscar"
+    character(len=*), parameter :: output_key_vasp        = "vasp"
+    character(len=*), parameter :: output_key_mxt         = "mxt"
+    character(len=*), parameter :: output_key_scatter     = "scatter"
+    character(len=*), parameter :: output_key_nene        = "nene"
+    character(len=*), parameter :: output_key_aims        = "aims"
+    character(len=*), parameter :: output_key_runner      = "runner"
+    character(len=*), parameter :: output_key_is_adsorbed = "adsorption_status"
+    character(len=*), parameter :: output_key_beads       = "beads"
 
     integer, parameter :: output_id_xyz     = 1
     integer, parameter :: output_id_energy  = 2
@@ -127,6 +139,8 @@ module constants
     integer, parameter :: output_id_nene    = 7
     integer, parameter :: output_id_aims    = 8
     integer, parameter :: output_id_runner  = 9
+    integer, parameter :: output_id_is_adsorbed = 10
+    integer, parameter :: output_id_beads   = 11
 
     ! Conversion constants to program units
     !
@@ -138,21 +152,19 @@ module constants
     !           Mass   : eV fs^2 / A^2 = 1/103.6382 amu
     !           Angle  : radian = 180 deg
     !           bohr   : bohr = 0.5291772 Angstroem
-    real(dp), parameter :: amu2mass         = 103.638239276_dp
-    real(dp), parameter :: deg2rad          = pi/180.0_dp
-    real(dp), parameter :: rad2deg          = 180.0_dp/pi
-    real(dp), parameter :: bohr2ang         = 0.529177211_dp
-    real(dp), parameter :: ang2bohr         = 1/bohr2ang
-    real(dp), parameter :: p2GPa            = 160.2176565_dp
-    real(dp), parameter :: joule2ev         = 6.2415093433e+18_dp
-    real(dp), parameter :: kelvin2ev        = kB
-    real(dp), parameter :: ha2ev            = 27.21138602_dp ! convert Ha to eV
-    real(dp), parameter :: habohr2evang     = ha2ev*ang2bohr !51.4220670398_dp; convert Ha/bohr to eV/ang
-
-    !arrays used in pes_nene_mod.f90
-    character(len=93)   :: atom_format = '(A4, X, F16.9, X, F16.9, X, F16.9, X, A3, X, F11.8, X, F11.8, X, F11.8, X, F11.8, X, F11.8)'
-    character(len=20)   :: ce_format = '(A6 ,X , F11.8)'
-    character(len=36)   :: lattice_format = '(A7, X, F11.8, X, F11.8, X, F11.8)'
-    character(len=29)   :: forces_string = '(F11.8, X, F11.8, X, F11.8)'
+    real(dp), parameter :: amu2mass             = 103.638239276_dp
+    real(dp), parameter :: deg2rad              = pi/180.0_dp
+    real(dp), parameter :: rad2deg              = 180.0_dp/pi
+    real(dp), parameter :: bohr2ang             = 0.529177211_dp
+    real(dp), parameter :: ang2bohr             = 1/bohr2ang
+    real(dp), parameter :: p2GPa                = 160.2176565_dp
+    real(dp), parameter :: joule2ev             = 6.2415093433e+18_dp
+    real(dp), parameter :: kelvin2ev            = kB
+    real(dp), parameter :: ha2ev                = 27.21138602_dp ! convert Ha to eV
+    real(dp), parameter :: ev2ha                = 1/ha2ev
+    real(dp), parameter :: habohr2evang         = ha2ev*ang2bohr !51.4220670398_dp; convert Ha/bohr to eV/ang
+    real(dp), parameter :: evang2habohr         = 1/habohr2evang
+    real(dp), parameter :: habohrcub2evangcub   = ha2ev*(ang2bohr**3)
+    real(dp), parameter :: au2gpa               = 29419.844d0 ! 1 Ha/Bohr3 = 29419.844 GPa
 
 end module constants

@@ -4,6 +4,8 @@
 
 import os, sys, glob 
 
+VERSION_ID = 2.00
+
 class Traj:
 	def __init__(self, fname, ekin_p_i, ekin_l_i, epot_i, etotal_i,\
 			r_p_i, polar_i, azi_i, ekin_p_f, ekin_l_f, epot_f,   \
@@ -28,7 +30,6 @@ class Traj:
 		self.turn_pnts= turn_pnts
 		self.cl_appr  = cl_appr
 		self.r_p_min  = r_p_min
-                #self.traj_id  = traj_id
 
 	def containsNaN(self):
 		return "NaN" in self.ekin_p_i or "NaN" in self.ekin_l_i or "NaN" in self.epot_i or "NaN" in self.etotal_i or \
@@ -81,13 +82,11 @@ def read_in_mxt_fins():
 	traj_list = num_folders*[None]
 	print "Reading %d trajs..." % num_folders
 	counter = 0
-        #traj_id = []
 	for folder in folder_list:
 		if (counter % (num_folders/10) == 0):
 			print 100*counter/num_folders+1, "%"
 		infile = open(folder, 'r')						        	####    Reference Trajectory Output   ####
 
-                #traj_id.append(folder[7:15])
 
 		for line in infile:
 			try:
@@ -144,9 +143,8 @@ def write_summary():
 
 	outfile.close()
 
+print("Created by version %4.2f" % VERSION_ID)
+
 traj_list = read_in_mxt_fins()
-#traj_list,traj_id = read_in_mxt_fins()
-#traj_id = read_traj_id()
 write_summary()
 
-#print("MXT2Summary.txt creation was successful, {} trajectories range from {} to {} ".format(len(traj_id), traj_id[0], traj_id[-1]))

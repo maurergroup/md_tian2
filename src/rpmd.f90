@@ -1,7 +1,7 @@
 !############################################################################
 ! This routine is part of
 ! md_tian2 (Molecular Dynamics Tian Xia 2)
-! (c) 2014-2020 Daniel J. Auerbach, Svenja M. Janke, Marvin Kammler,
+! (c) 2014-2021 Daniel J. Auerbach, Svenja M. Janke, Marvin Kammler,
 !               Sascha Kandratsenka, Sebastian Wille
 ! Dynamics at Surfaces Department
 ! MPI for Biophysical Chemistry Goettingen, Germany
@@ -31,7 +31,7 @@ module rpmd !ring polymer MD
 
     real(dp), allocatable :: cjk(:,:)
 
-contains
+    contains
 
     subroutine build_cjk(nbeads)
         integer, intent(in) :: nbeads
@@ -60,7 +60,6 @@ contains
 
 
 
-
     real(dp) function calc_bead_temperature(atoms) result(temperature)
 
         type(universe), intent(in) :: atoms
@@ -75,7 +74,6 @@ contains
         temperature = temp / kB / atoms%dof
 
     end function calc_bead_temperature
-
 
 
 
@@ -103,6 +101,36 @@ contains
 
     end function calc_centroid_positions
 
+
+
+    function calc_centroid_is_fixed(atoms) result(cents)
+
+        type(universe), intent(in) :: atoms
+        logical                   :: cents(3, atoms%natoms)
+
+        integer  :: i,j,k
+
+        cents = .false.
+
+        ! active rpmd
+        if (atoms%nbeads > 1) then
+
+            do i = 1,atoms%natoms
+                do j= 1,atoms%nbeads
+                    do k = 1,3
+                        if (atoms%is_fixed(k,j,i)) then
+                            cents(k,i) = .true.
+                        end if
+                    end do
+                end do
+            end do
+
+        ! no rpmd
+        else
+            cents = atoms%is_fixed(:,1,:)
+        end if
+
+    end function calc_centroid_is_fixed
 
 
 
@@ -141,11 +169,50 @@ contains
 
         if (.not. atoms%is_cart) print *, "Warning: centroid velocities are being calculated from direct coordinates!"
 
-
         cent_v = sum(atoms%v(:,:,the_atom), dim=2)/atoms%nbeads
 
     end function calc_centroid_velocity_one
 
+
+
+    function calc_centroid_forces(atoms) result(cents)
+
+        type(universe), intent(in) :: atoms
+        real(dp)                   :: cents(3, atoms%natoms)
+
+        integer  :: i
+
+        if (.not. atoms%is_cart) print *, "Warning: centroid forces are being calculated from direct coordinates!"
+
+        ! active rpmd
+        if (atoms%nbeads > 1) then
+
+            do i = 1, atoms%natoms
+                cents(:,i) = sum(atoms%f(:,:,i), dim=2)/atoms%nbeads
+            end do
+
+        ! no rpmd
+        else
+            cents = atoms%f(:,1,:)
+        end if
+
+    end function calc_centroid_forces
+
+
+
+    function calc_centroid_force_one(atoms, the_atom) result(cent_F)
+
+        type(universe), intent(in) :: atoms
+        integer       , intent(in) :: the_atom
+
+        real(dp)                   :: cent_F(3)
+        integer  :: i
+
+        if (.not. atoms%is_cart) print *, "Warning: centroid velocities are being calculated from direct coordinates!"
+
+        cent_F = sum(atoms%f(:,:,the_atom), dim=2)/atoms%nbeads
+
+    end function calc_centroid_force_one
 
 
 
@@ -174,7 +241,6 @@ contains
 
 
 
-
     real(dp) function calc_bead_epot(atoms) result(epot)
 
         type(universe), intent(in) :: atoms
@@ -199,7 +265,6 @@ contains
         epot = 0.5_dp * epot / atoms%nbeads
 
     end function calc_bead_epot
-
 
 
 
@@ -237,20 +302,28 @@ contains
 
 
 
-
+    ! from Michele Ceriotti, Michele Parrinello, Thomas E. Markland and David E. Manolopoulos,
+    ! Efficient stochastic thermostatting of path integral molecular dynamics,
+    ! J. Chem. Phys., 133, 124104 (2010), doi: 10.1063/1.3489925
+    ! This subroutine implements Eqns. 22-24
     subroutine do_ring_polymer_step(atoms)
 
         type(universe), intent(inout) :: atoms
 
-        real(dp), dimension(3, atoms%nbeads, atoms%natoms)  :: p, q, newP, newQ
+        real(dp), dimension(3, atoms%nbeads, atoms%natoms)  :: p, q, newP, newQ, saveR, saveV
 
         real(dp) :: poly(4, atoms%nbeads), p_new(3)
         real(dp) :: twown, wk, wt, wm, cos_wt, sin_wt
-        real(dp) :: betaN, piN, mass
+        real(dp) :: betaN, piN, mass, prefactor
 
-        integer :: i, b, k
+        integer :: i, b, k, prev_idx, next_idx
 
         if (.not. allocated(cjk)) call build_cjk(atoms%nbeads)
+
+        ! save positions and velocities
+        saveR     = atoms%r
+        saveV     = atoms%v
+        prefactor = -1 * atoms%m(1) * (kB*simparams%Tproj*atoms%nbeads/hbar)**2
 
         ! Transform to normal mode space
         call calc_momentum_all(atoms, p)
@@ -268,7 +341,7 @@ contains
         newP = 0.0_dp
         newQ = 0.0_dp
         do b = 1, atoms%nbeads
-            do k = 1, atoms%nBeads
+            do k = 1, atoms%nbeads
                 newP(:,b,:) = newP(:,b,:) + p(:,k,:)*cjk(k,b)
                 newQ(:,b,:) = newQ(:,b,:) + q(:,k,:)*cjk(k,b)
             end do
@@ -313,11 +386,7 @@ contains
             end if
 
             do b = 1, atoms%nbeads
-                p_new = p(:,b,i) * poly(1,b) + q(:,b,i) * poly(2,b)
-                !                if (b == 1 .and. i == 1) then
-                !                    print *, "secondp", p(:,b,i)
-                !                    print *, "secondq", q(:,b,i)
-                !                end if
+                p_new    = p(:,b,i) * poly(1,b) + q(:,b,i) * poly(2,b)
                 q(:,b,i) = p(:,b,i) * poly(3,b) + q(:,b,i) * poly(4,b)
                 p(:,b,i) = p_new
             end do
@@ -329,8 +398,6 @@ contains
             atoms%v = 0.0_dp
         end where
 
-        !print *, "lastp", p(:,1,1)
-
         do i = 1, atoms%natoms
             do b = 1, atoms%nbeads
                 do k = 1, atoms%nbeads
@@ -340,8 +407,32 @@ contains
                     end where
                 end do
             end do
-           ! atoms%v(:,:,i) = atoms%v(:,:,i)
         end do
+
+
+        ! If RPMD is being used in combination with the LDFA, the ring polymer step
+        !   needs to be reverted, because it does not follow the harmonic motion
+        !   due to electronic friction. Instead, we're adding the ring polymer forces
+        !   to the universe singleton and update position and velocity in the Langevin step.
+
+        if (any(atoms%algo == prop_id_langevin)) then
+            do i = 1, atoms%natoms
+                if (atoms%algo(atoms%idx(i)) == prop_id_langevin) then
+
+                    atoms%r(:,:,i) = saveR(:,:,i)
+                    atoms%v(:,:,i) = saveV(:,:,i)
+
+                    do b = 1, atoms%nbeads
+                        prev_idx = b-1
+                        next_idx = b+1
+                        if (b == 1)            prev_idx = atoms%nbeads
+                        if (b == atoms%nbeads) next_idx = 1
+
+                        atoms%f(:,b,i) = prefactor * (2*atoms%r(:,b,i)-atoms%r(:,prev_idx,i)-atoms%r(:,next_idx,i))
+                    end do
+                end if
+            end do
+        end if
 
         !        do k = 1, 3
         !            do i = 1, atoms%natoms
@@ -357,11 +448,12 @@ contains
         !            end where
         !        end do
 
+
     end subroutine do_ring_polymer_step
 
 
 
-
+    ! Careful with this one, you might run into numerical accuracy problems
     subroutine do_ring_polymer_step_with_forces(atoms, forces)
 
         type(universe), intent(inout) :: atoms
@@ -376,6 +468,43 @@ contains
 
     end subroutine do_ring_polymer_step_with_forces
 
+
+
+    subroutine set_ring_polymer_forces(atoms)
+
+        type(universe), intent(inout) :: atoms
+
+        real(dp), dimension(3, atoms%nbeads, atoms%natoms) :: saveR, saveV, initP, finalP
+        real(dp) :: testF(dimensionality, atoms%nbeads), pref
+        integer :: b, prev_idx, next_idx
+
+        ! save positions and velocities
+        saveR = atoms%r
+        saveV = atoms%v
+
+        ! do the RP step, save momentum change
+        call do_ring_polymer_step(atoms)
+
+        ! revert the step for projectile, add to forces instead
+        atoms%r(:,:,1) = saveR(:,:,1)
+        atoms%v(:,:,1) = saveV(:,:,1)
+
+        pref = -1 * atoms%m(1) * (kB*simparams%Tproj*atoms%nbeads/hbar)**2
+
+        do b = 1, atoms%nbeads
+
+            prev_idx = b-1
+            next_idx = b+1
+            if (b == 1)            prev_idx = atoms%nbeads
+            if (b == atoms%nbeads) next_idx = 1
+
+            testF(:,b) = pref * (2*atoms%r(:,b,1)-atoms%r(:,prev_idx,1)-atoms%r(:,next_idx,1))
+
+        end do
+
+        atoms%f(:,:,1) = atoms%f(:,:,1) + testF
+
+    end subroutine set_ring_polymer_forces
 
 
 
@@ -415,7 +544,6 @@ contains
 
 
 
-
     subroutine bead_ekin(atoms, ekin_p, ekin_l)
 
         type(universe), intent(in) :: atoms
@@ -442,7 +570,6 @@ contains
         ekin_l = 0.5_dp * ekin_l / atoms%nbeads
 
     end subroutine bead_ekin
-
 
 
 
@@ -515,6 +642,5 @@ contains
 !        x = factor * copy(1:N)
 !
 !    end subroutine irfft
-
 
 end module rpmd

@@ -1,7 +1,7 @@
 !############################################################################
 ! This routine is part of
 ! md_tian2 (Molecular Dynamics Tian Xia 2)
-! (c) 2014-2020 Daniel J. Auerbach, Svenja M. Janke, Marvin Kammler,
+! (c) 2014-2021 Daniel J. Auerbach, Svenja M. Janke, Marvin Kammler,
 !               Sascha Kandratsenka, Sebastian Wille
 ! Dynamics at Surfaces Department
 ! MPI for Biophysical Chemistry Goettingen, Germany
@@ -27,11 +27,9 @@ module pes_emt_mod
     use universe_mod
     use useful_things, only : split_string, lower_case
 
-
     implicit none
 
     type emt_pes
-
         private
         real(dp), allocatable :: eta2(:)
         real(dp), allocatable :: n0(:)
@@ -40,14 +38,13 @@ module pes_emt_mod
         real(dp), allocatable :: v0(:)
         real(dp), allocatable :: kappa(:)
         real(dp), allocatable :: s0(:)
-
     end type emt_pes
 
     type(emt_pes) :: pes_emt
 
     real(dp), allocatable :: dens(:,:)
 
-contains
+    contains
 
     subroutine read_emt(atoms, inp_unit)
 
@@ -210,7 +207,7 @@ contains
         select case (nEMT)
 
             case (1)
-                call compute_emt_nspecies(atoms, flag)  ! TODO: code a one-species version
+                call compute_emt_1species(atoms, flag)
 
             case (2)
                 call compute_emt_2species(atoms, flag)
@@ -226,6 +223,260 @@ contains
 
 
     end subroutine compute_emt
+
+
+
+
+    subroutine compute_emt_1species(atoms, flag)
+
+        type(universe), intent(inout) :: atoms
+        integer, intent(in)           :: flag
+
+        real(dp), parameter :: cutoff = 1.5_dp
+
+        integer :: i, j, b, emt_idx, idx_i, idx_j
+
+        real(dp) :: betas0, betaeta2, kappadbeta
+
+        real(dp) :: rcut, rr, acut, theta, rtemp, rtemp1, rtemp2
+        real(dp) :: igamma1, igamma2, beta
+
+        real(dp), dimension(3) :: rnn         ! nnn-distances
+        real(dp), dimension(3) :: x
+        real(dp), dimension(3) :: dtheta, nneighs, r3temp
+
+        real(dp), dimension(atoms%nbeads) :: V, Ecoh
+        real(dp), dimension(atoms%nbeads) :: vref, rijmag, rtemp_beads
+        real(dp), dimension(3, atoms%nbeads) :: rij
+
+        real(dp), dimension(atoms%nbeads,atoms%natoms) :: s, exp_lambda_s, sigma
+
+        real(dp), dimension(3,atoms%nbeads,atoms%natoms) :: dV, dEcoh, dvref
+
+        real(dp), dimension(3,atoms%nbeads,atoms%natoms,atoms%natoms) :: dsigma, ds
+
+        !----------------------VALUES OF FREQUENT USE ---------------------------------
+
+        ! find the EMT index
+        do i = 1, atoms%ntypes
+            if (atoms%pes(i,i) == pes_id_emt) then
+                emt_idx = i
+            end if
+        end do
+
+        beta = select_beta('fcc')
+        nneighs = select_nneighs('fcc')
+
+        ! beta * s0
+        betas0 = beta * pes_emt%s0(emt_idx)
+
+        ! beta * eta2
+        betaeta2 = beta * pes_emt%eta2(emt_idx)
+
+        ! kappa / beta
+        kappadbeta = pes_emt%kappa(emt_idx) / beta
+
+        !print *,chi_12, chi_21
+        !stop
+
+        ! Distances to the nearest, next-nearest and next-next-nearest neighbours
+        rnn(1) = betas0
+        rnn(2) = rnn(1) * sqrt2
+        rnn(3) = rnn(1) * sqrt3
+
+        !------------------------------------------------------------------------------
+        !                                  CUT-OFF
+        !                                  =======
+        !------------------------------------------------------------------------------
+        ! We use the distance to the next-next-nearest neighbours as cut-off.
+        ! We only need one cut-off and we choose the one of the lattice atoms since s0
+        ! is usually larger for them.
+
+        rcut = betas0 * sqrt3
+        rr = 4.0 * rcut / (sqrt3 + 2)
+        acut = 9.21034037197618_dp/(rr -rcut) ! ln(10000)
+
+        x = nneighs * twelfth / (1 + exp(acut*(rnn-rcut)))
+
+        !-----------------------------------GAMMA--------------------------------------
+        ! Gamma enforces the cut-off together with theta (see below)
+        ! Gamma is defined as inverse.
+
+        r3temp = rnn - betas0
+        igamma1 = 1.0 / sum(x*exp(-pes_emt%eta2(emt_idx) * r3temp))
+        igamma2 = 1.0 / sum(x*exp(-kappadbeta * r3temp))
+
+
+
+        !------------------------------------------------------------------------------
+        !                          Sigma and Pair-wise Contributions
+        !                          =================================
+        !------------------------------------------------------------------------------
+
+
+        ! initialize accumulators
+        sigma  = 0.0
+        dsigma = 0.0
+        s      = 0.0
+        ds     = 0.0
+        Ecoh   = 0.0
+        dEcoh  = 0.0
+        V      = 0.0
+        dV     = 0.0
+        vref   = 0.0
+        dvref  = 0.0
+
+        do i = 1, atoms%natoms-1
+            idx_i = atoms%idx(i)
+
+            do j = i+1, atoms%natoms
+                idx_j = atoms%idx(j)
+
+                if (atoms%pes(idx_i,idx_j) /= pes_id_emt) cycle
+
+                rijmag = atoms%distances(:,i,j)
+                rij    = atoms%vectors(:,:,i,j)
+
+                do b = 1, atoms%nbeads
+
+                    if (rijmag(b) > cutoff*rcut) cycle
+
+                    ! cut-off function
+                    rtemp = exp(acut*(rijmag(b) - rcut))
+                    theta = 1.0 / (1 + rtemp)
+                    rtemp1 = acut*rtemp*theta
+
+                    rtemp = theta*exp(-pes_emt%eta2(emt_idx)*(rijmag(b) - betas0))     ! sigma_ij*gamma1
+                    sigma(b,i) = sigma(b,i) + rtemp
+                    sigma(b,j) = sigma(b,j) + rtemp
+
+                    dtheta = (pes_emt%eta2(emt_idx) + rtemp1)*rtemp * rij(:,b)/rijmag(b)
+                    dsigma(:,b,i,i) = dsigma(:,b,i,i) - dtheta    ! dsigma_i/dr_i
+                    dsigma(:,b,j,j) = dsigma(:,b,j,j) + dtheta
+                    dsigma(:,b,j,i) = dtheta                       ! dsigma_i/dr_j
+                    dsigma(:,b,i,j) =-dtheta                       ! dsigma_j/dr_i
+
+                    rtemp = theta*exp(-kappadbeta * (rijmag(b) - betas0))   ! V_ij*gamma2*V_0
+                    !print *, theta, kappadbeta, rijmag(b), betas0
+                    V(b) = V(b) + rtemp
+
+                    dtheta = (kappadbeta + rtemp1)*rtemp * rij(:,b)/rijmag(b)
+                    dV(:,b,i) = dV(:,b,i) + dtheta
+                    dV(:,b,j) = dV(:,b,j) - dtheta
+
+                end do
+            end do
+        end do
+
+        ! divide by cut-off scaling factors
+
+        sigma  = sigma  * igamma1
+        V      = V      * igamma2 * pes_emt%v0(emt_idx)
+        dsigma = dsigma * igamma1
+        dV     = dV     * igamma2 * pes_emt%v0(emt_idx)
+
+
+        !-----------------------------NEUTRAL SPHERE RADIUS----------------------------
+
+        ! is being used for division
+        s = max(1e-30, sigma)
+        ds = -dsigma
+
+        do i = 1, atoms%natoms
+            idx_i = atoms%idx(i)
+            do j = 1, atoms%natoms
+                idx_j = atoms%idx(j)
+                if (atoms%pes(idx_i, idx_j) == pes_id_emt) then
+                    do b = 1, atoms%nbeads
+                        ds(:,b,i,j) = ds(:,b,i,j)/(betaeta2*s(b,j))
+                    end do
+                end if
+            end do
+        end do
+
+        s = -log(max(tolerance,s)*twelfth)/betaeta2
+
+        !----------COHESIVE FUNCTION AND EMBEDDED ELECTRON DENSITY--------------------------
+
+        rtemp1 = 0.5/bohr2ang - betaeta2
+
+        do i = 1, atoms%natoms
+            idx_i = atoms%idx(i)
+            if (atoms%pes(idx_i,idx_i) == pes_id_emt) then
+                dens(:,i)         = pes_emt%n0(idx_i)*exp(rtemp1*s(:,i))
+                exp_lambda_s(:,i) = exp(-pes_emt%lambda(idx_i)*s(:,i))
+                Ecoh              = Ecoh + ((1 + pes_emt%lambda(idx_i)*s(:,i)) * exp_lambda_s(:,i) - 1)
+            end if
+        end do
+
+        Ecoh = Ecoh * pes_emt%e0(emt_idx)
+
+        do i = 1, atoms%natoms
+            idx_i = atoms%idx(i)
+            do j = 1, atoms%natoms
+                idx_j = atoms%idx(j)
+                if (atoms%pes(idx_i, idx_j) == pes_id_emt) then
+                    do b = 1, atoms%nbeads
+                        dEcoh(:,b,i) = dEcoh(:,b,i) + s(b,j)*exp_lambda_s(b,j)*ds(:,b,i,j)
+                    end do
+                end if
+            end do
+        end do
+
+        dEcoh = pes_emt%e0(emt_idx)*pes_emt%lambda(emt_idx)*pes_emt%lambda(emt_idx)*dEcoh
+
+        !----------------REFERENCE PAIR POTENTIAL CONTRIBUTIONS------------------------
+
+        do i = 1, atoms%natoms
+            if (atoms%idx(i) == emt_idx) then
+
+                rtemp_beads = exp(-pes_emt%kappa(emt_idx)*s(:,i))
+                vref = vref + rtemp_beads
+
+                do j = 1, atoms%natoms
+                    if (atoms%idx(j) == emt_idx) then
+                        do b = 1, atoms%nbeads
+                            dvref(:,b,j) = dvref(:,b,j) + rtemp_beads(b)*ds(:,b,j,i)
+                        end do
+                    end if
+                end do
+            end if
+        end do
+
+        rtemp = 12 * pes_emt%v0(emt_idx)
+        vref  = vref * rtemp
+        dvref = dvref * rtemp * pes_emt%kappa(emt_idx)
+
+
+        !-------------------------------TOTAL ENERGY---------------------------------
+
+        atoms%epot = atoms%epot + Ecoh - V + 0.5*vref
+
+        !        print *, "Ecoh", Ecoh
+              ! print *, "V",  V
+        !        print *, "vref",   vref
+
+         !       print *, "dEcoh", dEcoh
+
+
+       !     print *, "dV", dV
+
+
+       ! print *, "dvref", dvref
+
+        !
+        !
+        ! stop 123
+        ! minus sign was taken into account in calculation of separate contributions
+        do i = 1, atoms%natoms
+            if (atoms%idx(i) == emt_idx) then
+                atoms%f(:,:,i) = atoms%f(:,:,i) + dEcoh(:,:,i) - dV(:,:,i) + 0.5*dvref(:,:,i)
+            end if
+        end do
+
+    end subroutine compute_emt_1species
+
+
 
 
 
@@ -425,6 +676,8 @@ contains
                         dsigma_22(:,b,i,j) =-dtheta                       ! dsigma_j/dr_i
 
                         rtemp = theta*exp(-kappadbeta_2*(rijmag(b) - betas0_2)) ! V_ij*gamma2*V_0
+                         !print *, theta, kappadbeta_2, rijmag(b), betas0_2
+
                         V_22(b) = V_22(b) + rtemp
 
                         dtheta = (kappadbeta_2 + rtemp1)*rtemp * rij(:,b)/rijmag(b)
@@ -509,7 +762,7 @@ contains
             end do
         end do
 
-
+        !print *, "1", V_22
 
         ! divide by cut-off scaling factors
         sigma_22 = sigma_22*igamma1_2
@@ -722,9 +975,9 @@ contains
 
         atoms%epot = atoms%epot + (Ecoh_2 + Ecoh_1 - V_22 - V_11 - 0.5*(V_21 + V_12 - vref_2 - vref_1))
 
-        !        print *, "Ecoh", Ecoh_2 + Ecoh_1
-        !        print *, "V", - V_22 - V_11 - 0.5*(V_21 + V_12)
-        !        print *, "vref",   0.5*(vref_2 + vref_1)
+        !        print *, "Ecoh", Ecoh_2,  Ecoh_1
+        !        print *, "V", - V_22 - V_11 - 0.5*(V_21 + V_12),  V_11, V_22, 0.5*(V_21 + V_12)
+        !        print *, "vref",   vref_2 , vref_1
 
         !        print *, "dEcoh 11, 12, 21, 22"
         !        print *, dEcoh_1_1(:,:,1)
@@ -743,7 +996,7 @@ contains
         !print *, dvref_1_2(:,:,2)
         !
         !
-        !stop 123
+
         ! minus sign was taken into account in calculation of separate contributions
         do i = 1, atoms%natoms
 
@@ -757,9 +1010,9 @@ contains
 
         end do
 
-    !       print *,  "dEcoh", dEcoh_2_2(:,:,2)+ dEcoh_1_2(:,:,2)
-    !       print *,  "dVf"  , -dV_22_2(:,:,2)-0.5*(dV_21_2(:,:,2) + dV_12_2(:,:,2))
-    !       print *,  "dVref", 0.5*(dvref_2_2(:,:,2)+dvref_1_2(:,:,2))
+    !       print *,  "dEcoh", dEcoh_2_2(:,:,:),  dEcoh_1_2(:,:,:)
+    !       print *,  "dVf"  , dV_22_2(:,:,:) !-0.5*(dV_21_2(:,:,2) + dV_12_2(:,:,2))
+     !      print *,  "dVref", dvref_2_2(:,:,:) !+dvref_1_2(:,:,2))
     !       print *,  "atoms%f", atoms%f(:,:,2)
 
 
@@ -769,6 +1022,7 @@ contains
     !       print *,  "atoms%f", atoms%f(:,:,1)
 
     !        print *, "Epot2", atoms%epot
+    !  stop 123
 
     end subroutine compute_emt_2species
 
@@ -831,10 +1085,13 @@ contains
             kappadbeta = pes_emt%kappa / beta
 
             ! 'coupling' parameters between species
+            chi = 0.0_dp
             do i = 1, atoms%ntypes
                 do j = 1, atoms%ntypes
-                    chi(i,j) = pes_emt%n0(i) / pes_emt%n0(j) * &
-                        exp(0.5_dp/bohr2ang*(pes_emt%s0(j)-pes_emt%s0(i)))
+                    if (atoms%pes(idx_i,idx_j) == pes_id_emt) then
+                        chi(i,j) = pes_emt%n0(i) / pes_emt%n0(j) * &
+                            exp(0.5_dp/bohr2ang*(pes_emt%s0(j)-pes_emt%s0(i)))
+                    end if
                 end do
             end do
 

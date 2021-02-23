@@ -11,15 +11,18 @@ bin/
 # RuNNer input files
 RuNNer_input/*
 # conf folder
+conf/ads*
 conf/pos* 
 conf/mxt*
 conf/proj
 conf/latt
+conf/latt_300K
 !conf/proj/mxt_00000001.dat
 !conf/latt/mxt_00000001.dat
 # traj folder
 traj/
-# MDT2 output folders
+!scripts/traj/
+# output folder
 poscar/
 aims/
 energy/
