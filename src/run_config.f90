@@ -65,7 +65,8 @@ module run_config
         real(dp) :: andersen_time                                   ! average time between collsions per atom
         real(dp) :: pile_tau                                        ! PILE thermostat centroid mode thermostat time constant
         integer  :: force_beads                                     ! inititalizes all atoms with this many beads
-        real(dp) :: proj_ul                                         ! stop trajectory if projectile's z-coordinate is higher that this value
+        real(dp) :: proj_ul                                         ! stop trajectory if projectile's z-coordinate is higher than this value
+        real(dp) :: proj_ll                                         ! stop trajectory if projectile's z-coordinate is lower than this value
         character(len=max_string_length) :: fit_training_folder     ! path to training data
         character(len=max_string_length) :: fit_validation_folder   ! path to validation data
         integer  :: fit_training_data                               ! number of configuration/energy pair files in fit_training_folder
@@ -119,6 +120,7 @@ contains
         new_simulation_parameters%pile_tau              = 200.0_dp
         new_simulation_parameters%force_beads           = default_int
         new_simulation_parameters%proj_ul               = default_real
+        new_simulation_parameters%proj_ll               = default_real*(-1.0_dp)
         new_simulation_parameters%fit_training_data     = default_int
         new_simulation_parameters%fit_validation_data   = default_int
         new_simulation_parameters%fit_training_folder   = default_string
@@ -587,6 +589,12 @@ contains
                         if (simparams%proj_ul /= default_real) stop err // "projectile upper limit set multiple times"
                         read(words(2), *, iostat=ios) simparams%proj_ul
                         if (ios /= 0) stop err // "proj_upper_limit"
+
+                    case ('pll')
+
+                        if (simparams%proj_ll /= default_real*(-1.0_dp)) stop err // "projectile lower limit set multiple times"
+                        read(words(2), *, iostat=ios) simparams%proj_ll
+                        if (ios /= 0) stop err // "proj_lower_limit"
 
 
                     case ('fit_training_data')
