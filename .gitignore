@@ -10,6 +10,9 @@ bin/
 *.x
 # RuNNer input files
 RuNNer_input/*
+# input files
+*.inp
+!md_tian.inp
 # conf folder
 conf/ads*
 conf/pos* 
@@ -42,3 +45,5 @@ xyz/
 *.toc
 # General
 *.swp
+# Debug
+*.dyn
