@@ -500,33 +500,53 @@ contains
         use rpmd, only : calc_centroid_positions
 
         type(universe), intent(inout) :: atoms
-        real(dp) :: target_position, cents(3, atoms%natoms)
+        real(dp) :: cents(3, atoms%natoms), fixed_position
+        real(dp), dimension(3) :: target_position
 
         integer  :: k, b, ios
         character(len=*), parameter :: err = "Error in apply_pip(): "
         character(len=*), parameter :: random_position = "r"
 
+
         call to_cartesian(atoms)
         cents = calc_centroid_positions(atoms)
 
+
+
         if (.not. all(atoms%is_proj)) stop err // "there are lattice atoms affected by apply_pip() subroutine"
+
+        target_position = 0
+
 
         do k = 1, dimensionality
             ! draw random number from direct coordinates, then convert to cartesian
             if (simparams%pip(k) == random_position) then
-                call random_number(target_position)
+                call random_number(target_position(k))
                 target_position = target_position * sum(atoms%simbox(:,k))
 
             else
-                read(simparams%pip(k), *, iostat=ios) target_position
+                read(simparams%pip(k), *, iostat=ios) fixed_position
+
+
                 if (ios /= 0) then
                     print *, err, "unknown pip format at position", k, "of pip array"
                     stop
                 end if
+                do b = 1, atoms%nbeads
+                    atoms%r(k,b,:) = atoms%r(k,b,:) + fixed_position
+                end do
+
             end if
 
+        end do
+
+
+
+        do k = 1, dimensionality
+            fixed_position = atoms%simbox(k,1)*target_position(1) + atoms%simbox(k,2)*target_position(2) + atoms%simbox(k,3)*target_position(3)
+
             do b = 1, atoms%nbeads
-                atoms%r(k,b,:) = atoms%r(k,b,:) - cents(k,:) + target_position
+                atoms%r(k,b,:) = atoms%r(k,b,:) - cents(k,:) + fixed_position
             end do
 
         end do
