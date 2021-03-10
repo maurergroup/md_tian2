@@ -30,6 +30,7 @@ SPECULAR_RADIUS = 4.4
 
 
 inpname = "MXT2Summary.txt"
+defnrgname = "deformation_energy_trajids.txt"
 logfilename = "AnalyzePESTrajectory.log"
 
 ### NO CHANGES BELOW THIS LINE ###
@@ -214,6 +215,7 @@ def initialize(inpname,logfile):
 	logfile.write("Reading {} trajectories\n".format(ntrajs))
 	traj_list = []					# init list
 	inp_file = open(inpname, "r")
+        def_nrg_file = open(defnrgname, "w")
 	counter = 0
 	scattered = 0
         sc_count = 0
@@ -281,6 +283,9 @@ def initialize(inpname,logfile):
 		if traj.has_scattered:
 			scattered += 1
                         if traj.cl_appr < 1.4:
+                                if traj.turn_pnts == 1:
+                                        def_nrg_file.write(traj.traj_id)
+                                        def_nrg_file.write(' ')
                                 print("Analyze slow component in traj {}".format(traj.traj_id))
                                 logfile.write("Analyze slow component in traj {}\n".format(traj.traj_id))
                                 sc_count += 1
