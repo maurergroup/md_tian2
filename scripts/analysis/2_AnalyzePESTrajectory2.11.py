@@ -26,7 +26,7 @@ import os, sys, math, copy, numpy, time
 METAL_TYPE = "C"
 SHOT_THRU_LIMIT = 0.0 
 
-SPECULAR_RADIUS = 4.4
+SPECULAR_RADIUS = 1.5
 
 
 inpname = "MXT2Summary.txt"
@@ -132,7 +132,7 @@ class Traj:
                 self.vloss      = length(v_p_i) - length(v_p_f)
 		self.has_scattered = r_p_f.z > r_p_i.z
 		self.has_transmitted = r_p_f.z < SHOT_THRU_LIMIT
-		self.has_adsorbed = not (self.has_scattered or self.has_scattered)
+		self.has_adsorbed = not (self.has_scattered or self.has_transmitted)
 		self.delta_azi = min(360-abs(azi_f-azi_i), abs(azi_f-azi_i))
 		self.in_spec = math.sqrt( (polar_f-polar_i)**2 + (azi_f-azi_i)**2 ) < SPECULAR_RADIUS
 		self.in_plane = self.delta_azi < SPECULAR_RADIUS
