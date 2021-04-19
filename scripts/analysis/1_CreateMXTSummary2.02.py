@@ -37,35 +37,35 @@ logfilename = "CreateMXTSummary.log"
 VERSION_ID = 2.02
 
 class Traj:
-	def __init__(self, fname, ekin_p_i, ekin_l_i, epot_i, etotal_i,\
-			r_p_i, v_p_i, polar_i, azi_i, ekin_p_f, ekin_l_f, epot_f,   \
+        def __init__(self, fname, ekin_p_i, ekin_l_i, epot_i, etotal_i,\
+                r_p_i, v_p_i, polar_i, azi_i, ekin_p_f, ekin_l_f, epot_f,   \
                         etotal_f, r_p_f, v_p_f, polar_f, azi_f, time, turn_pnts, \
-			cl_appr, cl_appr_t, r_p_min, traj_id):
-		self.fname     = fname
-		self.traj_id   = traj_id
-		self.ekin_p_i  = ekin_p_i
-		self.ekin_l_i  = ekin_l_i
-		self.epot_i    = epot_i
-		self.etotal_i  = etotal_i
-		self.r_p_i     = r_p_i
-		self.v_p_i     = v_p_i
-		self.polar_i   = polar_i
-		self.azi_i     = azi_i
-		self.ekin_p_f  = ekin_p_f
-		self.ekin_l_f  = ekin_l_f
-		self.epot_f    = epot_f
-		self.etotal_f  = etotal_f
-		self.r_p_f     = r_p_f
-		self.v_p_f     = v_p_f
-		self.polar_f   = polar_f
-		self.azi_f     = azi_f
-		self.time      = time
-		self.turn_pnts = turn_pnts
-		self.cl_appr   = cl_appr
-		self.cl_appr_t = cl_appr_t
-		self.r_p_min   = r_p_min
+                        cl_appr, cl_appr_t, r_p_min, traj_id):
+                self.fname     = fname
+                self.traj_id   = traj_id
+                self.ekin_p_i  = ekin_p_i
+                self.ekin_l_i  = ekin_l_i
+                self.epot_i    = epot_i
+                self.etotal_i  = etotal_i
+                self.r_p_i     = r_p_i
+                self.v_p_i     = v_p_i
+                self.polar_i   = polar_i
+                self.azi_i     = azi_i
+                self.ekin_p_f  = ekin_p_f
+                self.ekin_l_f  = ekin_l_f
+                self.epot_f    = epot_f
+                self.etotal_f  = etotal_f
+                self.r_p_f     = r_p_f
+                self.v_p_f     = v_p_f
+                self.polar_f   = polar_f
+                self.azi_f     = azi_f
+                self.time      = time
+                self.turn_pnts = turn_pnts
+                self.cl_appr   = cl_appr
+                self.cl_appr_t = cl_appr_t
+                self.r_p_min   = r_p_min
 
-	def containsNaN(self):
+        def containsNaN(self):
 		return "NaN" in self.ekin_p_i or "NaN" in self.ekin_l_i or "NaN" in self.epot_i or "NaN" in self.etotal_i or \
 			"NaN" in self.ekin_p_f or "NaN" in self.ekin_l_f or "NaN" in self.epot_f or "NaN" in self.etotal_f
 

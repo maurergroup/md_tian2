@@ -198,7 +198,8 @@ md_tian.inp file: -> add a list with the complete set of keywords with descripti
                 a) Here it will be defined, which interactions and what potential is used to describe them. Furthermore, we have to set if the element is of type projectile (proj) or part of the surface/bulk (latt).
                    For all possible element permutations we have to define interactions. Depending on the potential used, specific parameters have to be given. 
                    In the following an example for H on graphene is shown using a high-dimensional neural-network potential. In this case, interactions between H and C, H and H in case of multiple projectiles as well as C and C can occur. 
-                   For all cases, the neural-networks potential should be used (keyword nene). For the parameters, we have to give the folder to look up for the potential specific files. 
+                   For all cases, the neural-networks potential should be used (keyword nene). For the parameters, we have to give the folder to look up for the potential specific files
+                   The parameters are given with an indentation of a single white space.
                    Optional, the keyword maxnum_extrapolation_warnings together with an integer will set the threshold when to stop the program if the number for warnings is exceeded.
                    The parameters are given with an indentation of a single white space.
 
