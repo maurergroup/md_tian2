@@ -66,11 +66,11 @@ class Traj:
                 self.r_p_min   = r_p_min
 
         def containsNaN(self):
-		return "NaN" in self.ekin_p_i or "NaN" in self.ekin_l_i or "NaN" in self.epot_i or "NaN" in self.etotal_i or \
-			"NaN" in self.ekin_p_f or "NaN" in self.ekin_l_f or "NaN" in self.epot_f or "NaN" in self.etotal_f
+	        return "NaN" in self.ekin_p_i or "NaN" in self.ekin_l_i or "NaN" in self.epot_i or "NaN" in self.etotal_i or \
+		        "NaN" in self.ekin_p_f or "NaN" in self.ekin_l_f or "NaN" in self.epot_f or "NaN" in self.etotal_f
 
-	def __str__(self):
-		return "   fname " + str(self.fname) +\
+        def __str__(self):
+                return "   fname " + str(self.fname) +\
                         "\ntraj_id " + str(self.traj_id) +\
 			"\nekin_p_i " + str(self.ekin_p_i) +\
                         "\nekin_l_i " + str(self.ekin_l_i) +\
@@ -134,10 +134,9 @@ def read_in_mxt_fins(logfile):
 		if (counter % (num_folders/10) == 0):
                         print("{}%".format(100*counter/num_folders+1))
                         logfile.write("{}%\n".format(100*counter/num_folders+1))
+
 		infile = open(folder, 'r')						        	####    Reference Trajectory Output   ####
-
                 traj_id = folder[7:15]
-
                 checkline = file_len(folder) # check if number of entries match finished traj file
 
                 if checkline == 23:
@@ -196,7 +195,7 @@ def read_in_mxt_fins(logfile):
 
 def write_summary(logfile, outfile_name, traj_list):
 	outfile = open(outfile_name, "w")
-	outfile.write("# traj_id E_kin_p   E_kin_l        E_pot      E_total r_p(    x,        y,         z) v_p(    x,        y,         z)      polar       azi   E_kin_p  E_kin_l       E_pot       E_total     r_p(x,       y,         z) v_p(x,       y,         z)        polar       azi     simtime turn_pnts   cl_appr   cl_appr_t   r_p_min\n")
+	outfile.write("# traj_id E_kin_p   E_kin_l        E_pot      E_total r_p(    x,        y,         z) v_p(    x,        y,         z)      polar       azi   E_kin_p  E_kin_l       E_pot       E_total     r_p(    x,       y,         z) v_p(    x,       y,         z)        polar       azi     simtime turn_pnts   cl_appr   cl_appr_t   r_p_min\n")
 	for traj in traj_list:
 		try:
 			outfile.write("%s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s\n" \
