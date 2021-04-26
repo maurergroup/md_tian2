@@ -8,6 +8,7 @@ V_INC = "`head analysis/plot_parameter.txt | tail -1 | awk '{print $2}'`"
 
 
 set term png enhanced size 1920,1080 font "Computer Modern, 30"
+#set term png enhanced size 1920,1080 font "Helvetica, 30"
 
 set xlabel "Number of bounces"
 set ylabel "Probability density"
