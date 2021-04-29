@@ -9,5 +9,5 @@ do
 	cp ${script} ${script}_${i}
         sed -i -e "s/start.*/start $j/g" ${script}
         sed -i -e "s/ntrajs.*/ntrajs ${ntrajs}/g" ${script}
-	nohup ~/Kai+Victoria/new_calc/md_tian2.serial.x ${script}_${i} > output_${i}.out &
+	nohup ~/MDT2/new_calc/md_tian2.serial.x ${script}_${i} > output_${i}.out &
 done

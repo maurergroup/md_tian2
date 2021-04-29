@@ -61,6 +61,7 @@ module pes_nene_mod
 
     integer, dimension(:), allocatable :: zelem                     ! zelem(max_num_atoms)
     integer, dimension(:), allocatable :: num_atoms_element         ! num_atoms_element(nelem)
+
     integer :: count_wconstraint    = 0
     integer :: count_wconstrainte   = 0
     integer :: line = 0
@@ -85,35 +86,35 @@ module pes_nene_mod
     real(dp) :: nnstress_short(3,3) = default_real
     real(dp) :: nnstress_elec(3,3)  = default_real
 
-    !real(dp), dimension(:), allocatable :: atomcharge               ! atomcharge(max_num_atoms)
-    !real(dp), dimension(:), allocatable :: atomenergy               ! atomenergy(max_num_atoms)
-    real(dp), dimension(:), allocatable :: chargemin                ! chargemin(nelem)
-    real(dp), dimension(:), allocatable :: chargemax                ! chargemax(nelem)
-    real(dp), dimension(:), allocatable :: nnatomcharge             ! nnatomcharge(max_num_atoms)
-    real(dp), dimension(:), allocatable :: nnatomenergy             ! nnatomenergy(max_num_atoms)
-    !real(dp), dimension(:), allocatable :: dmin_temp                ! dmin_temp(nelem*(nelem+1)/2)
+    !real(dp), dimension(:), allocatable :: atomcharge                ! atomcharge(max_num_atoms)
+    !real(dp), dimension(:), allocatable :: atomenergy                ! atomenergy(max_num_atoms)
+    real(dp), dimension(:), allocatable :: chargemin                  ! chargemin(nelem)
+    real(dp), dimension(:), allocatable :: chargemax                  ! chargemax(nelem)
+    real(dp), dimension(:), allocatable :: nnatomcharge               ! nnatomcharge(max_num_atoms)
+    real(dp), dimension(:), allocatable :: nnatomenergy               ! nnatomenergy(max_num_atoms)
+    !real(dp), dimension(:), allocatable :: dmin_temp                 ! dmin_temp(nelem*(nelem+1)/2)
 
-    !real(dp), dimension(:,:), allocatable :: xyzstruct              ! xyzstruct(3,max_num_atoms)
-    real(dp), dimension(:,:), allocatable :: minvalue_short_atomic  ! minvalue_short_atomic(nelem,maxnum_funcvalues_short_atomic)
-    real(dp), dimension(:,:), allocatable :: maxvalue_short_atomic  ! maxvalue_short_atomic(nelem,maxnum_funcvalues_short_atomic)
-    real(dp), dimension(:,:), allocatable :: avvalue_short_atomic   ! avvalue_short_atomic(nelem,maxnum_funcvalues_short_atomic)
-    real(dp), dimension(:,:), allocatable :: minvalue_elec          ! minvalue_elec(nelem,maxnum_funcvalues_elec)
-    real(dp), dimension(:,:), allocatable :: maxvalue_elec          ! maxvalue_elec(nelem,maxnum_funcvalues_elec)
-    real(dp), dimension(:,:), allocatable :: avvalue_elec           ! avvalue_elec(nelem,maxnum_funcvalues_elec)
-    !real(dp), dimension(:,:), allocatable :: totalforce             ! totalforce(3,max_num_atoms)
-    real(dp), dimension(:,:), allocatable :: nnshortforce           ! nnshortforce(3,max_num_atoms)
-    real(dp), dimension(:,:), allocatable :: nntotalforce           ! nntotalforce(3,max_num_atoms)
-    real(dp), dimension(:,:), allocatable :: nnelecforce            ! nnelecforce(3,max_num_atoms)
-    real(dp), dimension(:,:), allocatable :: sens                   ! ; already deallocated in cleanup
-    real(dp), dimension(:,:), allocatable :: sense                  ! ; already deallocated in cleanup
+    !real(dp), dimension(:,:), allocatable :: xyzstruct               ! xyzstruct(3,max_num_atoms)
+    real(dp), dimension(:,:), allocatable :: minvalue_short_atomic    ! minvalue_short_atomic(nelem,maxnum_funcvalues_short_atomic)
+    real(dp), dimension(:,:), allocatable :: maxvalue_short_atomic    ! maxvalue_short_atomic(nelem,maxnum_funcvalues_short_atomic)
+    real(dp), dimension(:,:), allocatable :: avvalue_short_atomic     ! avvalue_short_atomic(nelem,maxnum_funcvalues_short_atomic)
+    real(dp), dimension(:,:), allocatable :: minvalue_elec            ! minvalue_elec(nelem,maxnum_funcvalues_elec)
+    real(dp), dimension(:,:), allocatable :: maxvalue_elec            ! maxvalue_elec(nelem,maxnum_funcvalues_elec)
+    real(dp), dimension(:,:), allocatable :: avvalue_elec             ! avvalue_elec(nelem,maxnum_funcvalues_elec)
+    !real(dp), dimension(:,:), allocatable :: totalforce              ! totalforce(3,max_num_atoms)
+    real(dp), dimension(:,:), allocatable :: nnshortforce             ! nnshortforce(3,max_num_atoms)
+    real(dp), dimension(:,:), allocatable :: nntotalforce             ! nntotalforce(3,max_num_atoms)
+    real(dp), dimension(:,:), allocatable :: nnelecforce              ! nnelecforce(3,max_num_atoms)
+    real(dp), dimension(:,:), allocatable :: sens                     ! sens(nelem,maxnum_funcvalues_short_atomic)
+    real(dp), dimension(:,:), allocatable :: sense                    ! sense(nelem,maxnum_funcvalues_elec)
 
     integer, parameter  :: inpnn_unit = 61
 
     integer :: bead
     integer :: max_count_extrapolation_warnings = default_int
 
-    integer, dimension(:), allocatable :: count_extrapolation_warnings_traj_energy
-    integer, dimension(:), allocatable :: count_extrapolation_warnings_traj_symfunc
+    integer, dimension(:), allocatable :: count_extrapolation_warnings_traj_energy     ! count_extrapolation_warnings_traj_energy(atoms%nbeads)
+    integer, dimension(:), allocatable :: count_extrapolation_warnings_traj_symfunc    ! count_extrapolation_warnings_traj_symfunc(atoms%nbeads)
 
 
     contains
@@ -166,8 +167,8 @@ module pes_nene_mod
         integer :: atom_energy_counter = default_int
         integer :: wcount
 
-        integer, dimension(:)  , allocatable :: nodes_short_local ! nodes_short_local(0:maxnum_layers_short_atomic)
-        integer, dimension(:)  , allocatable :: nodes_ewald_local ! nodes_ewald_local(0:maxnum_layers_elec)
+        integer, dimension(:)  , allocatable :: nodes_short_local             ! nodes_short_local(0:maxnum_layers_short_atomic)
+        integer, dimension(:)  , allocatable :: nodes_ewald_local             ! nodes_ewald_local(0:maxnum_layers_elec)
         integer :: num_funcvalues_local(102)
         integer :: num_funcvaluese_local(102)
 
@@ -176,40 +177,40 @@ module pes_nene_mod
         character(len=2) :: elementtemp2    = default_string
         character(len=2) :: elementtemp3    = default_string
 
-        character(len=2), dimension(:), allocatable :: elementsymbol_dummy ! elementsymbol_dummy(nelem)
+        character(len=2), dimension(:), allocatable :: elementsymbol_dummy    ! elementsymbol_dummy(nelem)
 
-        logical, dimension(:), allocatable :: lfound       ! lfound(nelem)
+        logical, dimension(:), allocatable :: lfound                          ! lfound(nelem)
+
         logical :: lfound_glob_act_s            = default_bool
         logical :: lfound_glob_act_e            = default_bool
 
         logical :: lfound_global_nodes_short    = default_bool
         logical :: lfound_global_nodes_elec     = default_bool
 
-        logical :: lfounddebug              = default_bool
-        logical :: lfound_num_layersshort   = default_bool
-        logical :: lfound_num_layersewald   = default_bool
-        logical :: lfound_luseatomenergies  = default_bool
-        logical :: lfound_luseatomcharges   = default_bool
-        logical :: lfound_nelem             = default_bool
+        logical :: lfounddebug                  = default_bool
+        logical :: lfound_num_layersshort       = default_bool
+        logical :: lfound_num_layersewald       = default_bool
+        logical :: lfound_luseatomenergies      = default_bool
+        logical :: lfound_luseatomcharges       = default_bool
+        logical :: lfound_nelem                 = default_bool
 
         real(dp) :: xyzstruct(3,atoms%natoms)
 
 
-        real(dp), dimension(:), allocatable :: rdummy                   ! rdummy(nelem)
+        real(dp), dimension(:), allocatable :: rdummy                         ! rdummy(nelem)
         real(dp) :: dummy
 
 
-        character(len=1), dimension(:), allocatable :: actfunc_short_atomic_dummy ! actfunc_short_atomic_dummy(maxnum_layers_short_atomic)
-        character(len=1), dimension(:), allocatable :: actfunc_elec_dummy         ! actfunc_elec_dummy(maxnum_layers_elec)
+        character(len=1), dimension(:), allocatable :: actfunc_short_atomic_dummy    ! actfunc_short_atomic_dummy(maxnum_layers_short_atomic)
+        character(len=1), dimension(:), allocatable :: actfunc_elec_dummy            ! actfunc_elec_dummy(maxnum_layers_elec)
         character(len=1) :: actfunc
-        !character(len=1) :: actfunc_short_pair_dummy
 
 
         integer :: function_type_temp
-        integer, dimension(:), allocatable :: nodes_short_atomic_temp ! nodes_short_atomic_temp(0:maxnum_layers_short_atomic)
-        integer, dimension(:), allocatable :: nodes_elec_temp         ! nodes_elec_temp(0:maxnum_layers_elec)
-        integer, dimension(:), allocatable :: sym_short_atomic_count  ! sym_short_atomic_count(nelem)
-        integer, dimension(:), allocatable :: sym_elec_count          ! sym_elec_count(nelem)
+        integer, dimension(:), allocatable :: nodes_short_atomic_temp        ! nodes_short_atomic_temp(0:maxnum_layers_short_atomic)
+        integer, dimension(:), allocatable :: nodes_elec_temp                ! nodes_elec_temp(0:maxnum_layers_elec)
+        integer, dimension(:), allocatable :: sym_short_atomic_count         ! sym_short_atomic_count(nelem)
+        integer, dimension(:), allocatable :: sym_elec_count                 ! sym_elec_count(nelem)
         integer :: layer
         integer :: node
 
@@ -347,14 +348,14 @@ module pes_nene_mod
         npairs                              = default_int
         max_num_pairs                       = default_int
         lvdw                                = default_bool
-        maxnum_funcvalues_short_atomic      = 0 ! needed so that the max function will work
-        maxnum_funcvalues_elec              = 0 ! needed so that the max function will work
+        maxnum_funcvalues_short_atomic      = 0            ! needed so that the max function will work
+        maxnum_funcvalues_elec              = 0            ! needed so that the max function will work
         function_type_local                 = default_int
         function_type_temp                  = default_int
-        funccutoff_local                    = 0.0d0 ! needed so that the max function will work
-        maxcutoff_local                     = 0.0d0 ! needed so that the max function will work
-        maxnodes_short_atomic               = 0 ! needed so that the max function will work
-        maxnodes_elec                       = 0 ! needed so that the max function will work
+        funccutoff_local                    = 0.0d0        ! needed so that the max function will work
+        maxcutoff_local                     = 0.0d0        ! needed so that the max function will work
+        maxnodes_short_atomic               = 0            ! needed so that the max function will work
+        maxnodes_elec                       = 0            ! needed so that the max function will work
         lcheckinputforces                   = default_bool
         inputforcethreshold                 = default_real
         lprintforcecomponents               = default_bool
