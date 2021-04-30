@@ -128,11 +128,11 @@ contains
                     read(words(2), *) pes_lj%sigma(idx1, idx2)
                     read(words(2), *) pes_lj%sigma(idx2, idx1)
 
-                case ('epsilon')    ! given in kelvin
+                case ('epsilon')    ! given in eV
                     read(words(2), *) pes_lj%eps(idx1, idx2)
                     read(words(2), *) pes_lj%eps(idx2, idx1)
-                    pes_lj%eps(idx1, idx2) = pes_lj%eps(idx1, idx2) * kelvin2ev
-                    pes_lj%eps(idx2, idx1) = pes_lj%eps(idx2, idx1) * kelvin2ev
+                    pes_lj%eps(idx1, idx2) = pes_lj%eps(idx1, idx2)
+                    pes_lj%eps(idx2, idx1) = pes_lj%eps(idx2, idx1)
 
                 case default
                     print *, "Error in the PES file: unknown LJ parameter", words(1)
@@ -213,11 +213,11 @@ contains
                     read(words(2), *) pes_lj%sigma(idx1, idx2)
                     read(words(2), *) pes_lj%sigma(idx2, idx1)
 
-                case ('epsilon')    ! given in kelvin
+                case ('epsilon')    ! given in eV
                     read(words(2), *) pes_lj%eps(idx1, idx2)
                     read(words(2), *) pes_lj%eps(idx2, idx1)
-                    pes_lj%eps(idx1, idx2) = pes_lj%eps(idx1, idx2) * kelvin2ev
-                    pes_lj%eps(idx2, idx1) = pes_lj%eps(idx2, idx1) * kelvin2ev
+                    pes_lj%eps(idx1, idx2) = pes_lj%eps(idx1, idx2)
+                    pes_lj%eps(idx2, idx1) = pes_lj%eps(idx2, idx1)
 
                 case default
                     print *, "Error in the PES file: unknown LJ parameter", words(1)
