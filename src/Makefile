@@ -19,7 +19,9 @@ FC     = ifort
 FFLAGS = -O3 -mkl -xhost -fp-model precise -132
 LIB    =
 
-# Comments: -fp-model precise -132 was added to guerantee numerical stability (affects mostly the RuNNer subroutines)
+# Comments: 
+# -fp-model precise -132 was added to guerantee numerical stability (affects mostly the RuNNer subroutines)
+#  instead of using the MKL library one can also include BLAS and LAPACK directly (not tested)
 
 # check also the intel link advisor webpage under:
 # https://software.intel.com/content/www/us/en/develop/articles/intel-mkl-link-line-advisor.html
