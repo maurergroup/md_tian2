@@ -428,45 +428,8 @@ def analyze(trajs,logfile):
 	in_plane_mul_b     = []
 
 	# LOOP
-	for ind,traj in enumerate(trajs):	# List comprehension simply need too much time. This is ugly, but fast.
+	for traj in trajs:	# List comprehension simply need too much time. This is ugly, but fast.
 		if traj.in_plane and traj.has_scattered:
-                        if traj.cl_appr < 1.4:
-                            outfile_string = "slow_component.log"
-                        else:
-                            outfile_string = "fast_component.log"
-
-                        outfile = open(outfile_string,'a+')
-                        if 14 <= traj.polar_f <= 16: # SW mod starts here
-                            if 1.44 <= traj.ekin_p_f:
-                                outfile.write("15+-1, 1.44 <= E_s: trajid {} and closest approach {}\n".format(traj.traj_id,traj.cl_appr))
-                            if 0.960 <= traj.ekin_p_f < 1.44:
-                                outfile.write("15+-1, 0.96 <= E_s < 1.44: trajid {} and closest approach {}\n".format(traj.traj_id,traj.cl_appr))
-                            if traj.ekin_p_f < 0.960:
-                                outfile.write("15+-1, E_s < 0.96: trajid {} and closest approach {}\n".format(traj.traj_id,traj.cl_appr))
-                        if 29 <= traj.polar_f <= 31: # SW mod starts here
-                            if 1.44 <= traj.ekin_p_f:
-                                outfile.write("30+-1, 1.44 <= E_s: trajid {} and closest approach {}\n".format(traj.traj_id,traj.cl_appr))
-                            if 0.960 <= traj.ekin_p_f < 1.44:
-                                outfile.write("30+-1, 0.96 <= E_s < 1.44: trajid {} and closest approach {}\n".format(traj.traj_id,traj.cl_appr))
-                            if traj.ekin_p_f < 0.960:
-                                outfile.write("30+-1, E_s < 0.96: trajid {} and closest approach {}\n".format(traj.traj_id,traj.cl_appr))
-                        if 44 <= traj.polar_f <= 46:
-                            if 1.44 <= traj.ekin_p_f:
-                                outfile.write("45+-1, 1.44 <= E_s: trajid {} and closest approach {}\n".format(traj.traj_id,traj.cl_appr))
-                            if 0.960 <= traj.ekin_p_f < 1.44:
-                                outfile.write("45+-1, 0.96 <= E_s < 1.44: trajid {} and closest approach {}\n".format(traj.traj_id,traj.cl_appr))
-                            if traj.ekin_p_f < 0.960:
-                                outfile.write("45+-1, E_s < 0.96: trajid {} and closest approach {}\n".format(traj.traj_id,traj.cl_appr))
-                        if 59 <= traj.polar_f <= 61: # SW mod starts here
-                            if 1.44 <= traj.ekin_p_f:
-                                outfile.write("60+-1, 1.44 <= E_s: trajid {} and closest approach {}\n".format(traj.traj_id,traj.cl_appr))
-                            if 0.960 <= traj.ekin_p_f < 1.44:
-                                outfile.write("60+-1, 0.96 <= E_s < 1.44: trajid {} and closest approach {}\n".format(traj.traj_id,traj.cl_appr))
-                            if traj.ekin_p_f < 0.960:
-                                outfile.write("60+-1, E_s < 0.96: trajid {} and closest approach {}\n".format(traj.traj_id,traj.cl_appr))
-
-                        outfile.close()
-
 
 			in_plane_all_eloss.append(traj.eloss)
 
@@ -1007,8 +970,46 @@ def analyze(trajs,logfile):
 # Average energy of H-atoms reflected 1.93905890836 eV.
 # Peak energy of H-atoms reflected 2.770000 eV
 #
+def analyze_angles(trajs,logfile):
+	for traj in trajs:	# List comprehension simply need too much time. This is ugly, but fast.
+		if traj.in_plane and traj.has_scattered:
 
+                        if traj.cl_appr < 1.4: # our structural parameter for the barrie # our structural parameter for the barrierr
+                            outfile_string = "slow_component.log"
+                        else:
+                            outfile_string = "fast_component.log"
 
+                        outfile = open(outfile_string,'a+')
+                        if 14 <= traj.polar_f <= 16:
+                            if 1.44 <= traj.ekin_p_f:
+                                outfile.write("15+-1, 1.44 <= E_s: trajid {} and closest approach {}\n".format(traj.traj_id,traj.cl_appr))
+                            if 0.960 <= traj.ekin_p_f < 1.44:
+                                outfile.write("15+-1, 0.96 <= E_s < 1.44: trajid {} and closest approach {}\n".format(traj.traj_id,traj.cl_appr))
+                            if traj.ekin_p_f < 0.960:
+                                outfile.write("15+-1, E_s < 0.96: trajid {} and closest approach {}\n".format(traj.traj_id,traj.cl_appr))
+                        if 29 <= traj.polar_f <= 31:
+                            if 1.44 <= traj.ekin_p_f:
+                                outfile.write("30+-1, 1.44 <= E_s: trajid {} and closest approach {}\n".format(traj.traj_id,traj.cl_appr))
+                            if 0.960 <= traj.ekin_p_f < 1.44:
+                                outfile.write("30+-1, 0.96 <= E_s < 1.44: trajid {} and closest approach {}\n".format(traj.traj_id,traj.cl_appr))
+                            if traj.ekin_p_f < 0.960:
+                                outfile.write("30+-1, E_s < 0.96: trajid {} and closest approach {}\n".format(traj.traj_id,traj.cl_appr))
+                        if 44 <= traj.polar_f <= 46:
+                            if 1.44 <= traj.ekin_p_f:
+                                outfile.write("45+-1, 1.44 <= E_s: trajid {} and closest approach {}\n".format(traj.traj_id,traj.cl_appr))
+                            if 0.960 <= traj.ekin_p_f < 1.44:
+                                outfile.write("45+-1, 0.96 <= E_s < 1.44: trajid {} and closest approach {}\n".format(traj.traj_id,traj.cl_appr))
+                            if traj.ekin_p_f < 0.960:
+                                outfile.write("45+-1, E_s < 0.96: trajid {} and closest approach {}\n".format(traj.traj_id,traj.cl_appr))
+                        if 59 <= traj.polar_f <= 61:
+                            if 1.44 <= traj.ekin_p_f:
+                                outfile.write("60+-1, 1.44 <= E_s: trajid {} and closest approach {}\n".format(traj.traj_id,traj.cl_appr))
+                            if 0.960 <= traj.ekin_p_f < 1.44:
+                                outfile.write("60+-1, 0.96 <= E_s < 1.44: trajid {} and closest approach {}\n".format(traj.traj_id,traj.cl_appr))
+                            if traj.ekin_p_f < 0.960:
+                                outfile.write("60+-1, E_s < 0.96: trajid {} and closest approach {}\n".format(traj.traj_id,traj.cl_appr))
+
+                        outfile.close()
 
 
 
@@ -1024,7 +1025,6 @@ logfile.write("Created by version %4.2f\n" % VERSION_ID)
 
 
 
-
 ### READ IN TRAJS ###
 traj_collection, SCATTERED, ABSORBED, TRANSMITTED = initialize(inpname,logfile)
 
@@ -1034,7 +1034,16 @@ FRAC_SCATTERED = float(SCATTERED)/NTRAJS
 FRAC_ABSORBED = float(ABSORBED)/NTRAJS
 FRAC_TRANSMITTED = float(TRANSMITTED)/NTRAJS
 
+
+
 ### OUTPUT ###
 analyze(traj_collection,logfile)
+
+
+
+### H@Gr functions
+analyze_angles(traj_collection,logfile)
+
+
 
 logfile.close()
