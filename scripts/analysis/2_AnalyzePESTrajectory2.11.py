@@ -11,7 +11,7 @@
 
 # intention: analyze compressed traj file to generate data files needed for plotting
 
-# use like: python <scriptname>
+# use like: python2 <scriptname>
 
 import os, sys, math, copy, numpy, time
 

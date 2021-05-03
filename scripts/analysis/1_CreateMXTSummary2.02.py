@@ -16,7 +16,7 @@
 
 # intention: analyze all traj/mxt_fin files and create the MXt2Summary file
 
-# use like: python <scriptname>
+# use like: python2 <scriptname>
 
 
 # 2DO:
@@ -329,7 +329,11 @@ logfile.write("Created by version %4.2f\n" % VERSION_ID)
 traj_list = read_in_mxt_fins(logfile)
 write_summary(logfile, outname, traj_list)
 
-# in case of further analysis
+
+
+# H@Gr related functions
 write_statistics(traj_list)
+
+
 
 logfile.close()

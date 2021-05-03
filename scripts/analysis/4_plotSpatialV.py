@@ -2,16 +2,17 @@
 
 # intetnion: plot spatial velocity distribution
 
-# use like: python <scriptname>
+# use like: python3 <scriptname>
 
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.interpolate import griddata
 from matplotlib.colors import LogNorm
 
+# set according to lattice vectors
 xmax = 8.5476
 ymax = 7.4024
-zmax = 13.0055 # this only for completeness
+zmax = 13.0055 # this is only for completeness
 
 
 dat = np.genfromtxt('analysis/spatial_v.txt',skip_header=1)
