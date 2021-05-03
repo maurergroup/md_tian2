@@ -12,10 +12,27 @@
 ### Settings:
 #############
 
-# ifort and mkl library
+# Although it is possible to use GNU compiler, we strongly recommend to use the intel compiler due to performance reasons!
+
+# INTEL compiler and MKL library - dynamic
 FC     = ifort 
 FFLAGS = -O3 -mkl -xhost -fp-model precise -132
 LIB    =
+
+# Comments: -fp-model precise -132 was added to guerantee numerical stability (affects mostly the RuNNer subroutines)
+
+# check also the intel link advisor webpage under:
+# https://software.intel.com/content/www/us/en/develop/articles/intel-mkl-link-line-advisor.html
+
+# GNU Compiler and MKL library - static
+#FC     = gfortran
+#FFLAGS = -O3 -xhost -fp-model precise -132
+#LIB    = -Wl,--start-group ${MKLROOT}/lib/intel64/libmkl_gf_lp64.a ${MKLROOT}/lib/intel64/libmkl_sequential.a ${MKLROOT}/lib/intel64/libmkl_core.a -Wl,--end-group -lpthread -lm -ldl
+
+# GNU Compiler and MKL library - dynamic
+#FC     = gfortran
+#FFLAGS = -O3 -xhost -fp-model precise -132
+#LIB    = -L${MKLROOT}/lib/intel64 -Wl,--no-as-needed -lmkl_gf_lp64 -lmkl_sequential -lmkl_core -lpthread -lm -ldl
 
 ###############################################
 # Changes below this line developers only

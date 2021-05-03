@@ -32,7 +32,7 @@ List of modules: -> maybe also here, but put in manual!
 	trajectory_info.f90	collect information from the calculated trajectories
 	universe_mod.f90	contains definitions of user types and all constants
 	useful_things.f90	useful math routines
-        write_info.f90          write header and information concerning program routine
+	write_info.f90          write header and information concerning program routine
 
 
 
@@ -46,22 +46,6 @@ input.nn	        :control parameters for the high-dimensional neural network pot
 scaling.data	        :contains the bias weights for the high-dimensional neural network potential
 weights.XXX.data        :contains the weights for this element (XXX is the element number in the periodic table; e.g. 001 for H)
 
-
-Compilation and linking (Intel fortran compiler and mkl library): -> maybe also here, but put in manual!
-
-In case the gfortran compiler is used you have to insert in the Makefile for the LIB entry:
-
--Wl,--start-group ${MKLROOT}/lib/intel64/libmkl_gf_lp64.a ${MKLROOT}/lib/intel64/libmkl_sequential.a ${MKLROOT}/lib/intel64/libmkl_core.a -Wl,--end-group -lpthread -lm -ldl
-
-for static or
-
--L${MKLROOT}/lib/intel64 -Wl,--no-as-needed -lmkl_gf_lp64 -lmkl_sequential -lmkl_core -lpthread -lm -ldl
-
-for dynamic linking. Check also the intel link advisor webpage under:
-
-https://software.intel.com/content/www/us/en/develop/articles/intel-mkl-link-line-advisor.html
-
-Although it is possible to use GNU compiler, we strongly recommend to use the intel compiler due to performance reasons!
 
 Example calculation:
 To check for the technical and numerical stability of the program, one can run the simulation in the example/md/ folder 

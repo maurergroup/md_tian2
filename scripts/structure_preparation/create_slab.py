@@ -1,11 +1,11 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Intention: script to create fcc, bcc and diamond slabs with given miller indices for surface type
 
 #use script like: 
 #./scriptname <element symbol> <lattice type> <miller index x-axis> <miller index y-axis> <miller index z-axis> <surface layers> <lattice constant> <repeat in x> <repeat in y> <vacuum>
 
-#example: ./all_surfaces.py Ag fcc 1 1 1 6 4.17 2 2 6.5 (Create a POSCAR file of an 2x2 Ag fcc(111) surface with 6 layers, a lattice constant of 4.17 Ang and 6.5 Ang vacuum)
+#example: ./create_slab.py Ag fcc 1 1 1 6 4.17 2 2 6.5 (Create a POSCAR file of an 2x2 Ag fcc(111) surface with 6 layers, a lattice constant of 4.17 Ang and 6.5 Ang vacuum)
 
 # 2do: include general procedure for hcp metals?, convert orthorhombic to orthogonal lattice, 
 

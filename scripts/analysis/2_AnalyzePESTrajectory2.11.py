@@ -1041,7 +1041,7 @@ analyze(traj_collection,logfile)
 
 
 
-### H@Gr functions
+### H@Gr related functions
 analyze_angles(traj_collection,logfile)
 
 

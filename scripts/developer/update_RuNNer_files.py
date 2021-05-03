@@ -1,10 +1,11 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 
 # intention: update RuNNer related files in a separate folder in the src folder of md_tian2
 
-# use: python update_RuNNer_files.py <path/to/RuNNer/src/dir> <path/to/md_tian2/RuNNer/src/dir>
+# use: python3 update_RuNNer_files.py <path/to/RuNNer/src/dir> <path/to/md_tian2/RuNNer/src/dir>
 
 # 2do: add options and show help like in RuNNerUC.py
+#      change to list? -> give entry number+file list?
 
 import sys
 import os
@@ -12,7 +13,7 @@ import os
 runner_path=sys.argv[1]
 md_tian_path=sys.argv[2]
 
-# change to list? -> give entry number+file list?
+# RuNNer source files in alphabetical order, add additional files if needed
 file_list = \
        'abstime.f90 \
         addatoms.f90 \
@@ -68,7 +69,6 @@ file_list = \
         symfunctions.f90 \
         timings.f90 \
         translate.f90'
-# RuNNer source files in alphabetical order, add additional files if needed
 
 runner_dir=os.chdir(runner_path) # change to RuNNer directory
 

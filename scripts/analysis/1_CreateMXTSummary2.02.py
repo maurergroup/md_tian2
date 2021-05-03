@@ -256,7 +256,7 @@ def write_traj_to_file(this_traj,this_outfile):
 
 
 # 2DO: include write function to spare unnecessary code!!
-def write_statistics(traj_list):
+def write_angle_files(traj_list):
         # make the following more general
         outfilestr_15 = "MXT2Summary_15.txt"
         outfilestr_30 = "MXT2Summary_30.txt"
@@ -332,7 +332,7 @@ write_summary(logfile, outname, traj_list)
 
 
 # H@Gr related functions
-write_statistics(traj_list)
+write_angle_files(traj_list)
 
 
 

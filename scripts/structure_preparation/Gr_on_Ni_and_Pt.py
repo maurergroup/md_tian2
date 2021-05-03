@@ -2,6 +2,10 @@
 
 # intention: create input structures for graphene (Gr) on Ni and Pt
 
+# use: python3 <scriptname>
+
+#2do: add needed comments, mention paper with algo for lattice mismatch, include MLP w/ Mail as reference, mention/show how to come up with lattice vectors for super structure that respects both lattice constants
+
 from ase.lattice.hexagonal import Graphene #for creating the Gr slab
 from ase.build import fcc111 #for creating Ni fcc(111) surface
 from ase.io import write #for writing to POSCAR
