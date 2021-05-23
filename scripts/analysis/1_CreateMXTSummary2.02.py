@@ -119,61 +119,81 @@ def file_len(fname):
 
 
 def read_in_mxt_fins(logfile):
-	os.chdir("traj/")
-	traj_dir = os.getcwd()
-	folder_list = sorted(glob.glob('mxt_*'))
+        os.chdir("traj/")
+        traj_dir = os.getcwd()
+        folder_list = sorted(glob.glob('mxt_*'))
 	#folder_list = [folder for folder in os.listdir(traj_dir)]
-	num_folders = len(folder_list)
+        num_folders = len(folder_list)
 #	traj_list = num_folders*[None]
-	traj_list = []
-	print("Reading {} trajs...".format(num_folders))
-	logfile.write("Reading {} trajs...\n".format(num_folders))
-	counter = 0
-	traj_id = []
-	for folder in folder_list:
-		if (counter % (num_folders/10) == 0):
+        traj_list = []
+        print("Reading {} trajs...".format(num_folders))
+        logfile.write("Reading {} trajs...\n".format(num_folders))
+        counter = 0
+        traj_id = []
+        for folder in folder_list:
+                if (counter % (num_folders/10) == 0):
                         print("{}%".format(100*counter/num_folders+1))
                         logfile.write("{}%\n".format(100*counter/num_folders+1))
 
-		infile = open(folder, 'r')						        	####    Reference Trajectory Output   ####
+                infile = open(folder, 'r')
                 traj_id = folder[7:15]
                 checkline = file_len(folder) # check if number of entries match finished traj file
 
-                if checkline == 23:
-		        for line in infile:
-			        try:
-			        	ekin_p_i = line.strip(' \n\t\r').split()[-1]; line=infile.next()	#	ekin_p_i =      1.9200000
-				        ekin_l_i = line.strip(' \n\t\r').split()[-1]; line=infile.next()	#	ekin_l_i =      0.9553543
-				        epot_i   = line.strip(' \n\t\r').split()[-1]; line=infile.next()	#	epot_i   =   -392.2094094
-				        etotal_i = line.strip(' \n\t\r').split()[-1]; line=infile.next()	#       etotal_i =   -369.3305490
-			        	r_p_i    = line.strip(' \n\t\r').split()[-3:] ; line=infile.next()	#	r_i      =     30.1309358    32.4013593     3.5000000
-			        	v_p_i    = line.strip(' \n\t\r').split()[-3:] ; line=infile.next()	#	v_i      =     0.0000000     0.0000000     -0.1934888
-		        		polar_i  = line.strip(' \n\t\r').split()[-1]; line=infile.next()	#	polar_i  =     50.0000000
-	        			azi_i    = line.strip(' \n\t\r').split()[-1]; line=infile.next()	#	azi_i    =      0.0000000
-		        		line=infile.next()							#
-			        	ekin_p_f = line.strip(' \n\t\r').split()[-1]; line=infile.next()	#       ekin_p_f =      1.5942738
-		        		ekin_l_f = line.strip(' \n\t\r').split()[-1]; line=infile.next()	#	ekin_l_f =      0.9610213
-       	                	        epot_f   = line.strip(' \n\t\r').split()[-1]; line=infile.next()	#	epot_f   =   -391.8832698
-       	        	                etotal_f = line.strip(' \n\t\r').split()[-1]; line=infile.next()	#	etotal_f =   -369.3305177
-       	        	                r_p_f    = line.strip(' \n\t\r').split()[-3:]; line=infile.next()	#	r_f      =     33.1131979    32.3776858     1.3585263
-       	        	                v_p_f    = line.strip(' \n\t\r').split()[-3:]; line=infile.next()	#	r_f      =      0.0026410     0.0117354     0.1513796
-       	 		                polar_f  = line.strip(' \n\t\r').split()[-1]; line=infile.next()	#	polar_f  =    122.6747121
-       		       	                azi_f    = line.strip(' \n\t\r').split()[-1]; line=infile.next()	#	azi_f    =     -5.5773256
-				        line=infile.next()
-				        time     = line.strip(' \n\t\r').split()[-1]; line=infile.next()	#	time     =     20.0000000
-				        turn_pnts= line.strip(' \n\t\r').split()[-1]; line=infile.next()	#	turn_pnts =           1
-				        cl_appr  = line.strip(' \n\t\r').split()[-1]; line=infile.next()        #       cl_appr  =      0.9694690
-				        cl_appr_t  = line.strip(' \n\t\r').split()[-1]; line=infile.next()        #       cl_appr_time  =          278
-				        r_p_min  = line.strip(' \n\t\r').split()[-3:]				#	r_min_p  =     51.3246421    33.1600141     0.9996723
+                if checkline == 23: # only finished traj files have all needed entries, this will skip unfinished trajs
+                        for line in infile:
+                                sline = line.split()
+                                #try:
+                                if "ekin_p_i" in sline:
+                                    ekin_p_i = sline[-1]	#	ekin_p_i =      1.9200000
+                                elif "ekin_l_i" in sline:
+                                    ekin_l_i = sline[-1]	#	ekin_l_i =      0.9553543
+                                elif "epot_i" in line:
+                                    epot_i  = sline[-1]         #       epot_i   =   -392.2094094
+                                elif "etotal_i" in line:
+                                    etotal_i = sline[-1]        #       etotal_i =   -369.3305490
+                                if line.startswith("r_i"):
+                                    r_p_i = sline[-3:]          #       r_i      =     30.1309358    32.4013593     3.5000000
+                                if "v_i" in line:
+                                    v_p_i = sline[-3:]          #       v_i      =     0.0000000     0.0000000     -0.1934888 
+                                if "polar_i" in line:
+                                    polar_i = sline[-1]         #       polar_i  =     50.0000000
+                                if "azi_i" in line:
+                                    azi_i = sline[-1]           #       azi_i    =      0.0000000
+                                if "ekin_p_f" in line:
+                                    ekin_p_f = sline[-1]        #       ekin_p_f =      1.5942738
+                                if "ekin_l_f" in line:
+                                    ekin_l_f = sline[-1]        #       ekin_l_f =      0.9610213
+                                if "epot_f" in line:
+                                    epot_f = sline[-1]          #       epot_f   =   -391.8832698
+                                if "etotal_f" in line:
+                                    etotal_f = sline[-1]        #       etotal_f =   -369.3305177
+                                if line.startswith("r_f"):
+                                    r_p_f = sline[-3:]          #       r_f      =     33.1131979    32.3776858     1.3585263
+                                if "v_f" in line:
+                                    v_p_f = sline[-3:]          #       v_f      =      0.0026410     0.0117354     0.1513796
+                                if "polar_f" in line:
+                                    polar_f = sline[-1]         #       polar_f  =    122.6747121
+                                if "azi_f" in line:
+                                    azi_f = sline[-1]           #       azi_f    =     -5.5773256
+                                if "time" in line:
+                                    time = sline[-1]            #       time     =     20.0000000
+                                if "turn_pnts" in line:
+                                    turn_pnts = sline[-1]       #       turn_pnts =           1
+                                if "cl_appr" in line:
+                                    cl_appr = sline[-1]         #       cl_appr  =      0.9694690
+                                if "cl_appr_time" in line:
+                                    cl_appr_t = sline[-1]       #       cl_appr_time  =          278
+                                if "r_min_p" in line:
+                                    r_p_min = sline[-3:]        #       r_min_p  =     51.3246421    33.1600141     0.9996723
 
-				        traj = Traj(folder, ekin_p_i, ekin_l_i, epot_i, etotal_i,  \
-                      			    r_p_i, v_p_i, polar_i, azi_i, ekin_p_f, ekin_l_f, epot_f,\
-                       			    etotal_f, r_p_f, v_p_f, polar_f, azi_f, time, turn_pnts,\
-					    cl_appr, cl_appr_t, r_p_min, traj_id)
-			        except:
-                                        print("Error in file {} in line {}".format(folder,line))
-                                        logfile.write("Error in file {} in line {}\n".format(folder,line))
-				        sys.exit()	
+                        traj = Traj(folder, ekin_p_i, ekin_l_i, epot_i, etotal_i,  \
+                                    r_p_i, v_p_i, polar_i, azi_i, ekin_p_f, ekin_l_f, epot_f,\
+                                    etotal_f, r_p_f, v_p_f, polar_f, azi_f, time, turn_pnts,\
+                                    cl_appr, cl_appr_t, r_p_min, traj_id)
+                                #except:
+                                        #print("Error in file {} in line {}".format(folder,line))
+                                        #logfile.write("Error in file {} in line {}\n".format(folder,line))
+                                        #sys.exit()	
 
 		        #infile.close()
 		        #traj_list[counter] = traj
@@ -189,8 +209,8 @@ def read_in_mxt_fins(logfile):
                 infile.close()
 
         
-	os.chdir("../")
-	return traj_list
+        os.chdir("../")
+        return traj_list
 
 
 def write_summary(logfile, outfile_name, traj_list):
@@ -206,11 +226,10 @@ def write_summary(logfile, outfile_name, traj_list):
                                 traj.time, traj.turn_pnts, traj.cl_appr, traj.cl_appr_t, \
 				traj.r_p_min[0], traj.r_p_min[1], traj.r_p_min[2]))
 		except (IndexError):
-			outfile.close()
+                        outfile.close()
                         print("ERROR: There's something wrong with file {}\n".format(str(traj)))
                         logfile.write("ERROR: There's something wrong with file {}\n".format(str(traj)))
-			sys.exit()
-			
+                        sys.exit()
 
 	outfile.close()
 
@@ -242,7 +261,6 @@ def remove_unfinished_traj(logfile):
     os.chdir("../")
 
 def write_traj_to_file(this_traj,this_outfile):
-        #outfile = open(this_outfile, "w")
         this_outfile.write("%s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s\n" \
                        % ( this_traj.traj_id, this_traj.ekin_p_i, this_traj.ekin_l_i, this_traj.epot_i, 
                            this_traj.etotal_i, this_traj.r_p_i[0], this_traj.r_p_i[1], this_traj.r_p_i[2], \
@@ -252,10 +270,8 @@ def write_traj_to_file(this_traj,this_outfile):
                            this_traj.v_p_f[0], this_traj.v_p_f[1], this_traj.v_p_f[2], this_traj.polar_f, \
                            this_traj.azi_f, this_traj.time, this_traj.turn_pnts, this_traj.cl_appr, this_traj.cl_appr_t, \
                            this_traj.r_p_min[0], this_traj.r_p_min[1], this_traj.r_p_min[2]))
-        #outfile.close()
 
 
-# 2DO: include write function to spare unnecessary code!!
 def write_angle_files(traj_list):
         # make the following more general
         outfilestr_15 = "MXT2Summary_15.txt"
@@ -271,32 +287,12 @@ def write_angle_files(traj_list):
         for traj in traj_list:
                 if 7.5 <= float(traj.polar_f) <= 22.5:
                         write_traj_to_file(traj,outfile_15)
-                        #outfile_15.write("%s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s\n" \
-                        #        % ( traj.traj_id, traj.ekin_p_i, traj.ekin_l_i, traj.epot_i, traj.etotal_i, traj.r_p_i[0], traj.r_p_i[1], traj.r_p_i[2], \
-                        #        traj.polar_i, traj.azi_i, traj.ekin_p_f, traj.ekin_l_f, traj.epot_f, traj.etotal_f, traj.r_p_f[0], \
-                        #        traj.r_p_f[1], traj.r_p_f[2], traj.polar_f, traj.azi_f, traj.time, traj.turn_pnts, traj.cl_appr, \
-                        #        traj.r_p_min[0], traj.r_p_min[1], traj.r_p_min[2]))
                 if 22.5 <= float(traj.polar_f) <= 37.5:
                         write_traj_to_file(traj,outfile_30)
-                        #outfile_30.write("%s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s\n" \
-                        #        % ( traj.traj_id, traj.ekin_p_i, traj.ekin_l_i, traj.epot_i, traj.etotal_i, traj.r_p_i[0], traj.r_p_i[1], traj.r_p_i[2], \
-                        #        traj.polar_i, traj.azi_i, traj.ekin_p_f, traj.ekin_l_f, traj.epot_f, traj.etotal_f, traj.r_p_f[0], \
-                        #        traj.r_p_f[1], traj.r_p_f[2], traj.polar_f, traj.azi_f, traj.time, traj.turn_pnts, traj.cl_appr, \
-                        #        traj.r_p_min[0], traj.r_p_min[1], traj.r_p_min[2]))
                 if 37.5 <= float(traj.polar_f) <= 52.5:
                         write_traj_to_file(traj,outfile_45)
-                        #outfile_45.write("%s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s\n" \
-                        #        % ( traj.traj_id, traj.ekin_p_i, traj.ekin_l_i, traj.epot_i, traj.etotal_i, traj.r_p_i[0], traj.r_p_i[1], traj.r_p_i[2], \
-                        #        traj.polar_i, traj.azi_i, traj.ekin_p_f, traj.ekin_l_f, traj.epot_f, traj.etotal_f, traj.r_p_f[0], \
-                        #        traj.r_p_f[1], traj.r_p_f[2], traj.polar_f, traj.azi_f, traj.time, traj.turn_pnts, traj.cl_appr, \
-                        #        traj.r_p_min[0], traj.r_p_min[1], traj.r_p_min[2]))
                 if 52.5 <= float(traj.polar_f) <= 67.5:
                         write_traj_to_file(traj,outfile_60)
-                        #outfile_60.write("%s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s\n" \
-                        #        % ( traj.traj_id, traj.ekin_p_i, traj.ekin_l_i, traj.epot_i, traj.etotal_i, traj.r_p_i[0], traj.r_p_i[1], traj.r_p_i[2], \
-                        #        traj.polar_i, traj.azi_i, traj.ekin_p_f, traj.ekin_l_f, traj.epot_f, traj.etotal_f, traj.r_p_f[0], \
-                        #        traj.r_p_f[1], traj.r_p_f[2], traj.polar_f, traj.azi_f, traj.time, traj.turn_pnts, traj.cl_appr, \
-                        #        traj.r_p_min[0], traj.r_p_min[1], traj.r_p_min[2]))
 
 
         outfile_15.close()
@@ -305,6 +301,21 @@ def write_angle_files(traj_list):
         outfile_60.close()
 
 
+def traj_in_es(traj_list):
+
+        es_file_1 = open(esname+'_p31a5.txt', 'w')
+        es_file_2 = open(esname+'_p5a31.txt', 'w')
+
+        for traj in traj_list:
+                if float(traj.polar_f) <= 31:
+                        if min(360-abs(float(traj.azi_f)-float(traj.azi_i)), abs(float(traj.azi_f)-float(traj.azi_i))) <= 5:
+                                write_traj_to_file(traj,es_file_1)
+                if min(360-abs(float(traj.azi_f)-float(traj.azi_i)), abs(float(traj.azi_f)-float(traj.azi_i))) <= 31:
+                        if float(traj.polar_f) <= 5:
+                                write_traj_to_file(traj,es_file_2)
+
+        es_file_1.close()
+        es_file_2.close()
 
 
 
@@ -333,7 +344,7 @@ write_summary(logfile, outname, traj_list)
 
 # H@Gr related functions
 write_angle_files(traj_list)
-
+traj_in_es(traj_list)
 
 
 logfile.close()

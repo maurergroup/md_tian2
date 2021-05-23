@@ -27,7 +27,7 @@ subroutine write_info()
 
       print *, '--------------------------------------------------------------------------'
       print *, '                md_tian2 (Molecular Dynamics Tian Xia 2)                  '
-      print *, '---------  (c) 2014-2020 Daniel J. Auerbach, Svenja M. Janke,    ---------'
+      print *, '---------  (c) 2014-2021 Daniel J. Auerbach, Svenja M. Janke,    ---------'
       print *, '---------  Marvin Kammler, Sascha Kandratsenka, Sebastian Wille  ---------'
       print *, '---------            Dynamics at Surfaces Department             ---------'
       print *, '---------    MPI for Biophysical Chemistry Goettingen, Germany   ---------'

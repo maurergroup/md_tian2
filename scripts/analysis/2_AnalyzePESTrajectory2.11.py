@@ -69,10 +69,10 @@ class Point3D:
                 self.z = self.z / l
 	
 	def project_onto_plane(self, plane):
-    		d = self.dot_product(plane) / plane.length()
-		plane.normalize()
-    		plane.multiply(d)
-    		self.minus(plane)
+                d = self.dot_product(plane) / plane.length()
+                plane.normalize()
+                plane.multiply(d)
+                self.minus(plane)
 
 
 	def rotate_about_z(self, angle):
@@ -106,42 +106,42 @@ class Traj:
 			r_p_i, v_p_i, polar_i, azi_i, ekin_p_f, ekin_l_f, epot_f,   \
                         etotal_f, r_p_f, v_p_f, polar_f, azi_f, time, turn_pnts,    \
 			cl_appr, cl_appr_t, r_p_min, traj_id):
-		self.ekin_p_i   = ekin_p_i
-		self.ekin_l_i   = ekin_l_i
-		self.epot_i     = epot_i
-		self.etotal_i   = etotal_i
-		self.r_p_i      = r_p_i
-		self.v_p_i      = v_p_i
-		self.polar_i    = polar_i
-		self.azi_i      = azi_i
-		self.ekin_p_f   = ekin_p_f
-		self.ekin_l_f   = ekin_l_f
-		self.epot_f     = epot_f
-		self.etotal_f   = etotal_f
-		self.r_p_f      = r_p_f
-		self.v_p_f      = v_p_f
-		self.polar_f    = polar_f
-		self.azi_f      = azi_f
-		self.time       = time
-		self.turn_pnts  = turn_pnts
-		self.cl_appr    = cl_appr
-		self.cl_appr_t  = cl_appr_t
-		self.r_p_min    = r_p_min
+                self.ekin_p_i   = ekin_p_i
+                self.ekin_l_i   = ekin_l_i
+                self.epot_i     = epot_i
+                self.etotal_i   = etotal_i
+                self.r_p_i      = r_p_i
+                self.v_p_i      = v_p_i
+                self.polar_i    = polar_i
+                self.azi_i      = azi_i
+                self.ekin_p_f   = ekin_p_f
+                self.ekin_l_f   = ekin_l_f
+                self.epot_f     = epot_f
+                self.etotal_f   = etotal_f
+                self.r_p_f      = r_p_f
+                self.v_p_f      = v_p_f
+                self.polar_f    = polar_f
+                self.azi_f      = azi_f
+                self.time       = time
+                self.turn_pnts  = turn_pnts
+                self.cl_appr    = cl_appr
+                self.cl_appr_t  = cl_appr_t
+                self.r_p_min    = r_p_min
                 self.traj_id    = traj_id
-		self.eloss      = ekin_p_i - ekin_p_f
+                self.eloss      = ekin_p_i - ekin_p_f
                 self.vloss      = length(v_p_i) - length(v_p_f)
-		self.has_scattered = r_p_f.z > r_p_i.z
-		self.has_transmitted = r_p_f.z < SHOT_THRU_LIMIT
-		self.has_adsorbed = not (self.has_scattered or self.has_transmitted)
-		self.delta_azi = min(360-abs(azi_f-azi_i), abs(azi_f-azi_i))
-		self.in_spec = math.sqrt( (polar_f-polar_i)**2 + (azi_f-azi_i)**2 ) < SPECULAR_RADIUS
-		self.in_plane = self.delta_azi < SPECULAR_RADIUS
+                self.has_scattered = r_p_f.z > r_p_i.z
+                self.has_transmitted = r_p_f.z < SHOT_THRU_LIMIT
+                self.has_adsorbed = not (self.has_scattered or self.has_transmitted)
+                self.delta_azi = min(360-abs(azi_f-azi_i), abs(azi_f-azi_i))
+                self.in_spec = math.sqrt( (polar_f-polar_i)**2 + (azi_f-azi_i)**2 ) < SPECULAR_RADIUS
+                self.in_plane = self.delta_azi < SPECULAR_RADIUS
 
 	def spec_scattering_vector(self):
-		inc = copy.deepcopy(self.v_p_i)
+                inc = copy.deepcopy(self.v_p_i)
                 inc.z *= -1.
                 inc.normalize()
-		return inc
+                return inc
 
 	def angle_with_spec_scattering_vector(self):
 		inc = self.spec_scattering_vector()
@@ -154,8 +154,8 @@ class Traj:
 	def angle_with_vector(self, vec):
                 out = copy.deepcopy(self.v_p_f)
                 out.normalize()
-		vec = Point3D(vec[0], vec[1], vec[2])
-		vec.normalize()
+                vec = Point3D(vec[0], vec[1], vec[2])
+                vec.normalize()
                 dp = out.dot_product(vec)
                 angle_in_rad = math.acos(dp)
                 return math.degrees( angle_in_rad )
@@ -163,9 +163,9 @@ class Traj:
 
 def angle_between(fv, sv):
         fv1 = Point3D(fv[0], fv[1], fv[2])
-	sv1 = Point3D(sv[0], sv[1], sv[2])
+        sv1 = Point3D(sv[0], sv[1], sv[2])
         fv1.normalize()
-	sv1.normalize()
+        sv1.normalize()
         dp = fv1.dot_product(sv1)
         angle_in_rad = math.acos(dp)
         return math.degrees( angle_in_rad )
@@ -210,60 +210,60 @@ def length(self):
 	return math.sqrt( (self.x)**2 + (self.y)**2 +(self.z)**2 )
 
 def initialize(inpname,logfile):
-	ntrajs = sum(1 for line in open(inpname, "r")) -1 	# first line is commment
-	print("Reading {} trajectories".format(ntrajs))
-	logfile.write("Reading {} trajectories\n".format(ntrajs))
-	traj_list = []					# init list
-	inp_file = open(inpname, "r")
+        ntrajs = sum(1 for line in open(inpname, "r")) -1 	# first line is commment
+        print("Reading {} trajectories".format(ntrajs))
+        logfile.write("Reading {} trajectories\n".format(ntrajs))
+        traj_list = []					# init list
+        inp_file = open(inpname, "r")
         def_nrg_file = open(defnrgname, "w")
-	counter = 0
-	scattered = 0
+        counter = 0
+        scattered = 0
         sc_count = 0
-	absorbed = 0
-	transmitted = 0
-	for line in inp_file:
-		if line.startswith("#"):				# is comment line
-			continue
-		if (counter % (ntrajs/10) == 0):
+        absorbed = 0
+        transmitted = 0
+        for line in inp_file:
+                if line.startswith("#"):				# is comment line
+                	continue
+                if (counter % (ntrajs/10) == 0):
                         print("{}%".format(100*counter/ntrajs+1))
                         logfile.write("{}%\n".format(100*counter/ntrajs+1))
-		sl = line.strip("\n\t\r ").split()
+                sl = line.strip("\n\t\r ").split()
                 traj_id  = str(sl[0])                                           #       traj_id   = 00000001
-		ekin_p_i = float(sl[1])						#	e_kin_p_i = 3.33000
-		ekin_l_i = float(sl[2])						#	e_kin_l_i = 4.07264
-		epot_i   = float(sl[3])						#	epot_i    = 30.09554
-		etotal_i = float(sl[4])						#       e_total_i = 37.49818
-		r_p_i    = Point3D(float(sl[5]), float(sl[6]), float(sl[7]))	#	r_i       = 14.88455  -2.57611  6.00000
-		v_p_i    = Point3D(float(sl[8]), float(sl[9]), float(sl[10]))	#	r_i       = 14.88455  -2.57611  6.00000
-		polar_i  = float(sl[11])                                         #       polar_i   = 50.00000
-		azi_i    = float(sl[12])                                         #       azi_i     = 0.000000
+                ekin_p_i = float(sl[1])						#	e_kin_p_i = 3.33000
+                ekin_l_i = float(sl[2])						#	e_kin_l_i = 4.07264
+                epot_i   = float(sl[3])						#	epot_i    = 30.09554
+                etotal_i = float(sl[4])						#       e_total_i = 37.49818
+                r_p_i    = Point3D(float(sl[5]), float(sl[6]), float(sl[7]))	#	r_i       = 14.88455  -2.57611  6.00000
+                v_p_i    = Point3D(float(sl[8]), float(sl[9]), float(sl[10]))	#	r_i       = 14.88455  -2.57611  6.00000
+                polar_i  = float(sl[11])                                         #       polar_i   = 50.00000
+                azi_i    = float(sl[12])                                         #       azi_i     = 0.000000
 
-		ekin_p_f = float(sl[13])					#	ekin_p_f  = 0.05978
-		ekin_l_f = float(sl[14])					#	ekin_l_f  = 5.26957
-		epot_f   = float(sl[15])					#	epot_f    = 28.73945
-		etotal_f = float(sl[16])					#	etotal_f  = 34.06880
-		r_p_f    = Point3D(float(sl[17]), float(sl[18]), float(sl[19]))	#	r_f       = 13.70619  1.33464  -1.07431
-		v_p_f    = Point3D(float(sl[20]), float(sl[21]), float(sl[22]))	#	r_f       = 13.70619  1.33464  -1.07431
-		polar_f  = float(sl[23])                                        #       polar_f   = 27.23457
+                ekin_p_f = float(sl[13])					#	ekin_p_f  = 0.05978
+                ekin_l_f = float(sl[14])					#	ekin_l_f  = 5.26957
+                epot_f   = float(sl[15])					#	epot_f    = 28.73945
+                etotal_f = float(sl[16])					#	etotal_f  = 34.06880
+                r_p_f    = Point3D(float(sl[17]), float(sl[18]), float(sl[19]))	#	r_f       = 13.70619  1.33464  -1.07431
+                v_p_f    = Point3D(float(sl[20]), float(sl[21]), float(sl[22]))	#	r_f       = 13.70619  1.33464  -1.07431
+                polar_f  = float(sl[23])                                        #       polar_f   = 27.23457
                 azi_f    = float(sl[24])                                        # 	azi_f     = 4.23478	
-		
-		time     = float(sl[25])					#	time      = 978.70000
-		turn_pnts = int(sl[26])						#       turn_pnts = 14
-		cl_appr  = float(sl[27])					#	cl_appr  =      0.9846501
-		cl_appr_t  = int(sl[28])					#	cl_appr_t = 128
-		r_p_min  = Point3D(float(sl[29]), float(sl[30]), float(sl[31])) #	r_min_p  = 33.4630699  31.9529501  0.9322836
-	
-		this_traj = Traj(ekin_p_i, ekin_l_i, epot_i, etotal_i, r_p_i, v_p_i, polar_i, azi_i, ekin_p_f, \
-					ekin_l_f, epot_f, etotal_f, r_p_f, v_p_f, polar_f, azi_f, time, turn_pnts, \
-					cl_appr, cl_appr_t, r_p_min, traj_id)
+                
+                time     = float(sl[25])					#	time      = 978.70000
+                turn_pnts = int(sl[26])						#       turn_pnts = 14
+                cl_appr  = float(sl[27])					#	cl_appr  =      0.9846501
+                cl_appr_t  = int(sl[28])					#	cl_appr_t = 128
+                r_p_min  = Point3D(float(sl[29]), float(sl[30]), float(sl[31])) #	r_min_p  = 33.4630699  31.9529501  0.9322836
+        
+                this_traj = Traj(ekin_p_i, ekin_l_i, epot_i, etotal_i, r_p_i, v_p_i, polar_i, azi_i, ekin_p_f, \
+                			ekin_l_f, epot_f, etotal_f, r_p_f, v_p_f, polar_f, azi_f, time, turn_pnts, \
+                			cl_appr, cl_appr_t, r_p_min, traj_id)
 
-		traj_list.append(this_traj)
-		counter += 1
+                traj_list.append(this_traj)
+                counter += 1
 
-		if this_traj.ekin_p_f > 1.4*this_traj.ekin_p_i:
-			print("Warning in traj {}: a projectile with final kinetic energy of {} gained more \
+                if this_traj.ekin_p_f > 1.4*this_traj.ekin_p_i:
+                	print("Warning in traj {}: a projectile with final kinetic energy of {} gained more \
                             than 40% of its initial kinetic energy!".format(this_traj.traj_id,this_traj.ekin_p_f))
-			logfile.write("Warning in traj {}: a projectile with final kinetic energy of {} gained \
+                	logfile.write("Warning in traj {}: a projectile with final kinetic energy of {} gained \
                             more than 40% of its initial kinetic energy!\n".format(this_traj.traj_id,this_traj.ekin_p_f))
 
                 #if this_traj.has_transmitted is True:
@@ -274,14 +274,14 @@ def initialize(inpname,logfile):
 
 
 
-	inp_file.close()
+        inp_file.close()
 
-	if not os.path.exists("analysis"):
-    		os.makedirs("analysis")
+        if not os.path.exists("analysis"):
+        	os.makedirs("analysis")
 
-	for traj in traj_list:
-		if traj.has_scattered:
-			scattered += 1
+        for traj in traj_list:
+                if traj.has_scattered:
+                        scattered += 1
                         if traj.cl_appr < 1.4:
                                 if traj.turn_pnts == 1:
                                         def_nrg_file.write(traj.traj_id)
@@ -289,12 +289,12 @@ def initialize(inpname,logfile):
                                 print("Analyze slow component in traj {}".format(traj.traj_id))
                                 logfile.write("Analyze slow component in traj {}\n".format(traj.traj_id))
                                 sc_count += 1
-		elif traj.has_transmitted:
-			transmitted += 1
+                elif traj.has_transmitted:
+                        transmitted += 1
                         print("Particle was transmitted in traj {}".format(traj.traj_id))
                         logfile.write("Particle was transmitted in traj {}\n".format(traj.traj_id))
-		else:
-			absorbed += 1
+                else:
+                	absorbed += 1
 
         print("total traj: {}".format(ntrajs))
         logfile.write("total traj: {}\n".format(ntrajs))
@@ -303,7 +303,7 @@ def initialize(inpname,logfile):
         print("# traj with adsorption: {} out of total {} traj ({}%)".format(absorbed,ntrajs,float(absorbed)*float(100)/float(ntrajs)))
         logfile.write("# traj with adsorption: {} out of total {} traj ({}%)\n".format(absorbed,ntrajs,float(absorbed)*float(100)/float(ntrajs)))
 
-	return traj_list, scattered, absorbed, transmitted
+        return traj_list, scattered, absorbed, transmitted
 
 def numbins(inp):
 	if isinstance(inp, list):
@@ -317,388 +317,389 @@ def numbins(inp):
 
 def analyze(trajs,logfile):
 
-	### BOUNCES ###
-	print("Calculating bounces.")
-	logfile.write("Calculating bounces.\n")
+        ### BOUNCES ###
+        print("Calculating bounces.")
+        logfile.write("Calculating bounces.\n")
 
-	# LOOP 
-	all_bounces    = [traj.turn_pnts for traj in trajs]
-	scat_bounces   = [traj.turn_pnts for traj in trajs if traj.has_scattered]
-	abso_bounces   = [traj.turn_pnts for traj in trajs if traj.has_adsorbed]
-	transm_bounces = [traj.turn_pnts for traj in trajs if traj.has_transmitted]
-	
-	# ANALYSIS
-	all_bounce_hist,    all_bounce_edges    = numpy.histogram(all_bounces,    bins=max(all_bounces), range=(0,max(all_bounces)), density=True)
-	scat_bounce_hist,   scat_bounce_edges   = numpy.histogram(scat_bounces,   bins=max(all_bounces), range=(0,max(all_bounces)), density=True)
-	abso_bounce_hist,   abso_bounce_edges   = numpy.histogram(abso_bounces,   bins=max(all_bounces), range=(0,max(all_bounces)), density=True)
-	transm_bounce_hist, transm_bounce_edges = numpy.histogram(transm_bounces, bins=max(all_bounces), range=(0,max(all_bounces)), density=True)
+        # LOOP 
+        all_bounces    = [traj.turn_pnts for traj in trajs]
+        scat_bounces   = [traj.turn_pnts for traj in trajs if traj.has_scattered]
+        abso_bounces   = [traj.turn_pnts for traj in trajs if traj.has_adsorbed]
+        transm_bounces = [traj.turn_pnts for traj in trajs if traj.has_transmitted]
+        
+        # ANALYSIS
+        all_bounce_hist,    all_bounce_edges    = numpy.histogram(all_bounces,    bins=max(all_bounces), range=(0,max(all_bounces)), density=True)
+        scat_bounce_hist,   scat_bounce_edges   = numpy.histogram(scat_bounces,   bins=max(all_bounces), range=(0,max(all_bounces)), density=True)
+        abso_bounce_hist,   abso_bounce_edges   = numpy.histogram(abso_bounces,   bins=max(all_bounces), range=(0,max(all_bounces)), density=True)
+        transm_bounce_hist, transm_bounce_edges = numpy.histogram(transm_bounces, bins=max(all_bounces), range=(0,max(all_bounces)), density=True)
 
-	# OUTPUT
-	bounce_file = open("analysis/bounces.txt", "w")
-	bounce_file.write("# bounces  all  scattered  absorbed  transmitted\n")
-	for i in range(len(all_bounce_hist)):
-		bounce_file.write("%d %f %f %f %f\n" % ( 0.5*(all_bounce_edges[i]+all_bounce_edges[i+1]), all_bounce_hist[i], FRAC_SCATTERED*scat_bounce_hist[i], FRAC_ABSORBED*abso_bounce_hist[i], FRAC_TRANSMITTED*transm_bounce_hist[i]))
-	bounce_file.close()
-
-
-	### TOTAL ENERGY LOSS ###
-	print("Calculating total energy loss.")
-	logfile.write("Calculating total energy loss.\n")
-	# LOOP 
-	all_eloss = [traj.eloss for traj in trajs if traj.has_scattered] 
-	one_b     = [traj.eloss for traj in trajs if traj.has_scattered and traj.turn_pnts == 1]
-	two_b     = [traj.eloss for traj in trajs if traj.has_scattered and traj.turn_pnts == 3]
-	mul_b     = [traj.eloss for traj in trajs if traj.has_scattered and traj.turn_pnts >= 5]
-	
-	absorbed_eloss = [traj.eloss for traj in trajs if traj.has_adsorbed]
-
-	# ANALYSIS
-	all_eloss_hist, all_eloss_edges = numpy.histogram(all_eloss, bins=numbins(SCATTERED), range=(min(all_eloss), max(all_eloss)), density=True)
-	one_b_hist,     one_b_edges     = numpy.histogram(one_b,     bins=numbins(SCATTERED), range=(min(all_eloss), max(all_eloss)), density=True)
-	two_b_hist,     two_b_edges     = numpy.histogram(two_b,     bins=numbins(SCATTERED), range=(min(all_eloss), max(all_eloss)), density=True)
-	mul_b_hist,     mul_b_edges     = numpy.histogram(mul_b,     bins=numbins(SCATTERED), range=(min(all_eloss), max(all_eloss)), density=True)
-	frac_one_b = float(len(one_b))/SCATTERED
-	frac_two_b = float(len(two_b))/SCATTERED
-	frac_mul_b = float(len(mul_b))/SCATTERED
-
-	# OUTPUT 
-	eloss_file = open("analysis/eloss.txt", "w")
-	eloss_file.write("# eloss/eV  all  single bounce  double bounce  multi bounce\n")
-	for i in range(len(all_eloss_hist)):
-		eloss_file.write("%f %f %f %f %f\n" % (0.5*(all_eloss_edges[i]+all_eloss_edges[i+1]), all_eloss_hist[i], frac_one_b*one_b_hist[i], frac_two_b*two_b_hist[i], frac_mul_b*mul_b_hist[i]))
-	eloss_file.close()
+        # OUTPUT
+        bounce_file = open("analysis/bounces.txt", "w")
+        bounce_file.write("# bounces  all  scattered  absorbed  transmitted\n")
+        for i in range(len(all_bounce_hist)):
+        	bounce_file.write("%d %f %f %f %f\n" % ( 0.5*(all_bounce_edges[i]+all_bounce_edges[i+1]), all_bounce_hist[i], FRAC_SCATTERED*scat_bounce_hist[i], FRAC_ABSORBED*abso_bounce_hist[i], FRAC_TRANSMITTED*transm_bounce_hist[i]))
+        bounce_file.close()
 
 
-	### SPECULAR ENERGY LOSS ###
-	print("Calculating specular energy loss.")
-	logfile.write("Calculating specular energy loss.\n")
+        ### TOTAL ENERGY LOSS ###
+        print("Calculating total energy loss.")
+        logfile.write("Calculating total energy loss.\n")
+        # LOOP 
+        all_eloss = [traj.eloss for traj in trajs if traj.has_scattered] 
+        one_b     = [traj.eloss for traj in trajs if traj.has_scattered and traj.turn_pnts == 1]
+        two_b     = [traj.eloss for traj in trajs if traj.has_scattered and traj.turn_pnts == 3]
+        mul_b     = [traj.eloss for traj in trajs if traj.has_scattered and traj.turn_pnts >= 5]
+        
+        absorbed_eloss = [traj.eloss for traj in trajs if traj.has_adsorbed]
 
-	# INIT
-	spec_all_eloss = []
-	spec_one_b     = []
-	spec_two_b     = []
-	spec_mul_b     = []
+        # ANALYSIS
+        all_eloss_hist, all_eloss_edges = numpy.histogram(all_eloss, bins=numbins(SCATTERED), range=(min(all_eloss), max(all_eloss)), density=True)
+        one_b_hist,     one_b_edges     = numpy.histogram(one_b,     bins=numbins(SCATTERED), range=(min(all_eloss), max(all_eloss)), density=True)
+        two_b_hist,     two_b_edges     = numpy.histogram(two_b,     bins=numbins(SCATTERED), range=(min(all_eloss), max(all_eloss)), density=True)
+        mul_b_hist,     mul_b_edges     = numpy.histogram(mul_b,     bins=numbins(SCATTERED), range=(min(all_eloss), max(all_eloss)), density=True)
+        frac_one_b = float(len(one_b))/SCATTERED
+        frac_two_b = float(len(two_b))/SCATTERED
+        frac_mul_b = float(len(mul_b))/SCATTERED
 
-	# LOOP
-	for traj in trajs:	# List comprehension simply need too much time. This is ugly, but fast.
-		if traj.in_spec and traj.has_scattered:
-			spec_all_eloss.append(traj.eloss)
-			if traj.turn_pnts == 1:
-				spec_one_b.append(traj.eloss)
-			elif traj.turn_pnts == 3:
-				spec_two_b.append(traj.eloss)
-			else:
-				spec_mul_b.append(traj.eloss)
+        # OUTPUT 
+        eloss_file = open("analysis/eloss.txt", "w")
+        eloss_file.write("# eloss/eV  all  single bounce  double bounce  multi bounce\n")
+        for i in range(len(all_eloss_hist)):
+        	eloss_file.write("%f %f %f %f %f\n" % (0.5*(all_eloss_edges[i]+all_eloss_edges[i+1]), all_eloss_hist[i], frac_one_b*one_b_hist[i], frac_two_b*two_b_hist[i], frac_mul_b*mul_b_hist[i]))
+        eloss_file.close()
 
-	spec_eloss_file = open("analysis/spec_eloss.txt", "w")
+
+        ### SPECULAR ENERGY LOSS ###
+        print("Calculating specular energy loss.")
+        logfile.write("Calculating specular energy loss.\n")
+
+        # INIT
+        spec_all_eloss = []
+        spec_one_b     = []
+        spec_two_b     = []
+        spec_mul_b     = []
+
+        # LOOP
+        for traj in trajs:	# List comprehension simply need too much time. This is ugly, but fast.
+                if traj.in_spec and traj.has_scattered:
+                        spec_all_eloss.append(traj.eloss)
+                        if traj.turn_pnts == 1:
+                        	spec_one_b.append(traj.eloss)
+                        elif traj.turn_pnts == 3:
+                        	spec_two_b.append(traj.eloss)
+                        else:
+                        	spec_mul_b.append(traj.eloss)
+
+        spec_eloss_file = open("analysis/spec_eloss.txt", "w")
         spec_eloss_file.write("# eloss/eV  all  single bounce  double bounce  multi bounce\n")
-	if len(spec_all_eloss) > 0:	
-	        # ANALYSIS 
-		spec_all_eloss_hist, spec_all_eloss_edges = numpy.histogram(spec_all_eloss, bins=numbins(spec_all_eloss), range=(min(spec_all_eloss), max(spec_all_eloss)), density=True)
-	        spec_one_b_hist,     spec_one_b_edges     = numpy.histogram(spec_one_b,     bins=numbins(spec_all_eloss), range=(min(spec_all_eloss), max(spec_all_eloss)), density=True)
-	        spec_two_b_hist,     spec_two_b_edges     = numpy.histogram(spec_two_b,     bins=numbins(spec_all_eloss), range=(min(spec_all_eloss), max(spec_all_eloss)), density=True)
-	        spec_mul_b_hist,     spec_mul_b_edges     = numpy.histogram(spec_mul_b,     bins=numbins(spec_all_eloss), range=(min(spec_all_eloss), max(spec_all_eloss)), density=True)
-	        spec_frac_one_b = float(len(spec_one_b))/len(spec_all_eloss)
-	        spec_frac_two_b = float(len(spec_two_b))/len(spec_all_eloss)
-	        spec_frac_mul_b = float(len(spec_mul_b))/len(spec_all_eloss)
+        if len(spec_all_eloss) > 0:	
+                # ANALYSIS 
+                spec_all_eloss_hist, spec_all_eloss_edges = numpy.histogram(spec_all_eloss, bins=numbins(spec_all_eloss), range=(min(spec_all_eloss), max(spec_all_eloss)), density=True)
+                spec_one_b_hist,     spec_one_b_edges     = numpy.histogram(spec_one_b,     bins=numbins(spec_all_eloss), range=(min(spec_all_eloss), max(spec_all_eloss)), density=True)
+                spec_two_b_hist,     spec_two_b_edges     = numpy.histogram(spec_two_b,     bins=numbins(spec_all_eloss), range=(min(spec_all_eloss), max(spec_all_eloss)), density=True)
+                spec_mul_b_hist,     spec_mul_b_edges     = numpy.histogram(spec_mul_b,     bins=numbins(spec_all_eloss), range=(min(spec_all_eloss), max(spec_all_eloss)), density=True)
+                spec_frac_one_b = float(len(spec_one_b))/len(spec_all_eloss)
+                spec_frac_two_b = float(len(spec_two_b))/len(spec_all_eloss)
+                spec_frac_mul_b = float(len(spec_mul_b))/len(spec_all_eloss)
 
-		# OUTPUT 
-	        spec_eloss_file = open("analysis/spec_eloss.txt", "w")
-	        spec_eloss_file.write("# eloss/eV  all  single bounce  double bounce  multi bounce\n")
-	        for i in range(len(spec_all_eloss_hist)):
+                # OUTPUT 
+                spec_eloss_file = open("analysis/spec_eloss.txt", "w")
+                spec_eloss_file.write("# eloss/eV  all  single bounce  double bounce  multi bounce\n")
+                for i in range(len(spec_all_eloss_hist)):
 	                spec_eloss_file.write("%f %f %f %f %f\n" % (0.5*(spec_all_eloss_edges[i]+spec_all_eloss_edges[i+1]), spec_all_eloss_hist[i], spec_frac_one_b*spec_one_b_hist[i], spec_frac_two_b*spec_two_b_hist[i], spec_frac_mul_b*spec_mul_b_hist[i]))
-	else:
-		spec_eloss_file.write("%f %f %f %f %f\n" % ( 0.0, 0.0, 0.0, 0.0, 0.0))
-	spec_eloss_file.close()
+        else:
+        	spec_eloss_file.write("%f %f %f %f %f\n" % ( 0.0, 0.0, 0.0, 0.0, 0.0))
+        spec_eloss_file.close()
 
 
-	### IN PLANE ENERGY LOSS ###
-	print("Calculating in-plane energy loss.")
-	logfile.write("Calculating in-plane energy loss.\n")
+        ### IN PLANE ENERGY LOSS ###
+        print("Calculating in-plane energy loss.")
+        logfile.write("Calculating in-plane energy loss.\n")
 
         pp_file = open("analysis/plot_parameter.txt", "w") # here the parameters needed for plotting are stored
         pp_file.write("Einc Vinc\n{} {}".format(trajs[0].ekin_p_i,length(trajs[0].v_p_i)))
         pp_file.close()
 
 
-	# INIT
-	in_plane_all_eloss = []
-	in_plane_one_b     = []
-	in_plane_two_b     = []
-	in_plane_mul_b     = []
+        # INIT
+        in_plane_all_eloss = []
+        in_plane_one_b     = []
+        in_plane_two_b     = []
+        in_plane_mul_b     = []
 
-	# LOOP
-	for traj in trajs:	# List comprehension simply need too much time. This is ugly, but fast.
-		if traj.in_plane and traj.has_scattered:
+        # LOOP
+        for traj in trajs:	# List comprehension simply need too much time. This is ugly, but fast.
+                if traj.in_plane and traj.has_scattered:
 
-			in_plane_all_eloss.append(traj.eloss)
+                        in_plane_all_eloss.append(traj.eloss)
 
-			if traj.turn_pnts == 1:
-				in_plane_one_b.append(traj.eloss)
-			elif traj.turn_pnts == 3:
-				in_plane_two_b.append(traj.eloss)
-			else:
-				in_plane_mul_b.append(traj.eloss)
+                        if traj.turn_pnts == 1:
+                        	in_plane_one_b.append(traj.eloss)
+                        elif traj.turn_pnts == 3:
+                        	in_plane_two_b.append(traj.eloss)
+                        else:
+                        	in_plane_mul_b.append(traj.eloss)
 
 
-	in_plane_eloss_file = open("analysis/in_plane_eloss.txt", "w")
+        in_plane_eloss_file = open("analysis/in_plane_eloss.txt", "w")
         in_plane_eloss_file.write("# eloss/eV  all  single bounce  double bounce  multi bounce\n")
-	if len(in_plane_all_eloss) > 0:	
-	        # ANALYSIS 
-		in_plane_all_eloss_hist, in_plane_all_eloss_edges = numpy.histogram(in_plane_all_eloss, bins=numbins(in_plane_all_eloss), range=(min(in_plane_all_eloss), max(in_plane_all_eloss)), density=True)
-	        in_plane_one_b_hist,     in_plane_one_b_edges     = numpy.histogram(in_plane_one_b,     bins=numbins(in_plane_all_eloss), range=(min(in_plane_all_eloss), max(in_plane_all_eloss)), density=True)
-	        in_plane_two_b_hist,     in_plane_two_b_edges     = numpy.histogram(in_plane_two_b,     bins=numbins(in_plane_all_eloss), range=(min(in_plane_all_eloss), max(in_plane_all_eloss)), density=True)
-	        in_plane_mul_b_hist,     in_plane_mul_b_edges     = numpy.histogram(in_plane_mul_b,     bins=numbins(in_plane_all_eloss), range=(min(in_plane_all_eloss), max(in_plane_all_eloss)), density=True)
-	        in_plane_frac_one_b = float(len(in_plane_one_b))/len(in_plane_all_eloss)
-	        in_plane_frac_two_b = float(len(in_plane_two_b))/len(in_plane_all_eloss)
-	        in_plane_frac_mul_b = float(len(in_plane_mul_b))/len(in_plane_all_eloss)
+        if len(in_plane_all_eloss) > 0:	
+                # ANALYSIS 
+                in_plane_all_eloss_hist, in_plane_all_eloss_edges = numpy.histogram(in_plane_all_eloss, bins=numbins(in_plane_all_eloss), range=(min(in_plane_all_eloss), max(in_plane_all_eloss)), density=True)
+                in_plane_one_b_hist,     in_plane_one_b_edges     = numpy.histogram(in_plane_one_b,     bins=numbins(in_plane_all_eloss), range=(min(in_plane_all_eloss), max(in_plane_all_eloss)), density=True)
+                in_plane_two_b_hist,     in_plane_two_b_edges     = numpy.histogram(in_plane_two_b,     bins=numbins(in_plane_all_eloss), range=(min(in_plane_all_eloss), max(in_plane_all_eloss)), density=True)
+                in_plane_mul_b_hist,     in_plane_mul_b_edges     = numpy.histogram(in_plane_mul_b,     bins=numbins(in_plane_all_eloss), range=(min(in_plane_all_eloss), max(in_plane_all_eloss)), density=True)
+                in_plane_frac_one_b = float(len(in_plane_one_b))/len(in_plane_all_eloss)
+                in_plane_frac_two_b = float(len(in_plane_two_b))/len(in_plane_all_eloss)
+                in_plane_frac_mul_b = float(len(in_plane_mul_b))/len(in_plane_all_eloss)
 
-		# OUTPUT 
-	        in_plane_eloss_file = open("analysis/in_plane_eloss.txt", "w")
-	        in_plane_eloss_file.write("# eloss/eV  all  single bounce  double bounce  multi bounce\n")
-	        for i in range(len(in_plane_all_eloss_hist)):
-	                in_plane_eloss_file.write("%f %f %f %f %f\n" % (0.5*(in_plane_all_eloss_edges[i]+in_plane_all_eloss_edges[i+1]), in_plane_all_eloss_hist[i], in_plane_frac_one_b*in_plane_one_b_hist[i], in_plane_frac_two_b*in_plane_two_b_hist[i], in_plane_frac_mul_b*in_plane_mul_b_hist[i]))
-	else:
-		in_plane_eloss_file.write("%f %f %f %f %f\n" % ( 0.0, 0.0, 0.0, 0.0, 0.0))
-	in_plane_eloss_file.close()
+                # OUTPUT 
+                in_plane_eloss_file = open("analysis/in_plane_eloss.txt", "w")
+                in_plane_eloss_file.write("# eloss/eV  all  single bounce  double bounce  multi bounce\n")
+                for i in range(len(in_plane_all_eloss_hist)):
+                        in_plane_eloss_file.write("%f %f %f %f %f\n" % (0.5*(in_plane_all_eloss_edges[i]+in_plane_all_eloss_edges[i+1]), in_plane_all_eloss_hist[i], in_plane_frac_one_b*in_plane_one_b_hist[i], in_plane_frac_two_b*in_plane_two_b_hist[i], in_plane_frac_mul_b*in_plane_mul_b_hist[i]))
+        else:
+        	in_plane_eloss_file.write("%f %f %f %f %f\n" % ( 0.0, 0.0, 0.0, 0.0, 0.0))
+        in_plane_eloss_file.close()
 
 
 
-	### Z-POSITION ###
-	print("Calculating final z positions.")
-	logfile.write("Calculating final z positions.\n")
-	# LOOP
-	final_z = [traj.r_p_f.z for traj in trajs if traj.has_adsorbed]
+        ### Z-POSITION ###
+        print("Calculating final z positions.")
+        logfile.write("Calculating final z positions.\n")
+        # LOOP
+        final_z = [traj.r_p_f.z for traj in trajs if traj.has_adsorbed]
 
-	if (len(final_z) > 0):
-		# ANALYSIS
-		final_z_hist, final_z_edges = numpy.histogram(final_z, bins=numbins(final_z), range=(min(final_z), max(final_z)), density=True)
+        if (len(final_z) > 0):
+        	# ANALYSIS
+        	final_z_hist, final_z_edges = numpy.histogram(final_z, bins=numbins(final_z), range=(min(final_z), max(final_z)), density=True)
 
-		# OUTPUT
-		final_z_file = open("analysis/final_z.txt", "w")
-		final_z_file.write("# z/A  probability density\n")
-		for i in range(len(final_z_hist)):
-			final_z_file.write("%f %f\n" % (0.5*(final_z_edges[i]+final_z_edges[i+1]), final_z_hist[i]))
-		final_z_file.close()
-		
+        	# OUTPUT
+        	final_z_file = open("analysis/final_z.txt", "w")
+        	final_z_file.write("# z/A  probability density\n")
+        	for i in range(len(final_z_hist)):
+        		final_z_file.write("%f %f\n" % (0.5*(final_z_edges[i]+final_z_edges[i+1]), final_z_hist[i]))
+        	final_z_file.close()
+        	
 
-	### BOUNCES VS ELOSS ###
-	print("Calculating bounces/energy loss correlation.")
-	logfile.write("Calculating bounces/energy loss correlation.\n")
-	# ANALYSIS
-	bounce_vs_eloss_hist, xedges, yedges = numpy.histogram2d(scat_bounces, all_eloss, bins=(max(scat_bounces),numbins(all_eloss)), range=[[0,max(scat_bounces)],[min(all_eloss),max(all_eloss)]], normed=False)
+        ### BOUNCES VS ELOSS ###
+        print("Calculating bounces/energy loss correlation.")
+        logfile.write("Calculating bounces/energy loss correlation.\n")
+        # ANALYSIS
+        bounce_vs_eloss_hist, xedges, yedges = numpy.histogram2d(scat_bounces, all_eloss, bins=(max(scat_bounces),numbins(all_eloss)), range=[[0,max(scat_bounces)],[min(all_eloss),max(all_eloss)]], normed=False)
 
-	# OUTPUT
-	out = open("analysis/bounces_vs_eloss.txt", "w")
-	out.write("# bounces  eloss/eV  counts\n")
-	for i in range(len(bounce_vs_eloss_hist)):
-		for j in range(len(bounce_vs_eloss_hist[i])):
-			out.write("%d %f %d\n" % (0.5*(xedges[i]+xedges[i+1]), 0.5*(yedges[j]+yedges[j+1]), bounce_vs_eloss_hist[i][j]))
-		out.write("\n")
-	out.close()
+        # OUTPUT
+        out = open("analysis/bounces_vs_eloss.txt", "w")
+        out.write("# bounces  eloss/eV  counts\n")
+        for i in range(len(bounce_vs_eloss_hist)):
+        	for j in range(len(bounce_vs_eloss_hist[i])):
+        		out.write("%d %f %d\n" % (0.5*(xedges[i]+xedges[i+1]), 0.5*(yedges[j]+yedges[j+1]), bounce_vs_eloss_hist[i][j]))
+        	out.write("\n")
+        out.close()
 
 
         ### ANGULAR DISTRIBUTION ###
-	print("Calculating angular energy loss.")
-	logfile.write("Calculating angular energy loss.\n")
-	# get trajectories that are within specular radius in azimuth direction
-	energy_collect  = []
-	angle_collect   = []
-	ps_dist_collect = []
-	polar_scatt_azi_int_energy = []
-	polar_scatt_azi_int_angle  = []
-	for traj in trajs:
-		if traj.has_scattered:
-			polar_scatt_azi_int_energy.append(traj.eloss)
-			polar_scatt_azi_int_angle.append(traj.polar_f)
+        print("Calculating angular energy loss.")
+        logfile.write("Calculating angular energy loss.\n")
+        # get trajectories that are within specular radius in azimuth direction
+        energy_collect  = []
+        angle_collect   = []
+        ps_dist_collect = []
+        polar_scatt_azi_int_energy = []
+        polar_scatt_azi_int_angle  = []
+        for traj in trajs:
+        	if traj.has_scattered:
+        		polar_scatt_azi_int_energy.append(traj.eloss)
+        		polar_scatt_azi_int_angle.append(traj.polar_f)
 
-			if traj.in_plane:
-				energy_collect.append(traj.eloss)
-				angle_collect.append(traj.polar_f)
-				ps_dist_collect.append(traj.cl_appr)
+        		if traj.in_plane:
+        			energy_collect.append(traj.eloss)
+        			angle_collect.append(traj.polar_f)
+        			ps_dist_collect.append(traj.cl_appr)
 
-	ang_dist_file     = open("analysis/ang_res_eloss.txt", "w")
-	ang_dist_mat_file = open("analysis/ang_res_eloss_matrix.txt", "w")
-	occurence_file    = open("analysis/ang_res_occurrence.txt", "w")
-	if len(energy_collect) != 0:
-		angle_eloss_hist, xedges, yedges = numpy.histogram2d(energy_collect, angle_collect,  bins=(numbins(energy_collect)), normed=False)
-		occurence_hist, occ_edges = numpy.histogram(angle_collect, bins=numpy.arange(91), normed=False)
+        ang_dist_file     = open("analysis/ang_res_eloss.txt", "w")
+        ang_dist_mat_file = open("analysis/ang_res_eloss_matrix.txt", "w")
+        occurence_file    = open("analysis/ang_res_occurrence.txt", "w")
+        if len(energy_collect) != 0:
+                angle_eloss_hist, xedges, yedges = numpy.histogram2d(energy_collect, angle_collect,  bins=(numbins(energy_collect)), normed=False)
+                #occurence_hist, occ_edges = numpy.histogram(angle_collect, bins=numpy.arange(91), normed=False)
+                occurence_hist, occ_edges = numpy.histogram(angle_collect, bins=numpy.arange(91), density=False)
 
-		# OUTPUT
-		for i in range(len(angle_eloss_hist)):
-			for j in range(len(angle_eloss_hist[i])):
-				ang_dist_file.write("%f %f %d\n" % (0.5*(xedges[i]+xedges[i+1]), 0.5*(yedges[j]+yedges[j+1]), angle_eloss_hist[i][j]))
-			ang_dist_file.write("\n")
+                # OUTPUT
+                for i in range(len(angle_eloss_hist)):
+                	for j in range(len(angle_eloss_hist[i])):
+                		ang_dist_file.write("%f %f %d\n" % (0.5*(xedges[i]+xedges[i+1]), 0.5*(yedges[j]+yedges[j+1]), angle_eloss_hist[i][j]))
+                	ang_dist_file.write("\n")
 
-		ang_dist_mat_file.write("# x-range describing energy loss in eV (left to right) from %f to %f in steps of %f\n" % (0.5*(xedges[0]+xedges[1]), 0.5*(xedges[-2]+xedges[-1]), abs(xedges[0]-xedges[1])))
-        	ang_dist_mat_file.write("# y-range describing scattering angle in degrees (top to bottom) from %f to %f in steps of %f\n" % (0.5*(yedges[0]+yedges[1]), 0.5*(yedges[-2]+yedges[-1]), abs(yedges[0]-yedges[1])))
-	        ang_dist_mat_file.write("# specular scattering angle is %f degrees and detector radius is %f degrees\n" % (trajs[0].polar_i, SPECULAR_RADIUS))
-		ang_dist_mat_file.write("0.0 "); [ang_dist_mat_file.write("%f " % (0.5*(xedges[i]+xedges[i+1]))) for i in range(len(xedges)-1)]; ang_dist_mat_file.write("\n")
-		for i in range(len(angle_eloss_hist[0])):
-			ang_dist_mat_file.write("%f " % (0.5*(yedges[i]+yedges[i+1])))
+                ang_dist_mat_file.write("# x-range describing energy loss in eV (left to right) from %f to %f in steps of %f\n" % (0.5*(xedges[0]+xedges[1]), 0.5*(xedges[-2]+xedges[-1]), abs(xedges[0]-xedges[1])))
+                ang_dist_mat_file.write("# y-range describing scattering angle in degrees (top to bottom) from %f to %f in steps of %f\n" % (0.5*(yedges[0]+yedges[1]), 0.5*(yedges[-2]+yedges[-1]), abs(yedges[0]-yedges[1])))
+                ang_dist_mat_file.write("# specular scattering angle is %f degrees and detector radius is %f degrees\n" % (trajs[0].polar_i, SPECULAR_RADIUS))
+                ang_dist_mat_file.write("0.0 "); [ang_dist_mat_file.write("%f " % (0.5*(xedges[i]+xedges[i+1]))) for i in range(len(xedges)-1)]; ang_dist_mat_file.write("\n")
+                for i in range(len(angle_eloss_hist[0])):
+                        ang_dist_mat_file.write("%f " % (0.5*(yedges[i]+yedges[i+1])))
                         for j in range(len(angle_eloss_hist)):
-				ang_dist_mat_file.write("%d " % angle_eloss_hist[j][i])
-			ang_dist_mat_file.write("\n")
-				
+                        	ang_dist_mat_file.write("%d " % angle_eloss_hist[j][i])
+                        ang_dist_mat_file.write("\n")
+                		
 
-		occurence_file.write("# number of trajs in plane in unit polar angle, unit azimuthal angle\n")
-		for i in range(len(occurence_hist)):
-			this_angle = 0.5*(occ_edges[i]+occ_edges[i+1])
-			occurence_file.write("%f %f\n" % (this_angle, 1.0*occurence_hist[i]/sum(occurence_hist)))
-	else:
-		ang_dist_file.write("%f %f %d\n"   % (0.1, 0.5, 0))
+                occurence_file.write("# number of trajs in plane in unit polar angle, unit azimuthal angle\n")
+                for i in range(len(occurence_hist)):
+                	this_angle = 0.5*(occ_edges[i]+occ_edges[i+1])
+                	occurence_file.write("%f %f\n" % (this_angle, 1.0*occurence_hist[i]/sum(occurence_hist)))
+        else:
+                ang_dist_file.write("%f %f %d\n"   % (0.1, 0.5, 0))
                 ang_dist_file.write("%f %f %d\n\n" % (0.1, 1.0, 1))
-		ang_dist_file.write("%f %f %d\n"   % (0.2, 1.0, 1))
-		ang_dist_file.write("%f %f %d\n"   % (0.2, 0.5, 2))
+                ang_dist_file.write("%f %f %d\n"   % (0.2, 1.0, 1))
+                ang_dist_file.write("%f %f %d\n"   % (0.2, 0.5, 2))
 
-		occurence_file.write("%f %f\n" % (0.1, 0.1))
+                occurence_file.write("%f %f\n" % (0.1, 0.1))
 
-	occurence_file.close()
-	ang_dist_file.close()
-	ang_dist_mat_file.close()
+        occurence_file.close()
+        ang_dist_file.close()
+        ang_dist_mat_file.close()
 
 
 
-	# Graphene bounce events #
-	print("Calculating graphene bounce events.")
-	logfile.write("Calculating graphene bounce events.\n")
-	fast_c = open("analysis/component_fast.txt", "w")
+        # Graphene bounce events #
+        print("Calculating graphene bounce events.")
+        logfile.write("Calculating graphene bounce events.\n")
+        fast_c = open("analysis/component_fast.txt", "w")
         slow_c_sb = open("analysis/component_slow_single.txt", "w")
         slow_c_mb = open("analysis/component_slow_multi.txt", "w")
-	for traj in trajs:
-		if traj.has_scattered and traj.in_plane:
-			if traj.turn_pnts == 1:
-				if traj.cl_appr > 1.4:
-					fast_c.write("%f %f\n" % (traj.ekin_p_f/traj.ekin_p_i, traj.polar_f))
-				if traj.cl_appr < 1.4:
-					slow_c_sb.write("%f %f\n" % (traj.ekin_p_f/traj.ekin_p_i, traj.polar_f))
-			elif traj.turn_pnts > 1 and traj.cl_appr < 1.4:
-					slow_c_mb.write("%f %f\n" % (traj.ekin_p_f/traj.ekin_p_i, traj.polar_f))
-	slow_c_mb.close(); slow_c_sb.close(); fast_c.close()
-				
-				
-				
+        for traj in trajs:
+        	if traj.has_scattered and traj.in_plane:
+        		if traj.turn_pnts == 1:
+        			if traj.cl_appr > 1.4:
+        				fast_c.write("%f %f\n" % (traj.ekin_p_f/traj.ekin_p_i, traj.polar_f))
+        			if traj.cl_appr < 1.4:
+        				slow_c_sb.write("%f %f\n" % (traj.ekin_p_f/traj.ekin_p_i, traj.polar_f))
+        		elif traj.turn_pnts > 1 and traj.cl_appr < 1.4:
+        				slow_c_mb.write("%f %f\n" % (traj.ekin_p_f/traj.ekin_p_i, traj.polar_f))
+        slow_c_mb.close(); slow_c_sb.close(); fast_c.close()
+        			
+        			
+        			
 
 
 
-	# INTERGRATED OVER ALL AZIMUTH ANGLES #
-	polar_scatt_azi_file = open("analysis/polar_scatt_azi_int.txt", "w")
-	if len(polar_scatt_azi_int_energy) != 0:
-		polar_scatt_azi_int_hist, xedges, yedges = numpy.histogram2d(polar_scatt_azi_int_energy, polar_scatt_azi_int_angle, bins=(numbins(polar_scatt_azi_int_energy)), normed=False)
-		
-		for i in range(len(polar_scatt_azi_int_hist)):
-			for j in range(len(polar_scatt_azi_int_hist[i])):
-				polar_scatt_azi_file.write("%f %f %d\n" % (0.5*(xedges[i]+xedges[i+1]), 0.5*(yedges[j]+yedges[j+1]), polar_scatt_azi_int_hist[i][j]))
-			polar_scatt_azi_file.write("\n")
-	else:
-		polar_scatt_azi_file.write("%f %f %d\n"   % (0.1, 0.5, 0))
-		polar_scatt_azi_file.write("%f %f %d\n\n" % (0.1, 1.0, 1))
-		polar_scatt_azi_file.write("%f %f %d\n"   % (0.2, 1.0, 1))
-		polar_scatt_azi_file.write("%f %f %d\n"   % (0.2, 0.5, 2))
+        # INTERGRATED OVER ALL AZIMUTH ANGLES #
+        polar_scatt_azi_file = open("analysis/polar_scatt_azi_int.txt", "w")
+        if len(polar_scatt_azi_int_energy) != 0:
+        	polar_scatt_azi_int_hist, xedges, yedges = numpy.histogram2d(polar_scatt_azi_int_energy, polar_scatt_azi_int_angle, bins=(numbins(polar_scatt_azi_int_energy)), normed=False)
+        	
+        	for i in range(len(polar_scatt_azi_int_hist)):
+        		for j in range(len(polar_scatt_azi_int_hist[i])):
+        			polar_scatt_azi_file.write("%f %f %d\n" % (0.5*(xedges[i]+xedges[i+1]), 0.5*(yedges[j]+yedges[j+1]), polar_scatt_azi_int_hist[i][j]))
+        		polar_scatt_azi_file.write("\n")
+        else:
+        	polar_scatt_azi_file.write("%f %f %d\n"   % (0.1, 0.5, 0))
+        	polar_scatt_azi_file.write("%f %f %d\n\n" % (0.1, 1.0, 1))
+        	polar_scatt_azi_file.write("%f %f %d\n"   % (0.2, 1.0, 1))
+        	polar_scatt_azi_file.write("%f %f %d\n"   % (0.2, 0.5, 2))
 
-	polar_scatt_azi_file.close()
+        polar_scatt_azi_file.close()
 
 
-	### LOSS TO EHP AND PHONONS ###
-	print("Calculating loss to ehps and phonons.")
-	logfile.write("Calculating loss to ehps and phonons.\n")
-	# LOOP
-	loss_to_ehps = [ traj.etotal_i - traj.etotal_f for traj in trajs if traj.has_scattered ]
-	loss_to_ehps_spec = [ traj.etotal_i - traj.etotal_f for traj in trajs if traj.has_scattered and traj.in_spec ]
-	
-	# ANALYSIS
-	loss_to_ehps_hist, loss_to_ehps_edges = numpy.histogram(loss_to_ehps, bins=numbins(loss_to_ehps), range=(min(loss_to_ehps), max(loss_to_ehps)), density=True)
-	if len(loss_to_ehps_spec) > 0:
-		loss_to_ehps_spec_hist, loss_to_ehps_spec_edges = numpy.histogram(loss_to_ehps_spec, bins=numbins(loss_to_ehps_spec), range=(min(loss_to_ehps_spec), max(loss_to_ehps_spec)), density=True)
+        ### LOSS TO EHP AND PHONONS ###
+        print("Calculating loss to ehps and phonons.")
+        logfile.write("Calculating loss to ehps and phonons.\n")
+        # LOOP
+        loss_to_ehps = [ traj.etotal_i - traj.etotal_f for traj in trajs if traj.has_scattered ]
+        loss_to_ehps_spec = [ traj.etotal_i - traj.etotal_f for traj in trajs if traj.has_scattered and traj.in_spec ]
+        
+        # ANALYSIS
+        loss_to_ehps_hist, loss_to_ehps_edges = numpy.histogram(loss_to_ehps, bins=numbins(loss_to_ehps), range=(min(loss_to_ehps), max(loss_to_ehps)), density=True)
+        if len(loss_to_ehps_spec) > 0:
+        	loss_to_ehps_spec_hist, loss_to_ehps_spec_edges = numpy.histogram(loss_to_ehps_spec, bins=numbins(loss_to_ehps_spec), range=(min(loss_to_ehps_spec), max(loss_to_ehps_spec)), density=True)
 
-	# OUTPUT
-	loss_to_ehps_file = open("analysis/eloss_to_ehps.txt", "w")
-	for i in range(len(loss_to_ehps_hist)):
-		loss_to_ehps_file.write("%f %f\n" % (0.5*(loss_to_ehps_edges[i]+loss_to_ehps_edges[i+1]), loss_to_ehps_hist[i]))
-	loss_to_ehps_file.close()
+        # OUTPUT
+        loss_to_ehps_file = open("analysis/eloss_to_ehps.txt", "w")
+        for i in range(len(loss_to_ehps_hist)):
+        	loss_to_ehps_file.write("%f %f\n" % (0.5*(loss_to_ehps_edges[i]+loss_to_ehps_edges[i+1]), loss_to_ehps_hist[i]))
+        loss_to_ehps_file.close()
 
-	
-	loss_to_ehps_spec_file = open("analysis/eloss_to_ehps_spec.txt", "w")
-	if len(loss_to_ehps_spec) > 0:
-	        for i in range(len(loss_to_ehps_spec_hist)):
-	                loss_to_ehps_spec_file.write("%f %f\n" % (0.5*(loss_to_ehps_spec_edges[i]+loss_to_ehps_spec_edges[i+1]), loss_to_ehps_spec_hist[i]))
-	else:
-		loss_to_ehps_spec_file.write("%f %f\n" % (0.0, 0.0))
+        
+        loss_to_ehps_spec_file = open("analysis/eloss_to_ehps_spec.txt", "w")
+        if len(loss_to_ehps_spec) > 0:
+                for i in range(len(loss_to_ehps_spec_hist)):
+                        loss_to_ehps_spec_file.write("%f %f\n" % (0.5*(loss_to_ehps_spec_edges[i]+loss_to_ehps_spec_edges[i+1]), loss_to_ehps_spec_hist[i]))
+        else:
+        	loss_to_ehps_spec_file.write("%f %f\n" % (0.0, 0.0))
         loss_to_ehps_spec_file.close()
 
 
-	### SPHERICAL SYMMETRY ###
-	# LOOP
-	print("Calculating spherical symmetry.")
-	logfile.write("Calculating spherical symmetry.\n")
-	abs_azi = []
-	rel_azi = []
-	yvals = []
-	this_azi = None
-	for traj in trajs:
-		if traj.has_scattered:
-			delta_azi = traj.azi_f-traj.azi_i
-			if -180 <= delta_azi <= 180:
-				rel_azi.append(delta_azi)
-			elif delta_azi < -180:
-				rel_azi.append(delta_azi+360)
-			elif delta_azi > 180:
-				rel_azi.append(delta_azi-360)
-			else:
+        ### SPHERICAL SYMMETRY ###
+        # LOOP
+        print("Calculating spherical symmetry.")
+        logfile.write("Calculating spherical symmetry.\n")
+        abs_azi = []
+        rel_azi = []
+        yvals = []
+        this_azi = None
+        for traj in trajs:
+        	if traj.has_scattered:
+        		delta_azi = traj.azi_f-traj.azi_i
+        		if -180 <= delta_azi <= 180:
+        			rel_azi.append(delta_azi)
+        		elif delta_azi < -180:
+        			rel_azi.append(delta_azi+360)
+        		elif delta_azi > 180:
+        			rel_azi.append(delta_azi-360)
+        		else:
                                 print("Weird angle in spherical symmetry.")
                                 logfile.write("Weird angle in spherical symmetry.\n")
-				sys.exit()
+                                sys.exit()
 
-			abs_azi.append(traj.azi_f)
-			yvals.append(traj.polar_f)
+        		abs_azi.append(traj.azi_f)
+        		yvals.append(traj.polar_f)
 
-	# ANALYSIS
-	rel_spherical_hist, rel_xedges, yedges = numpy.histogram2d(rel_azi, yvals, bins=numbins(rel_azi), normed=False)
-	abs_spherical_hist, abs_xedges, yedges = numpy.histogram2d(abs_azi, yvals, bins=numbins(abs_azi), normed=False)
+        # ANALYSIS
+        rel_spherical_hist, rel_xedges, yedges = numpy.histogram2d(rel_azi, yvals, bins=numbins(rel_azi), normed=False)
+        abs_spherical_hist, abs_xedges, yedges = numpy.histogram2d(abs_azi, yvals, bins=numbins(abs_azi), normed=False)
 
-	# OUTPUT
-	spherical_file = open("analysis/rel_spherical_symmetry.txt", "w")
-	for i in range(len(rel_spherical_hist)):
-		for j in range(len(rel_spherical_hist[i])):
-			spherical_file.write("%f %f %d\n" % (0.5*(rel_xedges[i]+rel_xedges[i+1]), -0.5*(yedges[j]+yedges[j+1]), rel_spherical_hist[i][j]))
-		spherical_file.write("\n")
-	spherical_file.close()
+        # OUTPUT
+        spherical_file = open("analysis/rel_spherical_symmetry.txt", "w")
+        for i in range(len(rel_spherical_hist)):
+        	for j in range(len(rel_spherical_hist[i])):
+        		spherical_file.write("%f %f %d\n" % (0.5*(rel_xedges[i]+rel_xedges[i+1]), -0.5*(yedges[j]+yedges[j+1]), rel_spherical_hist[i][j]))
+        	spherical_file.write("\n")
+        spherical_file.close()
 
-	spherical_file = open("analysis/abs_spherical_symmetry.txt", "w")
-	for i in range(len(abs_spherical_hist)):
-		for j in range(len(abs_spherical_hist[i])):
-			spherical_file.write("%f %f %d\n" % (0.5*(abs_xedges[i]+abs_xedges[i+1]), -0.5*(yedges[j]+yedges[j+1]), abs_spherical_hist[i][j]))
-		spherical_file.write("\n")
-	spherical_file.close()
+        spherical_file = open("analysis/abs_spherical_symmetry.txt", "w")
+        for i in range(len(abs_spherical_hist)):
+        	for j in range(len(abs_spherical_hist[i])):
+        		spherical_file.write("%f %f %d\n" % (0.5*(abs_xedges[i]+abs_xedges[i+1]), -0.5*(yedges[j]+yedges[j+1]), abs_spherical_hist[i][j]))
+        	spherical_file.write("\n")
+        spherical_file.close()
 
 
 
-	### Projectile-Surface distance ###
-	print("Calculating projectile-surface distance.")
-	logfile.write("Calculating projectile-surface distance.\n")
-	# LOOP
-	ps_dist = [traj.cl_appr for traj in trajs if traj.has_scattered]
+        ### Projectile-Surface distance ###
+        print("Calculating projectile-surface distance.")
+        logfile.write("Calculating projectile-surface distance.\n")
+        # LOOP
+        ps_dist = [traj.cl_appr for traj in trajs if traj.has_scattered]
 
-	# ANALYSIS
-	ps_hist, xedges = numpy.histogram(ps_dist, bins=numbins(ps_dist), range=(min(ps_dist), max(ps_dist)), density=True)
-	
-	# OUTPUT
-	ps_file = open("analysis/ps_dist.txt", "w")
+        # ANALYSIS
+        ps_hist, xedges = numpy.histogram(ps_dist, bins=numbins(ps_dist), range=(min(ps_dist), max(ps_dist)), density=True)
+        
+        # OUTPUT
+        ps_file = open("analysis/ps_dist.txt", "w")
         for i in range(len(ps_hist)):
                 ps_file.write("%f %f\n" % (0.5*(xedges[i]+xedges[i+1]), ps_hist[i]))
         ps_file.close()
 
 
 
-	### Eloss vs Projectile-Surface distance ###
-	print("Calculating energy loss projectile-surface distance relationship.")
-	logfile.write("Calculating energy loss projectile-surface distance relationship.\n")
-	# ANALYSIS
-	eloss_psd_hist, xedges, yedges = numpy.histogram2d(all_eloss, ps_dist, bins=numbins(all_eloss), normed=False)
-	
-	# OUTPUT
-	eloss_psd_file = open("analysis/eloss_psd.txt", "w")
-	for i in range(len(eloss_psd_hist)):
+        ### Eloss vs Projectile-Surface distance ###
+        print("Calculating energy loss projectile-surface distance relationship.")
+        logfile.write("Calculating energy loss projectile-surface distance relationship.\n")
+        # ANALYSIS
+        eloss_psd_hist, xedges, yedges = numpy.histogram2d(all_eloss, ps_dist, bins=numbins(all_eloss), normed=False)
+        
+        # OUTPUT
+        eloss_psd_file = open("analysis/eloss_psd.txt", "w")
+        for i in range(len(eloss_psd_hist)):
                 for j in range(len(eloss_psd_hist[i])):
                         eloss_psd_file.write("%f %f %d\n" % (0.5*(xedges[i]+xedges[i+1]), 0.5*(yedges[j]+yedges[j+1]), eloss_psd_hist[i][j]))
                 eloss_psd_file.write("\n")
@@ -706,89 +707,89 @@ def analyze(trajs,logfile):
 
 
 
-	### Scattering polar angle vs Projectile-Surface distance in-plane ###
-	print("Calculating scattering angle projectile-surface distance relationship.")
-	logfile.write("Calculating scattering angle projectile-surface distance relationship.\n")
-	# ANALYSIS
-	polar_psd_file = open("analysis/polar_psd.txt", "w")
-	if len(ps_dist_collect) > 0:
-		polar_psd_hist, xedges, yedges = numpy.histogram2d(ps_dist_collect, angle_collect, bins=numbins(ps_dist_collect), normed=False)
+        ### Scattering polar angle vs Projectile-Surface distance in-plane ###
+        print("Calculating scattering angle projectile-surface distance relationship.")
+        logfile.write("Calculating scattering angle projectile-surface distance relationship.\n")
+        # ANALYSIS
+        polar_psd_file = open("analysis/polar_psd.txt", "w")
+        if len(ps_dist_collect) > 0:
+        	polar_psd_hist, xedges, yedges = numpy.histogram2d(ps_dist_collect, angle_collect, bins=numbins(ps_dist_collect), normed=False)
 
-		# OUTPUT
-		for i in range(len(polar_psd_hist)):
-	                for j in range(len(polar_psd_hist[i])):
-	                        polar_psd_file.write("%f %f %d\n" % (0.5*(xedges[i]+xedges[i+1]), 0.5*(yedges[j]+yedges[j+1]), polar_psd_hist[i][j]))
-			polar_psd_file.write("\n")
-	else:
-		polar_psd_file.write("%f %f %d\n"   % (0.1, 0.5, 0))
+        	# OUTPUT
+        	for i in range(len(polar_psd_hist)):
+                        for j in range(len(polar_psd_hist[i])):
+                                polar_psd_file.write("%f %f %d\n" % (0.5*(xedges[i]+xedges[i+1]), 0.5*(yedges[j]+yedges[j+1]), polar_psd_hist[i][j]))
+                        polar_psd_file.write("\n")
+        else:
+                polar_psd_file.write("%f %f %d\n"   % (0.1, 0.5, 0))
                 polar_psd_file.write("%f %f %d\n\n" % (0.1, 1.0, 1))
                 polar_psd_file.write("%f %f %d\n"   % (0.2, 1.0, 1))
                 polar_psd_file.write("%f %f %d\n"   % (0.2, 0.5, 2))
-	polar_psd_file.close()
+        polar_psd_file.close()
 
 
-	### Eloss vs Projectile-Surface distance in plane ###
-	print("Calculating in-plane energy loss projectile-surface distance relationship.")
-	logfile.write("Calculating in-plane energy loss projectile-surface distance relationship.\n")
-	# ANALYSIS
-	eloss_psd_in_plane_file = open("analysis/eloss_psd_in_plane.txt", "w")
-	if len(ps_dist_collect) > 0:
-		eloss_psd_in_plane_hist, xedges, yedges = numpy.histogram2d(energy_collect, ps_dist_collect, bins=numbins(ps_dist_collect), normed=False)
+        ### Eloss vs Projectile-Surface distance in plane ###
+        print("Calculating in-plane energy loss projectile-surface distance relationship.")
+        logfile.write("Calculating in-plane energy loss projectile-surface distance relationship.\n")
+        # ANALYSIS
+        eloss_psd_in_plane_file = open("analysis/eloss_psd_in_plane.txt", "w")
+        if len(ps_dist_collect) > 0:
+        	eloss_psd_in_plane_hist, xedges, yedges = numpy.histogram2d(energy_collect, ps_dist_collect, bins=numbins(ps_dist_collect), normed=False)
 
-		# OUTPUT
-		for i in range(len(eloss_psd_in_plane_hist)):
-	                for j in range(len(eloss_psd_in_plane_hist[i])):
-	                        eloss_psd_in_plane_file.write("%f %f %d\n" % (0.5*(xedges[i]+xedges[i+1]), 0.5*(yedges[j]+yedges[j+1]), eloss_psd_in_plane_hist[i][j]))
-	                eloss_psd_in_plane_file.write("\n")
-	else:
-		eloss_psd_in_plane_file.write("%f %f %d\n"   % (0.1, 0.5, 0))
+        	# OUTPUT
+        	for i in range(len(eloss_psd_in_plane_hist)):
+                        for j in range(len(eloss_psd_in_plane_hist[i])):
+                                eloss_psd_in_plane_file.write("%f %f %d\n" % (0.5*(xedges[i]+xedges[i+1]), 0.5*(yedges[j]+yedges[j+1]), eloss_psd_in_plane_hist[i][j]))
+                        eloss_psd_in_plane_file.write("\n")
+        else:
+                eloss_psd_in_plane_file.write("%f %f %d\n"   % (0.1, 0.5, 0))
                 eloss_psd_in_plane_file.write("%f %f %d\n\n" % (0.1, 1.0, 1))
                 eloss_psd_in_plane_file.write("%f %f %d\n"   % (0.2, 1.0, 1))
                 eloss_psd_in_plane_file.write("%f %f %d\n"   % (0.2, 0.5, 2))
         eloss_psd_in_plane_file.close()
-	
+        
 
-	### TOTAL VELOCITY LOSS ###
-	print("Calculating total velocity loss.")
+        ### TOTAL VELOCITY LOSS ###
+        print("Calculating total velocity loss.")
         logfile.write("Calculating total velocity loss.\n")
-	# LOOP 
-	all_vloss  = [traj.vloss for traj in trajs if traj.has_scattered] 
-	one_vb     = [traj.vloss for traj in trajs if traj.has_scattered and traj.turn_pnts == 1]
-	two_vb     = [traj.vloss for traj in trajs if traj.has_scattered and traj.turn_pnts == 3]
-	mul_vb     = [traj.vloss for traj in trajs if traj.has_scattered and traj.turn_pnts >= 5]
+        # LOOP 
+        all_vloss  = [traj.vloss for traj in trajs if traj.has_scattered] 
+        one_vb     = [traj.vloss for traj in trajs if traj.has_scattered and traj.turn_pnts == 1]
+        two_vb     = [traj.vloss for traj in trajs if traj.has_scattered and traj.turn_pnts == 3]
+        mul_vb     = [traj.vloss for traj in trajs if traj.has_scattered and traj.turn_pnts >= 5]
 
         all_vf     = [length(traj.v_p_f) for traj in trajs if traj.has_scattered]
         one_vfb    = [length(traj.v_p_f) for traj in trajs if traj.has_scattered and traj.turn_pnts == 1]
         two_vfb    = [length(traj.v_p_f) for traj in trajs if traj.has_scattered and traj.turn_pnts == 3]
         mul_vfb    = [length(traj.v_p_f) for traj in trajs if traj.has_scattered and traj.turn_pnts >= 5]
-	
-	absorbed_vloss = [traj.vloss for traj in trajs if traj.has_adsorbed]
+        
+        absorbed_vloss = [traj.vloss for traj in trajs if traj.has_adsorbed]
 
-	# ANALYSIS
-	all_vloss_hist, all_vloss_edges  = numpy.histogram(all_vloss,   bins=numbins(SCATTERED), range=(min(all_vloss), max(all_vloss)), density=True)
-	one_vb_hist,     one_vb_edges     = numpy.histogram(one_vb,     bins=numbins(SCATTERED), range=(min(all_vloss), max(all_vloss)), density=True)
-	two_vb_hist,     two_vb_edges     = numpy.histogram(two_vb,     bins=numbins(SCATTERED), range=(min(all_vloss), max(all_vloss)), density=True)
-	mul_vb_hist,     mul_vb_edges     = numpy.histogram(mul_vb,     bins=numbins(SCATTERED), range=(min(all_vloss), max(all_vloss)), density=True)
+        # ANALYSIS
+        all_vloss_hist, all_vloss_edges  = numpy.histogram(all_vloss,   bins=numbins(SCATTERED), range=(min(all_vloss), max(all_vloss)), density=True)
+        one_vb_hist,     one_vb_edges     = numpy.histogram(one_vb,     bins=numbins(SCATTERED), range=(min(all_vloss), max(all_vloss)), density=True)
+        two_vb_hist,     two_vb_edges     = numpy.histogram(two_vb,     bins=numbins(SCATTERED), range=(min(all_vloss), max(all_vloss)), density=True)
+        mul_vb_hist,     mul_vb_edges     = numpy.histogram(mul_vb,     bins=numbins(SCATTERED), range=(min(all_vloss), max(all_vloss)), density=True)
 
         all_vf_hist,      all_vf_edges      = numpy.histogram(all_vf,     bins=numbins(SCATTERED), range=(min(all_vf), max(all_vf)), density=True)
         one_vfb_hist,     one_vfb_edges     = numpy.histogram(one_vfb,     bins=numbins(SCATTERED), range=(min(all_vf), max(all_vf)), density=True)
         two_vfb_hist,     two_vfb_edges     = numpy.histogram(two_vfb,     bins=numbins(SCATTERED), range=(min(all_vf), max(all_vf)), density=True)
         mul_vfb_hist,     mul_vfb_edges     = numpy.histogram(mul_vfb,     bins=numbins(SCATTERED), range=(min(all_vf), max(all_vf)), density=True)
 
-	frac_one_vb = float(len(one_vb))/SCATTERED
-	frac_two_vb = float(len(two_vb))/SCATTERED
-	frac_mul_vb = float(len(mul_vb))/SCATTERED
+        frac_one_vb = float(len(one_vb))/SCATTERED
+        frac_two_vb = float(len(two_vb))/SCATTERED
+        frac_mul_vb = float(len(mul_vb))/SCATTERED
 
         frac_one_vfb = float(len(one_vfb))/SCATTERED
         frac_two_vfb = float(len(two_vfb))/SCATTERED
         frac_mul_vfb = float(len(mul_vfb))/SCATTERED
 
-	# OUTPUT 
-	vloss_file = open("analysis/vloss.txt", "w")
-	vloss_file.write("# vloss/Ang*fs^-1  all  single bounce  double bounce  multi bounce\n")
-	for i in range(len(all_vloss_hist)):
-		vloss_file.write("%f %f %f %f %f\n" % (0.5*(all_vloss_edges[i]+all_vloss_edges[i+1]), all_vloss_hist[i], frac_one_vb*one_vb_hist[i], frac_two_vb*two_vb_hist[i], frac_mul_vb*mul_vb_hist[i]))
-	vloss_file.close()
+        # OUTPUT 
+        vloss_file = open("analysis/vloss.txt", "w")
+        vloss_file.write("# vloss/Ang*fs^-1  all  single bounce  double bounce  multi bounce\n")
+        for i in range(len(all_vloss_hist)):
+        	vloss_file.write("%f %f %f %f %f\n" % (0.5*(all_vloss_edges[i]+all_vloss_edges[i+1]), all_vloss_hist[i], frac_one_vb*one_vb_hist[i], frac_two_vb*two_vb_hist[i], frac_mul_vb*mul_vb_hist[i]))
+        vloss_file.close()
 
         # write final velocities
         v_final_file = open("analysis/all_final_v.txt", "w")
@@ -808,36 +809,37 @@ def analyze(trajs,logfile):
 
 
         ### ANGULAR DISTRIBUTION ###
-	print("Calculating angular velocity loss.")
+        print("Calculating angular velocity loss.")
         logfile.write("Calculating angular velocity loss.\n")
-	# get trajectories that are within specular radius in azimuth direction
-	velocity_collect  = []
-	angle_collect   = []
-	ps_dist_collect = []
-	polar_scatt_azi_int_velocity = []
-	polar_scatt_azi_int_angle  = []
-	for traj in trajs:
-		if traj.has_scattered:
-			polar_scatt_azi_int_velocity.append(traj.vloss)
-			polar_scatt_azi_int_angle.append(traj.polar_f)
+        # get trajectories that are within specular radius in azimuth direction
+        velocity_collect  = []
+        angle_collect   = []
+        ps_dist_collect = []
+        polar_scatt_azi_int_velocity = []
+        polar_scatt_azi_int_angle  = []
+        for traj in trajs:
+        	if traj.has_scattered:
+        		polar_scatt_azi_int_velocity.append(traj.vloss)
+        		polar_scatt_azi_int_angle.append(traj.polar_f)
 
-			if traj.in_plane:
-				velocity_collect.append(traj.vloss)
-				angle_collect.append(traj.polar_f)
-				ps_dist_collect.append(traj.cl_appr)
+        		if traj.in_plane:
+        			velocity_collect.append(traj.vloss)
+        			angle_collect.append(traj.polar_f)
+        			ps_dist_collect.append(traj.cl_appr)
 
-	ang_dist_file_v = open("analysis/ang_res_vloss.txt", "w")
+        ang_dist_file_v = open("analysis/ang_res_vloss.txt", "w")
         ang_dist_mat_file_v = open("analysis/ang_res_vloss_matrix.txt", "w")
         occurence_file_v    = open("analysis/ang_res_occurrence_v.txt", "w")
-	if len(velocity_collect) != 0:
-		angle_vloss_hist, xedges, yedges = numpy.histogram2d(velocity_collect, angle_collect,  bins=(numbins(velocity_collect)), normed=False)
-                occurence_hist_v, occ_edges = numpy.histogram(angle_collect, bins=numpy.arange(91), normed=False)
-			
-		# OUTPUT
-		for i in range(len(angle_vloss_hist)):
-			for j in range(len(angle_vloss_hist[i])):
-				ang_dist_file_v.write("%f %f %d\n" % (0.5*(xedges[i]+xedges[i+1]), 0.5*(yedges[j]+yedges[j+1]), angle_vloss_hist[i][j]))
-			ang_dist_file_v.write("\n")
+        if len(velocity_collect) != 0:
+                angle_vloss_hist, xedges, yedges = numpy.histogram2d(velocity_collect, angle_collect,  bins=(numbins(velocity_collect)), normed=False)
+                #occurence_hist_v, occ_edges = numpy.histogram(angle_collect, bins=numpy.arange(91), normed=False)
+                occurence_hist_v, occ_edges = numpy.histogram(angle_collect, bins=numpy.arange(91), density=False)
+                	
+                # OUTPUT
+                for i in range(len(angle_vloss_hist)):
+                	for j in range(len(angle_vloss_hist[i])):
+                		ang_dist_file_v.write("%f %f %d\n" % (0.5*(xedges[i]+xedges[i+1]), 0.5*(yedges[j]+yedges[j+1]), angle_vloss_hist[i][j]))
+                	ang_dist_file_v.write("\n")
 
                 ang_dist_mat_file_v.write("# x-range describing velocity loss in Ang/fs (left to right) from %f to %f in steps of %f\n" % (0.5*(xedges[0]+xedges[1]), 0.5*(xedges[-2]+xedges[-1]), abs(xedges[0]-xedges[1])))
                 ang_dist_mat_file_v.write("# y-range describing scattering angle in degrees (top to bottom) from %f to %f in steps of %f\n" % (0.5*(yedges[0]+yedges[1]), 0.5*(yedges[-2]+yedges[-1]), abs(yedges[0]-yedges[1])))
@@ -853,34 +855,34 @@ def analyze(trajs,logfile):
                 for i in range(len(occurence_hist_v)):
                         this_angle = 0.5*(occ_edges[i]+occ_edges[i+1])
                         occurence_file_v.write("%f %f\n" % (this_angle, 1.0*occurence_hist_v[i]/sum(occurence_hist_v)))
-	else:
-		ang_dist_file_v.write("%f %f %d\n"   % (0.1, 0.5, 0))
+        else:
+                ang_dist_file_v.write("%f %f %d\n"   % (0.1, 0.5, 0))
                 ang_dist_file_v.write("%f %f %d\n\n" % (0.1, 1.0, 1))
-		ang_dist_file_v.write("%f %f %d\n"   % (0.2, 1.0, 1))
-		ang_dist_file_v.write("%f %f %d\n"   % (0.2, 0.5, 2))
+                ang_dist_file_v.write("%f %f %d\n"   % (0.2, 1.0, 1))
+                ang_dist_file_v.write("%f %f %d\n"   % (0.2, 0.5, 2))
 
                 occurence_file_v.write("%f %f\n" % (0.1, 0.1))
-		
+        	
         occurence_file_v.close()
-	ang_dist_file_v.close()
+        ang_dist_file_v.close()
         ang_dist_mat_file_v.close()
 
-	# INTERGRATED OVER ALL AZIMUTH ANGLES #
-	polar_scatt_azi_file_v = open("analysis/polar_scatt_azi_int_v.txt", "w")
-	if len(polar_scatt_azi_int_velocity) != 0:
-		polar_scatt_azi_int_hist_v, xedges, yedges = numpy.histogram2d(polar_scatt_azi_int_velocity, polar_scatt_azi_int_angle, bins=(numbins(polar_scatt_azi_int_velocity)), normed=False)
-		
-		for i in range(len(polar_scatt_azi_int_hist_v)):
-			for j in range(len(polar_scatt_azi_int_hist_v[i])):
-				polar_scatt_azi_file_v.write("%f %f %d\n" % (0.5*(xedges[i]+xedges[i+1]), 0.5*(yedges[j]+yedges[j+1]), polar_scatt_azi_int_hist_v[i][j]))
-			polar_scatt_azi_file_v.write("\n")
-	else:
-		polar_scatt_azi_file_v.write("%f %f %d\n"   % (0.1, 0.5, 0))
-		polar_scatt_azi_file_v.write("%f %f %d\n\n" % (0.1, 1.0, 1))
-		polar_scatt_azi_file_v.write("%f %f %d\n"   % (0.2, 1.0, 1))
-		polar_scatt_azi_file_v.write("%f %f %d\n"   % (0.2, 0.5, 2))
+        # INTERGRATED OVER ALL AZIMUTH ANGLES #
+        polar_scatt_azi_file_v = open("analysis/polar_scatt_azi_int_v.txt", "w")
+        if len(polar_scatt_azi_int_velocity) != 0:
+                polar_scatt_azi_int_hist_v, xedges, yedges = numpy.histogram2d(polar_scatt_azi_int_velocity, polar_scatt_azi_int_angle, bins=(numbins(polar_scatt_azi_int_velocity)), normed=False)
+        	
+                for i in range(len(polar_scatt_azi_int_hist_v)):
+                        for j in range(len(polar_scatt_azi_int_hist_v[i])):
+                                polar_scatt_azi_file_v.write("%f %f %d\n" % (0.5*(xedges[i]+xedges[i+1]), 0.5*(yedges[j]+yedges[j+1]), polar_scatt_azi_int_hist_v[i][j]))
+                        polar_scatt_azi_file_v.write("\n")
+        else:
+                polar_scatt_azi_file_v.write("%f %f %d\n"   % (0.1, 0.5, 0))
+                polar_scatt_azi_file_v.write("%f %f %d\n\n" % (0.1, 1.0, 1))
+                polar_scatt_azi_file_v.write("%f %f %d\n"   % (0.2, 1.0, 1))
+                polar_scatt_azi_file_v.write("%f %f %d\n"   % (0.2, 0.5, 2))
 
-	polar_scatt_azi_file_v.close()
+        polar_scatt_azi_file_v.close()
 
         ### SPHERICAL SYMMETRY ###
         # LOOP
@@ -932,38 +934,38 @@ def analyze(trajs,logfile):
 
 
 
-	### SUMMARY ###
-	# ANALYSIS
-	energy_won = sum( [1 for e_final in all_eloss if e_final < 0] )
+        ### SUMMARY ###
+        # ANALYSIS
+        energy_won = sum( [1 for e_final in all_eloss if e_final < 0] )
 
-	# OUTPUT 
-	out = open("analysis/Summary.txt", "w")
-	out.write("Created by version %4.2f\n" % VERSION_ID)
-	out.write("Scattered:   %d (%f%%)\n" % (SCATTERED,   100.*FRAC_SCATTERED))
-	out.write("Absorbed:    %d (%f%%)\n" % (ABSORBED,    100.*FRAC_ABSORBED))
-	out.write("Transmitted: %d (%f%%)\n\n" % (TRANSMITTED, 100.*FRAC_TRANSMITTED))
+        # OUTPUT 
+        out = open("analysis/Summary.txt", "w")
+        out.write("Created by version %4.2f\n" % VERSION_ID)
+        out.write("Scattered:   %d (%f%%)\n" % (SCATTERED,   100.*FRAC_SCATTERED))
+        out.write("Absorbed:    %d (%f%%)\n" % (ABSORBED,    100.*FRAC_ABSORBED))
+        out.write("Transmitted: %d (%f%%)\n\n" % (TRANSMITTED, 100.*FRAC_TRANSMITTED))
 
-	out.write("%d (%f%%) of the scattered projectiles won kinetic energy.\n" % (energy_won, 100.*energy_won/SCATTERED))
-	out.write("%f%% of scattered trajectories were within +-%f degrees in plane.\n" % (100.*len(in_plane_all_eloss)/SCATTERED, SPECULAR_RADIUS))
-	out.write("%f%% of scattered trajectories were within +-%f degrees to specular scattering angle.\n\n" % (100.*len(spec_all_eloss)/SCATTERED, SPECULAR_RADIUS))
+        out.write("%d (%f%%) of the scattered projectiles won kinetic energy.\n" % (energy_won, 100.*energy_won/SCATTERED))
+        out.write("%f%% of scattered trajectories were within +-%f degrees in plane.\n" % (100.*len(in_plane_all_eloss)/SCATTERED, SPECULAR_RADIUS))
+        out.write("%f%% of scattered trajectories were within +-%f degrees to specular scattering angle.\n\n" % (100.*len(spec_all_eloss)/SCATTERED, SPECULAR_RADIUS))
 
-	out.write("Average energy loss of H-atoms in specular scattering angle %f eV.\n"   % numpy.mean(spec_all_eloss))
-	try:
-		out.write("Peak energy loss of H-atoms in specular scattering angle    %f eV.\n\n" % spec_all_eloss_edges[numpy.argmax(spec_all_eloss_hist)])
-	except(UnboundLocalError):
-		out.write("Peak energy loss of H-atoms in specular scattering angle    %s eV.\n\n" % "No atoms in specular scattering angle")
-	out.write("Average energy loss of H-atoms reflected %f eV.\n"     % numpy.mean(all_eloss))
-	out.write("Peak energy loss of H-atoms reflected    %f eV.\n\n"   % all_eloss_edges[numpy.argmax(all_eloss_hist)])
-	out.write("Average energy loss of H-atoms in bulk   %f eV.\n" % numpy.mean(absorbed_eloss))
-	out.write("Average energy loss of reflected H-atoms to ehps %f eV.\n" % numpy.mean(loss_to_ehps))
-	out.write("Average energy loss of specularly reflected H-atoms to ehps %f eV.\n\n" % numpy.mean(loss_to_ehps_spec))
-	
-	out.write("%refl  %in bulk  %shot_thru  %E_won  %in_spec  avg_E_in_spec  peak_E_in_spec  avg_E_in_bulk  avg_E_refl  peak_E_refl  avg_ehp_loss  avg_ehp_loss_spec Trajs\n")
-	try:
-		out.write("%f %f %f %f %f %f %f %f %f %f %f %f %d\n" % (100.*FRAC_SCATTERED, 100.*FRAC_ABSORBED, 100.*FRAC_TRANSMITTED, 100.*energy_won/SCATTERED, 100.*len(spec_all_eloss)/SCATTERED, trajs[0].ekin_p_i-numpy.mean(spec_all_eloss), trajs[0].ekin_p_i-spec_all_eloss_edges[numpy.argmax(spec_all_eloss_hist)], trajs[0].ekin_p_i-numpy.mean(absorbed_eloss), trajs[0].ekin_p_i-numpy.mean(all_eloss), trajs[0].ekin_p_i-all_eloss_edges[numpy.argmax(all_eloss_hist)], numpy.mean(loss_to_ehps), numpy.mean(loss_to_ehps_spec), len(trajs)))
-	except(UnboundLocalError):
-		out.write("%f %f %f %f %f %f %f %f %f %f %f %d\n" % (100.*FRAC_SCATTERED, 100.*FRAC_ABSORBED, 100.*FRAC_TRANSMITTED, 100.*energy_won/SCATTERED, 100.*len(spec_all_eloss)/SCATTERED, trajs[0].ekin_p_i-numpy.mean(spec_all_eloss), trajs[0].ekin_p_i-numpy.mean(absorbed_eloss), trajs[0].ekin_p_i-numpy.mean(all_eloss), trajs[0].ekin_p_i-all_eloss_edges[numpy.argmax(all_eloss_hist)], numpy.mean(loss_to_ehps), numpy.mean(loss_to_ehps_spec), len(trajs)))
-	out.close()
+        out.write("Average energy loss of H-atoms in specular scattering angle %f eV.\n"   % numpy.mean(spec_all_eloss))
+        try:
+                out.write("Peak energy loss of H-atoms in specular scattering angle    %f eV.\n\n" % spec_all_eloss_edges[numpy.argmax(spec_all_eloss_hist)])
+        except(UnboundLocalError):
+                out.write("Peak energy loss of H-atoms in specular scattering angle    %s eV.\n\n" % "No atoms in specular scattering angle")
+        out.write("Average energy loss of H-atoms reflected %f eV.\n"     % numpy.mean(all_eloss))
+        out.write("Peak energy loss of H-atoms reflected    %f eV.\n\n"   % all_eloss_edges[numpy.argmax(all_eloss_hist)])
+        out.write("Average energy loss of H-atoms in bulk   %f eV.\n" % numpy.mean(absorbed_eloss))
+        out.write("Average energy loss of reflected H-atoms to ehps %f eV.\n" % numpy.mean(loss_to_ehps))
+        out.write("Average energy loss of specularly reflected H-atoms to ehps %f eV.\n\n" % numpy.mean(loss_to_ehps_spec))
+        
+        out.write("%refl  %in bulk  %shot_thru  %E_won  %in_spec  avg_E_in_spec  peak_E_in_spec  avg_E_in_bulk  avg_E_refl  peak_E_refl  avg_ehp_loss  avg_ehp_loss_spec Trajs\n")
+        try:
+                out.write("%f %f %f %f %f %f %f %f %f %f %f %f %d\n" % (100.*FRAC_SCATTERED, 100.*FRAC_ABSORBED, 100.*FRAC_TRANSMITTED, 100.*energy_won/SCATTERED, 100.*len(spec_all_eloss)/SCATTERED, trajs[0].ekin_p_i-numpy.mean(spec_all_eloss), trajs[0].ekin_p_i-spec_all_eloss_edges[numpy.argmax(spec_all_eloss_hist)], trajs[0].ekin_p_i-numpy.mean(absorbed_eloss), trajs[0].ekin_p_i-numpy.mean(all_eloss), trajs[0].ekin_p_i-all_eloss_edges[numpy.argmax(all_eloss_hist)], numpy.mean(loss_to_ehps), numpy.mean(loss_to_ehps_spec), len(trajs)))
+        except(UnboundLocalError):
+	        out.write("%f %f %f %f %f %f %f %f %f %f %f %d\n" % (100.*FRAC_SCATTERED, 100.*FRAC_ABSORBED, 100.*FRAC_TRANSMITTED, 100.*energy_won/SCATTERED, 100.*len(spec_all_eloss)/SCATTERED, trajs[0].ekin_p_i-numpy.mean(spec_all_eloss), trajs[0].ekin_p_i-numpy.mean(absorbed_eloss), trajs[0].ekin_p_i-numpy.mean(all_eloss), trajs[0].ekin_p_i-all_eloss_edges[numpy.argmax(all_eloss_hist)], numpy.mean(loss_to_ehps), numpy.mean(loss_to_ehps_spec), len(trajs)))
+        out.close()
 
 	
 # Average energy of H-atoms in bulk 0.03969474585 eV.
@@ -971,8 +973,8 @@ def analyze(trajs,logfile):
 # Peak energy of H-atoms reflected 2.770000 eV
 #
 def analyze_angles(trajs,logfile):
-	for traj in trajs:	# List comprehension simply need too much time. This is ugly, but fast.
-		if traj.in_plane and traj.has_scattered:
+        for traj in trajs:	# List comprehension simply need too much time. This is ugly, but fast.
+                if traj.in_plane and traj.has_scattered:
 
                         if traj.cl_appr < 1.4: # our structural parameter for the barrie # our structural parameter for the barrierr
                             outfile_string = "slow_component.log"
