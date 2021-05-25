@@ -179,7 +179,7 @@ def read_in_mxt_fins(logfile):
                                     time = sline[-1]            #       time     =     20.0000000
                                 if "turn_pnts" in line:
                                     turn_pnts = sline[-1]       #       turn_pnts =           1
-                                if "cl_appr" in line:
+                                if "cl_appr " in line:
                                     cl_appr = sline[-1]         #       cl_appr  =      0.9694690
                                 if "cl_appr_time" in line:
                                     cl_appr_t = sline[-1]       #       cl_appr_time  =          278
@@ -303,6 +303,7 @@ def write_angle_files(traj_list):
 
 def traj_in_es(traj_list):
 
+        esname    = outname.split('.')[0] + "_es"
         es_file_1 = open(esname+'_p31a5.txt', 'w')
         es_file_2 = open(esname+'_p5a31.txt', 'w')
 
