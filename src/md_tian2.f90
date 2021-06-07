@@ -85,10 +85,10 @@ program md_tian2
                     ! output and exit conditionns
                     if (any(mod(istep, simparams%output_interval) == 0)) call output(atoms, itraj, istep)
 
-                    if ( all(atoms%r(3,:,1) > simparams%proj_ul) .and. atoms%is_proj(atoms%idx(1)) &
+                    if ( all(atoms%r(3,:,1) > simparams%proj_ul) .and. atoms%is_proj(atoms%idx(1)) & ! check for projectile upper limit
                         .and. any(simparams%output_type == output_id_scatter)) exit
 
-                    if ( all(atoms%r(3,:,1) < simparams%proj_ll) .and. atoms%is_proj(atoms%idx(1)) &
+                    if ( all(atoms%r(3,:,1) < simparams%proj_ll) .and. atoms%is_proj(atoms%idx(1)) & ! check for projectile lower limit
                         .and. any(simparams%output_type == output_id_scatter)) exit
 
                     ! record bounces, lowest position, etc.

@@ -1014,6 +1014,16 @@ def analyze_angles(trajs,logfile):
                         outfile.close()
 
 
+def get_traj(trajs):
+
+    for traj in trajs:
+        if traj.has_scattered:
+            if traj.azi_f < -100:
+                print(traj.traj_id)
+
+
+
+
 
 ###### SCRIPT ######
 
@@ -1045,7 +1055,7 @@ analyze(traj_collection,logfile)
 
 ### H@Gr related functions
 analyze_angles(traj_collection,logfile)
-
+get_traj(traj_collection) # get traj # for backscattering
 
 
 logfile.close()

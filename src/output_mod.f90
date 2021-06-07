@@ -92,7 +92,7 @@ contains
                             call output_adsorption_status(atoms, itraj, istep)
 
                         case (output_id_nene)
-                            print *, "MD step ", istep
+                            call output_nene(atoms, itraj, istep)
 
                         case (output_id_aims)
                             call output_aims(atoms, itraj, istep)
@@ -632,8 +632,6 @@ contains
     end subroutine output_mxt
 
 
-
-
     subroutine output_scatter(atoms, itraj, istep, flag)
 
         use rpmd
@@ -732,7 +730,6 @@ contains
     end subroutine output_scatter
 
 
-
     subroutine output_pes(atoms)
 
         use pes_rebo_mod, only : to_string_rebo
@@ -792,8 +789,6 @@ contains
     end subroutine output_pes
 
 
-
-
     subroutine output_adsorption_status(atoms, itraj, istep)
 
         type(universe), intent(in) :: atoms
@@ -823,5 +818,17 @@ contains
         close(out_unit)
 
     end subroutine output_adsorption_status
+
+
+    ! print the current step in case of using nene pes
+    subroutine output_nene(atoms, itraj, istep)
+
+        type(universe), intent(in) :: atoms
+        integer, intent(in)        :: itraj, istep
+
+        print *, "MD step ", istep
+
+    end subroutine output_nene
+
 
 end module output_mod

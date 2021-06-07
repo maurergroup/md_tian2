@@ -757,6 +757,12 @@ def analyze(trajs):
 	out.close()
 
 	
+def get_trajnum(trajs):
+
+    for traj in trajs:
+        if traj.has_scattered:
+            if traj.ekin_p_f > traj.ekin_p_i:
+                print(traj.traj_id)
 	
 	
 
@@ -778,3 +784,5 @@ FRAC_TRANSMITTED = float(TRANSMITTED)/NTRAJS
 ### OUTPUT ###
 analyze(traj_collection)
 
+### H@EG ###
+get_trajnum(traj_collection)

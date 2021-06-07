@@ -130,17 +130,17 @@ module constants
     character(len=*), parameter :: output_key_is_adsorbed = "adsorption_status"
     character(len=*), parameter :: output_key_beads       = "beads"
 
-    integer, parameter :: output_id_xyz     = 1
-    integer, parameter :: output_id_energy  = 2
-    integer, parameter :: output_id_poscar  = 3
-    integer, parameter :: output_id_vasp    = 4
-    integer, parameter :: output_id_mxt     = 5
-    integer, parameter :: output_id_scatter = 6
-    integer, parameter :: output_id_nene    = 7
-    integer, parameter :: output_id_aims    = 8
-    integer, parameter :: output_id_runner  = 9
+    integer, parameter :: output_id_xyz         = 1
+    integer, parameter :: output_id_energy      = 2
+    integer, parameter :: output_id_poscar      = 3
+    integer, parameter :: output_id_vasp        = 4
+    integer, parameter :: output_id_mxt         = 5
+    integer, parameter :: output_id_scatter     = 6
+    integer, parameter :: output_id_nene        = 7
+    integer, parameter :: output_id_aims        = 8
+    integer, parameter :: output_id_runner      = 9
     integer, parameter :: output_id_is_adsorbed = 10
-    integer, parameter :: output_id_beads   = 11
+    integer, parameter :: output_id_beads       = 11
 
     ! Conversion constants to program units
     !
@@ -156,15 +156,15 @@ module constants
     real(dp), parameter :: deg2rad              = pi/180.0_dp
     real(dp), parameter :: rad2deg              = 180.0_dp/pi
     real(dp), parameter :: bohr2ang             = 0.529177211_dp
-    real(dp), parameter :: ang2bohr             = 1/bohr2ang
+    real(dp), parameter :: ang2bohr             = 1.0_dp/bohr2ang
     real(dp), parameter :: p2GPa                = 160.2176565_dp
     real(dp), parameter :: joule2ev             = 6.2415093433e+18_dp
     real(dp), parameter :: kelvin2ev            = kB
     real(dp), parameter :: ha2ev                = 27.21138602_dp ! convert Ha to eV
-    real(dp), parameter :: ev2ha                = 1/ha2ev
+    real(dp), parameter :: ev2ha                = 1.0_dp/ha2ev
     real(dp), parameter :: habohr2evang         = ha2ev*ang2bohr !51.4220670398_dp; convert Ha/bohr to eV/ang
-    real(dp), parameter :: evang2habohr         = 1/habohr2evang
+    real(dp), parameter :: evang2habohr         = 1.0_dp/habohr2evang
     real(dp), parameter :: habohrcub2evangcub   = ha2ev*(ang2bohr**3)
-    real(dp), parameter :: au2gpa               = 29419.844d0 ! 1 Ha/Bohr3 = 29419.844 GPa
+    real(dp), parameter :: au2gpa               = 29419.844_dp ! 1 Ha/Bohr3 = 29419.844 GPa
 
 end module constants

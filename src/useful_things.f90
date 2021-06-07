@@ -103,7 +103,7 @@ contains
                 putseed = (/seed/)
                 call random_seed(put=putseed)
 
-                ! the following ensures a uniform distridution of random numbers
+                ! the following ensures a uniform distribution of random numbers
                 do i = 1,100
                     call random_number(tmp)
                 end do
