@@ -85,7 +85,6 @@ SUBROUTINES = 	md_tian2.o \
 		sortelements.o \
 		sortsymfunctions.o \
 		translate.o \
-		write_info.o \
 
 
 MPI_DUMMY_SUBROUTINES = mpi_dummy_routines.o \
@@ -392,9 +391,6 @@ sortsymfunctions.o: $(RUNNER_SRC_DIR)sortsymfunctions.f90
 
 translate.o: $(RUNNER_SRC_DIR)translate.f90
 	$(FC) $(FFLAGS) -c $(RUNNER_SRC_DIR)translate.f90
-
-write_info.o: write_info.f90
-	$(FC) $(FFLAGS) -c write_info.f90
 
 
 serial: ./md_tian2.serial.x

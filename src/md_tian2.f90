@@ -31,7 +31,7 @@ program md_tian2
     use rpmd
     use universe_mod
     use fit
-    use output_mod, only : output
+    use output_mod, only : output, write_header
     use trajectory_info
     use geometry_opt
     use useful_things, only : rnd_seed
@@ -46,7 +46,7 @@ program md_tian2
     real(dp) :: vec(3)
 
 
-    call write_info() ! write header
+    call write_header() ! write program header at the beginning
 
     call simbox_init(atoms) ! set up the simulation box
 
