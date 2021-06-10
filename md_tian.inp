@@ -1,10 +1,11 @@
 run md
 
-rng_type 2
+rng_seed traj_id
+!rng_seed global
 
 start 1
-ntrajs 10
-nsteps 2000
+ntrajs 2
+nsteps 10
 step 0.1
 
 projectile 1 H 1.0 ver

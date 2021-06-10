@@ -7248,7 +7248,7 @@ module pes_nene_mod
             count_extrapolation_warnings_traj_symfunc(bead) = count_extrapolation_warnings_traj_symfunc(bead) + count_extrapolation_warnings_symfunc
 
             ! more information and checks for debug
-            if (simparams%debug(id_nene)) then
+            if (simparams%debug(debug_id_nene)) then
 
                 print *, "bead: ", bead
 

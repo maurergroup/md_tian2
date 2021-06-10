@@ -315,7 +315,7 @@ contains
         write(traj_id_vasp,'(i8.8)') itraj
 
 
-        if (simparams%lbead_output_format) then
+        if (simparams%lbead_output_format .and. atoms%nbeads > 1) then
 
             do bead = 1,atoms%nbeads
 
@@ -424,7 +424,7 @@ contains
         end if
         write(traj_id_aims,'(i8.8)') itraj
 
-        if (simparams%lbead_output_format) then
+        if (simparams%lbead_output_format .and. atoms%nbeads > 1) then
 
             do bead = 1,atoms%nbeads
 

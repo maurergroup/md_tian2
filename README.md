@@ -32,7 +32,6 @@ List of modules: -> maybe also here, but put in manual!
 	trajectory_info.f90	collect information from the calculated trajectories
 	universe_mod.f90	contains definitions of user types and all constants
 	useful_things.f90	useful math routines
-	write_info.f90          write header and information concerning program routine
 
 
 
@@ -147,8 +146,8 @@ md_tian.inp file: -> add a list with the complete set of keywords with descripti
 		y) maxit: maximum number of iterations during fit
 		z) nthreads: number of threads used for fitting
 		aa) adsorption_distance: define distance of projectile to surface (start and end) to get interaction time 
-		ab) rng_type: we have two types of RNG, default is 1 if you give no keyword
-		ac) debug: debugging, only interesting for developers
+		ab) rng_type: we have two types of RNG namely global and traj_id, default is traj_id if no keyword is given
+		ac) debug: debugging, developers only; followed by the pes name this enables pes specific debug information
 
         Annotations to points from list:
 

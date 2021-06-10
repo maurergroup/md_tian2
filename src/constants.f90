@@ -53,6 +53,8 @@ module constants
 
 
     ! PES-related constants
+    integer, parameter :: number_of_pess        = 8
+
     integer, parameter :: nparams_lj            = 2
     integer, parameter :: nparams_morse         = 3
     integer, parameter :: nparams_emt           = 7
@@ -79,14 +81,14 @@ module constants
     character(len=*), parameter :: pes_name_nene           = "nene"
 
     ! Debug ID
-    integer, parameter :: id_lj                 = 1
-    integer, parameter :: id_simple_lj          = 2
-    integer, parameter :: id_emt                = 3
-    integer, parameter :: id_rebo               = 4
-    integer, parameter :: id_no_interaction     = 5
-    integer, parameter :: id_ho                 = 6
-    integer, parameter :: id_morse              = 7
-    integer, parameter :: id_nene               = 8 ! This will also define debug array length
+    integer, parameter :: debug_id_lj                 = 1
+    integer, parameter :: debug_id_simple_lj          = 2
+    integer, parameter :: debug_id_emt                = 3
+    integer, parameter :: debug_id_rebo               = 4
+    integer, parameter :: debug_id_no_interaction     = 5
+    integer, parameter :: debug_id_ho                 = 6
+    integer, parameter :: debug_id_morse              = 7
+    integer, parameter :: debug_id_nene               = 8
 
      ! Internal program constants
     integer, parameter :: randseed(13)            = [7,5,3,11,9,1,17,2,9,6,4,5,8]

@@ -43,14 +43,14 @@ module run_config
         real(dp),         allocatable :: mass_l(:), mass_p(:)       ! atomic masses
         integer,          allocatable :: md_algo_l(:), md_algo_p(:) ! and respective key
         real(dp) :: einc, sigma_einc                                ! incidence energy (eV)
-        real(dp) :: polar                                     ! incidence polar angle (degree)
+        real(dp) :: polar                                           ! incidence polar angle (degree)
         character(len=15) :: azimuth                                ! incidence azimuthal angle (degree) or 'r' for random
         real(dp) :: sigma_azimuth                                   ! standard dev of incidence azimuthal angle (degree)
-        real(dp) :: Tsurf                                            ! surface temperature in K
-        real(dp) :: Tproj                                            ! projectile temperature in K
-        real(dp) :: sa_Tmax                                          ! max. Tsurf for simulated annealing in K
-        integer  :: sa_nsteps                                        ! number of steps per simulated annealing cycle
-        integer  :: sa_interval                                      ! number of steps per temperature interval
+        real(dp) :: Tsurf                                           ! surface temperature in K
+        real(dp) :: Tproj                                           ! projectile temperature in K
+        real(dp) :: sa_Tmax                                         ! max. Tsurf for simulated annealing in K
+        integer  :: sa_nsteps                                       ! number of steps per simulated annealing cycle
+        integer  :: sa_interval                                     ! number of steps per temperature interval
         character(len=7)    :: confname                             ! configuration key
         character(len=max_string_length) :: confname_file           ! name of the system configuration file or folder
         integer :: nconfs                                           ! number of configurations to read in
@@ -76,8 +76,8 @@ module run_config
         integer  :: nthreads                                        ! number of threads used for fitting
         real(dp) :: adsorption_start, adsorption_end                ! define adsorption start and end. it starts when below 'start' and ends when above 'end'
         integer  :: nran                                            ! type of the random number generator
-        logical  :: debug(id_nene)                                  ! in case of the nene pes this variable turn on more information for debugging
-        logical  :: loutput                                         ! if any output format is set this variable is true; should reduce the if condition when no output is chosen
+        logical  :: debug(number_of_pess)                           ! for the chosen pes this variable turn on more information for debugging purposes
+        logical  :: loutput                                         ! if any output format is set, this variable is true; should reduce the if condition per step when no output is chosen
         logical  :: lbead_output_format                             ! defines if centroid positions or each bead is written out in a separate data file
 
     end type
@@ -147,6 +147,7 @@ contains
         character(len=max_string_length) :: words(100)
         integer, parameter :: inp_unit = 38
         character(len=*), parameter :: err = "Error in the input file: "
+        character(len=*), parameter :: warn = "Warning: "
 
         simparams = new_simulation_parameters()
 
@@ -166,30 +167,37 @@ contains
             if (ios == 0) then
                 ! Split an input string
                 call split_string(buffer, words, nwords)
+
                 select case (words(1))
+
                     case ('start')
-                        if (simparams%start /= default_int) stop 'Error in the input file: Multiple use of the start key'
+
+                        if (simparams%start /= default_int) stop err // 'Multiple use of the start key'
                         if (nwords == 2) then
                             read(words(2),'(i1000)', iostat=ios) simparams%start
                             if (ios /= 0) stop err // 'start value must be integer'
                         else
                             print *, err, 'start key needs a single argument'; stop
                         end if
-                    case ('rng_type')
-                        if (simparams%nran /= default_int) stop 'Error in the input file: Multiple use of the rng_type key'
+
+                    case ('rng_seed')
+
+                        if (simparams%nran /= default_int) stop err // 'Multiple use of the rng_seed key'
                         if (nwords == 2) then
-                            read(words(2),'(i1000)', iostat=ios) simparams%nran
-                            if (ios /= 0) stop err // 'rng_type value must be integer'
                             select case (words(2))
-                                case ('1', '2')
-                                        ! let the valid types pass
+                                case ('global')
+                                    simparams%nran = 1
+                                case ('traj_id')
+                                    simparams%nran = 2
                                 case default
-                                    print *, err, 'Unknown rng_type value'; stop
+                                    print *, err, 'Unknown rng_seed key'; stop
                             end select
                         else
-                            print *, err, 'rng_type key needs a single argument'; stop
+                            print *, err, 'rng_seed key needs a single argument'; stop
                         end if
+
                 end select
+
             end if
         end do
 
@@ -197,7 +205,7 @@ contains
 
         ! in case the rng_type key is missing in the input file
         if (simparams%nran == default_int) then
-            simparams%nran = 1
+            simparams%nran = 2
         end if
 
         call rnd_seed(simparams%nran,simparams%start) ! seed the RNG
@@ -218,7 +226,7 @@ contains
                     case ('start')
                         ! pass
 
-                    case ('rng_type')
+                    case ('rng_seed')
                         ! pass
 
                     case ('run')
@@ -584,13 +592,13 @@ contains
                         if (ios /= 0) stop 'Error in the input file: Error reading force_beads'
 
 
-                    case ('pul')
+                    case ('pul') ! projectile upper limit
 
                         if (simparams%proj_ul /= default_real) stop err // "projectile upper limit set multiple times"
                         read(words(2), *, iostat=ios) simparams%proj_ul
                         if (ios /= 0) stop err // "proj_upper_limit"
 
-                    case ('pll')
+                    case ('pll') ! projectile lower limit
 
                         if (simparams%proj_ll /= default_real*(-1.0_dp)) stop err // "projectile lower limit set multiple times"
                         read(words(2), *, iostat=ios) simparams%proj_ll
@@ -646,13 +654,14 @@ contains
                             do word=1,nwords-1
                                 select case(trim(words(word+1)))
                                     case (pes_name_nene)
-                                        simparams%debug(id_nene) = .true.
+                                        simparams%debug(debug_id_nene) = .true.
                                     case default
-                                        print *, "Warning: Debug option not available for ", trim(words(word+1))
+                                        print *, warn, "no debug information available for ", trim(words(word+1))
                                 end select
                             end do
                         else
-                            print *, err, 'debug key needs an argument'
+                                print *, warn, "debug key doesn't have arguments, all debug flags set to true"
+                                simparams%debug(:) = .true.
                         end if
 
                     case default
