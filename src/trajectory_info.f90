@@ -34,8 +34,7 @@ module trajectory_info
 
     integer  :: nearest_surface_idx, bounces, col_partner_change
     integer  :: last_surface_idx, rFcut, vFcut, r_dot_v_ptm
-    integer  :: closest_approach_time
-    real(dp) :: lowest_z(3), closest_approach, interaction_time
+    real(dp) :: lowest_z(3), closest_approach, interaction_time, closest_approach_time
     real(dp) :: r_dot_v(2), r_dot_F(2), v_dot_F(2)      ! needed for collision detection
     logical  :: is_adsorbed
     real(dp), allocatable :: centroid_positions(:,:)
@@ -102,7 +101,7 @@ contains
             r =  sqrt(sum(vec*vec))          ! distance
             if (r < closest_approach) then
                     closest_approach = r
-                    closest_approach_time = istep
+                    closest_approach_time = dble(istep) * simparams%step ! should be best solution to convert integer to double precision instead of just real
             end if
             if (r < cl_appr_in_this_step) then
                 cl_appr_in_this_step = r
