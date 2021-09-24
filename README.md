@@ -1,7 +1,7 @@
 md_tian2
 ========
 
-md_tian2 (Molecular Dynamics Tian Xia 2) is a program for simulating
+md_tian2 (Molecular Dynamics Tian Xia 2, acronym: MDT2) is a program for simulating
 the scattering of atoms (and molecules) from a surface.
 
 Purpose: -> maybe also here, but put in manual!

@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
-# original version 2.00 was done by Marvin Kammler
-# version 2.01 is modified by Sebastian Wille
-# version 2.02 is modified by Sebastian Wille
+# original version 2.00 and previous versions were done by Marvin Kammler
+# version 2.01 was modified by Sebastian Wille
+# version 2.02 was modified by Sebastian Wille
 
 # Modifications v2.01:
 # trajid added in Traj class
@@ -13,10 +13,11 @@
 # Modifications v2.02:
 # initial and final velocities will also be given
 # added time at closest approach
+# added function to select traj according to settings from ion imaging experiment
 
 # intention: analyze all traj/mxt_fin files and create the MXt2Summary file
 
-# use like: python2 <scriptname>
+# use like: python3 <scriptname>
 
 
 # 2DO:
@@ -27,8 +28,8 @@
 import os, sys, glob 
 
 # set names for output and log file
-outname     = "MXT2Summary.txt"
-logfilename = "CreateMXTSummary.log"
+outname        = "MXT2Summary.txt"
+logfilename    = "CreateMXTSummary.log"
 
 # add range of scattered angle to look at
 
@@ -301,6 +302,19 @@ def write_angle_files(traj_list):
         outfile_60.close()
 
 
+def traj_in_ion_imaging(traj_list):
+
+        ion_imaging_filename = outname.split('.')[0] + "_ion_imaging.txt"
+        ion_imaging_file = open(ion_imaging_filename, 'w')
+
+        for traj in traj_list:
+                if float(traj.polar_f) <= 31:
+                        if min(360-abs(float(traj.azi_f)-float(traj.azi_i)), abs(float(traj.azi_f)-float(traj.azi_i))) <= 4.5:
+                                write_traj_to_file(traj,ion_imaging_file)
+
+        ion_imaging_file.close()
+
+
 def traj_in_es(traj_list):
 
         esname    = outname.split('.')[0] + "_es"
@@ -341,6 +355,8 @@ logfile.write("Created by version %4.2f\n" % VERSION_ID)
 traj_list = read_in_mxt_fins(logfile)
 write_summary(logfile, outname, traj_list)
 
+# Ion Imaging Experiment
+traj_in_ion_imaging(traj_list)
 
 
 # H@Gr related functions
