@@ -101,7 +101,7 @@ contains
             r =  sqrt(sum(vec*vec))          ! distance
             if (r < closest_approach) then
                     closest_approach = r
-                    closest_approach_time = dble(istep) * simparams%step ! should be best solution to convert integer to double precision instead of just real
+                    closest_approach_time = dble(istep) ! should be best solution to convert integer to double precision instead of just real
             end if
             if (r < cl_appr_in_this_step) then
                 cl_appr_in_this_step = r
@@ -109,6 +109,9 @@ contains
             end if
 
         end do
+
+        ! we multiply with the step to get the time and NOT count of the steps; outside loop to spare time
+        closest_approach_time = closest_approach_time * simparams%step
 
         ! check for adsorption
         if (.not. is_adsorbed .and. cl_appr_in_this_step < simparams%adsorption_start) is_adsorbed = .true.
