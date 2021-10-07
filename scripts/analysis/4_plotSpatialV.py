@@ -1,6 +1,6 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
-# intetnion: plot spatial velocity distribution
+# intention: plot spatial velocity distribution
 
 # use like: python3 <scriptname>
 

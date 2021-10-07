@@ -1,8 +1,9 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 
 # Original version 2.09 was done by Marvin Kammler
 # Version 2.10 was modified by Sebastian Wille
 # Version 2.11 was modified by Sebastian Wille
+# Version 2.12 was modified by Nils Hertl
 
 # Modifications v2.10:
 # traj_id added in Traj class
@@ -14,6 +15,9 @@
 # velocities added in Traj class
 # velocity analysis files will be written
 # logfile entries added for velocities
+
+# Modifications v2.12:
+# angle correction added in polar plots
 
 # intention: analyze compressed traj file to generate data files needed for plotting
 
@@ -33,15 +37,18 @@ METAL_TYPE = "C"
 SHOT_THRU_LIMIT = 0.0 
 
 SPECULAR_RADIUS = 1.5
-
+AZIMUTHAL_ANGLE = 0
 
 inpname = "MXT2Summary.txt"
-defnrgname = "deformation_energy_trajids.txt"
 logfilename = "AnalyzePESTrajectory.log"
+
+# H@Gr related
+defnrgname = "deformation_energy_trajids.txt"
+
 
 ### CHANGES BELOW THIS LINE DEVELOPERS ONLY###
 
-VERSION_ID = 2.11
+VERSION_ID = 2.12
 
 class Point3D:
 	def __init__(self,x,y,z):
@@ -221,10 +228,9 @@ def initialize(inpname,logfile):
         logfile.write("Reading {} trajectories\n".format(ntrajs))
         traj_list = []					# init list
         inp_file = open(inpname, "r")
-        def_nrg_file = open(defnrgname, "w")
         counter = 0
         scattered = 0
-        sc_count = 0
+        #sc_count = 0
         absorbed = 0
         transmitted = 0
         for line in inp_file:
@@ -288,13 +294,13 @@ def initialize(inpname,logfile):
         for traj in traj_list:
                 if traj.has_scattered:
                         scattered += 1
-                        if traj.cl_appr < 1.4:
-                                if traj.turn_pnts == 1:
-                                        def_nrg_file.write(traj.traj_id)
-                                        def_nrg_file.write(' ')
-                                print("Analyze slow component in traj {}".format(traj.traj_id))
-                                logfile.write("Analyze slow component in traj {}\n".format(traj.traj_id))
-                                sc_count += 1
+                        #if traj.cl_appr < 1.4:
+                                #if traj.turn_pnts == 1:
+                                        #def_nrg_file.write(traj.traj_id)
+                                        #def_nrg_file.write(' ')
+                                #print("Analyze slow component in traj {}".format(traj.traj_id))
+                                #logfile.write("Analyze slow component in traj {}\n".format(traj.traj_id))
+                                #sc_count += 1
                 elif traj.has_transmitted:
                         transmitted += 1
                         print("Particle was transmitted in traj {}".format(traj.traj_id))
@@ -302,12 +308,16 @@ def initialize(inpname,logfile):
                 else:
                 	absorbed += 1
 
-        print("total traj: {}".format(ntrajs))
-        logfile.write("total traj: {}\n".format(ntrajs))
-        print("# traj with scattering after barrier: {} out of {} scattered traj ({}%)".format(sc_count,scattered,float(sc_count)*100/float(scattered)))
-        logfile.write("# traj with scattering after barrier: {} out of {} scattered traj ({}%)\n".format(sc_count,scattered,float(sc_count)*100/float(scattered)))
-        print("# traj with adsorption: {} out of total {} traj ({}%)".format(absorbed,ntrajs,float(absorbed)*float(100)/float(ntrajs)))
-        logfile.write("# traj with adsorption: {} out of total {} traj ({}%)\n".format(absorbed,ntrajs,float(absorbed)*float(100)/float(ntrajs)))
+        #print("total traj: {}".format(ntrajs))
+        #logfile.write("total traj: {}\n".format(ntrajs))
+        #print("# traj with scattering after barrier: {} out of {} scattered traj ({}%)".format(sc_count,scattered,float(sc_count)*100/float(scattered)))
+        #logfile.write("# traj with scattering after barrier: {} out of {} scattered traj ({}%)\n".format(sc_count,scattered,float(sc_count)*100/float(scattered)))
+        print("trajs with scattering: {} out of total {} traj ({:4.2f}%)".format(scattered,ntrajs,float(scattered)*float(100)/float(ntrajs)))
+        print("trajs with adsorption: {} out of total {} traj ({:4.2f}%)".format(absorbed,ntrajs,float(absorbed)*float(100)/float(ntrajs)))
+        print("trajs transmitted: {} out of total {} traj ({:4.2f}%)".format(transmitted,ntrajs,float(transmitted)*float(100)/float(ntrajs)))
+        logfile.write("trajs with scattering: {} out of total {} traj ({:4.2f}%)\n".format(scattered,ntrajs,float(scattered)*float(100)/float(ntrajs)))
+        logfile.write("trajs with adsorption: {} out of total {} traj ({:4.2f}%)\n".format(absorbed,ntrajs,float(absorbed)*float(100)/float(ntrajs)))
+        logfile.write("trajs transmitted: {} out of total {} traj ({:4.2f}%)\n".format(transmitted,ntrajs,float(transmitted)*float(100)/float(ntrajs)))
 
         return traj_list, scattered, absorbed, transmitted
 
@@ -534,7 +544,8 @@ def analyze(trajs,logfile):
                 # OUTPUT
                 for i in range(len(angle_eloss_hist)):
                     for j in range(len(angle_eloss_hist[i])):
-                        ang_dist_file.write("%f %f %d\n" % (0.5*(xedges[i]+xedges[i+1]), 0.5*(yedges[j]+yedges[j+1]), angle_eloss_hist[i][j]))
+                        ang_dist_file.write("%f %f %d\n" % (0.5*(xedges[i]+xedges[i+1]), 0.5*(yedges[j]+yedges[j+1]), int(angle_eloss_hist[i][j])/abs(numpy.sin(0.5*(yedges[j]+yedges[j+1])/360*2*numpy.pi))))
+                	#ang_dist_file.write("%f %f %d\n" % (0.5*(xedges[i]+xedges[i+1]), 0.5*(yedges[j]+yedges[j+1]), angle_eloss_hist[i][j]))
                         ang_dist_file.write("\n")
 
                 ang_dist_mat_file.write("# x-range describing energy loss in eV (left to right) from %f to %f in steps of %f\n" % (0.5*(xedges[0]+xedges[1]), 0.5*(xedges[-2]+xedges[-1]), abs(xedges[0]-xedges[1])))
@@ -565,23 +576,22 @@ def analyze(trajs,logfile):
         ang_dist_mat_file.close()
 
 
-
         # Graphene bounce events #
-        print("Calculating graphene bounce events.")
-        logfile.write("Calculating graphene bounce events.\n")
-        fast_c = open("analysis/component_fast.txt", "w")
-        slow_c_sb = open("analysis/component_slow_single.txt", "w")
-        slow_c_mb = open("analysis/component_slow_multi.txt", "w")
-        for traj in trajs:
-        	if traj.has_scattered and traj.in_plane:
-        		if traj.turn_pnts == 1:
-        			if traj.cl_appr > 1.4:
-        				fast_c.write("%f %f\n" % (traj.ekin_p_f/traj.ekin_p_i, traj.polar_f))
-        			if traj.cl_appr < 1.4:
-        				slow_c_sb.write("%f %f\n" % (traj.ekin_p_f/traj.ekin_p_i, traj.polar_f))
-        		elif traj.turn_pnts > 1 and traj.cl_appr < 1.4:
-        				slow_c_mb.write("%f %f\n" % (traj.ekin_p_f/traj.ekin_p_i, traj.polar_f))
-        slow_c_mb.close(); slow_c_sb.close(); fast_c.close()
+        #print("Calculating graphene bounce events.")
+        #logfile.write("Calculating graphene bounce events.\n")
+        #fast_c = open("analysis/component_fast.txt", "w")
+        #slow_c_sb = open("analysis/component_slow_single.txt", "w")
+        #slow_c_mb = open("analysis/component_slow_multi.txt", "w")
+        #for traj in trajs:
+        	#if traj.has_scattered and traj.in_plane:
+        		#if traj.turn_pnts == 1:
+        			#if traj.cl_appr > 1.4:
+        				#fast_c.write("%f %f\n" % (traj.ekin_p_f/traj.ekin_p_i, traj.polar_f))
+        			#if traj.cl_appr < 1.4:
+        				#slow_c_sb.write("%f %f\n" % (traj.ekin_p_f/traj.ekin_p_i, traj.polar_f))
+        		#elif traj.turn_pnts > 1 and traj.cl_appr < 1.4:
+        				#slow_c_mb.write("%f %f\n" % (traj.ekin_p_f/traj.ekin_p_i, traj.polar_f))
+        #slow_c_mb.close(); slow_c_sb.close(); fast_c.close()
         			
         			
         			
@@ -595,7 +605,7 @@ def analyze(trajs,logfile):
         	
         	for i in range(len(polar_scatt_azi_int_hist)):
         		for j in range(len(polar_scatt_azi_int_hist[i])):
-        			polar_scatt_azi_file.write("%f %f %d\n" % (0.5*(xedges[i]+xedges[i+1]), 0.5*(yedges[j]+yedges[j+1]), polar_scatt_azi_int_hist[i][j]))
+        			polar_scatt_azi_file.write("%f %f %d\n" % (0.5*(xedges[i]+xedges[i+1]), 0.5*(yedges[j]+yedges[j+1]), int(polar_scatt_azi_int_hist[i][j])/abs(numpy.sin(0.5*(yedges[j]+yedges[j+1])/360*2*numpy.pi))))
         		polar_scatt_azi_file.write("\n")
         else:
         	polar_scatt_azi_file.write("%f %f %d\n"   % (0.1, 0.5, 0))
@@ -667,16 +677,45 @@ def analyze(trajs,logfile):
         spherical_file = open("analysis/rel_spherical_symmetry.txt", "w")
         for i in range(len(rel_spherical_hist)):
         	for j in range(len(rel_spherical_hist[i])):
-        		spherical_file.write("%f %f %d\n" % (0.5*(rel_xedges[i]+rel_xedges[i+1]), -0.5*(yedges[j]+yedges[j+1]), rel_spherical_hist[i][j]))
+        		spherical_file.write("%f %f %d\n" % (0.5*(rel_xedges[i]+rel_xedges[i+1]), -0.5*(yedges[j]+yedges[j+1]), int(rel_spherical_hist[i][j])/abs(numpy.sin(0.5*(yedges[j]+yedges[j+1])/360*2*numpy.pi))))
         	spherical_file.write("\n")
         spherical_file.close()
 
         spherical_file = open("analysis/abs_spherical_symmetry.txt", "w")
         for i in range(len(abs_spherical_hist)):
         	for j in range(len(abs_spherical_hist[i])):
-        		spherical_file.write("%f %f %d\n" % (0.5*(abs_xedges[i]+abs_xedges[i+1]), -0.5*(yedges[j]+yedges[j+1]), abs_spherical_hist[i][j]))
+        		spherical_file.write("%f %f %d\n" % (0.5*(abs_xedges[i]+abs_xedges[i+1]), -0.5*(yedges[j]+yedges[j+1]), int(abs_spherical_hist[i][j])/abs(numpy.sin(0.5*(yedges[j]+yedges[j+1])/360*2*numpy.pi))))
         	spherical_file.write("\n")
         spherical_file.close()
+
+        ### 1D ANGULAR DISTRIBUTION
+        print("Calculate 1D angular distribution")
+        angplane_collect = []
+        for traj in trajs:
+            if traj.azi_f < 0:
+                inv_azi = AZIMUTHAL_ANGLE - 180
+                if traj.has_scattered and abs(inv_azi - traj.azi_f) < SPECULAR_RADIUS:
+                    angplane_collect.append(-traj.polar_f)
+                elif traj.has_scattered and abs(AZIMUTHAL_ANGLE - traj.azi_f) < SPECULAR_RADIUS:
+                    angplane_collect.append(traj.polar_f)
+            if traj.azi_f > 0:
+                inv_azi = AZIMUTHAL_ANGLE + 180
+                if traj.has_scattered and abs(inv_azi - traj.azi_f) < SPECULAR_RADIUS:
+                    angplane_collect.append(-traj.polar_f)
+                elif traj.has_scattered and abs(AZIMUTHAL_ANGLE - traj.azi_f) < SPECULAR_RADIUS:
+                    angplane_collect.append(traj.polar_f)
+
+        ang_dist_file = open("analysis/ang_dist.txt", "w")
+        if len(angplane_collect) > 0:
+            angle_hist, angplane_collect_edges = numpy.histogram(angplane_collect, bins=36, range=(-90, 90), density=False)
+            for i in range(len(angle_hist)):
+                angle_hist[i] = angle_hist[i]/abs(numpy.sin(0.5*(angplane_collect_edges[i]+angplane_collect_edges[i+1])/360*2*numpy.pi)) # needs to be divided by sin(x) to correct geometry of experiment.
+
+            #OUTPUT
+            for i in range(len(angle_hist)):
+                ang_dist_file.write("%f %f %f\n" % (0.5*(angplane_collect_edges[i]+angplane_collect_edges[i+1]), angle_hist[i], angle_hist[i]/float(max(angle_hist))))
+            ang_dist_file.close()
+
 
 
 
@@ -724,7 +763,7 @@ def analyze(trajs,logfile):
         	# OUTPUT
         	for i in range(len(polar_psd_hist)):
                         for j in range(len(polar_psd_hist[i])):
-                                polar_psd_file.write("%f %f %d\n" % (0.5*(xedges[i]+xedges[i+1]), 0.5*(yedges[j]+yedges[j+1]), polar_psd_hist[i][j]))
+                                polar_psd_file.write("%f %f %d\n" % (0.5*(xedges[i]+xedges[i+1]), 0.5*(yedges[j]+yedges[j+1]), int(polar_psd_hist[i][j])/abs(numpy.sin(0.5*(yedges[j]+yedges[j+1])/360*2*numpy.pi))))
                         polar_psd_file.write("\n")
         else:
                 polar_psd_file.write("%f %f %d\n"   % (0.1, 0.5, 0))
@@ -745,7 +784,7 @@ def analyze(trajs,logfile):
         	# OUTPUT
         	for i in range(len(eloss_psd_in_plane_hist)):
                         for j in range(len(eloss_psd_in_plane_hist[i])):
-                                eloss_psd_in_plane_file.write("%f %f %d\n" % (0.5*(xedges[i]+xedges[i+1]), 0.5*(yedges[j]+yedges[j+1]), eloss_psd_in_plane_hist[i][j]))
+                                eloss_psd_in_plane_file.write("%f %f %d\n" % (0.5*(xedges[i]+xedges[i+1]), 0.5*(yedges[j]+yedges[j+1]), int(eloss_psd_in_plane_hist[i][j])/abs(numpy.sin(0.5*(yedges[j]+yedges[j+1])/360*2*numpy.pi))))
                         eloss_psd_in_plane_file.write("\n")
         else:
                 eloss_psd_in_plane_file.write("%f %f %d\n"   % (0.1, 0.5, 0))
@@ -844,7 +883,7 @@ def analyze(trajs,logfile):
                 # OUTPUT
                 for i in range(len(angle_vloss_hist)):
                 	for j in range(len(angle_vloss_hist[i])):
-                		ang_dist_file_v.write("%f %f %d\n" % (0.5*(xedges[i]+xedges[i+1]), 0.5*(yedges[j]+yedges[j+1]), angle_vloss_hist[i][j]))
+                		ang_dist_file_v.write("%f %f %d\n" % (0.5*(xedges[i]+xedges[i+1]), 0.5*(yedges[j]+yedges[j+1]), int(angle_vloss_hist[i][j])/abs(numpy.sin(0.5*(yedges[j]+yedges[j+1])/360*2*numpy.pi))))
                 	ang_dist_file_v.write("\n")
 
                 ang_dist_mat_file_v.write("# x-range describing velocity loss in Ang/fs (left to right) from %f to %f in steps of %f\n" % (0.5*(xedges[0]+xedges[1]), 0.5*(xedges[-2]+xedges[-1]), abs(xedges[0]-xedges[1])))
@@ -880,7 +919,7 @@ def analyze(trajs,logfile):
         	
                 for i in range(len(polar_scatt_azi_int_hist_v)):
                         for j in range(len(polar_scatt_azi_int_hist_v[i])):
-                                polar_scatt_azi_file_v.write("%f %f %d\n" % (0.5*(xedges[i]+xedges[i+1]), 0.5*(yedges[j]+yedges[j+1]), polar_scatt_azi_int_hist_v[i][j]))
+                                polar_scatt_azi_file_v.write("%f %f %d\n" % (0.5*(xedges[i]+xedges[i+1]), 0.5*(yedges[j]+yedges[j+1]), int(polar_scatt_azi_int_hist_v[i][j])/abs(numpy.sin(0.5*(yedges[j]+yedges[j+1])/360*2*numpy.pi))))
                         polar_scatt_azi_file_v.write("\n")
         else:
                 polar_scatt_azi_file_v.write("%f %f %d\n"   % (0.1, 0.5, 0))
@@ -921,14 +960,14 @@ def analyze(trajs,logfile):
         spherical_file_rel_v = open("analysis/rel_spherical_symmetry_v.txt", "w")
         for i in range(len(rel_spherical_hist_v)):
                 for j in range(len(rel_spherical_hist_v[i])):
-                        spherical_file_rel_v.write("%f %f %d\n" % (0.5*(rel_xedges[i]+rel_xedges[i+1]), -0.5*(yedges[j]+yedges[j+1]), rel_spherical_hist_v[i][j]))
+                        spherical_file_rel_v.write("%f %f %d\n" % (0.5*(rel_xedges[i]+rel_xedges[i+1]), -0.5*(yedges[j]+yedges[j+1]), int(rel_spherical_hist_v[i][j])/abs(numpy.sin(0.5*(yedges[j]+yedges[j+1])/360*2*numpy.pi))))
                 spherical_file_rel_v.write("\n")
         spherical_file_rel_v.close()
 
         spherical_file_abs_v = open("analysis/abs_spherical_symmetry_v.txt", "w")
         for i in range(len(abs_spherical_hist_v)):
                 for j in range(len(abs_spherical_hist_v[i])):
-                        spherical_file_abs_v.write("%f %f %d\n" % (0.5*(abs_xedges[i]+abs_xedges[i+1]), -0.5*(yedges[j]+yedges[j+1]), abs_spherical_hist_v[i][j]))
+                        spherical_file_abs_v.write("%f %f %d\n" % (0.5*(abs_xedges[i]+abs_xedges[i+1]), -0.5*(yedges[j]+yedges[j+1]), int(abs_spherical_hist_v[i][j])/abs(numpy.sin(0.5*(yedges[j]+yedges[j+1])/360*2*numpy.pi))))
                 spherical_file_abs_v.write("\n")
         spherical_file_abs_v.close()
 
@@ -978,6 +1017,33 @@ def analyze(trajs,logfile):
 # Average energy of H-atoms reflected 1.93905890836 eV.
 # Peak energy of H-atoms reflected 2.770000 eV
 #
+
+
+def graphene_bounce_events(trajs,logfile):
+
+    print("Calculating graphene bounce events.")
+    logfile.write("Calculating graphene bounce events.\n")
+
+    fast_c    = open("analysis/component_fast.txt", "w")
+    slow_c_sb = open("analysis/component_slow_single.txt", "w")
+    slow_c_mb = open("analysis/component_slow_multi.txt", "w")
+
+    for traj in trajs:
+        if traj.has_scattered and traj.in_plane:
+            if traj.turn_pnts == 1:
+                if traj.cl_appr > 1.4:
+                    fast_c.write("%f %f\n" % (traj.ekin_p_f/traj.ekin_p_i, traj.polar_f))
+
+                if traj.cl_appr < 1.4:
+                    slow_c_sb.write("%f %f\n" % (traj.ekin_p_f/traj.ekin_p_i, traj.polar_f))
+
+            elif traj.turn_pnts > 1 and traj.cl_appr < 1.4:
+                slow_c_mb.write("%f %f\n" % (traj.ekin_p_f/traj.ekin_p_i, traj.polar_f))
+
+    slow_c_mb.close()
+    slow_c_sb.close()
+    fast_c.close()
+
 def analyze_angles(trajs,logfile):
         for traj in trajs:	# List comprehension simply need too much time. This is ugly, but fast.
                 if traj.in_plane and traj.has_scattered:
@@ -1020,12 +1086,56 @@ def analyze_angles(trajs,logfile):
                         outfile.close()
 
 
-def get_traj(trajs):
+def get_traj(trajs,logfile):
+
+    def_nrg_file  = open(defnrgname, "w")
+
+    ntrajs        = len(trajs)
+    scattered_ctr = 0
+    absorbed_ctr  = 0
+    slow_comp_ctr = 0
+    fast_comp_ctr = 0
+    back_scat_ctr = 0
 
     for traj in trajs:
         if traj.has_scattered:
-            if traj.azi_f < -100:
-                print(traj.traj_id)
+            scattered_ctr += 1
+
+            if traj.cl_appr < 1.4: # to get slow component
+                if traj.turn_pnts == 1:
+                    slow_comp_ctr += 1
+
+                    def_nrg_file.write(traj.traj_id)
+                    def_nrg_file.write(' ')
+
+                    print("Analyze slow component in traj {}".format(traj.traj_id))
+                    logfile.write("Analyze slow component in traj {}\n".format(traj.traj_id))
+
+            else: # traj.cl_appr > 1.4
+                if traj.turn_pnts == 1:
+                    fast_comp_ctr += 1
+
+                    print("Analyze fast component in traj {}".format(traj.traj_id))
+                    logfile.write("Analyze fast component in traj {}\n".format(traj.traj_id))
+
+            if traj.azi_f < -100: # for backscattering
+                back_scat_ctr += 1
+
+                print("potential backscattering in traj {}".format(traj.traj_id))
+                logfile.write("potential backscattering in traj {}\n".format(traj.traj_id))
+
+        else:
+            absorbed_ctr += 1
+            print("particle adsorbed in traj {}".format(traj.traj_id))
+            logfile.write("particle adsorbed in traj {}\n".format(traj.traj_id))
+
+    print("trajs with scattering after barrier: {} out of {} scattered traj ({}%)".format(slow_comp_ctr,scattered_ctr,float(slow_comp_ctr)*100/float(scattered_ctr)))
+    logfile.write("trajs with scattering after barrier: {} out of {} scattered traj ({}%)\n".format(slow_comp_ctr,scattered_ctr,float(slow_comp_ctr)*100/float(scattered_ctr)))
+
+    print("trajs with adsorption: {} out of total {} traj ({}%)".format(absorbed_ctr,ntrajs,float(absorbed_ctr)*float(100)/float(ntrajs)))
+    logfile.write("trajs with adsorption: {} out of total {} traj ({}%)\n".format(absorbed_ctr,ntrajs,float(absorbed_ctr)*float(100)/float(ntrajs)))
+
+
 
 
 
@@ -1060,8 +1170,9 @@ analyze(traj_collection,logfile)
 
 
 ### H@Gr related functions
+graphene_bounce_events(traj_collection,logfile)
 analyze_angles(traj_collection,logfile)
-get_traj(traj_collection) # get traj # for backscattering
+get_traj(traj_collection,logfile) # get traj # for backscattering
 
 
 logfile.close()

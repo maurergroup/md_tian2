@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/python3
 
 # original version 2.00 and previous versions were done by Marvin Kammler
 # version 2.01 was modified by Sebastian Wille
@@ -17,7 +17,7 @@
 
 # intention: analyze all traj/mxt_fin files and create the MXt2Summary file
 
-# use like: python3 <scriptname>
+# use like: python3 <scriptname> or ./<scriptname> # check first command line
 
 
 # 2DO:
@@ -360,8 +360,8 @@ traj_in_ion_imaging(traj_list)
 
 
 # H@Gr related functions
-write_angle_files(traj_list)
-traj_in_es(traj_list)
+#write_angle_files(traj_list)
+#traj_in_es(traj_list)
 
 
 logfile.close()

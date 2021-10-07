@@ -106,6 +106,13 @@ set title "In plane scattering angle vs energy loss"
 set output "analysis/in_plane_eloss.png"
 splot "analysis/ang_res_eloss.txt" notitle
 
+reset
+set title "Angular Distribution"
+set xlabel "Angle / °"
+set ylabel "Relative Intensity"
+set output "analysis/ang_dist.png"
+plot "analysis/ang_dist.txt" u 1:3 w l lw 5 notitle
+
 
 reset
 set xlabel "Number of bounces"
