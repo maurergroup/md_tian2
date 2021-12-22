@@ -28,12 +28,37 @@
 import os, sys, glob 
 
 # set names for output and log file
-outname        = "MXT2Summary.txt"
-logfilename    = "CreateMXTSummary.log"
+outname     = "MXT2Summary"
+logfilename = "CreateMXTSummary.log"
+settingname = "plot_settings.dat"
+
+METAL_TYPE = "C"
+SHOT_THRU_LIMIT = 0.0
+
+SPECULAR_RADIUS = 1.5 # should match experimental settings (RAT detector radius)
+ION_IMAGING_AZI = 5.0   # should match experimental settings (ion imaging detector settings)
+AZIMUTHAL_ANGLE = 42.0  # should match experimental settings (ion imaging surface shift according to LEED)
+
+ANGLE_MAX = 90  # maximum angle in degrees
+ANGLE_MIN = -90 # minimum angle in degrees
 
 # add range of scattered angle to look at
 
 ############# NO CHANGES BELOW THIS LINE ######################################
+
+### WRITE SETTINGS TO FILE ###
+settingfile = open(settingname, 'w')
+
+settingfile.write("METAL_TYPE {}\n".format(METAL_TYPE))
+settingfile.write("SHOT_THRU_LIMIT {}\n".format(SHOT_THRU_LIMIT))
+settingfile.write("SPECULAR_RADIUS {}\n".format(SPECULAR_RADIUS))
+settingfile.write("ION_IMAGING_AZI {}\n".format(ION_IMAGING_AZI))
+settingfile.write("AZIMUTHAL_ANGLE {}\n".format(AZIMUTHAL_ANGLE))
+settingfile.write("ANGLE_MAX {}\n".format(ANGLE_MAX))
+settingfile.write("ANGLE_MIN {}\n".format(ANGLE_MIN))
+
+settingfile.close()
+
 
 VERSION_ID = 2.02
 
@@ -214,25 +239,26 @@ def read_in_mxt_fins(logfile):
         return traj_list
 
 
-def write_summary(logfile, outfile_name, traj_list):
-	outfile = open(outfile_name, "w")
-	outfile.write("# traj_id E_kin_p   E_kin_l        E_pot      E_total r_p(    x,        y,         z) v_p(    x,        y,         z)      polar       azi   E_kin_p  E_kin_l       E_pot       E_total     r_p(    x,       y,         z) v_p(    x,       y,         z)        polar       azi     simtime turn_pnts   cl_appr   cl_appr_t   r_p_min\n")
-	for traj in traj_list:
-		try:
-			outfile.write("%s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s\n" \
-				% ( traj.traj_id, traj.ekin_p_i, traj.ekin_l_i, traj.epot_i, traj.etotal_i, traj.r_p_i[0], traj.r_p_i[1], traj.r_p_i[2], \
+def write_summary(logfile, outfile_name_tmp, traj_list):
+        outfile_name = outfile_name_tmp + ".txt" 
+        outfile = open(outfile_name, "w")
+        outfile.write("# traj_id E_kin_p   E_kin_l        E_pot      E_total r_p(    x,        y,         z) v_p(    x,        y,         z)      polar       azi   E_kin_p  E_kin_l       E_pot       E_total     r_p(    x,       y,         z) v_p(    x,       y,         z)        polar       azi     simtime turn_pnts   cl_appr   cl_appr_t   r_p_min\n")
+        for traj in traj_list:
+                try:
+                        outfile.write("%s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s\n" \
+                                % ( traj.traj_id, traj.ekin_p_i, traj.ekin_l_i, traj.epot_i, traj.etotal_i, traj.r_p_i[0], traj.r_p_i[1], traj.r_p_i[2], \
                                 traj.v_p_i[0], traj.v_p_i[1], traj.v_p_i[2], \
-				traj.polar_i, traj.azi_i, traj.ekin_p_f, traj.ekin_l_f, traj.epot_f, traj.etotal_f, traj.r_p_f[0], \
-				traj.r_p_f[1], traj.r_p_f[2], traj.v_p_f[0], traj.v_p_f[1], traj.v_p_f[2], traj.polar_f, traj.azi_f, \
+                                traj.polar_i, traj.azi_i, traj.ekin_p_f, traj.ekin_l_f, traj.epot_f, traj.etotal_f, traj.r_p_f[0], \
+                                traj.r_p_f[1], traj.r_p_f[2], traj.v_p_f[0], traj.v_p_f[1], traj.v_p_f[2], traj.polar_f, traj.azi_f, \
                                 traj.time, traj.turn_pnts, traj.cl_appr, traj.cl_appr_t, \
-				traj.r_p_min[0], traj.r_p_min[1], traj.r_p_min[2]))
-		except (IndexError):
+                                traj.r_p_min[0], traj.r_p_min[1], traj.r_p_min[2]))
+                except (IndexError):
                         outfile.close()
                         print("ERROR: There's something wrong with file {}\n".format(str(traj)))
                         logfile.write("ERROR: There's something wrong with file {}\n".format(str(traj)))
                         sys.exit()
 
-	outfile.close()
+        outfile.close()
 
 # the following is not needed anymore since empty or unfinished files are skipped; might be useful for other applications
 def remove_unfinished_traj(logfile):
@@ -304,20 +330,68 @@ def write_angle_files(traj_list):
 
 def traj_in_ion_imaging(traj_list):
 
-        ion_imaging_filename = outname.split('.')[0] + "_ion_imaging.txt"
-        ion_imaging_file = open(ion_imaging_filename, 'w')
+        foldername = "ion_imaging"
+
+        if not os.path.exists(foldername):
+                os.makedirs(foldername)
+
+        #ion_imaging_filename = outname.split('.')[0] + "_ion_imaging.txt"
+        ion_imaging_filename     =  foldername + "/" + outname + ".txt"
+        #ion_imaging_filename_off =  foldername + "/" + outname + "_off.txt"
+        ion_imaging_file         = open(ion_imaging_filename, 'w')
+        #azi_file     = open("test_azi.dat", 'w')
+        #all_azi = []
+        ion_imaging_file.write("# traj_id E_kin_p   E_kin_l        E_pot      E_total r_p(    x,        y,         z) v_p(    x,        y,         z)      polar       azi   E_kin_p  E_kin_l       E_pot       E_total     r_p(    x,       y,         z) v_p(    x,       y,         z)        polar       azi     simtime turn_pnts   cl_appr   cl_appr_t   r_p_min\n")
 
         for traj in traj_list:
-                if float(traj.polar_f) <= 31:
-                        if min(360-abs(float(traj.azi_f)-float(traj.azi_i)), abs(float(traj.azi_f)-float(traj.azi_i))) <= 4.5:
-                                write_traj_to_file(traj,ion_imaging_file)
+            if float(traj.polar_f) <= 31:
+                if float(traj.azi_f) < 0:
+                    inv_azi = AZIMUTHAL_ANGLE - 180
+                    if inv_azi - ION_IMAGING_AZI <= abs(inv_azi - float(traj.azi_f)) <= inv_azi + ION_IMAGING_AZI:
+                        write_traj_to_file(traj,ion_imaging_file)
+                    elif AZIMUTHAL_ANGLE - ION_IMAGING_AZI <= abs(AZIMUTHAL_ANGLE - float(traj.azi_f)) <= AZIMUTHAL_ANGLE + ION_IMAGING_AZI:
+                        write_traj_to_file(traj,ion_imaging_file)
+                if float(traj.azi_f) > 0:
+                    inv_azi = AZIMUTHAL_ANGLE + 180
+                    if inv_azi - ION_IMAGING_AZI <= abs(inv_azi - float(traj.azi_f)) <= inv_azi + ION_IMAGING_AZI:
+                        write_traj_to_file(traj,ion_imaging_file)
+                    elif AZIMUTHAL_ANGLE - ION_IMAGING_AZI <= abs(AZIMUTHAL_ANGLE - float(traj.azi_f)) <= AZIMUTHAL_ANGLE + ION_IMAGING_AZI:
+                        write_traj_to_file(traj,ion_imaging_file)
+
+                         #all_azi.append(float(min(360-abs(float(traj.azi_f)-float(traj.azi_i)), abs(float(traj.azi_f)-float(traj.azi_i)))))
+                         #azi_file.write("{}\n".format(min(360-abs(float(traj.azi_f)-float(traj.azi_i)), abs(float(traj.azi_f)-float(traj.azi_i)))))
+                         #if AZIMUTH_OFFSET - 5 <= min(360-abs(float(traj.azi_f)-float(traj.azi_i)), abs(float(traj.azi_f)-float(traj.azi_i))) <= AZIMUTH_OFFSET + 5:
+                                 #write_traj_to_file(traj,ion_imaging_file)
+                #if float(traj.polar_f) <= 31:
+                         #if min(360-abs(float(traj.azi_f)-float(traj.azi_i)), abs(float(traj.azi_f)-float(traj.azi_i))) <= 5:
+                                 #write_traj_to_file(traj,ion_imaging_file)
+
+        #print(min(all_azi),max(all_azi))
+
+        '''
+        for traj in trajs:
+                if traj.azi_f < 0:
+                        inv_azi = AZIMUTHAL_ANGLE - 180
+                        if traj.has_scattered and abs(inv_azi - traj.azi_f) < SPECULAR_RADIUS:
+                                angle_all_collect.append(-traj.polar_f)
+                        elif traj.has_scattered and abs(AZIMUTHAL_ANGLE - traj.azi_f) < SPECULAR_RADIUS:
+                                angle_all_collect.append(traj.polar_f)
+                if traj.azi_f > 0:
+                        inv_azi = AZIMUTHAL_ANGLE + 180
+                        if traj.has_scattered and abs(inv_azi - traj.azi_f) < SPECULAR_RADIUS:
+                                angle_all_collect.append(-traj.polar_f)
+                        elif traj.has_scattered and abs(AZIMUTHAL_ANGLE - traj.azi_f) < SPECULAR_RADIUS:
+                                angle_all_collect.append(traj.polar_f)
+
+        '''
 
         ion_imaging_file.close()
+        #ion_imaging_file_off.close()
 
 
 def traj_in_es(traj_list):
 
-        esname    = outname.split('.')[0] + "_es"
+        esname    = outname + "_es"
         es_file_1 = open(esname+'_p31a5.txt', 'w')
         es_file_2 = open(esname+'_p5a31.txt', 'w')
 

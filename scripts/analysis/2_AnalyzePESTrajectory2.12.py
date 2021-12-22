@@ -33,14 +33,22 @@ import os, sys, math, copy, numpy, time
 #METAL_TYPE = "Au"
 #SHOT_THRU_LIMIT = -7.27636607765
 
-METAL_TYPE = "C"
-SHOT_THRU_LIMIT = 0.0 
+#METAL_TYPE = "C"
+#SHOT_THRU_LIMIT = 0.0 
 
-SPECULAR_RADIUS = 1.5
-AZIMUTHAL_ANGLE = 0
+#SPECULAR_RADIUS = 1.5 # should match experimental settings (RAT detector radius)
+#ION_IMAGING_AZI = 5   # should match experimental settings (ion imaging detector settings)
+#AZIMUTHAL_ANGLE = 42  # should match experimental settings (ion imaging surface shift according to LEED)
 
-inpname = "MXT2Summary.txt"
-logfilename = "AnalyzePESTrajectory.log"
+#ANGLE_MAX = 90  # maximum angle in degrees
+#ANGLE_MIN = -90 # minimum angle in degrees
+
+#BINS = int((ANGLE_MAX-ANGLE_MIN)/5.0) # Denominator defining bin width, default is 2.5
+
+inpname     = "MXT2Summary.txt" # output file
+logfilename = "AnalyzePESTrajectory.log" # logfile
+mdtinpname  = "md_tian.inp" # md_tian.inp file
+settingname = "plot_settings.dat" # settings file
 
 # H@Gr related
 defnrgname = "deformation_energy_trajids.txt"
@@ -49,6 +57,28 @@ defnrgname = "deformation_energy_trajids.txt"
 ### CHANGES BELOW THIS LINE DEVELOPERS ONLY###
 
 VERSION_ID = 2.12
+
+### READ SETTINGS ###
+
+settingfile = open(settingname, 'r')
+
+for line in settingfile:
+    if "METAL_TYPE" in line:
+        METAL_TYPE      = str(line.split()[-1])
+    if "SHOT_THRU_LIMIT" in line:
+        SHOT_THRU_LIMIT = float(line.split()[-1])
+    if "SPECULAR_RADIUS" in line:
+        SPECULAR_RADIUS = float(line.split()[-1])
+    if "ION_IMAGING_AZI" in line:
+        ION_IMAGING_AZI = float(line.split()[-1])
+    if "AZIMUTHAL_ANGLE" in line:
+        AZIMUTHAL_ANGLE = float(line.split()[-1])
+    if "ANGLE_MAX" in line:
+        ANGLE_MAX       = int(line.split()[-1])
+    if "ANGLE_MIN" in line:
+        ANGLE_MIN       = int(line.split()[-1])
+
+BINS = int((ANGLE_MAX-ANGLE_MIN)/5.0) # Denominator defining bin width, default is 2.5
 
 class Point3D:
 	def __init__(self,x,y,z):
@@ -142,6 +172,7 @@ class Traj:
                 self.r_p_min    = r_p_min
                 self.traj_id    = traj_id
                 self.eloss      = ekin_p_i - ekin_p_f
+                self.efrac      = ekin_p_f / ekin_p_i
                 self.vloss      = length(v_p_i) - length(v_p_f)
                 self.has_scattered = r_p_f.z > r_p_i.z
                 self.has_transmitted = r_p_f.z < SHOT_THRU_LIMIT
@@ -270,6 +301,9 @@ def initialize(inpname,logfile):
                 			cl_appr, cl_appr_t, r_p_min, traj_id)
 
                 traj_list.append(this_traj)
+                #if counter == 0:
+                #        einc = ekin_p_i
+                #        print("Einc_set = {}".format(einc))
                 counter += 1
 
                 if this_traj.ekin_p_f > 1.4*this_traj.ekin_p_i:
@@ -362,6 +396,7 @@ def analyze(trajs,logfile):
         logfile.write("Calculating total energy loss.\n")
         # LOOP 
         all_eloss = [traj.eloss for traj in trajs if traj.has_scattered] 
+        #all_efrac = [traj.efrac for traj in trajs if traj.has_scattered] 
         one_b     = [traj.eloss for traj in trajs if traj.has_scattered and traj.turn_pnts == 1]
         two_b     = [traj.eloss for traj in trajs if traj.has_scattered and traj.turn_pnts == 3]
         mul_b     = [traj.eloss for traj in trajs if traj.has_scattered and traj.turn_pnts >= 5]
@@ -370,6 +405,7 @@ def analyze(trajs,logfile):
 
         # ANALYSIS
         all_eloss_hist, all_eloss_edges = numpy.histogram(all_eloss, bins=numbins(SCATTERED), range=(min(all_eloss), max(all_eloss)), density=True)
+        #all_efrac_hist, all_efrac_edges = numpy.histogram(all_efrac, bins=numbins(SCATTERED), range=(min(all_efrac), max(all_efrac)), density=True)
         one_b_hist,     one_b_edges     = numpy.histogram(one_b,     bins=numbins(SCATTERED), range=(min(all_eloss), max(all_eloss)), density=True)
         two_b_hist,     two_b_edges     = numpy.histogram(two_b,     bins=numbins(SCATTERED), range=(min(all_eloss), max(all_eloss)), density=True)
         mul_b_hist,     mul_b_edges     = numpy.histogram(mul_b,     bins=numbins(SCATTERED), range=(min(all_eloss), max(all_eloss)), density=True)
@@ -391,6 +427,7 @@ def analyze(trajs,logfile):
 
         # INIT
         spec_all_eloss = []
+        #spec_all_efrac = []
         spec_one_b     = []
         spec_two_b     = []
         spec_mul_b     = []
@@ -399,6 +436,7 @@ def analyze(trajs,logfile):
         for traj in trajs:	# List comprehension simply need too much time. This is ugly, but fast.
                 if traj.in_spec and traj.has_scattered:
                         spec_all_eloss.append(traj.eloss)
+                        #spec_all_efrac.append(traj.efrac)
                         if traj.turn_pnts == 1:
                         	spec_one_b.append(traj.eloss)
                         elif traj.turn_pnts == 3:
@@ -411,6 +449,7 @@ def analyze(trajs,logfile):
         if len(spec_all_eloss) > 0:	
                 # ANALYSIS 
                 spec_all_eloss_hist, spec_all_eloss_edges = numpy.histogram(spec_all_eloss, bins=numbins(spec_all_eloss), range=(min(spec_all_eloss), max(spec_all_eloss)), density=True)
+                #spec_all_efrac_hist, spec_all_efrac_edges = numpy.histogram(spec_all_efrac, bins=numbins(spec_all_efrac), range=(min(spec_all_efrac), max(spec_all_efrac)), density=True)
                 spec_one_b_hist,     spec_one_b_edges     = numpy.histogram(spec_one_b,     bins=numbins(spec_all_eloss), range=(min(spec_all_eloss), max(spec_all_eloss)), density=True)
                 spec_two_b_hist,     spec_two_b_edges     = numpy.histogram(spec_two_b,     bins=numbins(spec_all_eloss), range=(min(spec_all_eloss), max(spec_all_eloss)), density=True)
                 spec_mul_b_hist,     spec_mul_b_edges     = numpy.histogram(spec_mul_b,     bins=numbins(spec_all_eloss), range=(min(spec_all_eloss), max(spec_all_eloss)), density=True)
@@ -433,7 +472,12 @@ def analyze(trajs,logfile):
         logfile.write("Calculating in-plane energy loss.\n")
 
         pp_file = open("analysis/plot_parameter.txt", "w") # here the parameters needed for plotting are stored
-        pp_file.write("Einc Vinc\n{} {}".format(trajs[0].ekin_p_i,length(trajs[0].v_p_i)))
+        mdtinpfile = open(mdtinpname, "r")
+        for line in mdtinpfile:
+            if not line.startswith("!"): # skip comment lines
+                if "Tsurf" in line:
+                    temp = float(line.split()[-1]) # "Tsurf 300"
+        pp_file.write("Einc Vinc Ainc Temp Detector_radius Bins\n{} {} {} {:f} {} {}".format(trajs[0].ekin_p_i,length(trajs[0].v_p_i),trajs[0].polar_i,temp,SPECULAR_RADIUS,BINS))
         pp_file.close()
 
 
@@ -519,25 +563,33 @@ def analyze(trajs,logfile):
         logfile.write("Calculating angular energy loss.\n")
         # get trajectories that are within specular radius in azimuth direction
         energy_collect  = []
+        efrac_collect   = []
         angle_collect   = []
         ps_dist_collect = []
         polar_scatt_azi_int_energy = []
+        polar_scatt_azi_int_efrac  = []
         polar_scatt_azi_int_angle  = []
+        #total_counts = 0
         for traj in trajs:
         	if traj.has_scattered:
         		polar_scatt_azi_int_energy.append(traj.eloss)
+        		polar_scatt_azi_int_efrac.append(traj.efrac)
         		polar_scatt_azi_int_angle.append(traj.polar_f)
 
         		if traj.in_plane:
         			energy_collect.append(traj.eloss)
+        			efrac_collect.append(traj.efrac)
         			angle_collect.append(traj.polar_f)
         			ps_dist_collect.append(traj.cl_appr)
 
-        ang_dist_file     = open("analysis/ang_res_eloss.txt", "w")
-        ang_dist_mat_file = open("analysis/ang_res_eloss_matrix.txt", "w")
-        occurence_file    = open("analysis/ang_res_occurrence.txt", "w")
+        ang_dist_file          = open("analysis/ang_res_eloss.txt", "w")
+        ang_dist_file_norm     = open("analysis/ang_res_eloss_norm.txt", "w")
+        ang_dist_mat_file      = open("analysis/ang_res_eloss_matrix.txt", "w")
+        ang_dist_mat_file_norm = open("analysis/ang_res_eloss_matrix_norm.txt", "w")
+        occurence_file         = open("analysis/ang_res_occurrence.txt", "w")
         if len(energy_collect) != 0:
-                angle_eloss_hist, xedges, yedges = numpy.histogram2d(energy_collect, angle_collect,  bins=(numbins(energy_collect)), normed=False)
+                angle_eloss_hist, xedges, yedges = numpy.histogram2d(energy_collect, angle_collect, bins=(numbins(energy_collect)), density=False)
+                angle_efrac_hist, xefedges, yefedges = numpy.histogram2d(efrac_collect, angle_collect, bins=BINS, range=[[0, 1.1],[0, 90]], density=False) # bins=90
                 #occurence_hist, occ_edges = numpy.histogram(angle_collect, bins=numpy.arange(91), normed=False)
                 occurence_hist, occ_edges = numpy.histogram(angle_collect, bins=numpy.arange(91), density=False)
 
@@ -551,12 +603,38 @@ def analyze(trajs,logfile):
                 ang_dist_mat_file.write("# x-range describing energy loss in eV (left to right) from %f to %f in steps of %f\n" % (0.5*(xedges[0]+xedges[1]), 0.5*(xedges[-2]+xedges[-1]), abs(xedges[0]-xedges[1])))
                 ang_dist_mat_file.write("# y-range describing scattering angle in degrees (top to bottom) from %f to %f in steps of %f\n" % (0.5*(yedges[0]+yedges[1]), 0.5*(yedges[-2]+yedges[-1]), abs(yedges[0]-yedges[1])))
                 ang_dist_mat_file.write("# specular scattering angle is %f degrees and detector radius is %f degrees\n" % (trajs[0].polar_i, SPECULAR_RADIUS))
-                ang_dist_mat_file.write("0.0 "); [ang_dist_mat_file.write("%f " % (0.5*(xedges[i]+xedges[i+1]))) for i in range(len(xedges)-1)]; ang_dist_mat_file.write("\n")
+                ang_dist_mat_file.write("{:8.4f}".format(0)); [ang_dist_mat_file.write("{:8.4f}".format((0.5*(xedges[i]+xedges[i+1])))) for i in range(len(xedges)-1)]; ang_dist_mat_file.write("\n")
+                ang_dist_mat_file.write("{:8.4f}".format(0)); [ang_dist_mat_file.write("{:8.4f}".format((trajs[0].ekin_p_i - (0.5*(xedges[i]+xedges[i+1]))))) for i in range(len(xedges)-1)]; ang_dist_mat_file.write("\n")
                 for i in range(len(angle_eloss_hist[0])):
-                        ang_dist_mat_file.write("%f " % (0.5*(yedges[i]+yedges[i+1])))
+                        ang_dist_mat_file.write("{:8.4f}".format(0.5*(yedges[i]+yedges[i+1])))
                         for j in range(len(angle_eloss_hist)):
-                        	ang_dist_mat_file.write("%d " % angle_eloss_hist[j][i])
+                            ang_dist_mat_file.write("{:4d}".format(int(angle_eloss_hist[j][i])))
+                            #total_counts += int(angle_eloss_hist[j][i])
                         ang_dist_mat_file.write("\n")
+                
+                # OUTPUT without and with norm
+                for i in range(len(angle_efrac_hist)):
+                    for j in range(len(angle_efrac_hist[i])):
+                        abs_val = int(angle_efrac_hist[i][j]/abs(numpy.sin(0.5*(yefedges[j]+yefedges[j+1])/360*2*numpy.pi))) # correct for angle in experiment
+                        #abs_val = int(angle_eloss_hist[i][j]/numpy.sin(0.5*(yedges[j]+yedges[j+1])/360*2*numpy.pi))
+                        rel_val = float(abs_val)/float(angle_efrac_hist.sum()) # get flux (integrated over all angles)
+                        ang_dist_file_norm.write("%f %f %f\n" % (0.5*(xefedges[i]+xefedges[i+1]), 0.5*(yefedges[j]+yefedges[j+1]), rel_val))
+
+                #print("Total counts in-plane {}".format(total_counts))
+                #logfile.write("Total counts in-plane {}\n".format(total_counts))
+
+                ang_dist_mat_file_norm.write("# x-range describing energy in eV (left to right) from %f to %f in steps of %f\n" % (0.5*(xedges[0]+xedges[1]), 0.5*(xedges[-2]+xedges[-1]), abs(xedges[0]-xedges[1])))
+                ang_dist_mat_file_norm.write("# y-range describing scattering angle in degrees (top to bottom) from %f to %f in steps of %f\n" % (0.5*(yedges[0]+yedges[1]), 0.5*(yedges[-2]+yedges[-1]), abs(yedges[0]-yedges[1])))
+                ang_dist_mat_file_norm.write("# specular scattering angle is {} degrees, incidence kinetic energy is {} eV and temperature is {} K\n".format(trajs[0].polar_i, trajs[0].ekin_p_i, temp))
+                ang_dist_mat_file_norm.write("# detector radius is %f degrees and total number of counts is %d \n" % (SPECULAR_RADIUS, angle_eloss_hist.sum()))
+                #ang_dist_mat_file_norm.write("{:8.4f}".format(0)); [ang_dist_mat_file_norm.write("{:8.4f}".format((0.5*(xedges[i]+xedges[i+1])))) for i in range(len(xedges)-1)]; ang_dist_mat_file_norm.write("\n")
+                ang_dist_mat_file_norm.write("{:8.4f}".format(0)); [ang_dist_mat_file_norm.write("{:8.4f}".format((trajs[0].ekin_p_i - (0.5*(xedges[i]+xedges[i+1]))))) for i in range(len(xedges)-1)]; ang_dist_mat_file_norm.write("\n")
+                for i in range(len(angle_eloss_hist[0])):
+                         ang_dist_mat_file_norm.write("{:8.4f}".format(0.5*(yedges[i]+yedges[i+1])))
+                         for j in range(len(angle_eloss_hist)):
+                             ang_dist_mat_file_norm.write("{:8.4f}".format(float(angle_eloss_hist[j][i]/angle_eloss_hist.sum())))
+                         ang_dist_mat_file_norm.write("\n")
+                ang_dist_mat_file.write("Total count: {}".format(angle_eloss_hist.sum()))
                 		
 
                 occurence_file.write("# number of trajs in plane in unit polar angle, unit azimuthal angle\n")
@@ -568,12 +646,19 @@ def analyze(trajs,logfile):
                 ang_dist_file.write("%f %f %d\n\n" % (0.1, 1.0, 1))
                 ang_dist_file.write("%f %f %d\n"   % (0.2, 1.0, 1))
                 ang_dist_file.write("%f %f %d\n"   % (0.2, 0.5, 2))
+                
+                #ang_dist_file_norm.write("%f %f %d\n"   % (0.1, 0.5, 0)) # don't know if this is needed and what the numbers should be
+                #ang_dist_file_norm.write("%f %f %d\n\n" % (0.1, 1.0, 1))
+                #ang_dist_file_morm.write("%f %f %d\n"   % (0.2, 1.0, 1))
+                #ang_dist_file_norm.write("%f %f %d\n"   % (0.2, 0.5, 2))
 
                 occurence_file.write("%f %f\n" % (0.1, 0.1))
 
+        ang_dist_mat_file.write("\n")
         occurence_file.close()
         ang_dist_file.close()
         ang_dist_mat_file.close()
+        ang_dist_mat_file_norm.close()
 
 
         # Graphene bounce events #
@@ -600,12 +685,15 @@ def analyze(trajs,logfile):
 
         # INTERGRATED OVER ALL AZIMUTH ANGLES #
         polar_scatt_azi_file = open("analysis/polar_scatt_azi_int.txt", "w")
+        #total_counts_all = 0
         if len(polar_scatt_azi_int_energy) != 0:
-        	polar_scatt_azi_int_hist, xedges, yedges = numpy.histogram2d(polar_scatt_azi_int_energy, polar_scatt_azi_int_angle, bins=(numbins(polar_scatt_azi_int_energy)), normed=False)
+        	polar_scatt_azi_int_hist, xedges, yedges = numpy.histogram2d(polar_scatt_azi_int_energy, polar_scatt_azi_int_angle, bins=(numbins(polar_scatt_azi_int_energy)), density=False)
         	
         	for i in range(len(polar_scatt_azi_int_hist)):
         		for j in range(len(polar_scatt_azi_int_hist[i])):
-        			polar_scatt_azi_file.write("%f %f %d\n" % (0.5*(xedges[i]+xedges[i+1]), 0.5*(yedges[j]+yedges[j+1]), int(polar_scatt_azi_int_hist[i][j])/abs(numpy.sin(0.5*(yedges[j]+yedges[j+1])/360*2*numpy.pi))))
+                                polar_scatt_azi_file.write("%f %f %d\n" % (0.5*(xedges[i]+xedges[i+1]), 0.5*(yedges[j]+yedges[j+1]), int(polar_scatt_azi_int_hist[i][j])/abs(numpy.sin(0.5*(yedges[j]+yedges[j+1])/360*2*numpy.pi))))
+                                #total_counts_all += int(polar_scatt_azi_int_hist[i][j])
+
         		polar_scatt_azi_file.write("\n")
         else:
         	polar_scatt_azi_file.write("%f %f %d\n"   % (0.1, 0.5, 0))
@@ -614,6 +702,27 @@ def analyze(trajs,logfile):
         	polar_scatt_azi_file.write("%f %f %d\n"   % (0.2, 0.5, 2))
 
         polar_scatt_azi_file.close()
+        #print("Total counts all angles: {}".format(int(total_counts_all)))
+        #logfile.write("Total counts all angles: {}\n".format(int(total_counts_all)))
+
+        polar_scatt_azi_file_norm = open("analysis/polar_scatt_azi_int_norm.txt", "w")
+        if len(polar_scatt_azi_int_efrac) != 0:
+                #polar_scatt_azi_int_hist, xedges, yedges = numpy.histogram2d(polar_scatt_azi_int_energy, polar_scatt_azi_int_angle, bins=(numbins(polar_scatt_azi_int_energy)), normed=False)
+                polar_scatt_azi_int_hist_f, xefedges, yefedges = numpy.histogram2d(polar_scatt_azi_int_efrac, polar_scatt_azi_int_angle, bins=BINS, range=[[0, 1.1],[0, 90]], density=False)
+
+                for i in range(len(polar_scatt_azi_int_hist_f)):
+                        for j in range(len(polar_scatt_azi_int_hist_f[i])):
+                                abs_val = int(polar_scatt_azi_int_hist_f[i][j]/abs(numpy.sin(0.5*(yefedges[j]+yefedges[j+1])/360*2*numpy.pi)))
+                                rel_val = float(abs_val)/float(polar_scatt_azi_int_hist_f.sum())
+                                polar_scatt_azi_file_norm.write("%f %f %f\n" % (0.5*(xefedges[i]+xefedges[i+1]), 0.5*(yefedges[j]+yefedges[j+1]), rel_val))
+
+                        #polar_scatt_azi_file_norm.write("\n")
+        else:
+                polar_scatt_azi_file_norm.write("%f %f %d\n"   % (0.1, 0.5, 0))
+                polar_scatt_azi_file_norm.write("%f %f %d\n\n" % (0.1, 1.0, 1))
+                polar_scatt_azi_file_norm.write("%f %f %d\n"   % (0.2, 1.0, 1))
+                polar_scatt_azi_file_norm.write("%f %f %d\n"   % (0.2, 0.5, 2))
+
 
 
         ### LOSS TO EHP AND PHONONS ###
@@ -707,7 +816,7 @@ def analyze(trajs,logfile):
 
         ang_dist_file = open("analysis/ang_dist.txt", "w")
         if len(angplane_collect) > 0:
-            angle_hist, angplane_collect_edges = numpy.histogram(angplane_collect, bins=36, range=(-90, 90), density=False)
+            angle_hist, angplane_collect_edges = numpy.histogram(angplane_collect, bins=BINS, range=(-90, 90), density=False)
             for i in range(len(angle_hist)):
                 angle_hist[i] = angle_hist[i]/abs(numpy.sin(0.5*(angplane_collect_edges[i]+angplane_collect_edges[i+1])/360*2*numpy.pi)) # needs to be divided by sin(x) to correct geometry of experiment.
 
@@ -717,6 +826,48 @@ def analyze(trajs,logfile):
             ang_dist_file.close()
 
 
+        ### 2D ANGULAR DISTRIBUTION
+        print("Calculate 2D angular distribution")
+        angle_all_collect = [] # all polar angle from -90 to 90 in deg
+        #angle_inp_collect = [] # in-plane polar angle from -90 to 90 in deg
+        efrac_all_collect = [] # all E_s / E_i in eV
+        #efrac_inp_collect = [] # in-plane E_s / E_i in eV
+
+        for traj in trajs:
+            if traj.azi_f < 0:
+                inv_azi = AZIMUTHAL_ANGLE - 180
+                if traj.has_scattered and abs(inv_azi - traj.azi_f) < SPECULAR_RADIUS:
+                    angle_all_collect.append(-traj.polar_f)
+                    efrac_all_collect.append(traj.efrac)
+                elif traj.has_scattered and abs(AZIMUTHAL_ANGLE - traj.azi_f) < SPECULAR_RADIUS:
+                    angle_all_collect.append(traj.polar_f)
+                    efrac_all_collect.append(traj.efrac)
+            if traj.azi_f > 0:
+                inv_azi = AZIMUTHAL_ANGLE + 180
+                if traj.has_scattered and abs(inv_azi - traj.azi_f) < SPECULAR_RADIUS:
+                    angle_all_collect.append(-traj.polar_f)
+                    efrac_all_collect.append(traj.efrac)
+                elif traj.has_scattered and abs(AZIMUTHAL_ANGLE - traj.azi_f) < SPECULAR_RADIUS:
+                    angle_all_collect.append(traj.polar_f)
+                    efrac_all_collect.append(traj.efrac)
+
+        ang_dist_nrg_ang      = open("analysis/2d-ang-dist.txt", "w")
+        ang_dist_nrg_ang_norm = open("analysis/2d-ang-dist_norm.txt", "w")
+
+        if len(efrac_all_collect) != 0 and len(angle_all_collect) != 0:
+            #angle_efrac_hist, xedges, yedges = numpy.histogram2d(efrac_all_collect, angle_all_collect,  bins=(numbins(efrac_all_collect)), density=False)
+            #angle_efrac_hist, xedges, yedges = numpy.histogram2d(efrac_all_collect, angle_all_collect, bins=BINS, range=[[0, 1.1],[-90, 90]], density=False) # fixed bin size of 2 deg; try 36,72,180
+            angle_efrac_hist, xedges, yedges = numpy.histogram2d(efrac_all_collect, angle_all_collect, bins=BINS, range=[[0, 1.1],[ANGLE_MIN, ANGLE_MAX]], density=False) # fixed bin size of 2 deg; try 36,72,180
+
+            for i in range(len(angle_efrac_hist)):
+                for j in range(len(angle_efrac_hist[i])):
+                    abs_val = int(angle_efrac_hist[i][j]/abs(numpy.sin(0.5*(yedges[j]+yedges[j+1])/360*2*numpy.pi))) # needs to be divided by sin(x) to correct geometry of experiment.
+                    rel_val = float(abs_val)/float(angle_efrac_hist.sum()) # current bin devided by sum of all bins to get "flux"
+                    ang_dist_nrg_ang.write("%f %f %d\n" % (0.5*(xedges[i]+xedges[i+1]), 0.5*(yedges[j]+yedges[j+1]), abs_val)) # write data with bins
+                    ang_dist_nrg_ang_norm.write("%f %f %f\n" % (0.5*(xedges[i]+xedges[i+1]), 0.5*(yedges[j]+yedges[j+1]), rel_val)) # write data with "flux""
+
+        ang_dist_nrg_ang.close()
+        ang_dist_nrg_ang_norm.close()
 
 
         ### Projectile-Surface distance ###
@@ -1137,6 +1288,46 @@ def get_traj(trajs,logfile):
 
 
 
+def ion_imaging_analysis(trajs,logfile):
+
+    print("Calculate 2D angular distribution for ion imaging experiment")
+    logfile.write("Calculate 2D angular distribution for ion imaging experiment\n")
+    angle_ion_collect = [] # all polar angle from -90 to 90 in deg
+    efrac_ion_collect = [] # all E_s / E_i in eV
+
+    for traj in trajs:
+        if traj.azi_f < 0:
+            inv_azi = AZIMUTHAL_ANGLE - 180
+            if traj.has_scattered and abs(inv_azi - traj.azi_f) < ION_IMAGING_AZI:
+                angle_ion_collect.append(-traj.polar_f)
+                efrac_ion_collect.append(traj.efrac)
+            elif traj.has_scattered and abs(AZIMUTHAL_ANGLE - traj.azi_f) < ION_IMAGING_AZI:
+                angle_ion_collect.append(traj.polar_f)
+                efrac_ion_collect.append(traj.efrac)
+        if traj.azi_f > 0:
+            inv_azi = AZIMUTHAL_ANGLE + 180
+            if traj.has_scattered and abs(inv_azi - traj.azi_f) < ION_IMAGING_AZI:
+                angle_ion_collect.append(-traj.polar_f)
+                efrac_ion_collect.append(traj.efrac)
+            elif traj.has_scattered and abs(AZIMUTHAL_ANGLE - traj.azi_f) < ION_IMAGING_AZI:
+                angle_ion_collect.append(traj.polar_f)
+                efrac_ion_collect.append(traj.efrac)
+
+        ang_dist_nrg_ang_ion      = open("analysis/2d-ang-dist_ion_imaging.txt", "w")
+        ang_dist_nrg_ang_ion_norm = open("analysis/2d-ang-dist_ion_imaging_norm.txt", "w")
+
+        if len(efrac_ion_collect) != 0 and len(angle_ion_collect) != 0:
+            angle_efrac_hist, xedges, yedges = numpy.histogram2d(efrac_ion_collect, angle_ion_collect, bins=BINS, range=[[0, 1.1],[ANGLE_MIN, ANGLE_MAX]], density=False) # fixed bin size of 2 deg; try 36,72,180
+
+            for i in range(len(angle_efrac_hist)):
+                for j in range(len(angle_efrac_hist[i])):
+                    abs_val = int(angle_efrac_hist[i][j]/abs(numpy.sin(0.5*(yedges[j]+yedges[j+1])/360*2*numpy.pi))) # needs to be divided by sin(x) to correct geometry of experiment.
+                    rel_val = float(abs_val)/float(angle_efrac_hist.sum()) # current bin devided by sum of all bins to get "flux"
+                    ang_dist_nrg_ang_ion.write("%f %f %d\n" % (0.5*(xedges[i]+xedges[i+1]), 0.5*(yedges[j]+yedges[j+1]), abs_val)) # write data with bins
+                    ang_dist_nrg_ang_ion_norm.write("%f %f %f\n" % (0.5*(xedges[i]+xedges[i+1]), 0.5*(yedges[j]+yedges[j+1]), rel_val)) # write data with "flux""
+
+        ang_dist_nrg_ang_ion.close()
+        ang_dist_nrg_ang_ion_norm.close()
 
 
 
@@ -1152,7 +1343,6 @@ print("Created by version %4.2f" % VERSION_ID)
 logfile.write("Created by version %4.2f\n" % VERSION_ID)
 
 
-
 ### READ IN TRAJS ###
 traj_collection, SCATTERED, ABSORBED, TRANSMITTED = initialize(inpname,logfile)
 
@@ -1162,7 +1352,8 @@ FRAC_SCATTERED = float(SCATTERED)/NTRAJS
 FRAC_ABSORBED = float(ABSORBED)/NTRAJS
 FRAC_TRANSMITTED = float(TRANSMITTED)/NTRAJS
 
-
+### ION IMAGING ###
+#ion_imaging_analysis(traj_collection,logfile)
 
 ### OUTPUT ###
 analyze(traj_collection,logfile)
@@ -1170,9 +1361,9 @@ analyze(traj_collection,logfile)
 
 
 ### H@Gr related functions
-graphene_bounce_events(traj_collection,logfile)
-analyze_angles(traj_collection,logfile)
-get_traj(traj_collection,logfile) # get traj # for backscattering
+#graphene_bounce_events(traj_collection,logfile)
+#analyze_angles(traj_collection,logfile)
+#get_traj(traj_collection,logfile) # get traj # for backscattering
 
 
 logfile.close()
