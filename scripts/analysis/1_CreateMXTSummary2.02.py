@@ -333,78 +333,52 @@ def traj_in_ion_imaging(traj_list):
         foldername = "ion_imaging"
 
         if not os.path.exists(foldername):
-                os.makedirs(foldername)
+            os.makedirs(foldername)
 
-        #ion_imaging_filename = outname.split('.')[0] + "_ion_imaging.txt"
-        ion_imaging_filename     =  foldername + "/" + outname + ".txt"
-        #ion_imaging_filename_off =  foldername + "/" + outname + "_off.txt"
-        ion_imaging_file         = open(ion_imaging_filename, 'w')
-        #azi_file     = open("test_azi.dat", 'w')
-        #all_azi = []
+        ion_imaging_filename  =  foldername + "/" + outname + ".txt"
+        ion_imaging_filenamet =  foldername + "/" + outname + "_test.txt"
+        
+        ion_imaging_file     = open(ion_imaging_filename, 'w')
+        ion_imaging_filet      = open(ion_imaging_filenamet, 'w')
+        
         ion_imaging_file.write("# traj_id E_kin_p   E_kin_l        E_pot      E_total r_p(    x,        y,         z) v_p(    x,        y,         z)      polar       azi   E_kin_p  E_kin_l       E_pot       E_total     r_p(    x,       y,         z) v_p(    x,       y,         z)        polar       azi     simtime turn_pnts   cl_appr   cl_appr_t   r_p_min\n")
+        ion_imaging_filet.write("# traj_id E_kin_p   E_kin_l        E_pot      E_total r_p(    x,        y,         z) v_p(    x,        y,         z)      polar       azi   E_kin_p  E_kin_l       E_pot       E_total     r_p(    x,       y,         z) v_p(    x,       y,         z)        polar       azi     simtime turn_pnts   cl_appr   cl_appr_t   r_p_min\n")
 
         for traj in traj_list:
             if float(traj.polar_f) <= 31:
                 if float(traj.azi_f) < 0:
                     inv_azi = AZIMUTHAL_ANGLE - 180
                     if inv_azi - ION_IMAGING_AZI <= abs(inv_azi - float(traj.azi_f)) <= inv_azi + ION_IMAGING_AZI:
-                        write_traj_to_file(traj,ion_imaging_file)
+                        write_traj_to_file(traj,ion_imaging_filet)
                     elif AZIMUTHAL_ANGLE - ION_IMAGING_AZI <= abs(AZIMUTHAL_ANGLE - float(traj.azi_f)) <= AZIMUTHAL_ANGLE + ION_IMAGING_AZI:
-                        write_traj_to_file(traj,ion_imaging_file)
+                        write_traj_to_file(traj,ion_imaging_filet)
                 if float(traj.azi_f) > 0:
                     inv_azi = AZIMUTHAL_ANGLE + 180
                     if inv_azi - ION_IMAGING_AZI <= abs(inv_azi - float(traj.azi_f)) <= inv_azi + ION_IMAGING_AZI:
-                        write_traj_to_file(traj,ion_imaging_file)
+                        write_traj_to_file(traj,ion_imaging_filet)
                     elif AZIMUTHAL_ANGLE - ION_IMAGING_AZI <= abs(AZIMUTHAL_ANGLE - float(traj.azi_f)) <= AZIMUTHAL_ANGLE + ION_IMAGING_AZI:
+                        write_traj_to_file(traj,ion_imaging_filet)
+
+        
+        for traj in traj_list:
+            if float(traj.polar_f) <= 31:
+                if float(traj.azi_f) < 0:
+                    inv_azi = AZIMUTHAL_ANGLE - 180
+                    if abs(inv_azi - float(traj.azi_f)) <= ION_IMAGING_AZI:
+                        write_traj_to_file(traj,ion_imaging_file)
+                    elif abs(AZIMUTHAL_ANGLE - float(traj.azi_f)) <= ION_IMAGING_AZI:
+                        write_traj_to_file(traj,ion_imaging_file)
+                if float(traj.azi_f) > 0:
+                    inv_azi = AZIMUTHAL_ANGLE + 180
+                    if abs(inv_azi - float(traj.azi_f)) <= ION_IMAGING_AZI:
+                        write_traj_to_file(traj,ion_imaging_file)
+                    elif abs(AZIMUTHAL_ANGLE - float(traj.azi_f)) <= ION_IMAGING_AZI:
                         write_traj_to_file(traj,ion_imaging_file)
 
-                         #all_azi.append(float(min(360-abs(float(traj.azi_f)-float(traj.azi_i)), abs(float(traj.azi_f)-float(traj.azi_i)))))
-                         #azi_file.write("{}\n".format(min(360-abs(float(traj.azi_f)-float(traj.azi_i)), abs(float(traj.azi_f)-float(traj.azi_i)))))
-                         #if AZIMUTH_OFFSET - 5 <= min(360-abs(float(traj.azi_f)-float(traj.azi_i)), abs(float(traj.azi_f)-float(traj.azi_i))) <= AZIMUTH_OFFSET + 5:
-                                 #write_traj_to_file(traj,ion_imaging_file)
-                #if float(traj.polar_f) <= 31:
-                         #if min(360-abs(float(traj.azi_f)-float(traj.azi_i)), abs(float(traj.azi_f)-float(traj.azi_i))) <= 5:
-                                 #write_traj_to_file(traj,ion_imaging_file)
 
-        #print(min(all_azi),max(all_azi))
-
-        '''
-        for traj in trajs:
-                if traj.azi_f < 0:
-                        inv_azi = AZIMUTHAL_ANGLE - 180
-                        if traj.has_scattered and abs(inv_azi - traj.azi_f) < SPECULAR_RADIUS:
-                                angle_all_collect.append(-traj.polar_f)
-                        elif traj.has_scattered and abs(AZIMUTHAL_ANGLE - traj.azi_f) < SPECULAR_RADIUS:
-                                angle_all_collect.append(traj.polar_f)
-                if traj.azi_f > 0:
-                        inv_azi = AZIMUTHAL_ANGLE + 180
-                        if traj.has_scattered and abs(inv_azi - traj.azi_f) < SPECULAR_RADIUS:
-                                angle_all_collect.append(-traj.polar_f)
-                        elif traj.has_scattered and abs(AZIMUTHAL_ANGLE - traj.azi_f) < SPECULAR_RADIUS:
-                                angle_all_collect.append(traj.polar_f)
-
-        '''
 
         ion_imaging_file.close()
-        #ion_imaging_file_off.close()
-
-
-def traj_in_es(traj_list):
-
-        esname    = outname + "_es"
-        es_file_1 = open(esname+'_p31a5.txt', 'w')
-        es_file_2 = open(esname+'_p5a31.txt', 'w')
-
-        for traj in traj_list:
-                if float(traj.polar_f) <= 31:
-                        if min(360-abs(float(traj.azi_f)-float(traj.azi_i)), abs(float(traj.azi_f)-float(traj.azi_i))) <= 5:
-                                write_traj_to_file(traj,es_file_1)
-                if min(360-abs(float(traj.azi_f)-float(traj.azi_i)), abs(float(traj.azi_f)-float(traj.azi_i))) <= 31:
-                        if float(traj.polar_f) <= 5:
-                                write_traj_to_file(traj,es_file_2)
-
-        es_file_1.close()
-        es_file_2.close()
+        ion_imaging_filet.close()
 
 
 

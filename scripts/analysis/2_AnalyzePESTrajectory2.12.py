@@ -1353,7 +1353,7 @@ FRAC_ABSORBED = float(ABSORBED)/NTRAJS
 FRAC_TRANSMITTED = float(TRANSMITTED)/NTRAJS
 
 ### ION IMAGING ###
-#ion_imaging_analysis(traj_collection,logfile)
+ion_imaging_analysis(traj_collection,logfile)
 
 ### OUTPUT ###
 analyze(traj_collection,logfile)
