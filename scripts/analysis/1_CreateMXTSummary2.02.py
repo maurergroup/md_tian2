@@ -37,7 +37,7 @@ SHOT_THRU_LIMIT = 0.0
 
 SPECULAR_RADIUS = 1.5 # should match experimental settings (RAT detector radius)
 ION_IMAGING_AZI = 5.0   # should match experimental settings (ion imaging detector settings)
-AZIMUTHAL_ANGLE = 42.0  # should match experimental settings (ion imaging surface shift according to LEED)
+AZIMUTHAL_ANGLE = -42.0  # should match experimental settings (ion imaging surface shift according to LEED)
 
 ANGLE_MAX = 90  # maximum angle in degrees
 ANGLE_MIN = -90 # minimum angle in degrees
@@ -171,11 +171,11 @@ def read_in_mxt_fins(logfile):
                                 #try:
                                 if "ekin_p_i" in sline:
                                     ekin_p_i = sline[-1]	#	ekin_p_i =      1.9200000
-                                elif "ekin_l_i" in sline:
+                                if "ekin_l_i" in sline:
                                     ekin_l_i = sline[-1]	#	ekin_l_i =      0.9553543
-                                elif "epot_i" in line:
+                                if "epot_i" in line:
                                     epot_i  = sline[-1]         #       epot_i   =   -392.2094094
-                                elif "etotal_i" in line:
+                                if "etotal_i" in line:
                                     etotal_i = sline[-1]        #       etotal_i =   -369.3305490
                                 if line.startswith("r_i"):
                                     r_p_i = sline[-3:]          #       r_i      =     30.1309358    32.4013593     3.5000000
@@ -336,28 +336,28 @@ def traj_in_ion_imaging(traj_list):
             os.makedirs(foldername)
 
         ion_imaging_filename  =  foldername + "/" + outname + ".txt"
-        ion_imaging_filenamet =  foldername + "/" + outname + "_test.txt"
+        #ion_imaging_filenamet =  foldername + "/" + outname + "_test.txt"
         
         ion_imaging_file     = open(ion_imaging_filename, 'w')
-        ion_imaging_filet      = open(ion_imaging_filenamet, 'w')
+        #ion_imaging_filet      = open(ion_imaging_filenamet, 'w')
         
         ion_imaging_file.write("# traj_id E_kin_p   E_kin_l        E_pot      E_total r_p(    x,        y,         z) v_p(    x,        y,         z)      polar       azi   E_kin_p  E_kin_l       E_pot       E_total     r_p(    x,       y,         z) v_p(    x,       y,         z)        polar       azi     simtime turn_pnts   cl_appr   cl_appr_t   r_p_min\n")
-        ion_imaging_filet.write("# traj_id E_kin_p   E_kin_l        E_pot      E_total r_p(    x,        y,         z) v_p(    x,        y,         z)      polar       azi   E_kin_p  E_kin_l       E_pot       E_total     r_p(    x,       y,         z) v_p(    x,       y,         z)        polar       azi     simtime turn_pnts   cl_appr   cl_appr_t   r_p_min\n")
+        #ion_imaging_filet.write("# traj_id E_kin_p   E_kin_l        E_pot      E_total r_p(    x,        y,         z) v_p(    x,        y,         z)      polar       azi   E_kin_p  E_kin_l       E_pot       E_total     r_p(    x,       y,         z) v_p(    x,       y,         z)        polar       azi     simtime turn_pnts   cl_appr   cl_appr_t   r_p_min\n")
 
-        for traj in traj_list:
-            if float(traj.polar_f) <= 31:
-                if float(traj.azi_f) < 0:
-                    inv_azi = AZIMUTHAL_ANGLE - 180
-                    if inv_azi - ION_IMAGING_AZI <= abs(inv_azi - float(traj.azi_f)) <= inv_azi + ION_IMAGING_AZI:
-                        write_traj_to_file(traj,ion_imaging_filet)
-                    elif AZIMUTHAL_ANGLE - ION_IMAGING_AZI <= abs(AZIMUTHAL_ANGLE - float(traj.azi_f)) <= AZIMUTHAL_ANGLE + ION_IMAGING_AZI:
-                        write_traj_to_file(traj,ion_imaging_filet)
-                if float(traj.azi_f) > 0:
-                    inv_azi = AZIMUTHAL_ANGLE + 180
-                    if inv_azi - ION_IMAGING_AZI <= abs(inv_azi - float(traj.azi_f)) <= inv_azi + ION_IMAGING_AZI:
-                        write_traj_to_file(traj,ion_imaging_filet)
-                    elif AZIMUTHAL_ANGLE - ION_IMAGING_AZI <= abs(AZIMUTHAL_ANGLE - float(traj.azi_f)) <= AZIMUTHAL_ANGLE + ION_IMAGING_AZI:
-                        write_traj_to_file(traj,ion_imaging_filet)
+        #for traj in traj_list:
+            #if float(traj.polar_f) <= 31:
+                #if float(traj.azi_f) < 0:
+                    #inv_azi = AZIMUTHAL_ANGLE - 180
+                    #if inv_azi - ION_IMAGING_AZI <= abs(inv_azi - float(traj.azi_f)) <= inv_azi + ION_IMAGING_AZI:
+                        #write_traj_to_file(traj,ion_imaging_filet)
+                    #elif AZIMUTHAL_ANGLE - ION_IMAGING_AZI <= abs(AZIMUTHAL_ANGLE - float(traj.azi_f)) <= AZIMUTHAL_ANGLE + ION_IMAGING_AZI:
+                        #write_traj_to_file(traj,ion_imaging_filet)
+                #if float(traj.azi_f) > 0:
+                    #inv_azi = AZIMUTHAL_ANGLE + 180
+                    #if inv_azi - ION_IMAGING_AZI <= abs(inv_azi - float(traj.azi_f)) <= inv_azi + ION_IMAGING_AZI:
+                        #write_traj_to_file(traj,ion_imaging_filet)
+                    #elif AZIMUTHAL_ANGLE - ION_IMAGING_AZI <= abs(AZIMUTHAL_ANGLE - float(traj.azi_f)) <= AZIMUTHAL_ANGLE + ION_IMAGING_AZI:
+                        #write_traj_to_file(traj,ion_imaging_filet)
 
         
         for traj in traj_list:
@@ -378,7 +378,7 @@ def traj_in_ion_imaging(traj_list):
 
 
         ion_imaging_file.close()
-        ion_imaging_filet.close()
+        #ion_imaging_filet.close()
 
 
 
