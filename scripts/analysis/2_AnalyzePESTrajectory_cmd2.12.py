@@ -1247,16 +1247,12 @@ def get_traj(trajs,logfile):
     slow_comp_ctr = 0
     fast_comp_ctr = 0
     back_scat_ctr = 0
-    traj_after    = 0
-    traj_before   = 0
-    cl_appr_dist  = 1.4
 
     for traj in trajs:
         if traj.has_scattered:
             scattered_ctr += 1
 
-            if traj.cl_appr <= cl_appr_dist: # to get slow component
-                traj_after += 1
+            if traj.cl_appr < 1.4: # to get slow component
                 if traj.turn_pnts == 1:
                     slow_comp_ctr += 1
 
@@ -1267,7 +1263,6 @@ def get_traj(trajs,logfile):
                     logfile.write("Analyze slow component in traj {}\n".format(traj.traj_id))
 
             else: # traj.cl_appr > 1.4
-                traj_before += 1
                 if traj.turn_pnts == 1:
                     fast_comp_ctr += 1
 
@@ -1285,18 +1280,11 @@ def get_traj(trajs,logfile):
             print("particle adsorbed in traj {}".format(traj.traj_id))
             logfile.write("particle adsorbed in traj {}\n".format(traj.traj_id))
 
-    print("trajs with scattering after barrier (single bounce): {} out of {} scattered traj ({}%)".format(slow_comp_ctr,scattered_ctr,float(slow_comp_ctr)*100/float(scattered_ctr)))
-    logfile.write("trajs with scattering after barrier (single bounce): {} out of {} scattered traj ({}%)\n".format(slow_comp_ctr,scattered_ctr,float(slow_comp_ctr)*100/float(scattered_ctr)))
+    print("trajs with scattering after barrier: {} out of {} scattered traj ({}%)".format(slow_comp_ctr,scattered_ctr,float(slow_comp_ctr)*100/float(scattered_ctr)))
+    logfile.write("trajs with scattering after barrier: {} out of {} scattered traj ({}%)\n".format(slow_comp_ctr,scattered_ctr,float(slow_comp_ctr)*100/float(scattered_ctr)))
 
     print("trajs with adsorption: {} out of total {} traj ({}%)".format(absorbed_ctr,ntrajs,float(absorbed_ctr)*float(100)/float(ntrajs)))
     logfile.write("trajs with adsorption: {} out of total {} traj ({}%)\n".format(absorbed_ctr,ntrajs,float(absorbed_ctr)*float(100)/float(ntrajs)))
-
-    print("trajs with scattering before barrier: {} out of {} scattered traj ({}%)".format(traj_before,scattered_ctr,float(traj_before)*float(100)/float(scattered_ctr)))
-    logfile.write("trajs with scattering before barrier: {} out of {} scattered traj ({}%)\n".format(traj_before,scattered_ctr,float(traj_before)*float(100)/float(scattered_ctr)))
-
-    print("trajs with scattering after barrier: {} out of {} scattered traj ({}%)".format(traj_after,scattered_ctr,float(traj_after)*float(100)/float(scattered_ctr)))
-    logfile.write("trajs with scattering after barrier: {} out of {} scattered traj ({}%)\n".format(traj_after,scattered_ctr,float(traj_after)*float(100)/float(scattered_ctr)))
-
 
 
 def rat_analysis(trajs,logfile):
@@ -1308,54 +1296,46 @@ def rat_analysis(trajs,logfile):
         AZIMUTHAL_ANGLE_RAT_D1 = 13.5
         AZIMUTHAL_ANGLE_RAT_D2 = -13.5
 
-       # DOMAIN 1 with azi_i = +13.5 degree
+       # DOMAIN 1 with azi = +13.5 degree
         for traj in trajs:
-            if traj.azi_i == AZIMUTHAL_ANGLE_RAT_D1:
-                if traj.azi_f < 0:
-                    inv_azi = AZIMUTHAL_ANGLE_RAT_D1 - 180
-                    if traj.has_scattered and abs(inv_azi - traj.azi_f) < SPECULAR_RADIUS:
-                        angle_rat_collect.append(-traj.polar_f)
-                        efrac_rat_collect.append(traj.efrac)
-                    elif traj.has_scattered and abs(AZIMUTHAL_ANGLE_RAT_D1 - traj.azi_f) < SPECULAR_RADIUS:
-                        angle_rat_collect.append(traj.polar_f)
-                        efrac_rat_collect.append(traj.efrac)
-                if traj.azi_f > 0:
-                    inv_azi = AZIMUTHAL_ANGLE_RAT_D1 + 180
-                    if traj.has_scattered and abs(inv_azi - traj.azi_f) < SPECULAR_RADIUS:
-                        angle_rat_collect.append(-traj.polar_f)
-                        efrac_rat_collect.append(traj.efrac)
-                    elif traj.has_scattered and abs(AZIMUTHAL_ANGLE_RAT_D1 - traj.azi_f) < SPECULAR_RADIUS:
-                        angle_rat_collect.append(traj.polar_f)
-                        efrac_rat_collect.append(traj.efrac)
+            if traj.azi_f < 0:
+                inv_azi = AZIMUTHAL_ANGLE_RAT_D1 - 180
+                if traj.has_scattered and abs(inv_azi - traj.azi_f) < SPECULAR_RADIUS:
+                    angle_rat_collect.append(-traj.polar_f)
+                    efrac_rat_collect.append(traj.efrac)
+                elif traj.has_scattered and abs(AZIMUTHAL_ANGLE_RAT_D1 - traj.azi_f) < SPECULAR_RADIUS:
+                    angle_rat_collect.append(traj.polar_f)
+                    efrac_rat_collect.append(traj.efrac)
+            if traj.azi_f > 0:
+                inv_azi = AZIMUTHAL_ANGLE_RAT_D1 + 180
+                if traj.has_scattered and abs(inv_azi - traj.azi_f) < SPECULAR_RADIUS:
+                    angle_rat_collect.append(-traj.polar_f)
+                    efrac_rat_collect.append(traj.efrac)
+                elif traj.has_scattered and abs(AZIMUTHAL_ANGLE_RAT_D1 - traj.azi_f) < SPECULAR_RADIUS:
+                    angle_rat_collect.append(traj.polar_f)
+                    efrac_rat_collect.append(traj.efrac)
 
-       # DOMAIN 2 with azi_i = -13.5 degree
+       # DOMAIN 2 with azi = -13.5 degree
         for traj in trajs:
-            if traj.azi_i == AZIMUTHAL_ANGLE_RAT_D2:
-                if traj.azi_f < 0:
-                    inv_azi = AZIMUTHAL_ANGLE_RAT_D2 - 180
-                    if traj.has_scattered and abs(inv_azi - traj.azi_f) < SPECULAR_RADIUS:
-                        angle_rat_collect.append(-traj.polar_f)
-                        efrac_rat_collect.append(traj.efrac)
-                    elif traj.has_scattered and abs(AZIMUTHAL_ANGLE_RAT_D2 - traj.azi_f) < SPECULAR_RADIUS:
-                        angle_rat_collect.append(traj.polar_f)
-                        efrac_rat_collect.append(traj.efrac)
-                if traj.azi_f > 0:
-                    inv_azi = AZIMUTHAL_ANGLE_RAT_D2 + 180
-                    if traj.has_scattered and abs(inv_azi - traj.azi_f) < SPECULAR_RADIUS:
-                        angle_rat_collect.append(-traj.polar_f)
-                        efrac_rat_collect.append(traj.efrac)
-                    elif traj.has_scattered and abs(AZIMUTHAL_ANGLE_RAT_D2 - traj.azi_f) < SPECULAR_RADIUS:
-                        angle_rat_collect.append(traj.polar_f)
-                        efrac_rat_collect.append(traj.efrac)
+            if traj.azi_f < 0:
+                inv_azi = AZIMUTHAL_ANGLE_RAT_D2 - 180
+                if traj.has_scattered and abs(inv_azi - traj.azi_f) < SPECULAR_RADIUS:
+                    angle_rat_collect.append(-traj.polar_f)
+                    efrac_rat_collect.append(traj.efrac)
+                elif traj.has_scattered and abs(AZIMUTHAL_ANGLE_RAT_D2 - traj.azi_f) < SPECULAR_RADIUS:
+                    angle_rat_collect.append(traj.polar_f)
+                    efrac_rat_collect.append(traj.efrac)
+            if traj.azi_f > 0:
+                inv_azi = AZIMUTHAL_ANGLE_RAT_D2 + 180
+                if traj.has_scattered and abs(inv_azi - traj.azi_f) < SPECULAR_RADIUS:
+                    angle_rat_collect.append(-traj.polar_f)
+                    efrac_rat_collect.append(traj.efrac)
+                elif traj.has_scattered and abs(AZIMUTHAL_ANGLE_RAT_D2 - traj.azi_f) < SPECULAR_RADIUS:
+                    angle_rat_collect.append(traj.polar_f)
+                    efrac_rat_collect.append(traj.efrac)
 
-        ang_dist_nrg_rat_ang          = open("analysis/2d-ang-dist_rat.txt", "w")
-        ang_dist_nrg_rat_ang_norm_sum = open("analysis/2d-ang-dist_rat_norm_sum.txt", "w")
-        ang_dist_nrg_rat_ang_norm_max = open("analysis/2d-ang-dist_rat_norm_max.txt", "w")
-        
-        ang_dist_nrg_rat_ang_norm_bin_sum = open("analysis/2d-ang-dist_rat_norm_bin_sum.txt", "w")
-        ang_dist_nrg_rat_ang_norm_bin_max = open("analysis/2d-ang-dist_rat_norm_bin_max.txt", "w")
-
-        bin_arr = []
+        ang_dist_nrg_rat_ang      = open("analysis/2d-ang-dist_rat.txt", "w")
+        ang_dist_nrg_rat_ang_norm = open("analysis/2d-ang-dist_rat_norm.txt", "w")
 
         if len(efrac_rat_collect) != 0 and len(angle_rat_collect) != 0:
             #angle_efrac_hist, xedges, yedges = numpy.histogram2d(efrac_all_collect, angle_all_collect,  bins=(numbins(efrac_all_collect)), density=False)
@@ -1364,28 +1344,13 @@ def rat_analysis(trajs,logfile):
 
             for i in range(len(angle_efrac_hist)):
                 for j in range(len(angle_efrac_hist[i])):
-                    val_abs = int(angle_efrac_hist[i][j]/abs(numpy.sin(0.5*(yedges[j]+yedges[j+1])/360*2*numpy.pi))) # needs to be divided by sin(x) to correct geometry of experiment.
-                    bin_arr.append(float(val_abs))
-                    val_sum = float(val_abs)/float(angle_efrac_hist.sum()) # current bin divided by sum of all values to get "flux"
-                    val_max = float(val_abs)/float(angle_efrac_hist.max()) # current bin divided by max value to get "flux"
-                    ang_dist_nrg_rat_ang.write("%f %f %d\n" % (0.5*(xedges[i]+xedges[i+1]), 0.5*(yedges[j]+yedges[j+1]), val_abs)) # write data with bins
-                    ang_dist_nrg_rat_ang_norm_sum.write("%f %f %f\n" % (0.5*(xedges[i]+xedges[i+1]), 0.5*(yedges[j]+yedges[j+1]), val_sum)) # write data with area integrtated "flux""
-                    ang_dist_nrg_rat_ang_norm_max.write("%f %f %f\n" % (0.5*(xedges[i]+xedges[i+1]), 0.5*(yedges[j]+yedges[j+1]), val_max)) # write data with normalized "flux""
-
-            for i in range(len(angle_efrac_hist)):
-                for j in range(len(angle_efrac_hist[i])):
-                    val_abs = int(angle_efrac_hist[i][j]/abs(numpy.sin(0.5*(yedges[j]+yedges[j+1])/360*2*numpy.pi)))
-                    val_sum = float(val_abs)/float(sum(bin_arr))
-                    val_max = float(val_abs)/float(max(bin_arr))
-                    ang_dist_nrg_rat_ang_norm_bin_sum.write("%f %f %f\n" % (0.5*(xedges[i]+xedges[i+1]), 0.5*(yedges[j]+yedges[j+1]), val_sum))
-                    ang_dist_nrg_rat_ang_norm_bin_max.write("%f %f %f\n" % (0.5*(xedges[i]+xedges[i+1]), 0.5*(yedges[j]+yedges[j+1]), val_max))
+                    abs_val = int(angle_efrac_hist[i][j]/abs(numpy.sin(0.5*(yedges[j]+yedges[j+1])/360*2*numpy.pi))) # needs to be divided by sin(x) to correct geometry of experiment.
+                    rel_val = float(abs_val)/float(angle_efrac_hist.sum()) # current bin devided by sum of all bins to get "flux"
+                    ang_dist_nrg_rat_ang.write("%f %f %d\n" % (0.5*(xedges[i]+xedges[i+1]), 0.5*(yedges[j]+yedges[j+1]), abs_val)) # write data with bins
+                    ang_dist_nrg_rat_ang_norm.write("%f %f %f\n" % (0.5*(xedges[i]+xedges[i+1]), 0.5*(yedges[j]+yedges[j+1]), rel_val)) # write data with "flux""
 
         ang_dist_nrg_rat_ang.close()
-        ang_dist_nrg_rat_ang_norm_sum.close()
-        ang_dist_nrg_rat_ang_norm_max.close()
-
-        ang_dist_nrg_rat_ang_norm_bin_sum.close()
-        ang_dist_nrg_rat_ang_norm_bin_max.close()
+        ang_dist_nrg_rat_ang_norm.close()
 
 
 def ion_imaging_analysis(trajs,logfile):
@@ -1413,46 +1378,25 @@ def ion_imaging_analysis(trajs,logfile):
                     angle_ion_collect.append(traj.polar_f)
                     efrac_ion_collect.append(traj.efrac)
  
-        ang_dist_nrg_ang_ion          = open("analysis/2d-ang-dist_ion_imaging.txt", "w")
-        ang_dist_nrg_ang_ion_norm_sum = open("analysis/2d-ang-dist_ion_imaging_norm_sum.txt", "w")
-        ang_dist_nrg_ang_ion_norm_max = open("analysis/2d-ang-dist_ion_imaging_norm_max.txt", "w")
-        
-        ang_dist_nrg_ang_ion_norm_bin_sum = open("analysis/2d-ang-dist_ion_imaging_norm_bin_sum.txt", "w")
-        ang_dist_nrg_ang_ion_norm_bin_max = open("analysis/2d-ang-dist_ion_imaging_norm_bin_max.txt", "w")
-
-        bin_arr = []
+        ang_dist_nrg_ang_ion      = open("analysis/2d-ang-dist_ion_imaging.txt", "w")
+        ang_dist_nrg_ang_ion_norm = open("analysis/2d-ang-dist_ion_imaging_norm.txt", "w")
 
         if len(efrac_ion_collect) != 0 and len(angle_ion_collect) != 0:
             angle_efrac_hist, xedges, yedges = numpy.histogram2d(efrac_ion_collect, angle_ion_collect, bins=BINS, range=[[0, 1.1],[ANGLE_MIN, ANGLE_MAX]], density=False) # fixed bin size of 2 deg; try 36,72,180
 
             for i in range(len(angle_efrac_hist)):
                 for j in range(len(angle_efrac_hist[i])):
-                    val_abs = int(angle_efrac_hist[i][j]/abs(numpy.sin(0.5*(yedges[j]+yedges[j+1])/360*2*numpy.pi))) # needs to be divided by sin(x) to correct geometry of experiment.
-                    bin_arr.append(float(val_abs))
-                    val_sum = float(val_abs)/float(angle_efrac_hist.sum()) # current bin divided by sum of all values to get "flux"; area normed
-                    val_max = float(val_abs)/float(angle_efrac_hist.max()) # current bin divided by maximum value of all values to get "flux", max value normed
-                    ang_dist_nrg_ang_ion.write("%f %f %d\n" % (0.5*(xedges[i]+xedges[i+1]), 0.5*(yedges[j]+yedges[j+1]), val_abs)) # write data with bins
-                    ang_dist_nrg_ang_ion_norm_sum.write("%f %f %f\n" % (0.5*(xedges[i]+xedges[i+1]), 0.5*(yedges[j]+yedges[j+1]), val_sum)) # write data with area normed "flux"
-                    ang_dist_nrg_ang_ion_norm_max.write("%f %f %f\n" % (0.5*(xedges[i]+xedges[i+1]), 0.5*(yedges[j]+yedges[j+1]), val_max)) # write data with maximum value normed "flux"
-
-            for i in range(len(angle_efrac_hist)):
-                for j in range(len(angle_efrac_hist[i])):
-                    val_abs = int(angle_efrac_hist[i][j]/abs(numpy.sin(0.5*(yedges[j]+yedges[j+1])/360*2*numpy.pi)))
-                    val_sum = float(val_abs)/float(sum(bin_arr)) # current bin divided by sum of all bins
-                    val_max = float(val_abs)/float(max(bin_arr)) # current bin divided by maximum value of all bins
-                    ang_dist_nrg_ang_ion_norm_bin_sum.write("%f %f %f\n" % (0.5*(xedges[i]+xedges[i+1]), 0.5*(yedges[j]+yedges[j+1]), val_sum))
-                    ang_dist_nrg_ang_ion_norm_bin_max.write("%f %f %f\n" % (0.5*(xedges[i]+xedges[i+1]), 0.5*(yedges[j]+yedges[j+1]), val_max))
+                    abs_val = int(angle_efrac_hist[i][j]/abs(numpy.sin(0.5*(yedges[j]+yedges[j+1])/360*2*numpy.pi))) # needs to be divided by sin(x) to correct geometry of experiment.
+                    rel_val = float(abs_val)/float(angle_efrac_hist.sum()) # current bin devided by sum of all bins to get "flux"
+                    ang_dist_nrg_ang_ion.write("%f %f %d\n" % (0.5*(xedges[i]+xedges[i+1]), 0.5*(yedges[j]+yedges[j+1]), abs_val)) # write data with bins
+                    ang_dist_nrg_ang_ion_norm.write("%f %f %f\n" % (0.5*(xedges[i]+xedges[i+1]), 0.5*(yedges[j]+yedges[j+1]), rel_val)) # write data with "flux""
 
         ang_dist_nrg_ang_ion.close()
-        ang_dist_nrg_ang_ion_norm_sum.close()
-        ang_dist_nrg_ang_ion_norm_max.close()
-
-        ang_dist_nrg_ang_ion_norm_bin_sum.close()
-        ang_dist_nrg_ang_ion_norm_bin_max.close()
+        ang_dist_nrg_ang_ion_norm.close()
 
 
 def cmd_analysis(trajs,logfile):
-        print("Calculate 2D angular distribution for cMD simulations\n")
+        print("Calculate 2D angular distribution for cMD simulations")
         logfile.write("Calculate 2D angular distribution for cMD simulations\n")
         angle_cmd_collect = [] # all polar angle from -90 to 90 in deg
         efrac_cmd_collect = [] # all E_s / E_i in eV
@@ -1483,10 +1427,14 @@ def cmd_analysis(trajs,logfile):
 
         if len(efrac_cmd_collect) != 0 and len(angle_cmd_collect) != 0:
             angle_efrac_hist, xedges, yedges = numpy.histogram2d(efrac_cmd_collect, angle_cmd_collect, bins=BINS, range=[[0, 1.1],[ANGLE_MIN, ANGLE_MAX]], density=False)
+            print(angle_efrac_hist.sum())
 
             for i in range(len(angle_efrac_hist)):
                 for j in range(len(angle_efrac_hist[i])):
                     abs_val = int(angle_efrac_hist[i][j]/abs(numpy.sin(0.5*(yedges[j]+yedges[j+1])/360*2*numpy.pi))) # needs to be divided by sin(x) to correct geometry of experiment.
+                    if abs_val > 0:
+                        abs_val = len(trajs)
+                    #rel_val = float(abs_val)/float(angle_efrac_hist.sum()) # current bin devided by sum of all bins to get "flux"
                     rel_val = float(abs_val)/float(angle_efrac_hist.sum()) # current bin devided by sum of all bins to get "flux"
                     ang_dist_nrg_ang_cmd.write("%f %f %d\n" % (0.5*(xedges[i]+xedges[i+1]), 0.5*(yedges[j]+yedges[j+1]), abs_val)) # write data with bins
                     ang_dist_nrg_ang_cmd_norm.write("%f %f %f\n" % (0.5*(xedges[i]+xedges[i+1]), 0.5*(yedges[j]+yedges[j+1]), rel_val)) # write data with "flux"
@@ -1523,7 +1471,7 @@ FRAC_TRANSMITTED = float(TRANSMITTED)/NTRAJS
 #ion_imaging_analysis(traj_collection,logfile)
 
 ### constrained MD ###
-#cmd_analysis(traj_collection,logfile)
+cmd_analysis(traj_collection,logfile)
 
 ### OUTPUT ###
 analyze(traj_collection,logfile)
@@ -1533,7 +1481,7 @@ analyze(traj_collection,logfile)
 ### H@Gr related functions
 #graphene_bounce_events(traj_collection,logfile)
 #analyze_angles(traj_collection,logfile)
-get_traj(traj_collection,logfile) # get traj # for backscattering
+#get_traj(traj_collection,logfile) # get traj # for backscattering
 
 
 logfile.close()

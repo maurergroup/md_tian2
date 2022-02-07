@@ -13,8 +13,8 @@ projectile 1 H 1.0 ver
 lattice 1 C 12.0 ver
 !lattice 2 Al 27.0 ver O 16.0 ver
 
-!force_beads 12
-!pile_tau 100
+!force_beads 8
+!pile_tau 500
 !andersen_time 30
 
 Einc 1.92
