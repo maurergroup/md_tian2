@@ -146,7 +146,7 @@ md_tian.inp file: -> add a list with the complete set of keywords with descripti
 		y) maxit: maximum number of iterations during fit
 		z) nthreads: number of threads used for fitting
 		aa) adsorption_distance: define distance of projectile to surface (start and end) to get interaction time 
-		ab) rng_type: we have two types of RNG namely global and traj_id, default is traj_id if no keyword is given
+		ab) rng_seed: we have two different seeding methods for the RNG namely global and traj_id. With traj_id the current id of the trajectory seeds whereas in the global case all previous numbers are caluclated again; default is traj_id if no keyword is given
 		ac) debug: debugging, developers only; followed by the pes name this enables pes specific debug information
 
         Annotations to points from list:

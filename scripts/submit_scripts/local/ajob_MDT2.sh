@@ -9,5 +9,5 @@ do
 	cp ${script}.inp ${script}_${i}.inp
         sed -i -e "s/start.*/start $j/g" ${script}_${i}.inp
         sed -i -e "s/ntrajs.*/ntrajs ${ntrajs}/g" ${script}_${i}.inp
-	#nohup ./md_tian2.serial.x ${script}_${i} > output_${i}.out &
+	#nohup ./md_tian2.serial.x ${script}_${i}.inp > output_${i}.out &
 done

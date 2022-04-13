@@ -1199,7 +1199,7 @@ def analyze_angles(trajs,logfile):
         for traj in trajs:	# List comprehension simply need too much time. This is ugly, but fast.
                 if traj.in_plane and traj.has_scattered:
 
-                        if traj.cl_appr < 1.4: # our structural parameter for the barrie # our structural parameter for the barrierr
+                        if traj.cl_appr < 1.4: # our structural parameter for the barrier
                             outfile_string = "slow_component.log"
                         else:
                             outfile_string = "fast_component.log"

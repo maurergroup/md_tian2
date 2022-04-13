@@ -1495,6 +1495,15 @@ def cmd_analysis(trajs,logfile):
         ang_dist_nrg_ang_cmd_norm.close()
 
 
+def get_movies(trajs,logfile):
+
+    for traj in trajs:
+        if traj.has_scattered:
+            #if 1.80 <= traj.
+            if 0.09 <= traj.eloss <= 0.11:
+                print(traj.traj_id)
+
+
 
 ###### SCRIPT ######
 
@@ -1517,7 +1526,7 @@ FRAC_ABSORBED = float(ABSORBED)/NTRAJS
 FRAC_TRANSMITTED = float(TRANSMITTED)/NTRAJS
 
 ### RAT ###
-#rat_analysis(traj_collection,logfile)
+rat_analysis(traj_collection,logfile)
 
 ### ION IMAGING ###
 #ion_imaging_analysis(traj_collection,logfile)
@@ -1533,7 +1542,8 @@ analyze(traj_collection,logfile)
 ### H@Gr related functions
 #graphene_bounce_events(traj_collection,logfile)
 #analyze_angles(traj_collection,logfile)
-get_traj(traj_collection,logfile) # get traj # for backscattering
+get_traj(traj_collection,logfile) # get number of trajs for backscattering
+get_movies(traj_collection,logfile) # get traj id for movies
 
 
 logfile.close()
