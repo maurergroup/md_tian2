@@ -36,8 +36,8 @@ METAL_TYPE = "C"
 SHOT_THRU_LIMIT = 0.0
 
 SPECULAR_RADIUS = 1.5 # should match experimental settings (RAT detector radius)
-ION_IMAGING_AZI = 5.0   # should match experimental settings (ion imaging detector settings)
-AZIMUTHAL_ANGLE = -42.0  # should match experimental settings (ion imaging surface shift according to LEED)
+ION_IMAGING_AZI = 4.5   # should match experimental settings (HBEAM detector settings)
+AZIMUTHAL_ANGLE = -42.0  # should match experimental settings (HBEAM surface shift according to LEED)
 
 ANGLE_MAX = 90  # maximum angle in degrees
 ANGLE_MIN = -90 # minimum angle in degrees
@@ -328,36 +328,36 @@ def write_angle_files(traj_list):
         outfile_60.close()
 
 
-def traj_in_ion_imaging(traj_list):
+def traj_in_hbeam(traj_list):
 
-        foldername = "ion_imaging"
+        foldername = "hbeam"
 
         if not os.path.exists(foldername):
             os.makedirs(foldername)
 
-        ion_imaging_filename  =  foldername + "/" + outname + ".txt"
-        #ion_imaging_filenamet =  foldername + "/" + outname + "_test.txt"
+        hbeam_filename  =  foldername + "/" + outname + ".txt"
+        #hbeam_filenamet =  foldername + "/" + outname + "_test.txt"
         
-        ion_imaging_file     = open(ion_imaging_filename, 'w')
-        #ion_imaging_filet      = open(ion_imaging_filenamet, 'w')
+        hbeam_file     = open(hbeam_filename, 'w')
+        #hbeam_filet      = open(hbeam_filenamet, 'w')
         
-        ion_imaging_file.write("# traj_id E_kin_p   E_kin_l        E_pot      E_total r_p(    x,        y,         z) v_p(    x,        y,         z)      polar       azi   E_kin_p  E_kin_l       E_pot       E_total     r_p(    x,       y,         z) v_p(    x,       y,         z)        polar       azi     simtime turn_pnts   cl_appr   cl_appr_t   r_p_min\n")
-        #ion_imaging_filet.write("# traj_id E_kin_p   E_kin_l        E_pot      E_total r_p(    x,        y,         z) v_p(    x,        y,         z)      polar       azi   E_kin_p  E_kin_l       E_pot       E_total     r_p(    x,       y,         z) v_p(    x,       y,         z)        polar       azi     simtime turn_pnts   cl_appr   cl_appr_t   r_p_min\n")
+        hbeam_file.write("# traj_id E_kin_p   E_kin_l        E_pot      E_total r_p(    x,        y,         z) v_p(    x,        y,         z)      polar       azi   E_kin_p  E_kin_l       E_pot       E_total     r_p(    x,       y,         z) v_p(    x,       y,         z)        polar       azi     simtime turn_pnts   cl_appr   cl_appr_t   r_p_min\n")
+        #hbeam_filet.write("# traj_id E_kin_p   E_kin_l        E_pot      E_total r_p(    x,        y,         z) v_p(    x,        y,         z)      polar       azi   E_kin_p  E_kin_l       E_pot       E_total     r_p(    x,       y,         z) v_p(    x,       y,         z)        polar       azi     simtime turn_pnts   cl_appr   cl_appr_t   r_p_min\n")
 
         #for traj in traj_list:
             #if float(traj.polar_f) <= 31:
                 #if float(traj.azi_f) < 0:
                     #inv_azi = AZIMUTHAL_ANGLE - 180
                     #if inv_azi - ION_IMAGING_AZI <= abs(inv_azi - float(traj.azi_f)) <= inv_azi + ION_IMAGING_AZI:
-                        #write_traj_to_file(traj,ion_imaging_filet)
+                        #write_traj_to_file(traj,hbeam_filet)
                     #elif AZIMUTHAL_ANGLE - ION_IMAGING_AZI <= abs(AZIMUTHAL_ANGLE - float(traj.azi_f)) <= AZIMUTHAL_ANGLE + ION_IMAGING_AZI:
-                        #write_traj_to_file(traj,ion_imaging_filet)
+                        #write_traj_to_file(traj,hbeam_filet)
                 #if float(traj.azi_f) > 0:
                     #inv_azi = AZIMUTHAL_ANGLE + 180
                     #if inv_azi - ION_IMAGING_AZI <= abs(inv_azi - float(traj.azi_f)) <= inv_azi + ION_IMAGING_AZI:
-                        #write_traj_to_file(traj,ion_imaging_filet)
+                        #write_traj_to_file(traj,hbeam_filet)
                     #elif AZIMUTHAL_ANGLE - ION_IMAGING_AZI <= abs(AZIMUTHAL_ANGLE - float(traj.azi_f)) <= AZIMUTHAL_ANGLE + ION_IMAGING_AZI:
-                        #write_traj_to_file(traj,ion_imaging_filet)
+                        #write_traj_to_file(traj,hbeam_filet)
 
         
         for traj in traj_list:
@@ -365,20 +365,20 @@ def traj_in_ion_imaging(traj_list):
                 if float(traj.azi_f) < 0:
                     inv_azi = AZIMUTHAL_ANGLE - 180
                     if abs(inv_azi - float(traj.azi_f)) <= ION_IMAGING_AZI:
-                        write_traj_to_file(traj,ion_imaging_file)
+                        write_traj_to_file(traj,hbeam_file)
                     elif abs(AZIMUTHAL_ANGLE - float(traj.azi_f)) <= ION_IMAGING_AZI:
-                        write_traj_to_file(traj,ion_imaging_file)
+                        write_traj_to_file(traj,hbeam_file)
                 if float(traj.azi_f) > 0:
                     inv_azi = AZIMUTHAL_ANGLE + 180
                     if abs(inv_azi - float(traj.azi_f)) <= ION_IMAGING_AZI:
-                        write_traj_to_file(traj,ion_imaging_file)
+                        write_traj_to_file(traj,hbeam_file)
                     elif abs(AZIMUTHAL_ANGLE - float(traj.azi_f)) <= ION_IMAGING_AZI:
-                        write_traj_to_file(traj,ion_imaging_file)
+                        write_traj_to_file(traj,hbeam_file)
 
 
 
-        ion_imaging_file.close()
-        #ion_imaging_filet.close()
+        hbeam_file.close()
+        #hbeam_filet.close()
 
 
 
@@ -404,7 +404,7 @@ traj_list = read_in_mxt_fins(logfile)
 write_summary(logfile, outname, traj_list)
 
 # Ion Imaging Experiment
-traj_in_ion_imaging(traj_list)
+traj_in_hbeam(traj_list)
 
 
 # H@Gr related functions

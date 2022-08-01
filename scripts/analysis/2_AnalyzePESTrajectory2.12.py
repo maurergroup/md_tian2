@@ -1447,6 +1447,9 @@ def ion_imaging_analysis(trajs,logfile):
         ang_dist_nrg_ang_ion_norm_sum.close()
         ang_dist_nrg_ang_ion_norm_max.close()
 
+        print(angle_efrac_hist.max())
+        print(angle_efrac_hist.sum())
+
         ang_dist_nrg_ang_ion_norm_bin_sum.close()
         ang_dist_nrg_ang_ion_norm_bin_max.close()
 
@@ -1526,10 +1529,10 @@ FRAC_ABSORBED = float(ABSORBED)/NTRAJS
 FRAC_TRANSMITTED = float(TRANSMITTED)/NTRAJS
 
 ### RAT ###
-rat_analysis(traj_collection,logfile)
+#rat_analysis(traj_collection,logfile)
 
 ### ION IMAGING ###
-#ion_imaging_analysis(traj_collection,logfile)
+ion_imaging_analysis(traj_collection,logfile)
 
 ### constrained MD ###
 #cmd_analysis(traj_collection,logfile)
@@ -1542,8 +1545,8 @@ analyze(traj_collection,logfile)
 ### H@Gr related functions
 #graphene_bounce_events(traj_collection,logfile)
 #analyze_angles(traj_collection,logfile)
-get_traj(traj_collection,logfile) # get number of trajs for backscattering
-get_movies(traj_collection,logfile) # get traj id for movies
+#get_traj(traj_collection,logfile) # get number of trajs for backscattering
+#get_movies(traj_collection,logfile) # get traj id for movies
 
 
 logfile.close()
