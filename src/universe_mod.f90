@@ -370,15 +370,18 @@ contains
         idx = default_int
         do i = 1, this%natoms
             !                print *, i, this%name(this%idx(i)), name, this%is_proj(this%idx(i)), is_proj, this%idx(i)
-            if (this%name(this%idx(i)) == name .and. this%is_proj(this%idx(i)) == is_proj) then
+            if ((this%name(this%idx(i)) == name) .and. (this%is_proj(this%idx(i)) .eqv. is_proj)) then
                 idx = this%idx(i)
                 exit
             end if
         end do
 
-        if (idx == default_int) stop "Error in get_idx_from_name(): make sure you &
+        if (idx == default_int) then
+            write(*,*) 'Err: ', name, is_proj
+            stop "Error in get_idx_from_name(): make sure you &
                         correctly assign element names to projectile and slab in both &
                         *.inp and *.pes files."
+        endif
 
     end function get_idx_from_name
 

@@ -24,7 +24,7 @@
 module force
 
     use constants
-    use universe_mod, only : universe, minimg_beads, new_atoms, to_direct
+    use universe_mod, only : universe, minimg_beads
 
     use pes_lj_mod,   only : compute_lj, compute_simple_lj
     use pes_emt_mod,  only : compute_emt
@@ -32,85 +32,10 @@ module force
     use pes_rebo_mod, only : compute_rebo
     use rpmd,         only : do_ring_polymer_step
     use pes_nene_mod, only : compute_nene
-    
-    use md_init, only: set_atomic_indices, set_atomic_dofs, read_pes
-    use useful_things, only: invert_matrix
-    use run_config
-
-    use, intrinsic :: iso_c_binding
 
     implicit none
 
 contains
-
-    subroutine full_energy_force_wrapper(natoms, nbeads, ntypes, &
-                                r, simbox, f, epot, pes_file, pes_file_length, natoms_list, &
-                                projectile_element, surface_element, is_proj)
-
-
-        integer(kind=c_int), intent(IN) :: natoms, nbeads, ntypes                     
-        real(kind=c_double), intent(IN) :: r(3,nbeads,natoms), simbox(3,3)
-        !real(kind=c_double), intent(IN) :: m(natoms)
-        real(kind=c_double), intent(OUT) :: f(3,nbeads,natoms)
-        real(kind=c_double), intent(OUT) :: epot(nbeads)
-        type(universe) :: atoms
-        integer(kind=c_int), intent(IN) :: natoms_list(ntypes)  
-        integer(kind=c_int), intent(IN) :: pes_file_length
-        character(len=pes_file_length), intent(IN) :: pes_file
-        character(len=1), intent(IN) ::projectile_element
-        character(len=2), intent(IN) ::surface_element
-        logical*8, intent(IN) :: is_proj(ntypes)
-        ! Think mass is not needed if not running dynamics
-        ! f and epot are output
-
-
-        ! 1. build default atoms in universe type (does allocations)
-        atoms = new_atoms(nbeads, natoms, ntypes)
-        atoms%r(:,:,:)=r        ! positions
-        atoms%simbox = simbox
-        atoms%isimbox = invert_matrix(simbox)
-        atoms%is_cart=.true.
-        call set_atomic_indices(atoms, natoms_list) !atoms%indx 
-        atoms%name(1) = projectile_element
-        atoms%name(2) = surface_element
-        atoms%is_proj = is_proj       
-        
-
-        ! 2. Build required simulation parameters
-        simparams = new_simulation_parameters()
-        simparams%pes_file = pes_file
-        simparams%nprojectiles = 1
-        simparams%nlattices = 1
-
-        ! 3. read pes
-        if (atoms%pes(1,1) == default_int) then
-            call read_pes(atoms)
-        endif
-
-
-        ! 4. calculate energy and force
-        call calc_force(atoms,energy_and_force)
-
-        ! 5. return epot and force
-        f = atoms%f
-        epot = atoms%epot
-
-        ! 6. deallocations
-        deallocate(atoms%r)
-        deallocate(atoms%v)
-        deallocate(atoms%f)
-        deallocate(atoms%a)
-        deallocate(atoms%m)
-        deallocate(atoms%is_fixed)
-        deallocate(atoms%idx)
-        deallocate(atoms%epot)
-        ! deallocate(atoms%pes)
-        deallocate(atoms%name)
-        deallocate(atoms%algo)
-        deallocate(atoms%is_proj)
-
-
-    end subroutine full_energy_force_wrapper
 
     subroutine calc_force(atoms, flag)
 

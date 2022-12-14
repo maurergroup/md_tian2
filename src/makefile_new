@@ -1,0 +1,22 @@
+FC = ifort
+
+#FFLAGS = -O0 -g -fbounds-check -fbacktracee
+FFLAGS = -O0
+LDFLAGS = -L${MKLROOT}/lib -Wl,-rpath,${MKLROOT}/lib -lmkl_rt
+#LDFLAGS = -L$(MKLROOT) -Wl,-rpath,$(MKLROOT) -lmkl_rt
+
+dlext ?= so
+
+%.o: %.f90
+	${FC} -c -fpic $^ ${FFLAGS}
+
+OBJ = abstime.o addatoms.o atomsymfunction1.o atomsymfunction2.o atomsymfunction3Andi.o atomsymfunction3.o atomsymfunction4.o atomsymfunction5.o atomsymfunction6.o atomsymfunction8.o atomsymfunction9.o calconenn.o checkelement.o check_type.o constants.o convert_frequencies.o dia_hessian.o fileunits.o fit.o fittingoptions.o force.o geometry_opt.o getatomsymfunctions.o getatomsymfunctions_sfg.o getcutoff.o getddnodes_values.o getdnodes_values.o getgroupcutoffvalues.o getgroupneighlist.o getlistdim.o getneighboridxatomic_para.o getneighborsatomic_para.o getshortatomic.o getsymfunctionderivatives.o getsymfunctionsecondderivatives.o getvibrationalfrequencies.o getvolume.o globaloptions.o md_algo.o md_init.o md_tian2.o mode1options.o mpi_dummy.o mpi_dummy_routines.o mpifitdistribution.o neighbor_para_short.o nnconstants.o nnewald.o nnflags.o nnshort_atomic.o nuccharge.o open_file.o output_mod.o pes_emt_mod.o pes_ho_mod.o pes_lj_mod.o pes_nene_mod.o pes_non_mod.o pes_rebo_mod.o predictionoptions.o predictionshortatomic.o rpmd.o run_config.o saturation.o sortelements.o sortsymfunctions.o structures.o symfunctiongroups.o symfunctions.o timings.o trajectory_info.o translate.o universe_mod.o useful_things.o wrapper.o
+
+md_tian2_lib.${dlext}: ${OBJ}
+	${FC} -shared -o $@ $^ ${LDFLAGS} ${FFLAGS}
+
+clean:
+	rm -f *.o *.mod md_tian2_lib.${dlext}
+
+rm:
+	rm -f M?? W??.txt

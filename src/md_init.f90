@@ -84,11 +84,11 @@ contains
 
         type(universe), intent(inout) :: atoms
 
-        integer :: ios = 0, nwords, i
+        integer :: ios, nwords, i
         character(len=max_string_length) :: buffer
         character(len=max_string_length) :: words(100)
         character(len=*), parameter :: err = "Error in read_pes(): "
-
+        ios = 0
         if (.not. file_exists(simparams%pes_file)) stop err // "PES file does not exist"
 
         call open_for_read(pes_unit, simparams%pes_file)
