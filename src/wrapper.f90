@@ -22,7 +22,8 @@ module wrapper
 
     subroutine wrapper_read_pes(natoms, nbeads, ntypes, &
         simbox, pes_file, pes_file_length, natoms_list, &
-        projectile_element, surface_element, is_proj)
+        !projectile_element, surface_element, is_proj)
+        elements, elements_length, is_proj)
 
         implicit none
 
@@ -31,8 +32,10 @@ module wrapper
         integer(kind=c_int), intent(IN) :: natoms_list(ntypes)  
         integer(kind=c_int), intent(IN) :: pes_file_length
         character(len=pes_file_length), intent(IN) :: pes_file
-        character(len=1), intent(IN) ::projectile_element
-        character(len=2), intent(IN) ::surface_element
+        ! character(len=1), intent(IN) ::projectile_element
+        ! character(len=2), intent(IN) ::surface_element
+        integer(kind=c_int), intent(IN) :: elements_length
+        character(len=elements_length), intent(IN) :: elements
         logical*8, intent(IN) :: is_proj(ntypes)
 
 
@@ -42,10 +45,13 @@ module wrapper
         atoms%simbox = simbox
         atoms%isimbox = invert_matrix(simbox)
         atoms%is_cart=.true.
-        call set_atomic_indices(atoms, natoms_list) !atoms%indx 
-        atoms%name(1) = projectile_element
-        atoms%name(2) = surface_element
-        atoms%is_proj = is_proj       
+        call set_atomic_indices(atoms, natoms_list) !atoms%indx
+
+
+        read(elements,*) atoms%name
+        ! atoms%name(1) = projectile_element
+        ! atoms%name(2) = surface_element
+        atoms%is_proj = is_proj
         
 
         ! 2. Build required simulation parameters
